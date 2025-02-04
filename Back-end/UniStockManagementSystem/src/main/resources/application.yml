@@ -1,0 +1,16 @@
+spring:
+  profiles:
+    active: dev
+
+  datasource:
+    url: ${PROFILE_URL} --placeholder
+    username: ${PROFILE_USERNAME}
+    password: ${PROFILE_PASS}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    database-platform: org.hibernate.dialect.MySQLDialect
+    show-sql: true
+
