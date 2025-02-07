@@ -1,11 +1,10 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom"; // ✅ Đúng cách
 import ProtectedRoute from "./ProtectedRoute";
 import paths from "./paths";
 
 // Import các trang
-import LoginPage from "../features/auth/LoginPage";
+import LoginPage from "../features/login/LoginPage"; // 🔥 Đảm bảo đường dẫn đúng
 import DashboardPage from "../features/dashboard/DashboardPage";
-
 import NotFoundPage from "../features/misc/NotFoundPage";
 import HomePage from "../features/home/HomePage";
 

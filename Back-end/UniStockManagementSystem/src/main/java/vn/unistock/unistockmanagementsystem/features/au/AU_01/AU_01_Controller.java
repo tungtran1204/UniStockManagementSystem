@@ -1,12 +1,12 @@
 package vn.unistock.unistockmanagementsystem.features.au.AU_01;
 
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 import vn.unistock.unistockmanagementsystem.entities.User;
 import vn.unistock.unistockmanagementsystem.security.Jwt;
 
@@ -21,6 +21,7 @@ public class AU_01_Controller {
         this.au01Service = au01Service;
         this.jwtUtil = jwtUtil;
     }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AU_01_DTO request) {
         try {
@@ -30,9 +31,11 @@ public class AU_01_Controller {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
             }
 
-            // Tạo JWT token với id người dùng
-            String token = jwtUtil.generateToken(user.getId());
-            return ResponseEntity.ok(new AU_01_DTO(token));
+            String role = user.getRole().getRoleName();
+            String email = user.getEmail();
+            String token = jwtUtil.generateToken(user.getId(), role, email);
+
+            return ResponseEntity.ok(new AU_01_DTO(token, role, email));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred");
         }

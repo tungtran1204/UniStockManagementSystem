@@ -1,40 +1,46 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import {
   getUser,
-  login as loginService,
-  logout as logoutService,
+  isAuthenticated,
+  login,
+  logout,
 } from "../services/authService";
 
-// Tạo Context
 const AuthContext = createContext();
 
-// Provider để bọc toàn bộ app
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuth, setIsAuth] = useState(false);
 
   useEffect(() => {
-    const storedUser = getUser();
-    if (storedUser) {
-      setUser(storedUser);
-      setIsAuthenticated(true);
+    // Khi load lại trang, lấy user từ localStorage nếu đã đăng nhập
+    if (isAuthenticated()) {
+      setUser(getUser());
+      setIsAuth(true);
     }
   }, []);
 
-  const login = async (credentials) => {
-    const userData = await loginService(credentials);
-    setUser(userData);
-    setIsAuthenticated(true);
+  const handleLogin = async (credentials) => {
+    try {
+      const loggedInUser = await login(credentials);
+      setUser(loggedInUser);
+      setIsAuth(true);
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error };
+    }
   };
 
-  const logout = () => {
-    logoutService();
+  const handleLogout = () => {
+    logout();
     setUser(null);
-    setIsAuthenticated(false);
+    setIsAuth(false);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, isAuth, login: handleLogin, logout: handleLogout }}
+    >
       {children}
     </AuthContext.Provider>
   );
