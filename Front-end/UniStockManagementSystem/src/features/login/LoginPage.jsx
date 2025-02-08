@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import useLogin from "./useLogin";
 
 const LoginPage = () => {
-  const { handleLogin } = useLogin(); // Đảm bảo lấy handleLogin
+  const { handleLogin } = useLogin(); // ✅ Sử dụng hook đăng nhập
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -18,7 +18,17 @@ const LoginPage = () => {
     const result = await handleLogin(email, password);
 
     if (result.success) {
-      navigate("/admin");
+      const userRole = result.user.role; // ✅ Lấy role từ user
+      console.log("✅ Role:", userRole);
+
+      // ✅ Điều hướng theo vai trò
+      if (userRole === "ADMIN") {
+        navigate("/admin");
+      } else if (userRole === "MANAGER") {
+        navigate("/dashboard");
+      } else {
+        navigate("/home");
+      }
     } else {
       setError(result.message);
     }

@@ -1,4 +1,4 @@
-package vn.unistock.unistockmanagementsystem.features.au.AU_01;
+package vn.unistock.unistockmanagementsystem.features.auth.login;
 
 import lombok.*;
 
@@ -8,13 +8,13 @@ import lombok.*;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class AU_01_DTO {
+public class LoginDTO {
     private String email;
     private String password;
     private String role;
     private String token;
 
-    public AU_01_DTO(String token, String role, String email) {
+    public LoginDTO(String token, String role, String email) {
         this.token = token;
         this.role = role;
         this.email = email;

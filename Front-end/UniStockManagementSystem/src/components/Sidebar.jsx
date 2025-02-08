@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { FaHome, FaUser, FaUsers, FaCog } from "react-icons/fa";
-import useAuth from "../hooks/useAuth";
+import { useAuth } from "../context/AuthContext";
 
 const Sidebar = () => {
   const { user } = useAuth();

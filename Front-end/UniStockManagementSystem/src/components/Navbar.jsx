@@ -1,30 +1,25 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
   const { isAuth, user, logout } = useAuth();
+  const navigate = useNavigate(); // Dùng để chuyển hướng
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <nav className="bg-dark text-white p-3">
       <div className="container d-flex justify-content-between align-items-center">
-        <div>
-          <Link to="/" className="text-white me-3">
-            🏠 Home
-          </Link>
-          <Link to="/inventory" className="text-white me-3">
-            📦 Kho hàng
-          </Link>
-          <Link to="/orders" className="text-white">
-            📜 Đơn hàng
-          </Link>
-        </div>
-
-        <div>
+        {/* Phần đăng nhập/đăng xuất nằm bên phải */}
+        <div className="d-flex align-items-center ms-auto">
           {isAuth ? (
             <>
               <span className="me-3">👤 {user?.email || "User"}</span>
-              <button onClick={logout} className="btn btn-danger btn-sm">
+              <button onClick={handleLogout} className="btn btn-danger btn-sm">
                 🚪 Đăng xuất
               </button>
             </>

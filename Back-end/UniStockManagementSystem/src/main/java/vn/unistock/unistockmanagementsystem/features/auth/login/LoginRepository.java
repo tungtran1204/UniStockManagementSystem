@@ -1,10 +1,11 @@
-package vn.unistock.unistockmanagementsystem.features.au.AU_01;
+package vn.unistock.unistockmanagementsystem.features.auth.login;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 import vn.unistock.unistockmanagementsystem.entities.User;
 
 import java.util.Optional;
-
-public interface AU_01_Repository extends JpaRepository<User, Long> {
+@Repository
+public interface LoginRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 }

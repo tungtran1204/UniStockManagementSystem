@@ -1,13 +1,13 @@
-package vn.unistock.unistockmanagementsystem.features.au.AU_01;
+package vn.unistock.unistockmanagementsystem.features.auth.login;
 
 import org.springframework.stereotype.Service;
 import vn.unistock.unistockmanagementsystem.entities.User;
 
 @Service
-public class AU_01_Service {
-    private final AU_01_Repository au01Repository;
+public class LoginService {
+    private final LoginRepository au01Repository;
 
-    public AU_01_Service(AU_01_Repository au01Repository) {
+    public LoginService(LoginRepository au01Repository) {
         this.au01Repository = au01Repository;
     }
 
