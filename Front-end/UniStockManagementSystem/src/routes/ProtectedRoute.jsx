@@ -15,8 +15,17 @@ const ProtectedRoute = ({ allowedRoles }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // 🔴 Nếu có `allowedRoles` và role của user không nằm trong danh sách → Chuyển về trang unauthorized
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
+  // ✅ Kiểm tra nếu `user.roles` là mảng, nếu không thì chuyển thành []
+  const userRoles = Array.isArray(user.roles)
+    ? user.roles
+    : typeof user.roles === "string"
+    ? user.roles.split(",").map((role) => role.trim())
+    : [];
+
+  console.log("✅ User roles:", userRoles);
+
+  // 🔴 Kiểm tra nếu user có ít nhất một role trong `allowedRoles`
+  if (allowedRoles && !userRoles.some((role) => allowedRoles.includes(role))) {
     console.warn("🚫 User does not have permission! Redirecting...");
     return <Navigate to="/unauthorized" replace />;
   }

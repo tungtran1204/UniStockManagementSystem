@@ -1,6 +1,7 @@
 package vn.unistock.unistockmanagementsystem.features.admin.users;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +14,13 @@ import java.util.Map;
 public class UsersController {
     private final UsersService usersService;
 
+    @PostMapping
+    public ResponseEntity<UsersDTO> addUser(@RequestBody UsersDTO userDTO) {
+        UsersDTO newUser = usersService.createUser(userDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(newUser);
+    }
+
+
     // 🟢 API: Lấy danh sách Users
     @GetMapping
     public ResponseEntity<List<UsersDTO>> getAllUsers() {
@@ -24,23 +32,13 @@ public class UsersController {
         UsersDTO updatedUser = usersService.updateUserStatus(id, status.get("isActive"));
         return ResponseEntity.ok(updatedUser);
     }
+
     // 🟢 API: Lấy User theo ID
     @GetMapping("/{id}")
     public ResponseEntity<UsersDTO> getUserById(@PathVariable Long id) {
         return ResponseEntity.ok(usersService.getUserByUserId(id));
     }
 
-    // 🟢 API: Tạo User mới (Role ID phải được cung cấp)
-    @PostMapping("/{roleId}")
-    public ResponseEntity<UsersDTO> createUser(@RequestBody UsersDTO usersDTO, @PathVariable Long roleId) {
-        return ResponseEntity.ok(usersService.createUser(usersDTO, roleId));
-    }
-
-    // 🟢 API: Cập nhật User (Role ID phải được cung cấp)
-    @PutMapping("/{id}/{roleId}")
-    public ResponseEntity<UsersDTO> updateUser(@PathVariable Long id, @RequestBody UsersDTO usersDTO, @PathVariable Long roleId) {
-        return ResponseEntity.ok(usersService.updateUser(id, usersDTO, roleId));
-    }
 
     // 🟢 API: Xóa User
     @DeleteMapping("/{id}")

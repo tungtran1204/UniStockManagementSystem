@@ -10,42 +10,47 @@ const apiClient = axios.create({
 });
 
 // 🟢 **Hàm Đăng nhập**
+
 export const login = async (credentials) => {
   try {
-    const response = await apiClient.post("/login", credentials);
-    const { token } = response.data;
+    const response = await fetch(`${API_URL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(credentials),
+    });
 
-    if (!token) {
-      throw new Error("Không nhận được token từ server!");
+    if (!response.ok) {
+      throw new Error("Lỗi đăng nhập: Sai email hoặc mật khẩu");
     }
 
-    localStorage.setItem("token", token); // ✅ Lưu token vào LocalStorage
+    const userData = await response.json();
+    console.log("📢 API Login Response:", JSON.stringify(userData, null, 2));
 
-    try {
-      const decodedToken = jwtDecode(token); // 🟢 Giải mã token
-      console.log("🔹 Decoded Token:", decodedToken);
-
-      if (!decodedToken.email || !decodedToken.role) {
-        throw new Error("Token không chứa email hoặc role hợp lệ.");
-      }
-
-      const user = {
-        email: decodedToken.email,
-        name: decodedToken.name || decodedToken.email, // Nếu không có `name`, dùng `email`
-        role: decodedToken.role,
-        token: token,
-      };
-
-      localStorage.setItem("user", JSON.stringify(user)); // ✅ Lưu user vào LocalStorage
-      return user;
-    } catch (error) {
-      console.error("🚨 Lỗi giải mã token:", error);
-      logout();
-      throw new Error("Token không hợp lệ!");
+    if (!userData.token) {
+      throw new Error("Token không hợp lệ từ server");
     }
+
+    // ✅ Giải mã token
+    const decodedToken = jwtDecode(userData.token);
+    console.log("📢 Decoded Token:", decodedToken);
+
+    // ✅ Kiểm tra nếu `roles` là chuỗi, chuyển thành mảng
+    const roles = Array.isArray(decodedToken.roles)
+      ? decodedToken.roles
+      : decodedToken.roles.split(",").map((role) => role.trim());
+
+    if (!decodedToken.email || roles.length === 0) {
+      throw new Error("Token không chứa email hoặc role hợp lệ.");
+    }
+
+    return {
+      email: decodedToken.email,
+      token: userData.token,
+      roles,
+    };
   } catch (error) {
-    console.error("🚨 Lỗi đăng nhập:", error.response?.data || error.message);
-    throw error.response?.data || "Đăng nhập thất bại!";
+    console.error("🚨 Lỗi đăng nhập:", error.message);
+    throw error;
   }
 };
 
