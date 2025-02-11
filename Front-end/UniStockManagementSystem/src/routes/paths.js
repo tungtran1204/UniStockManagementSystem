@@ -19,6 +19,13 @@ const paths = {
     assembly: "/manager/assembly",
   },
 
+  // 🔹 Routes dành riêng cho USER (Quản lý sản phẩm)
+  user: {
+    products: "/products",
+    productCreate: "/products/create",
+    productEdit: "/products/edit/:productId",
+  },
+
   // 🔹 Routes 404
   notFound: "*",
 };

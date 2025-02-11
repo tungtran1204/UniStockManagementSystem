@@ -20,6 +20,12 @@ public class Product {
     private String description;
     private Double price;
 
+    // Nhiều product -> 1 unit
+    @ManyToOne
+    @JoinColumn(name = "unit_id")
+    private Unit unit;
+
+
     // Nhiều product -> 1 productType
     @ManyToOne
     @JoinColumn(name = "type_id")
