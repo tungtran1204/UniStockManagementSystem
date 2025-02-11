@@ -35,23 +35,30 @@ const Sidebar = () => {
   ];
 
   return (
-    <div
-      className="d-flex flex-column p-3 bg-dark text-white"
-      style={{ height: "100vh", width: "250px" }}
-    >
-      <h4 className="text-center">Sidebar</h4>
+    <div className="flex flex-col p-3 bg-gray-800 text-white h-screen w-[250px]">
       {user ? (
-        <p className="text-center">Role: {user.role}</p>
+        <p className="">
+          Roles: {user.roles ? user.roles.join(", ") : "No roles"}
+        </p>
       ) : (
-        <p className="text-center text-danger">User not found</p>
+        <p className="text-red-500">User not found</p>
       )}
-      <ul className="nav flex-column">
+
+      <ul className="mt-4 space-y-2">
         {menuItems
-          .filter((item) => user && item.roles.includes(user.role))
+          .filter((item) =>
+            user && user.roles
+              ? item.roles.some((role) => user.roles.includes(role)) // ✅ Kiểm tra nếu user có bất kỳ role nào phù hợp
+              : false
+          )
           .map((item, index) => (
-            <li className="nav-item" key={index}>
-              <Link to={item.path} className="nav-link text-white">
-                {item.icon} <span className="ms-2">{item.label}</span>
+            <li key={index}>
+              <Link
+                to={item.path}
+                className="flex items-center text-white hover:text-gray-300"
+              >
+                {item.icon}
+                <span className="ml-2">{item.label}</span>
               </Link>
             </li>
           ))}

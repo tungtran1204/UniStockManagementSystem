@@ -20,20 +20,42 @@ const useLogin = () => {
   const handleLogin = async (email, password) => {
     try {
       const userData = await login({ email, password });
-      console.log("📢 API Login Response:", userData); // ✅ Kiểm tra dữ liệu trả về
+      console.log("📢 API Login Response:", JSON.stringify(userData, null, 2)); // 🟢 In dữ liệu API trả về
 
-      // 🔥 Kiểm tra nếu userData có đầy đủ dữ liệu
-      if (userData?.token && userData?.email && userData?.role) {
-        localStorage.setItem("user", JSON.stringify(userData)); // ✅ Lưu vào localStorage
-        setUser(userData); // ✅ Cập nhật state ngay lập tức
-        setIsAuth(true);
-
-        return { success: true, user: userData };
+      if (!userData || !userData.token || !userData.email || !userData.roles) {
+        return { success: false, message: "Dữ liệu đăng nhập không hợp lệ" };
       }
 
-      return { success: false, message: "Dữ liệu đăng nhập không hợp lệ" };
+      // ✅ Kiểm tra nếu `roles` là mảng, nếu không thì chuyển thành mảng
+      const userRoles = Array.isArray(userData.roles)
+        ? userData.roles
+        : typeof userData.roles === "string"
+        ? userData.roles.split(",").map((role) => role.trim()) // ✅ Chuyển từ chuỗi sang mảng nếu cần
+        : [];
+
+      if (userRoles.length === 0) {
+        return { success: false, message: "User không có quyền hợp lệ" };
+      }
+
+      // ✅ Lưu vào localStorage
+      const userObject = {
+        email: userData.email,
+        token: userData.token,
+        roles: userRoles,
+      };
+      localStorage.setItem("user", JSON.stringify(userObject));
+
+      setUser(userObject); // ✅ Cập nhật state ngay lập tức
+      setIsAuth(true);
+
+      console.log("✅ Đăng nhập thành công! User:", userObject);
+
+      return { success: true, user: userObject };
     } catch (error) {
-      console.error("❌ Lỗi khi đăng nhập:", error);
+      console.error(
+        "❌ Lỗi khi đăng nhập:",
+        error.response ? error.response.data : error.message
+      );
       return { success: false, message: "Lỗi khi đăng nhập, vui lòng thử lại" };
     }
   };

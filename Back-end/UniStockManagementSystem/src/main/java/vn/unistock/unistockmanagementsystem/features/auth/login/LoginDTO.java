@@ -2,6 +2,8 @@ package vn.unistock.unistockmanagementsystem.features.auth.login;
 
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Builder
@@ -11,12 +13,12 @@ import lombok.*;
 public class LoginDTO {
     private String email;
     private String password;
-    private String role;
+    private List<String> roles;
     private String token;
 
-    public LoginDTO(String token, String role, String email) {
+    public LoginDTO(String token, List<String> roles, String email) {
         this.token = token;
-        this.role = role;
+        this.roles = roles;
         this.email = email;
     }
 }

@@ -2,8 +2,9 @@ package vn.unistock.unistockmanagementsystem.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Builder
@@ -22,10 +23,14 @@ public class User {
     private String username;
     private String password;
 
-    // Quan hệ nhiều user -> 1 role
-    @ManyToOne
-    @JoinColumn(name = "role_id") // cột role_id trong bảng users
-    private Role role;
+    // 🟢 Nhiều Roles: dùng ManyToMany => user_roles là bảng trung gian
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roles = new HashSet<>();
 
     private String fullname;
     private String email;

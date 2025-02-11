@@ -22,33 +22,36 @@ const App = () => {
 };
 
 const AppContent = () => {
-  const location = useLocation(); // Lấy đường dẫn hiện tại
-  const { isAuth, user, loading } = useAuth(); // Lấy trạng thái đăng nhập từ AuthContext
+  const location = useLocation();
+  const { isAuth, user, loading } = useAuth();
 
-  // Chờ AuthContext load xong trước khi hiển thị UI
   if (loading) return <div>Loading...</div>;
 
-  // ✅ Nếu chưa đăng nhập và không ở trang login -> Chuyển hướng về login
   if (!isAuth && location.pathname !== "/login") {
     return <Navigate to="/login" replace />;
   }
 
-  // ✅ Nếu user đã đăng nhập mà cố vào trang login -> Điều hướng về trang phù hợp
   if (isAuth && location.pathname === "/login") {
     if (user.role === "ADMIN") return <Navigate to="/admin" replace />;
     if (user.role === "MANAGER") return <Navigate to="/dashboard" replace />;
-    return <Navigate to="/home" replace />; // Mặc định nếu không có role cụ thể
+    return <Navigate to="/home" replace />;
   }
 
-  // ✅ Ẩn Sidebar nếu đang ở trang login
+  // Nếu trang login => ẩn Sidebar
   const hideSidebar = location.pathname === "/login";
 
   return (
-    <div className="d-flex">
-      {!hideSidebar && <Sidebar />}
-      <div className="w-100">
-        <Navbar />
-        <main className="container mx-auto p-4">
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+
+      <div className="flex flex-1">
+        {!hideSidebar && (
+          <aside className="bg-gray-800 w-[250px] text-white">
+            <Sidebar />
+          </aside>
+        )}
+
+        <main className="flex-1 container mx-auto">
           <Routes>
             <Route path="/*" element={<AppRoutes />} />
           </Routes>

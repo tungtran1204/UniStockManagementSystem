@@ -6,6 +6,7 @@ import vn.unistock.unistockmanagementsystem.entities.Role;
 import vn.unistock.unistockmanagementsystem.entities.User;
 import vn.unistock.unistockmanagementsystem.features.admin.roles.RolesRepository;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -15,6 +16,23 @@ public class UsersService {
     private final UsersRepository usersRepository;
     private final RolesRepository rolesRepository;
     private final UsersMapper usersMapper = UsersMapper.INSTANCE;
+
+
+    public UsersDTO createUser(UsersDTO userDTO) {
+        // 1) Chuyển DTO -> Entity (trừ trường roles vì ignore)
+        User user = usersMapper.toEntity(userDTO);
+
+        // 2) Nạp Role từ DB qua roleIds
+        if (userDTO.getRoleIds() != null && !userDTO.getRoleIds().isEmpty()) {
+            List<Role> roles = rolesRepository.findAllById(userDTO.getRoleIds());
+            user.setRoles(new HashSet<>(roles));
+        }
+        // 3) Lưu user
+        user = usersRepository.save(user);
+
+        // 4) Trả lại DTO
+        return usersMapper.toDTO(user);
+    }
 
     // 🟢 Lấy danh sách Users
     public List<UsersDTO> getAllUsers() {
@@ -40,34 +58,7 @@ public class UsersService {
         return usersMapper.toDTO(user); // ✅ Dùng Mapper
     }
 
-    // 🟢 Tạo User mới với Role
-    public UsersDTO createUser(UsersDTO usersDTO, Long roleId) {
-        Role role = rolesRepository.findByRoleId(roleId)
-                .orElseThrow(() -> new IllegalArgumentException("Role không tồn tại"));
 
-        User newUser = usersMapper.toEntity(usersDTO); // ✅ Dùng Mapper
-        newUser.setRole(role);
-        usersRepository.save(newUser);
-
-        return usersMapper.toDTO(newUser);
-    }
-
-    // 🟢 Cập nhật thông tin User
-    public UsersDTO updateUser(Long id, UsersDTO usersDTO, Long roleId) {
-        User user = usersRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User không tồn tại"));
-
-        Role role = rolesRepository.findByRoleId(roleId)
-                .orElseThrow(() -> new IllegalArgumentException("Role không tồn tại"));
-
-        user.setUsername(usersDTO.getUsername());
-        user.setFullname(usersDTO.getFullname());
-        user.setRole(role);
-        user.setIsActive(usersDTO.getIsActive());
-
-        usersRepository.save(user);
-        return usersMapper.toDTO(user); // ✅ Dùng Mapper
-    }
 
     // 🟢 Xóa User theo ID
     public void deleteUser(Long id) {

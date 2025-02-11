@@ -7,18 +7,21 @@ import io.jsonwebtoken.io.DecodingException;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class Jwt {
     private static final String JWT_SECRET_KEY = "YWJjZGVmZ2hpamtsbW5vcHFyc3R1d2V4eXoqc29uZ2hhaWNr";
     private static final long JWT_EXPIRATION_TIME = 3600000; // 1 hour
 
+
     // Hàm để tạo JWT token
-    public String generateToken(Long id, String email, String role) {
+    public String generateToken(Long id, String email, List<String> roles) {
+
         return Jwts.builder()
                 .setSubject(String.valueOf(id))
                 .claim("email", email) // Thêm email vào JWT
-                .claim("role", role)
+                .claim("roles", roles)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + JWT_EXPIRATION_TIME))
                 .signWith(SignatureAlgorithm.HS256, JWT_SECRET_KEY)
