@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
   const { isAuth, user, logout } = useAuth();
-  const navigate = useNavigate(); // Dùng để chuyển hướng
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
@@ -12,20 +12,29 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-dark text-white p-3">
-      <div className="container d-flex justify-content-between align-items-center">
-        {/* Phần đăng nhập/đăng xuất nằm bên phải */}
-        <div className="d-flex align-items-center ms-auto">
+    <nav className="bg-gray-800 text-white p-3">
+      <div className="container mx-auto flex items-center justify-between">
+        <Link to="/" className="text-xl font-bold">
+          UniStock
+        </Link>
+
+        <div className="flex items-center ml-auto">
           {isAuth ? (
             <>
-              <span className="me-3">👤 {user?.email || "User"}</span>
-              <button onClick={handleLogout} className="btn btn-danger btn-sm">
+              {/* Thay me-3 => mr-3 */}
+              <span className="mr-3">👤 {user?.email || "User"}</span>
+
+              {/* Bỏ .btn .btn-danger .btn-sm, thay bằng class Tailwind cho nút đỏ nhỏ */}
+              <button
+                onClick={handleLogout}
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+              >
                 🚪 Đăng xuất
               </button>
             </>
           ) : (
             <Link to="/login" className="text-white">
-              🔑 Đăng nhập
+              🔑 Trang chủ
             </Link>
           )}
         </div>

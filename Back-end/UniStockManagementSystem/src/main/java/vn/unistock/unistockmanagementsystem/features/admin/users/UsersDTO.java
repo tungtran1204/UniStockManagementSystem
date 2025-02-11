@@ -1,7 +1,8 @@
 package vn.unistock.unistockmanagementsystem.features.admin.users;
 
 import lombok.*;
-import vn.unistock.unistockmanagementsystem.entities.Role;
+
+import java.util.Set;
 
 @Getter
 @Setter
@@ -13,7 +14,9 @@ public class UsersDTO {
     private String username;
     private String fullname;
     private String email;
-    private Long roleId;  // Chỉ lưu ID của Role
-    private String roleName; // Trả về thông tin Role
     private Boolean isActive;
+
+    // 🟢 Nhiều Roles => chứa danh sách ID (hoặc Set<String> roleNames)
+    private Set<Long> roleIds;
+    private Set<String> roleNames;
 }

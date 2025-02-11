@@ -1,6 +1,5 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Container, Button, Card } from "react-bootstrap";
 
 const HomePage = () => {
   return (

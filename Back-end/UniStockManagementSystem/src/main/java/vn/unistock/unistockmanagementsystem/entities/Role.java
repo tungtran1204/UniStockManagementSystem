@@ -3,9 +3,11 @@ package vn.unistock.unistockmanagementsystem.entities;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.ToString;
-
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @Entity
@@ -28,9 +30,13 @@ public class Role {
     private Long createdBy;
     private Long updatedBy;
 
-    // Bảng nối role_permissions
+    // 🟢 Bảng nối role_permissions (vẫn giữ nguyên nếu cần)
     @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
-    private List<RolePermission> rolePermissions;
-}
+    private List<RolePermission> rolePermissions = new ArrayList<>();
 
+    // 🟢 (Tuỳ chọn) Thêm phần ManyToMany “ngược” để lấy danh sách users
+    @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
+    @ToString.Exclude
+    private Set<User> users = new HashSet<>();
+}

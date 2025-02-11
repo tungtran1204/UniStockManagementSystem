@@ -1,10 +1,9 @@
 import React, { useState } from "react";
-import { Form, Button, Container } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import useLogin from "./useLogin";
 
 const LoginPage = () => {
-  const { handleLogin } = useLogin(); // ✅ Sử dụng hook đăng nhập
+  const { handleLogin } = useLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -12,16 +11,12 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Email:", email);
-    console.log("Password:", password);
-
     const result = await handleLogin(email, password);
 
     if (result.success) {
-      const userRole = result.user.role; // ✅ Lấy role từ user
+      const userRole = result.user.role;
       console.log("✅ Role:", userRole);
 
-      // ✅ Điều hướng theo vai trò
       if (userRole === "ADMIN") {
         navigate("/admin");
       } else if (userRole === "MANAGER") {
@@ -35,44 +30,59 @@ const LoginPage = () => {
   };
 
   return (
-    <Container
-      className="d-flex justify-content-center align-items-center"
-      style={{ minHeight: "100vh" }}
-    >
-      <div
-        className="p-4 shadow rounded"
-        style={{ backgroundColor: "#f8f9fa", width: "400px", margin: "auto" }}
-      >
-        <h3 className="text-center mb-4">Login</h3>
-        <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
-            <Form.Label>Email address</Form.Label>
-            <Form.Control
-              type="email"
-              placeholder="Enter email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </Form.Group>
+    <div className="min-h-screen flex flex-col">
+      <main className="flex-1 flex items-center justify-center bg-gray-100">
+        <div className="w-full max-w-md bg-white shadow-xl rounded-lg p-8">
+          <h3 className="text-3xl font-bold text-center text-gray-800 mb-6">
+            Welcome Back 👋
+          </h3>
 
-          <Form.Group className="mb-3">
-            <Form.Label>Password</Form.Label>
-            <Form.Control
-              type="password"
-              placeholder="Enter password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </Form.Group>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-gray-600 font-medium mb-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg 
+                           focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
 
-          {error && <p className="text-danger">{error}</p>}
+            <div>
+              <label className="block text-gray-600 font-medium mb-1">
+                Password
+              </label>
+              <input
+                type="password"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg 
+                           focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
 
-          <Button variant="success" type="submit" className="w-100">
-            Login
-          </Button>
-        </Form>
-      </div>
-    </Container>
+            {error && (
+              <p className="text-red-500 text-sm text-center">{error}</p>
+            )}
+
+            <button
+              type="submit"
+              className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold 
+                         hover:bg-green-700 hover:scale-105 transition-all duration-300"
+            >
+              Login
+            </button>
+          </form>
+        </div>
+      </main>
+    </div>
   );
 };
 
