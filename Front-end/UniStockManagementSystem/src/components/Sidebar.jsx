@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { FaHome, FaUser, FaUsers, FaCog, FaBox, FaCogs, FaCubes } from "react-icons/fa";
+import { FaHome, FaUser, FaUsers, FaCog, FaBox, FaCogs, FaCubes, FaEllipsisV, FaEdit } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 
 const Sidebar = () => {
   const { user } = useAuth();
   const [isResourceOpen, setIsResourceOpen] = useState(false);
+  const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
 
-  // Cấu hình menu theo từng role
   const menuItems = [
     {
       path: "/dashboard",
@@ -85,17 +85,32 @@ const Sidebar = () => {
         {/* Resource Menu with Submenu */}
         {user?.roles.includes("USER") && (
           <li>
-            <button
-              className="flex items-center text-white hover:text-gray-300 w-full"
-              onClick={() => setIsResourceOpen(!isResourceOpen)}
-            >
-              <FaCog />
-              <span className="ml-2">Resources</span>
-            </button>
+            <div className="flex justify-between items-center">
+              <button
+                className="flex items-center text-white hover:text-gray-300 w-full"
+                onClick={() => setIsResourceOpen(!isResourceOpen)}
+              >
+                <FaCog />
+                <span className="ml-2">Resources</span>
+              </button>
+              <button
+                className="text-white hover:text-gray-300"
+                onClick={() => setIsMoreActionsOpen(!isMoreActionsOpen)}
+              >
+                <FaEllipsisV />
+              </button>
+            </div>
+            {isMoreActionsOpen && (
+              <div className="ml-6 mt-2 p-2 bg-gray-700 rounded">
+                <button className="text-white flex items-center">
+                  <FaEdit className="mr-2" /> Edit Categories
+                </button>
+              </div>
+            )}
             {isResourceOpen && (
               <ul className="ml-6 mt-2 space-y-1">
                 {resourceSubMenu.map((subItem, subIndex) => (
-                  <li key={subIndex}>
+                  <li key={subIndex} className="flex justify-between items-center">
                     <Link
                       to={subItem.path}
                       className="flex items-center text-white hover:text-gray-300"
@@ -103,6 +118,9 @@ const Sidebar = () => {
                       {subItem.icon}
                       <span className="ml-2">{subItem.label}</span>
                     </Link>
+                    <button className="text-white hover:text-gray-300">
+                      <FaEdit />
+                    </button>
                   </li>
                 ))}
               </ul>
