@@ -6,7 +6,7 @@ const Footer = () => {
       <div className="container">
         <p>&copy; {new Date().getFullYear()} UniStock Management System</p>
         <p>
-          Made with ❤️ by{" "}
+          Made with ❤️ by{"Hiroshiba"}
           <a href="https://yourcompany.com" className="text-light">
             Your Company
           </a>

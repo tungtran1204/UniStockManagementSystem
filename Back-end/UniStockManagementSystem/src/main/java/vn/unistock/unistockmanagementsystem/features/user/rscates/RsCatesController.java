@@ -22,32 +22,32 @@ public class RsCatesController {
 
     //get all category
     @GetMapping
-    public List<ResourceCategory> getResourceCategories(){
+    public List<ResourceCategory> getResourceCategories() {
         return rsCatesService.getResourcesCategory();
     }
 
     //get category by id
     @GetMapping("/{rsCateId}")
-    public ResourceCategory getResourceCategoryById(@PathVariable String rsCateId){
+    public ResourceCategory getResourceCategoryById(@PathVariable String rsCateId) {
         return rsCatesService.getRsCatesById(rsCateId);
     }
 
     //update category by id
     @PatchMapping("/{rsCateId}")
-    public ResourceCategory updateResourceCategory(@Valid @PathVariable Long rsCateId, @RequestBody RsCatesDTO request){
+    public ResourceCategory updateResourceCategory(@Valid @PathVariable Long rsCateId, @RequestBody RsCatesDTO request) {
         return rsCatesService.updateRsCates(rsCateId, request);
     }
 
     //delete category by id
     @DeleteMapping("/{rsCateId}")
-    public String deleteResourceCategory(@PathVariable Long rsCateId){
+    public String deleteResourceCategory(@PathVariable Long rsCateId) {
         rsCatesService.deleteRsCates(rsCateId);
         return "Resource deleted successfully";
     }
 
     //deactivate category by id
     @PatchMapping("/{rsCateId}/deactivate")
-    public ResourceCategory deactivateResourceCategory(@PathVariable Long rsCateId, @RequestBody RsCatesDTO request){
+    public ResourceCategory deactivateResourceCategory(@PathVariable Long rsCateId, @RequestBody RsCatesDTO request) {
         return rsCatesService.deactiveRsCates(rsCateId, request);
     }
 }

@@ -9,8 +9,11 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @ControllerAdvice
 public class GlobalExceptionHandler{
     @ExceptionHandler(value = RuntimeException.class)
-    ResponseEntity<String> handleRuntimeException(RuntimeException exception){
-        return ResponseEntity.badRequest().body(exception.getMessage());
+    ResponseEntity<Error> handleRuntimeException(RuntimeException exception){
+        Error error = new Error();
+        error.setCode(1001);
+        error.setMessage(exception.getMessage());
+        return ResponseEntity.badRequest().body(error);
     }
 
     @ExceptionHandler(value = MethodArgumentNotValidException.class)

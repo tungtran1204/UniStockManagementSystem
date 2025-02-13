@@ -1,4 +1,12 @@
 package vn.unistock.unistockmanagementsystem.exception;
 
-public class Error {
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class Error<T> {
+    private int code;
+    private String message;
+    private T result;
 }
