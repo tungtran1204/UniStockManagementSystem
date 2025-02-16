@@ -14,7 +14,7 @@ const MainLayout = ({ children }) => {
   const specialRoutes = ["/login", "/unauthorized", "/not-found"];
 
   if (specialRoutes.includes(location.pathname)) {
-    return <div className="flex items-center justify-center min-h-screen bg-gray-100">{children}</div>;
+    return <div >{children}</div>;
   }
 
   return (
