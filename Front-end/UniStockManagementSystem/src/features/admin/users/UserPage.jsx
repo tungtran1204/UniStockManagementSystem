@@ -6,7 +6,7 @@ import {
   CardBody,
   Typography,
   Avatar,
-  Chip,
+  Switch,
   Tooltip,
 } from "@material-tailwind/react";
 import { FaEye, FaTrashAlt } from "react-icons/fa";
@@ -76,12 +76,21 @@ const UserPage = () => {
                         </Typography>
                       </td>
                       <td className={className}>
-                        <Chip
-                          variant="gradient"
-                          color={isActive ? "green" : "blue-gray"}
-                          value={isActive ? "Hoạt động" : "Vô hiệu hóa"}
-                          className="py-0.5 px-2 text-[11px] font-medium w-fit"
-                        />
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            color="green"
+                            checked={isActive}
+                            onChange={() => {
+                              if (!roleNames.includes("ADMIN")) {
+                                toggleStatus(userId, isActive);
+                              }
+                            }}
+                            disabled={roleNames.includes("ADMIN")}
+                          />
+                          <Typography className="text-xs font-semibold text-blue-gray-600">
+                            {isActive ? "Hoạt động" : "Vô hiệu hóa"}
+                          </Typography>
+                        </div>
                       </td>
                       <td className={className}>
                         <div className="flex items-center gap-2">
