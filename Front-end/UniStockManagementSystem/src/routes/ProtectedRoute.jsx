@@ -15,7 +15,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // ✅ Kiểm tra nếu `user.roles` là mảng, nếu không thì chuyển thành []
+  // ✅ Chuyển roles về dạng mảng nếu chưa phải
   const userRoles = Array.isArray(user.roles)
     ? user.roles
     : typeof user.roles === "string"
@@ -25,8 +25,12 @@ const ProtectedRoute = ({ allowedRoles }) => {
   console.log("✅ User roles:", userRoles);
 
   // 🔴 Kiểm tra nếu user có ít nhất một role trong `allowedRoles`
-  if (allowedRoles && !userRoles.some((role) => allowedRoles.includes(role))) {
-    console.warn("🚫 User does not have permission! Redirecting...");
+  const hasAccess = allowedRoles.some((role) => userRoles.includes(role));
+
+  if (!hasAccess) {
+    console.warn(
+      "🚫 User does not have permission! Redirecting to error page..."
+    );
     return <Navigate to="/unauthorized" replace />;
   }
 

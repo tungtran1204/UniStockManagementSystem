@@ -1,6 +1,8 @@
 package vn.unistock.unistockmanagementsystem.features.admin.users;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import vn.unistock.unistockmanagementsystem.entities.Role;
 import vn.unistock.unistockmanagementsystem.entities.User;
@@ -16,22 +18,30 @@ public class UsersService {
     private final UsersRepository usersRepository;
     private final RolesRepository rolesRepository;
     private final UsersMapper usersMapper = UsersMapper.INSTANCE;
-
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public UsersDTO createUser(UsersDTO userDTO) {
-        // 1) Chuyển DTO -> Entity (trừ trường roles vì ignore)
+        // 1) Chuyển DTO -> Entity
         User user = usersMapper.toEntity(userDTO);
 
-        // 2) Nạp Role từ DB qua roleIds
+        // 2) Mã hóa mật khẩu trước khi lưu
+        if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(userDTO.getPassword())); // ✅ Mã hóa mật khẩu
+        }
+
+        // 3) Nạp Role từ DB qua roleIds
         if (userDTO.getRoleIds() != null && !userDTO.getRoleIds().isEmpty()) {
             List<Role> roles = rolesRepository.findAllById(userDTO.getRoleIds());
             user.setRoles(new HashSet<>(roles));
         }
-        // 3) Lưu user
+
+        // 4) Lưu user
         user = usersRepository.save(user);
 
-        // 4) Trả lại DTO
-        return usersMapper.toDTO(user);
+        // 5) Trả lại DTO (Không trả về mật khẩu)
+        UsersDTO responseDTO = usersMapper.toDTO(user);
+        responseDTO.setPassword(null); // ✅ Không trả về password
+        return responseDTO;
     }
 
     // 🟢 Lấy danh sách Users

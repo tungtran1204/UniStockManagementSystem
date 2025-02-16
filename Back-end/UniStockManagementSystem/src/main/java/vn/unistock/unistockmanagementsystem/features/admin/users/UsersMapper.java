@@ -11,6 +11,7 @@ public interface UsersMapper {
 
     @Mapping(target = "roleIds", expression = "java(user.getRoles().stream().map(r -> r.getRoleId()).collect(java.util.stream.Collectors.toSet()))")
     @Mapping(target = "roleNames", expression = "java(user.getRoles().stream().map(r -> r.getRoleName()).collect(java.util.stream.Collectors.toSet()))")
+    @Mapping(target = "password", ignore = false)
     UsersDTO toDTO(User user);
 
     // Khi chuyển DTO -> Entity, ta tạm ignore roles => ta sẽ set roles thủ công ở service

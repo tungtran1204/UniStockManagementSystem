@@ -4,13 +4,18 @@ import { getUser, isAuthenticated, logout } from "../services/authService";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [isAuth, setIsAuth] = useState(false);
-  const [loading, setLoading] = useState(true); // ✅ Thêm trạng thái loading
+  const [user, setUser] = useState(() => {
+    const storedUser = getUser();
+    console.log("🔍 Init: User from localStorage", storedUser);
+    return storedUser || null;
+  });
+
+  const [isAuth, setIsAuth] = useState(() => isAuthenticated());
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const storedUser = getUser();
-    console.log("🔍 Reload: User from localStorage", storedUser);
+    console.log("🔍 Reload: User from localStorage after reload", storedUser);
 
     if (storedUser && isAuthenticated()) {
       setUser(storedUser);
@@ -20,18 +25,28 @@ export const AuthProvider = ({ children }) => {
       setIsAuth(false);
     }
 
-    setLoading(false); // ✅ Đánh dấu load xong
+    setLoading(false);
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      console.log("✅ Saving user to localStorage:", user);
+      localStorage.setItem("user", JSON.stringify(user));
+    }
+    // else {
+    //   console.log("⚠️ Removing user from localStorage");
+    //   localStorage.removeItem("user");
+    // }
+  }, [user]);
+
   const handleLogout = () => {
+    console.log("🚨 Logout function called! Xóa user khỏi localStorage!");
     logout();
     setUser(null);
     setIsAuth(false);
   };
 
-  if (loading) {
-    return <div>Loading...</div>; // ✅ Chặn render khi chưa xác định trạng thái đăng nhập
-  }
+  if (loading) return <div>Loading...</div>;
 
   return (
     <AuthContext.Provider

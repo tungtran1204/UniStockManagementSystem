@@ -11,3 +11,5 @@ app:
   file:
     images:
       location: public/images/
+jwt:
+  secret: "YWJjZGVmZ2hpamtsbW5vcHFyc3R1d2V4eXoqc29uZ2hhaWNr"
