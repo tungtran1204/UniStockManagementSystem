@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.DecodingException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -11,7 +12,9 @@ import java.util.List;
 
 @Component
 public class Jwt {
-    private static final String JWT_SECRET_KEY = "YWJjZGVmZ2hpamtsbW5vcHFyc3R1d2V4eXoqc29uZ2hhaWNr";
+    @Value("${jwt.secret}")
+    private String JWT_SECRET_KEY;
+
     private static final long JWT_EXPIRATION_TIME = 3600000; // 1 hour
 
 

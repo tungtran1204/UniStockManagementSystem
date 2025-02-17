@@ -1,51 +1,36 @@
-import { Routes, Route } from "react-router-dom";
-import ProtectedRoute from "./ProtectedRoute";
-import paths from "./paths";
-
-// Import các trang
-import LoginPage from "../features/login/LoginPage";
-import DashboardPage from "../features/dashboard/DashboardPage";
-import NotFoundPage from "../features/misc/NotFoundPage";
-import HomePage from "../features/home/HomePage";
-
-// Import các trang dành riêng cho từng Role
-import UserPage from "../features/admin/users/UserPage";
-import RolePage from "../features/admin/roles/RolePage";
-
-// Import các trang quản lý sản phẩm cho USER
-import ProductPage from "../features/user/products/ProductPage";
-import CreateProductPage from "../features/user/products/CreateProductPage";
-import EditProductPage from "../features/user/products/EditProductPage";
+import React from "react";
+import { Route, Routes } from "react-router-dom";
+import routes from "./routes";
+import { useAuth } from "@/context/AuthContext";
+import UnauthorizedPage from "@/components/UnauthorizedPage";
 
 const AppRoutes = () => {
+  const { user } = useAuth();
+
+  // ✅ Chuyển role về dạng mảng nếu cần
+  const userRoles = Array.isArray(user?.roles)
+    ? user.roles
+    : typeof user?.roles === "string"
+    ? user.roles.split(",").map((role) => role.trim())
+    : [];
+
   return (
     <Routes>
-      {/* Public Routes */}
-      <Route path={paths.home} element={<HomePage />} />
-      <Route path={paths.login} element={<LoginPage />} />
+      {routes.flatMap((routeGroup) =>
+        routeGroup.pages.map((route, index) => {
+          // ✅ Kiểm tra role trước khi render
+          const hasAccess =
+            !route.roles || route.roles.length === 0 || route.roles.some((role) => userRoles.includes(role));
 
-      {/* Protected Routes - Tất cả user đã đăng nhập */}
-      <Route
-        element={<ProtectedRoute allowedRoles={["ADMIN", "MANAGER", "USER"]} />}
-      >
-        <Route path={paths.dashboard} element={<DashboardPage />} />
-      </Route>
-
-      {/* Admin Routes */}
-      <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
-        <Route path={paths.admin.users} element={<UserPage />} />
-        <Route path={paths.admin.roles} element={<RolePage />} />
-      </Route>
-
-      {/* User Routes - Chỉ USER có quyền quản lý sản phẩm */}
-      <Route element={<ProtectedRoute allowedRoles={["USER"]} />}>
-        <Route path={paths.user.editProduct} element={<EditProductPage />} />
-        <Route path={paths.user.createProduct} element={<CreateProductPage />} />
-        <Route path={paths.user.products} element={<ProductPage />} />
-      </Route>
-
-      {/* Catch-all 404 */}
-      <Route path={paths.notFound} element={<NotFoundPage />} />
+          return (
+            <Route
+              key={index}
+              path={route.path}
+              element={hasAccess ? route.element : <UnauthorizedPage />}
+            />
+          );
+        })
+      )}
     </Routes>
   );
 };

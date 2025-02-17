@@ -15,7 +15,7 @@ public class UsersDTO {
     private String fullname;
     private String email;
     private Boolean isActive;
-
+    private String password;
     // 🟢 Nhiều Roles => chứa danh sách ID (hoặc Set<String> roleNames)
     private Set<Long> roleIds;
     private Set<String> roleNames;

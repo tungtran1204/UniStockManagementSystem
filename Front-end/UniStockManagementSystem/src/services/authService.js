@@ -10,7 +10,6 @@ const apiClient = axios.create({
 });
 
 // 🟢 **Hàm Đăng nhập**
-
 export const login = async (credentials) => {
   try {
     const response = await fetch(`${API_URL}/login`, {
@@ -20,7 +19,9 @@ export const login = async (credentials) => {
     });
 
     if (!response.ok) {
-      throw new Error("Lỗi đăng nhập: Sai email hoặc mật khẩu");
+      // Nếu API trả về mã lỗi (401, 403), lấy message từ response
+      const errorData = await response.text();
+      throw new Error(errorData || "Lỗi đăng nhập: Sai email hoặc mật khẩu");
     }
 
     const userData = await response.json();
@@ -34,7 +35,6 @@ export const login = async (credentials) => {
     const decodedToken = jwtDecode(userData.token);
     console.log("📢 Decoded Token:", decodedToken);
 
-    // ✅ Kiểm tra nếu `roles` là chuỗi, chuyển thành mảng
     const roles = Array.isArray(decodedToken.roles)
       ? decodedToken.roles
       : decodedToken.roles.split(",").map((role) => role.trim());
@@ -43,14 +43,20 @@ export const login = async (credentials) => {
       throw new Error("Token không chứa email hoặc role hợp lệ.");
     }
 
-    return {
+    // ✅ Lưu vào localStorage
+    const userObject = {
       email: decodedToken.email,
       token: userData.token,
       roles,
     };
+
+    localStorage.setItem("user", JSON.stringify(userObject));
+    localStorage.setItem("token", userData.token);
+
+    return userObject;
   } catch (error) {
     console.error("🚨 Lỗi đăng nhập:", error.message);
-    throw error;
+    return { success: false, message: error.message };
   }
 };
 
@@ -62,11 +68,13 @@ export const logout = () => {
 
 // 🟢 **Lấy user từ LocalStorage**
 export const getUser = () => {
+  const storedUser = localStorage.getItem("user");
+  console.log("📢 getUser() - Raw data from localStorage:", storedUser);
+
   try {
-    const storedUser = localStorage.getItem("user");
     return storedUser ? JSON.parse(storedUser) : null;
   } catch (error) {
-    console.error("🚨 Lỗi parse user từ LocalStorage:", error);
+    console.error("❌ Lỗi parse JSON từ localStorage:", error);
     return null;
   }
 };
