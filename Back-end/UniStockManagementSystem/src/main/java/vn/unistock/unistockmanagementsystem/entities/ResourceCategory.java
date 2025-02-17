@@ -2,6 +2,7 @@ package vn.unistock.unistockmanagementsystem.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
 
@@ -11,20 +12,21 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Table(name = "resource_category")
 public class ResourceCategory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "rc_id")
-    private Long id;
+    Long id;
     @Column(name = "rc_name")
-    private String name;
+    String name;
     @Column(name = "rc_description")
-    private String description;
+    String description;
     @Column(name = "created_at")
-    private LocalDateTime createAt;
+    LocalDateTime createAt;
     @Column(name = "updated_at")
-    private LocalDateTime updateAt;
+    LocalDateTime updateAt;
     @Column(name = "is_active")
-    private Boolean isActive;
+    Boolean isActive;
 }

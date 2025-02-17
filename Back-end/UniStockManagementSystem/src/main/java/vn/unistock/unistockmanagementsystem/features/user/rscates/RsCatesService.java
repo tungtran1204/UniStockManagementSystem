@@ -12,16 +12,15 @@ public class RsCatesService {
     @Autowired
     private RsCatesRepository rsCatesRepository;
 
+    @Autowired
+    private RsCatesMapper rsCatesMapper;
+
     //add the resource category
-    public ResourceCategory createRsCates(RsCatesDTO request){
-        if(rsCatesRepository.existsByName(request.getName())){
+    public ResourceCategory createRsCates(RsCatesDTO rsCate){
+        if(rsCatesRepository.existsByName(rsCate.getName())){
             throw new RuntimeException("Category already exists.");
         }
-        ResourceCategory resourceCategory = new ResourceCategory();
-        resourceCategory.setName(request.getName());
-        resourceCategory.setDescription(request.getDescription());
-        resourceCategory.setCreateAt(LocalDateTime.now());
-        resourceCategory.setIsActive(true);
+        ResourceCategory resourceCategory = rsCatesMapper.toResourceCategory(rsCate);
         return rsCatesRepository.save(resourceCategory);
     }
 
