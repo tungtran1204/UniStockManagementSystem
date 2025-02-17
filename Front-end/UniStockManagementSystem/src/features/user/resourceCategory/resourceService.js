@@ -16,7 +16,7 @@ export const createResourceCategory = async (category) => {
 
 export const updateResourceCategory = async (id, category) => {
   // Update an existing resource category
-  const response = await axios.put(`${API_URL}/${id}`, category);
+  const response = await axios.patch(`${API_URL}/${id}`, category);
   return response.data;
 };
 
