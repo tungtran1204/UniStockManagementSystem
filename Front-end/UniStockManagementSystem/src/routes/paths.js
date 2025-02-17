@@ -22,8 +22,8 @@ const paths = {
   // 🔹 Routes dành riêng cho USER (Quản lý sản phẩm)
   user: {
     products: "/products",
-    productCreate: "/products/create",
-    productEdit: "/products/edit/:productId",
+    createProduct: "/products/create",
+    editProduct: "/products/edit/:productId",
   },
 
   // 🔹 Routes 404

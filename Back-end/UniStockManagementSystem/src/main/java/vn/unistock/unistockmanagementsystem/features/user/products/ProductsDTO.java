@@ -16,15 +16,14 @@ public class ProductsDTO {
     private Double price;
 
     private Long unitId;
-    private String unitName; // Hiển thị tên đơn vị
+    private String unitName;
 
-    private Long productTypeId;
-    private String productTypeName; // Hiển thị tên loại sản phẩm
+    private Long typeId;
+    private String typeName;
 
-    private Long createdBy;
-    private String createdByUsername;
+    private String createdBy;
+    private String updatedBy;
 
-    private Long updatedBy;
-    private String updatedByUsername;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
-

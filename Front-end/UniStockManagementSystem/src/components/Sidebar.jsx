@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { FaHome, FaUser, FaUsers, FaCog } from "react-icons/fa";
+import { FaHome, FaUser, FaUsers, FaCog, FaBoxOpen } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 
 const Sidebar = () => {
@@ -32,12 +32,18 @@ const Sidebar = () => {
       icon: <FaCog />,
       roles: ["ADMIN", "MANAGER"],
     },
+    {
+      path: "/products",
+      label: "Manage Products",
+      icon: <FaBoxOpen />,
+      roles: ["USER"], 
+    },
   ];
 
   return (
     <div className="flex flex-col p-3 bg-gray-800 text-white h-screen w-[250px]">
       {user ? (
-        <p className="">
+        <p className="text-gray-300">
           Roles: {user.roles ? user.roles.join(", ") : "No roles"}
         </p>
       ) : (
@@ -48,14 +54,14 @@ const Sidebar = () => {
         {menuItems
           .filter((item) =>
             user && user.roles
-              ? item.roles.some((role) => user.roles.includes(role)) // ✅ Kiểm tra nếu user có bất kỳ role nào phù hợp
+              ? item.roles.some((role) => user.roles.includes(role))
               : false
           )
           .map((item, index) => (
             <li key={index}>
               <Link
                 to={item.path}
-                className="flex items-center text-white hover:text-gray-300"
+                className="flex items-center text-white hover:text-gray-300 p-2 rounded-lg hover:bg-gray-700"
               >
                 {item.icon}
                 <span className="ml-2">{item.label}</span>

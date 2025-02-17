@@ -8,6 +8,6 @@ import java.util.List;
 
 @Repository
 public interface ProductsRepository extends JpaRepository<Product, Long> {
-    // Lấy sản phẩm do user tạo
-    List<Product> findByCreatedBy(Long userId);
+    //xóa
+    void deleteById(Long productId); // Xóa sản phẩm theo ID
 }

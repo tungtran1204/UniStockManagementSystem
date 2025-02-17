@@ -1,6 +1,5 @@
 package vn.unistock.unistockmanagementsystem.features.user.products;
 
-
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
@@ -12,11 +11,12 @@ public interface ProductsMapper {
 
     @Mapping(source = "unit.unitId", target = "unitId")
     @Mapping(source = "unit.unitName", target = "unitName")
-    @Mapping(source = "productType.typeId", target = "productTypeId")
+    @Mapping(source = "productType.typeId", target = "typeId")
     @Mapping(source = "productType.typeName", target = "typeName")
-    @Mapping(source = "createdByUser.username", target = "createdByUsername")
-    @Mapping(source = "updatedByUser.username", target = "updatedByUsername")
     ProductsDTO toDTO(Product product);
 
+    @Mapping(target = "unit", ignore = true) // ✅ Ignore vì sẽ gán riêng
+    @Mapping(target = "productType", ignore = true) // ✅ Ignore vì sẽ gán riêng
     Product toEntity(ProductsDTO dto);
 }
+

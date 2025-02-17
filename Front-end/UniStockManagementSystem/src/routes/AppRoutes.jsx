@@ -7,13 +7,15 @@ import LoginPage from "../features/login/LoginPage";
 import DashboardPage from "../features/dashboard/DashboardPage";
 import NotFoundPage from "../features/misc/NotFoundPage";
 import HomePage from "../features/home/HomePage";
- 
+
 // Import các trang dành riêng cho từng Role
 import UserPage from "../features/admin/users/UserPage";
 import RolePage from "../features/admin/roles/RolePage";
 
 // Import các trang quản lý sản phẩm cho USER
 import ProductPage from "../features/user/products/ProductPage";
+import CreateProductPage from "../features/user/products/CreateProductPage";
+import EditProductPage from "../features/user/products/EditProductPage";
 
 const AppRoutes = () => {
   return (
@@ -35,8 +37,10 @@ const AppRoutes = () => {
         <Route path={paths.admin.roles} element={<RolePage />} />
       </Route>
 
-       {/* User Routes - Chỉ USER có quyền quản lý sản phẩm */}
-       <Route element={<ProtectedRoute allowedRoles={["USER"]} />}>
+      {/* User Routes - Chỉ USER có quyền quản lý sản phẩm */}
+      <Route element={<ProtectedRoute allowedRoles={["USER"]} />}>
+        <Route path={paths.user.editProduct} element={<EditProductPage />} />
+        <Route path={paths.user.createProduct} element={<CreateProductPage />} />
         <Route path={paths.user.products} element={<ProductPage />} />
       </Route>
 
