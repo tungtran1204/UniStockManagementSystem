@@ -3,6 +3,8 @@ package vn.unistock.unistockmanagementsystem.features.user.products;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import vn.unistock.unistockmanagementsystem.entities.Product;
+import vn.unistock.unistockmanagementsystem.entities.User;
+import vn.unistock.unistockmanagementsystem.features.admin.users.UsersRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,56 +13,43 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProductsService {
     private final ProductsRepository productsRepository;
+    private final UsersRepository usersRepository;
     private final ProductsMapper productsMapper = ProductsMapper.INSTANCE;
 
     // 🟢 Lấy tất cả sản phẩm (User có quyền xem tất cả)
     public List<ProductsDTO> getAllProducts() {
-        return productsRepository.findAll()
-                .stream()
-                .map(productsMapper::toDTO)
+        return productsRepository.findAll().stream()
+                .map(product -> new ProductsDTO(
+                        product.getProductId(),
+                        product.getProductName(),
+                        product.getDescription(),
+                        product.getPrice(),
+                        product.getUnit() != null ? product.getUnit().getUnitId() : null,
+                        product.getUnit() != null ? product.getUnit().getUnitName() : "N/A",
+                        product.getProductType() != null ? product.getProductType().getTypeId() : null,
+                        product.getProductType() != null ? product.getProductType().getTypeName() : "N/A",
+                        product.getCreatedByUser() != null ? product.getCreatedByUser().getUsername() : "Không rõ",
+                        product.getUpdatedByUser() != null ? product.getUpdatedByUser().getUsername() : "Không rõ",
+                        product.getCreatedAt(),
+                        product.getUpdatedAt()
+                ))
                 .collect(Collectors.toList());
     }
 
-    // 🟢 Lấy danh sách sản phẩm của chính User
-    public List<ProductsDTO> getUserProducts(Long userId) {
-        return productsRepository.findByCreatedBy(userId)
-                .stream()
-                .map(productsMapper::toDTO)
-                .collect(Collectors.toList());
-    }
 
     // 🟢 User tạo sản phẩm mới
-    public ProductsDTO createProduct(ProductsDTO dto, Long userId) {
-        Product product = productsMapper.toEntity(dto);
-        product.setCreatedBy(userId);
-        return productsMapper.toDTO(productsRepository.save(product));
+    public ProductsDTO createProduct(ProductsDTO dto, String username) {
+        User currentUser = usersRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalArgumentException("User không tồn tại"));
+
+        Product newProduct = productsMapper.toEntity(dto);
+        newProduct.setCreatedBy(currentUser.getUserId());  // ✅ Lưu ID người tạo
+        newProduct.setUpdatedBy(currentUser.getUserId());  // ✅ Lưu ID người cập nhật
+
+        productsRepository.save(newProduct);
+        return productsMapper.toDTO(newProduct);
     }
 
-    // 🟢 User cập nhật sản phẩm của chính mình
-    public ProductsDTO updateProduct(Long productId, ProductsDTO dto, Long userId) {
-        Product product = productsRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Sản phẩm không tồn tại"));
 
-        if (!product.getCreatedBy().equals(userId)) {
-            throw new SecurityException("Bạn không có quyền chỉnh sửa sản phẩm này");
-        }
 
-        product.setProductName(dto.getProductName());
-        product.setDescription(dto.getDescription());
-        product.setPrice(dto.getPrice());
-
-        return productsMapper.toDTO(productsRepository.save(product));
-    }
-
-    // 🟢 User xóa sản phẩm của chính mình
-    public void deleteProduct(Long productId, Long userId) {
-        Product product = productsRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Sản phẩm không tồn tại"));
-
-        if (!product.getCreatedBy().equals(userId)) {
-            throw new SecurityException("Bạn không có quyền xóa sản phẩm này");
-        }
-
-        productsRepository.delete(product);
-    }
 }

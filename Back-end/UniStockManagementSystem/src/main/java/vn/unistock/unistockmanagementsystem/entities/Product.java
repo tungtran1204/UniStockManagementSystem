@@ -1,5 +1,6 @@
 package vn.unistock.unistockmanagementsystem.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -14,26 +15,29 @@ public class Product {
     @Column(name = "product_id")
     private Long productId;
 
-    @Column(name = "product_name")
+    @Column(name = "product_name", nullable = false)
     private String productName;
 
     private String description;
+
     private Double price;
 
-    // Nhiều product -> 1 unit
+    // ✅ Cho phép nullable để tránh lỗi khi dữ liệu thiếu
     @ManyToOne
-    @JoinColumn(name = "unit_id")
+    @JoinColumn(name = "unit_id", nullable = true)
     private Unit unit;
 
-
-    // Nhiều product -> 1 productType
     @ManyToOne
-    @JoinColumn(name = "type_id")
+    @JoinColumn(name = "type_id", nullable = true)
     private ProductType productType;
 
-    // Audit
+    // ✅ Chỉ lưu tên người tạo, không dùng Foreign Key
+    @Column(name = "created_by", nullable = false)
+    private String createdBy;
+
+    @Column(name = "updated_by", nullable = false)
+    private String updatedBy;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private Long createdBy;
-    private Long updatedBy;
 }

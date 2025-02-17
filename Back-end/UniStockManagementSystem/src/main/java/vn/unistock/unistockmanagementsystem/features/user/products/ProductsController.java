@@ -2,6 +2,8 @@ package vn.unistock.unistockmanagementsystem.features.user.products;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,28 +20,14 @@ public class ProductsController {
         return ResponseEntity.ok(productsService.getAllProducts());
     }
 
-    // 🟢 Lấy sản phẩm do chính User tạo
-    @GetMapping("/{userId}")
-    public ResponseEntity<List<ProductsDTO>> getUserProducts(@PathVariable Long userId) {
-        return ResponseEntity.ok(productsService.getUserProducts(userId));
+
+    @PostMapping
+    public ResponseEntity<ProductsDTO> createProduct(
+            @RequestBody ProductsDTO productDTO,
+            @AuthenticationPrincipal UserDetails userDetails) { // ✅ Lấy user từ token JWT
+        String username = userDetails.getUsername();
+        ProductsDTO createdProduct = productsService.createProduct(productDTO, username);
+        return ResponseEntity.ok(createdProduct);
     }
 
-    // 🟢 Tạo sản phẩm mới
-    @PostMapping("/{userId}")
-    public ResponseEntity<ProductsDTO> createProduct(@PathVariable Long userId, @RequestBody ProductsDTO dto) {
-        return ResponseEntity.ok(productsService.createProduct(dto, userId));
-    }
-
-    // 🟢 Cập nhật sản phẩm của chính User
-    @PutMapping("/{userId}/{productId}")
-    public ResponseEntity<ProductsDTO> updateProduct(@PathVariable Long userId, @PathVariable Long productId, @RequestBody ProductsDTO dto) {
-        return ResponseEntity.ok(productsService.updateProduct(productId, dto, userId));
-    }
-
-    // 🟢 Xóa sản phẩm của chính User
-    @DeleteMapping("/{userId}/{productId}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long userId, @PathVariable Long productId) {
-        productsService.deleteProduct(productId, userId);
-        return ResponseEntity.noContent().build();
-    }
 }
