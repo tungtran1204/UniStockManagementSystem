@@ -1,6 +1,5 @@
-package vn.unistock.unistockmanagementsystem.features.admin.role;
+package vn.unistock.unistockmanagementsystem.features.admin.permission;
 
-import jakarta.persistence.Entity;
 import lombok.*;
 
 @Builder
@@ -8,9 +7,10 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class RoleDTO {
+public class PermissionDTO {
     private Long id;
     private String name;
     private String description;
-    private Boolean active;
+    private String httpMethod;
+    private String urlPattern;
 }

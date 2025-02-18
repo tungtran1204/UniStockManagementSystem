@@ -22,13 +22,17 @@ export function LoginPage() {
       setError("Email và mật khẩu không được để trống");
       return;
     }
-
+  
     const result = await handleLogin(email, password);
-
+  
     if (result.success) {
-      const userRoles = result.user.roles || [];
-      console.log("✅ User Roles:", userRoles);
-
+      const userRoles = result.user?.roles || [];
+      console.log("✅ [LoginPage] User Roles:", userRoles);
+  
+      if (userRoles.length === 0) {
+        console.warn("🚨 [LoginPage] User has no roles! Possible issue with API response.");
+      }
+  
       if (userRoles.includes("ADMIN")) {
         navigate("/admin/users");
       } else if (userRoles.includes("MANAGER")) {
@@ -40,6 +44,7 @@ export function LoginPage() {
       setError(result.message);
     }
   };
+  
 
   return (
     <section className="m-8 flex gap-4">
