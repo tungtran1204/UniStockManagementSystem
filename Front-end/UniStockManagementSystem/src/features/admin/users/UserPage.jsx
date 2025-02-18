@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import useUser from "./useUser";
 import {
   Card,
@@ -8,11 +8,14 @@ import {
   Avatar,
   Switch,
   Tooltip,
+  Button,
 } from "@material-tailwind/react";
-import { FaEye, FaTrashAlt } from "react-icons/fa";
+import { FaEye, FaTrashAlt, FaPlus, FaEdit } from "react-icons/fa";
+import ModalAddUser from "./ModalAddUser"; // ✅ Import Modal
 
 const UserPage = () => {
   const { users, fetchUsers, deleteUser, toggleStatus } = useUser();
+  const [openModal, setOpenModal] = useState(false); // ✅ State quản lý Modal
 
   useEffect(() => {
     fetchUsers().then((data) => {
@@ -23,11 +26,22 @@ const UserPage = () => {
   return (
     <div className="mt-12 mb-8 flex flex-col gap-12">
       <Card>
-        <CardHeader variant="gradient" color="gray" className="mb-8 p-6">
+        <CardHeader variant="gradient" color="gray" className="mb-8 p-6 flex justify-between items-center">
           <Typography variant="h6" color="white">
             Danh sách người dùng
           </Typography>
+
+          {/* ✅ Nút mở Modal */}
+          <Button
+            color="light-blue"
+            className="flex items-center gap-2"
+            onClick={() => setOpenModal(true)}
+          >
+            <FaPlus className="text-white" />
+            Thêm Người Dùng
+          </Button>
         </CardHeader>
+
         <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
           <table className="w-full min-w-[640px] table-auto">
             <thead>
@@ -99,17 +113,17 @@ const UserPage = () => {
                               onClick={() => console.log("Edit User:", userId)}
                               className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
                             >
-                              <FaEye />
+                              <FaEdit />
                             </button>
                           </Tooltip>
-                          <Tooltip content="Xóa người dùng">
+                          {/* <Tooltip content="Xóa người dùng">
                             <button
                               onClick={() => deleteUser(userId)}
                               className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white"
                             >
                               <FaTrashAlt />
                             </button>
-                          </Tooltip>
+                          </Tooltip> */}
                         </div>
                       </td>
                     </tr>
@@ -129,6 +143,9 @@ const UserPage = () => {
           </table>
         </CardBody>
       </Card>
+
+      {/* ✅ Modal Thêm Người Dùng */}
+      <ModalAddUser open={openModal} onClose={() => setOpenModal(false)} />
     </div>
   );
 };

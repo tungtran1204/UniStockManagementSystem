@@ -9,27 +9,31 @@ import Configurator from "../components/Configurator";
 
 const MainLayout = ({ children }) => {
   const [controller] = useMaterialTailwindController();
-  const { sidenavType } = controller;
+  const { sidenavType, openSidenav } = controller; // Lấy openSidenav
   const location = useLocation();
   const specialRoutes = ["/login", "/unauthorized", "/not-found"];
 
   if (specialRoutes.includes(location.pathname)) {
-    return <div >{children}</div>;
+    return <div>{children}</div>;
   }
 
   return (
     <div className="min-h-screen bg-blue-gray-50/50 flex">
+      {/* Sidebar */}
       <Sidenav
         routes={routes.filter(route => route.layout !== "default")}
         brandImg={sidenavType === "dark" ? "/img/logo-ct.png" : "/img/logo-ct-dark.png"}
       />
 
-      <div className="flex flex-col w-full p-4 xl:ml-80">
+      {/* Nội dung chính */}
+      <div
+        className={`flex flex-col w-full p-4 transition-all duration-300 ${
+          openSidenav ? "xl:ml-80" : "ml-0"
+        }`}
+      >
         <DashboardNavbar />
         <Configurator />
-        <div className="flex-grow">
-          {children}
-        </div>
+        <div className="flex-grow">{children}</div>
         <div className="text-blue-gray-600">
           <Footer />
         </div>
