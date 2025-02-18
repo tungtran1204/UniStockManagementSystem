@@ -36,9 +36,4 @@ public class User {
     private String email;
     private Boolean isActive;
 
-    // Audit
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private Long createdBy;
-    private Long updatedBy;
 }
