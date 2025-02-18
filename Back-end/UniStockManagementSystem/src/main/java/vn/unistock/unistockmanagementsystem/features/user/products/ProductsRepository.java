@@ -8,6 +8,7 @@ import java.util.List;
 
 @Repository
 public interface ProductsRepository extends JpaRepository<Product, Long> {
-    //xóa
+    boolean existsByProductCode(String productCode);
+
     void deleteById(Long productId); // Xóa sản phẩm theo ID
 }

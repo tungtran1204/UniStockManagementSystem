@@ -37,17 +37,29 @@ export const deleteProduct = async (productId) => {
 };
 
 
-// ✅ Lấy tất cả đơn vị
-export const getAllUnits = async () => {
-  const response = await axios.get(UNIT_API);
-  return response.data;
+export const fetchUnits = async () => {
+  try {
+    const response = await axios.get('http://localhost:8080/api/unistock/user/units');
+    return response.data;
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách đơn vị:', error);
+    throw error;
+  }
 };
 
-// ✅ Lấy tất cả loại sản phẩm
-export const getAllProductTypes = async () => {
-  const response = await axios.get(TYPE_API);
-  return response.data;
+// ... existing code ...
+
+export const fetchProductTypes = async () => {
+  try {
+    // Sửa lại URL từ port 3000 thành 8080
+    const response = await axios.get('http://localhost:8080/api/unistock/user/product-types');
+    return response.data;
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách dòng sản phẩm:', error);
+    throw error;
+  }
 };
+
 
 export const getProductById = async (productId) => {
   const response = await axios.get(`${API_URL}/${productId}`);

@@ -15,6 +15,9 @@ public class Product {
     @Column(name = "product_id")
     private Long productId;
 
+    @Column(name = "product_code", nullable = false, unique = true)
+    private String productCode;
+
     @Column(name = "product_name", nullable = false)
     private String productName;
 
@@ -40,4 +43,5 @@ public class Product {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
 }

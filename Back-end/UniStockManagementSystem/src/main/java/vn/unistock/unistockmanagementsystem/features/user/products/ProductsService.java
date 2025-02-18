@@ -8,13 +8,10 @@ import vn.unistock.unistockmanagementsystem.entities.Product;
 import vn.unistock.unistockmanagementsystem.entities.ProductType;
 import vn.unistock.unistockmanagementsystem.entities.Unit;
 import vn.unistock.unistockmanagementsystem.features.user.productTypes.ProductTypeRepository;
-import vn.unistock.unistockmanagementsystem.features.user.products.ProductsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.units.UnitRepository;
-import vn.unistock.unistockmanagementsystem.features.user.units.UnitService;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,6 +31,11 @@ public class ProductsService {
 
     // 🟢 Tạo sản phẩm mới
     public ProductsDTO createProduct(ProductsDTO dto) {
+        // Kiểm tra mã sản phẩm đã tồn tại chưa
+        if (productsRepository.existsByProductCode(dto.getProductCode())) {
+            throw new IllegalArgumentException("Mã sản phẩm đã tồn tại");
+        }
+
         // 🔹 Tìm đơn vị theo unitId
         Unit unit = unitRepository.findById(dto.getUnitId())
                 .orElseThrow(() -> new IllegalArgumentException("Đơn vị không hợp lệ"));
@@ -60,29 +62,34 @@ public class ProductsService {
         return productsMapper.toDTO(newProduct);
     }
 
-
+    // 🟢 Xóa sản phẩm
     @Transactional
     public void deleteProduct(Long productId) {
-        // Kiểm tra sản phẩm có tồn tại không
         if (!productsRepository.existsById(productId)) {
             throw new EntityNotFoundException("Không tìm thấy sản phẩm với ID: " + productId);
         }
-
         productsRepository.deleteById(productId);
     }
 
-
+    // 🟢 Lấy sản phẩm theo ID
     public ProductsDTO getProductById(Long productId) {
         Product product = productsRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm với ID: " + productId));
-
         return productsMapper.toDTO(product);
     }
 
+    // 🟢 Cập nhật sản phẩm
     public ProductsDTO updateProduct(Long productId, ProductsDTO dto) {
         Product product = productsRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Sản phẩm không tồn tại"));
 
+        // Kiểm tra nếu productCode thay đổi và đã tồn tại
+        if (!product.getProductCode().equals(dto.getProductCode()) && 
+            productsRepository.existsByProductCode(dto.getProductCode())) {
+            throw new IllegalArgumentException("Mã sản phẩm đã tồn tại");
+        }
+
+        product.setProductCode(dto.getProductCode());
         product.setProductName(dto.getProductName());
         product.setDescription(dto.getDescription());
         product.setPrice(dto.getPrice());
@@ -104,7 +111,4 @@ public class ProductsService {
         productsRepository.save(product);
         return productsMapper.toDTO(product);
     }
-
-
-
 }
