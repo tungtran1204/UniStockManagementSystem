@@ -1,14 +1,18 @@
 package vn.unistock.unistockmanagementsystem.entities;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.ToString;
-import java.time.LocalDateTime;
+import lombok.*;
+
 import java.util.List;
 
 @Data
 @Entity
 @Table(name = "permissions")
+@Builder
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class Permission {
 
     @Id
@@ -16,16 +20,16 @@ public class Permission {
     @Column(name = "permission_id")
     private Long permissionId;
 
+
+    private String httpMethod;   // GET, POST, PUT, DELETE, ...
+    private String urlPattern;
+
     @Column(name = "permission_name")
     private String permissionName;
 
     private String description;
 
-    // Audit
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private Long createdBy;
-    private Long updatedBy;
+
 
     // Liên kết qua bảng nối role_permissions
     @OneToMany(mappedBy = "permission", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -12,55 +12,76 @@ import java.util.List;
 
 @Component
 public class Jwt {
+
     @Value("${jwt.secret}")
     private String JWT_SECRET_KEY;
 
-    private static final long JWT_EXPIRATION_TIME = 3600000; // 1 hour
+    private static final long JWT_EXPIRATION_TIME = 3600000; // 1 giờ (3600000 ms)
 
-
-    // Hàm để tạo JWT token
-    public String generateToken(Long id, String email, List<String> roles) {
-
+    /**
+     * Tạo JWT token, với subject = email, và lưu userId, roles vào claim.
+     */
+    public String generateToken(Long userId, String email, List<String> roles) {
         return Jwts.builder()
-                .setSubject(String.valueOf(id))
-                .claim("email", email) // Thêm email vào JWT
-                .claim("roles", roles)
-                .setIssuedAt(new Date())
+                .setSubject("User Info")
+                .claim("email", email)// Subject = email
+                .claim("userId", userId) // Lưu userId trong claim
+                .claim("roles", roles)   // Lưu danh sách roles
+                .setIssuedAt(new Date()) // Thời điểm phát hành
                 .setExpiration(new Date(System.currentTimeMillis() + JWT_EXPIRATION_TIME))
                 .signWith(SignatureAlgorithm.HS256, JWT_SECRET_KEY)
                 .compact();
     }
 
-    // Hàm giải mã JWT token
+    /**
+     * Giải mã token, trả về đối tượng Claims.
+     * Ném IllegalArgumentException nếu token sai format.
+     */
     public Claims extractClaims(String token) {
         try {
-            String fixedToken = fixBase64Url(token); // Sửa token nếu cần thiết
             return Jwts.parser()
                     .setSigningKey(JWT_SECRET_KEY)
-                    .parseClaimsJws(fixedToken)
+                    .parseClaimsJws(token)
                     .getBody();
         } catch (DecodingException e) {
             throw new IllegalArgumentException("Invalid token format", e);
         }
     }
 
-    // Hàm chuyển đổi base64url thành base64 chuẩn
-    private String fixBase64Url(String base64Url) {
-        return base64Url.replace('-', '+').replace('_', '/');
-    }
-
-    // Hàm lấy email từ token
+    /**
+     * Lấy email từ token (được set làm subject).
+     */
     public String extractEmail(String token) {
-        return extractClaims(token).getSubject();
+        Claims claims = extractClaims(token);
+        return claims.get("email", String.class);
     }
 
-    // Hàm kiểm tra token đã hết hạn chưa
+    /**
+     * Lấy userId từ token (lưu trong claim "userId").
+     */
+    public Long extractUserId(String token) {
+        return extractClaims(token).get("userId", Long.class);
+    }
+
+    /**
+     * Lấy roles từ token (lưu trong claim "roles").
+     */
+    @SuppressWarnings("unchecked")
+    public List<String> extractRoles(String token) {
+        return extractClaims(token).get("roles", List.class);
+    }
+
+    /**
+     * Kiểm tra token đã hết hạn chưa.
+     */
     public boolean isTokenExpired(String token) {
         return extractClaims(token).getExpiration().before(new Date());
     }
 
-    // Hàm kiểm tra tính hợp lệ của token
+    /**
+     * Kiểm tra token có hợp lệ không, bằng cách so khớp email với subject và token chưa hết hạn.
+     */
     public boolean validateToken(String token, String email) {
-        return (email.equals(extractEmail(token)) && !isTokenExpired(token));
+        return email.equals(extractEmail(token)) && !isTokenExpired(token);
     }
 }
