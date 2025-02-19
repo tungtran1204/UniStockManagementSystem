@@ -5,15 +5,15 @@ import vn.unistock.unistockmanagementsystem.entities.User;
 
 @Service
 public class LoginService {
-    private final LoginRepository au01Repository;
+    private final LoginRepository loginRepository;
 
-    public LoginService(LoginRepository au01Repository) {
-        this.au01Repository = au01Repository;
+    public LoginService(LoginRepository loginRepository) {
+        this.loginRepository = loginRepository;
     }
 
 
     public User loadUserByEmail(String email) {
-        return au01Repository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        return loginRepository.findByEmailFetchAll(email)
+                .orElse(null);
     }
 }

@@ -1,16 +1,19 @@
 package vn.unistock.unistockmanagementsystem.entities;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.ToString;
-import java.time.LocalDateTime;
+import lombok.*;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Data
 @Entity
+@Builder
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "roles")
 public class Role {
 
@@ -23,12 +26,8 @@ public class Role {
     private String roleName;
 
     private String description;
+    private Boolean isActive;
 
-    // Audit
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private Long createdBy;
-    private Long updatedBy;
 
     // 🟢 Bảng nối role_permissions (vẫn giữ nguyên nếu cần)
     @OneToMany(mappedBy = "role", cascade = CascadeType.ALL, orphanRemoval = true)

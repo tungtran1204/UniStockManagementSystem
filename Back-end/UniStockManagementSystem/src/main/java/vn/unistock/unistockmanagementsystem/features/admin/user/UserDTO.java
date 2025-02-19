@@ -1,4 +1,4 @@
-package vn.unistock.unistockmanagementsystem.features.admin.users;
+package vn.unistock.unistockmanagementsystem.features.admin.user;
 
 import lombok.*;
 
@@ -9,7 +9,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UsersDTO {
+public class UserDTO {
     private Long userId;
     private String username;
     private String fullname;

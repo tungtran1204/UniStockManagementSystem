@@ -1,4 +1,4 @@
-package vn.unistock.unistockmanagementsystem.features.admin.users;
+package vn.unistock.unistockmanagementsystem.features.admin.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -11,39 +11,39 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/unistock/admin/users")
 @RequiredArgsConstructor
-public class UsersController {
-    private final UsersService usersService;
+public class UserController {
+    private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<UsersDTO> addUser(@RequestBody UsersDTO userDTO) {
-        UsersDTO newUser = usersService.createUser(userDTO);
+    public ResponseEntity<UserDTO> addUser(@RequestBody UserDTO userDTO) {
+        UserDTO newUser = userService.createUser(userDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(newUser);
     }
 
 
     // 🟢 API: Lấy danh sách Users
     @GetMapping
-    public ResponseEntity<List<UsersDTO>> getAllUsers() {
-        return ResponseEntity.ok(usersService.getAllUsers());
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<UsersDTO> updateStatus(@PathVariable Long id, @RequestBody Map<String, Boolean> status) {
-        UsersDTO updatedUser = usersService.updateUserStatus(id, status.get("isActive"));
+    public ResponseEntity<UserDTO> updateStatus(@PathVariable Long id, @RequestBody Map<String, Boolean> status) {
+        UserDTO updatedUser = userService.updateUserStatus(id, status.get("isActive"));
         return ResponseEntity.ok(updatedUser);
     }
 
     // 🟢 API: Lấy User theo ID
     @GetMapping("/{id}")
-    public ResponseEntity<UsersDTO> getUserById(@PathVariable Long id) {
-        return ResponseEntity.ok(usersService.getUserByUserId(id));
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
+        return ResponseEntity.ok(userService.getUserByUserId(id));
     }
 
 
     // 🟢 API: Xóa User
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        usersService.deleteUser(id);
+        userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
 }
