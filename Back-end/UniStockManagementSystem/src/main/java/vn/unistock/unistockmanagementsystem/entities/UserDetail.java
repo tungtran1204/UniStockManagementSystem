@@ -22,6 +22,7 @@ public class UserDetail {
     @JoinColumn(name = "user_id", referencedColumnName = "user_id", nullable = false, unique = true)
     private User user;
 
+    private String fullname;
     private String address;
     private String phoneNumber;
     private LocalDate dateOfBirth;

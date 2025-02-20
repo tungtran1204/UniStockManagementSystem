@@ -6,69 +6,89 @@ import {
   DialogFooter,
   Input,
   Button,
-  Switch
+  Switch,
 } from "@material-tailwind/react";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import usePermissions from "./usePermissions";
 
 const ModalEditRole = ({
   open,
   onClose,
   role,
-  allPermissions,      // 🟢 Tất cả permission (array)
-  onUpdateRole
+  allPermissions,
+  rolePermissions = [], // ✅ Đảm bảo rolePermissions luôn có giá trị mặc định
+  onUpdateRole,
 }) => {
   const [roleName, setRoleName] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(false);
-  const [selectedPermissions, setSelectedPermissions] = useState([]); 
-  // 🟢 Lưu mảng id permission đang được chọn
+  const [availablePermissions, setAvailablePermissions] = useState([]);
+  const [selectedPermissions, setSelectedPermissions] = useState([]);
 
-  // 🔹 Cập nhật state khi `role` thay đổi
   useEffect(() => {
-    if (role) {
+    console.log("🔍 [ModalEditRole] Role nhận được:", role);
+    console.log("🔍 [ModalEditRole] Danh sách tất cả permissions:", allPermissions);
+    console.log("🔍 [ModalEditRole] Permissions của role:", rolePermissions);
+
+    if (role && allPermissions) {
       setRoleName(role.name || "");
       setDescription(role.description || "");
       setIsActive(role.active || false);
 
-      // Lấy danh sách permission id đang có
-      if (role.permissions) {
-        const permIds = role.permissions.map((p) => p.id);
-        setSelectedPermissions(permIds);
-      } else {
-        setSelectedPermissions([]);
-      }
-    }
-  }, [role]);
+      // ✅ Nếu rolePermissions là undefined, gán mảng rỗng để tránh lỗi
+      const selectedPerms = Array.isArray(rolePermissions) ? rolePermissions : [];
+      setSelectedPermissions(selectedPerms);
 
+      // ✅ Lọc ra các permission chưa được gán
+      const selectedPermIds = selectedPerms.map((p) => p.id);
+      const remainingPerms = allPermissions.filter((perm) => !selectedPermIds.includes(perm.id));
+      setAvailablePermissions(remainingPerms);
+    }
+  }, [role, allPermissions, rolePermissions]);
+
+  // Cập nhật vai trò khi bấm lưu
   const handleEditRole = () => {
     if (!roleName.trim()) {
       alert("Tên vai trò không được để trống!");
       return;
     }
 
-    // 🟢 Đóng gói dữ liệu
     const updatedRole = {
       id: role.id,
       name: roleName,
       description,
       active: isActive,
-      permissionIds: selectedPermissions // 🟢 Mảng ID permission
+      permissionIds: selectedPermissions.map((p) => p.id),
     };
 
     onUpdateRole(role.id, updatedRole);
-    onClose(); // ✅ Đóng modal sau khi cập nhật
+    onClose();
   };
 
-  // 🟢 Toggle checkbox
-  const handleTogglePermission = (permId) => {
-    setSelectedPermissions((prev) => {
-      if (prev.includes(permId)) {
-        // Bỏ đi
-        return prev.filter((id) => id !== permId);
-      } else {
-        // Thêm vào
-        return [...prev, permId];
-      }
-    });
+  // Cấm chỉnh sửa trạng thái của role ADMIN
+  const isAdminRole = role?.name === "ADMIN";
+
+  // Xử lý kéo thả giữa hai danh sách
+  const handleDragEnd = (result) => {
+    if (!result.destination) return;
+
+    const { source, destination } = result;
+
+    let sourceList =
+      source.droppableId === "availablePermissions"
+        ? selectedPermissions
+        : availablePermissions;
+
+    let destinationList =
+      destination.droppableId === "availablePermissions"
+        ? selectedPermissions
+        : availablePermissions;
+
+    const [movedItem] = sourceList.splice(source.index, 1);
+    destinationList.splice(destination.index, 0, movedItem);
+
+    setAvailablePermissions([...availablePermissions]);
+    setSelectedPermissions([...selectedPermissions]);
   };
 
   return (
@@ -91,42 +111,105 @@ const ModalEditRole = ({
           <Switch
             color="green"
             checked={isActive}
+            disabled={isAdminRole}
             onChange={() => setIsActive(!isActive)}
           />
           <span>{isActive ? "Hoạt động" : "Vô hiệu hóa"}</span>
-        </div>
-
-        {/* Danh sách Permission */}
-        <div className="mt-4">
-          <h4 className="font-semibold mb-2">Quyền (Permissions):</h4>
-          {allPermissions && allPermissions.length > 0 ? (
-            <div className="max-h-60 overflow-y-auto grid grid-cols-2 gap-2">
-              {allPermissions.map((perm) => {
-                const checked = selectedPermissions.includes(perm.id);
-                return (
-                  <label
-                    key={perm.id}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => handleTogglePermission(perm.id)}
-                    />
-                    <span className="text-sm">
-                      {perm.name}{" "}
-                      <span className="text-gray-500">
-                        ({perm.description})
-                      </span>
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-gray-500">Không có permission nào.</p>
+          {isAdminRole && (
+            <span className="text-red-500 ml-2">Không thể chỉnh sửa ADMIN</span>
           )}
         </div>
+
+        {/* Danh sách Permission (Drag & Drop) */}
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Permission đã có */}
+            <div>
+              <h4 className="font-semibold mb-2 text-gray-700">
+                Permission có thể thêm:
+              </h4>
+              <Droppable droppableId="availablePermissions">
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="border p-3 h-60 overflow-y-auto bg-gray-100 rounded-md"
+                  >
+                    {selectedPermissions.length === 0 ? (
+                      <p className="text-gray-500">Chưa có quyền nào.</p>
+                    ) : (
+                      selectedPermissions.map((perm, index) => (
+                        <Draggable
+                          key={perm.id}
+                          draggableId={perm.id.toString()}
+                          index={index}
+                        >
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className="p-2 bg-white rounded-md shadow-md mb-2 cursor-pointer"
+                            >
+                              {perm.name}{" "}
+                              <span className="text-gray-500">
+                                ({perm.description})
+                              </span>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))
+                    )}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </div>
+
+            {/* Permission có thể thêm */}
+            <div>
+              <h4 className="font-semibold mb-2 text-gray-700">
+                Permission đã có:
+              </h4>
+              <Droppable droppableId="selectedPermissions">
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="border p-3 h-60 overflow-y-auto bg-green-100 rounded-md"
+                  >
+                    {availablePermissions.length === 0 ? (
+                      <p className="text-gray-500">Không có quyền nào.</p>
+                    ) : (
+                      availablePermissions.map((perm, index) => (
+                        <Draggable
+                          key={perm.id}
+                          draggableId={perm.id.toString()}
+                          index={index}
+                        >
+                          {(provided) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className="p-2 bg-white rounded-md shadow-md mb-2 cursor-pointer"
+                            >
+                              {perm.name}{" "}
+                              <span className="text-gray-500">
+                                ({perm.description})
+                              </span>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))
+                    )}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </div>
+          </div>
+        </DragDropContext>
       </DialogBody>
 
       <DialogFooter>

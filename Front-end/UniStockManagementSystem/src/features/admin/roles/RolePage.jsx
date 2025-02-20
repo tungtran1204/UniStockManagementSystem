@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardHeader,
@@ -9,35 +9,55 @@ import {
   Switch,
 } from "@material-tailwind/react";
 import { FaPlus, FaEdit } from "react-icons/fa";
-import ModalAddRole from "./ModalAddRole"; // ✅ Import Modal thêm mới
-import ModalEditRole from "./ModalEditRole"; // ✅ Import Modal chỉnh sửa
-import useRole from "./useRole"; // ✅ Import custom hook
-import { useAuth } from "@/context/AuthContext"; // ✅ Import AuthContext để kiểm tra quyền
+import ModalAddRole from "./ModalAddRole";
+import ModalEditRole from "./ModalEditRole";
+import useRole from "./useRole";
+import { useAuth } from "@/context/AuthContext";
+import usePermissions from "./usePermissions";
 
 const RolePage = () => {
-  const { user } = useAuth(); // 🔹 Lấy user từ context
+  const { user } = useAuth();
   const { roles, loading, handleAddRole, handleUpdateRole, handleToggleRoleStatus } = useRole();
+  const { allPermissions, fetchAllPermissions, fetchRolePermissions } = usePermissions();
   const [openAddModal, setOpenAddModal] = useState(false);
   const [openEditModal, setOpenEditModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
+  const [rolePermissions, setRolePermissions] = useState([]); // 🔹 Permissions của role đang chọn
 
-  // ✅ Kiểm tra quyền
+  // 🔹 Lấy danh sách tất cả permissions khi trang được tải
+  useEffect(() => {
+    fetchAllPermissions();
+  }, [fetchAllPermissions]);
+
+  // 🔹 Khi chọn role để chỉnh sửa, lấy permissions của role đó
+  const handleEditRole = async (role) => {
+    setSelectedRole(role);
+    setOpenEditModal(true);
+
+    // Check if the user has the necessary permissions
+    if (!user?.permissions?.includes("getRolePermissions")) {
+      console.error("❌ [RolePage] User does not have permission to view role permissions");
+      return;
+    }
+
+    try {
+      const permissions = await fetchRolePermissions(role.id);
+      setRolePermissions(permissions);
+    } catch (error) {
+      console.error("❌ [RolePage] Lỗi lấy danh sách permissions của role:", error);
+    }
+  };
+
+  // ✅ Kiểm tra quyền của user
   const canCreateRole = user?.permissions?.includes("createRole");
   const canUpdateRole = user?.permissions?.includes("updateRole");
   const canUpdateRoleStatus = user?.permissions?.includes("updateRoleStatus");
-
-  // 🔹 Mở Modal chỉnh sửa và set dữ liệu
-  const handleEditRole = (role) => {
-    setSelectedRole(role);
-    setOpenEditModal(true);
-  };
 
   return (
     <div className="mt-12 mb-8 flex flex-col gap-12">
       <Card>
         <CardHeader variant="gradient" color="gray" className="mb-8 p-6 flex justify-between items-center">
           <Typography variant="h6" color="white">Danh sách Vai Trò</Typography>
-          {/* ✅ Chỉ hiển thị nút "Thêm Vai Trò" nếu user có quyền */}
           {canCreateRole && (
             <Button
               size="sm"
@@ -81,7 +101,7 @@ const RolePage = () => {
                             <Switch
                               color="green"
                               checked={role.active}
-                              disabled={!canUpdateRoleStatus || isAdminRole} // 🔹 Không thể cập nhật ADMIN
+                              disabled={!canUpdateRoleStatus || isAdminRole}
                               onChange={() => handleToggleRoleStatus(role.id, role.active)}
                             />
                             <Typography className="text-xs font-semibold text-blue-gray-600">
@@ -90,7 +110,6 @@ const RolePage = () => {
                           </div>
                         </td>
                         <td className="py-3 px-5 flex gap-2">
-                          {/* ✅ Chỉ hiển thị nút chỉnh sửa nếu user có quyền & không phải role ADMIN */}
                           {canUpdateRole && (
                             <Tooltip content="Chỉnh sửa">
                               <button onClick={() => handleEditRole(role)} className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white">
@@ -113,17 +132,17 @@ const RolePage = () => {
         </CardBody>
       </Card>
 
-      {/* ✅ Modal Thêm Vai Trò */}
       {canCreateRole && (
         <ModalAddRole open={openAddModal} onClose={() => setOpenAddModal(false)} onAddRole={handleAddRole} />
       )}
 
-      {/* ✅ Modal Chỉnh Sửa Vai Trò */}
       {selectedRole && canUpdateRole && (
         <ModalEditRole
           open={openEditModal}
           onClose={() => setOpenEditModal(false)}
           role={selectedRole}
+          allPermissions={allPermissions}
+          rolePermissions={rolePermissions} // ✅ Truyền danh sách permission thực tế của role
           onUpdateRole={handleUpdateRole}
         />
       )}

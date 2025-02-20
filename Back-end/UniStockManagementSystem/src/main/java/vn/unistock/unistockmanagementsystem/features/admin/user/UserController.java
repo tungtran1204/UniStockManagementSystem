@@ -13,11 +13,19 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @PostMapping
     public ResponseEntity<UserDTO> addUser(@RequestBody UserDTO userDTO) {
         UserDTO newUser = userService.createUser(userDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(newUser);
+    }
+
+    @GetMapping("/check-email")
+    public ResponseEntity<Boolean> checkEmailExists(@RequestParam String email) {
+        boolean exists = userService.checkEmailExists(email);
+        System.out.println("📢 API kiểm tra email: " + email + " - Kết quả: " + exists);
+        return ResponseEntity.ok(exists);
     }
 
 
@@ -45,5 +53,13 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{userId}")
+    public ResponseEntity<UserDTO> updateUser(
+            @PathVariable Long userId,
+            @RequestBody UserDTO updatedUserDTO) {
+        UserDTO updatedUser = userService.updateUser(userId, updatedUserDTO);
+        return ResponseEntity.ok(updatedUser);
     }
 }
