@@ -4,6 +4,7 @@ import {
   TableCellsIcon,
   InformationCircleIcon,
   ServerStackIcon,
+  Bars3BottomRightIcon,
   ArchiveBoxIcon, // Changed from BoxIcon to ArchiveBoxIcon
 } from "@heroicons/react/24/solid";
 
@@ -17,6 +18,7 @@ import LoginPage from "@/features/login/LoginPage";
 import AdminDashboard from "@/features/admin/dashboard/AdminDashboard";
 import WarehousePage from "@/features/user/warehouse/WarehousePage";
 import ProductPage from "@/features/user/products/ProductPage";
+import PartnerTypePage from "@/features/user/partnerType/PartnerTypePage";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -83,7 +85,29 @@ export const routes = [
         element: <ProductPage />, // Trang quản lý sản phẩm
         roles: ["USER"],
       },
-    
+      {
+        icon: <UserCircleIcon {...icon} />,
+        name: "Partner",
+        path: "/user/partner",
+        roles: ["USER"],
+        element: <Navigate to="/user/partner/type" replace />, // Add a default redirect
+        subPages: [
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Partner Type",
+            path: "/user/partner/type", // Relative path
+            element: <PartnerTypePage />,
+            roles: ["USER"],
+          },
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Partners",
+            path: "/user/partner/list", // Relative path
+            element: <div>Partners Page</div>, // Placeholder for Partners Page
+            roles: ["USER"],
+          },
+        ],
+      },
     ],
   },
   {
