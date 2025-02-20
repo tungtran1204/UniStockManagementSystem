@@ -17,7 +17,7 @@ import NotFoundPage from "@/components/NotFoundPage";
 import LoginPage from "@/features/login/LoginPage";
 import AdminDashboard from "@/features/admin/dashboard/AdminDashboard";
 import WarehousePage from "@/features/user/warehouse/WarehousePage";
-import PartnerTypePage from "@/features/user/warehouse/partner/partnerType/PartnerTypePage";
+import PartnerTypePage from "@/features/user/partnerType/PartnerTypePage";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -122,10 +122,10 @@ export const routes = [
         path: "/unauthorized",
         element: <UnauthorizedPage />,
       },
-      // {
-      //   path: "*",
-      //   element: <NotFoundPage />,
-      // },
+      {
+        path: "*",
+        element: <NotFoundPage />,
+      },
     ],
   },
 ];
