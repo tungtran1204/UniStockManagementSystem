@@ -33,9 +33,8 @@ export const getPartnerTypes = async () => {
 };
 
 export const createPartnerType = async (partnerType, token) => {
-
   const response = await axios.post(`${API_URL}/add`, partnerType, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: authHeader(),
   });
 
   console.log("✅ Kết quả từ Server:", response.data);
@@ -45,7 +44,7 @@ export const createPartnerType = async (partnerType, token) => {
 export const updatePartnerType = async (partnerType, token) => {
 
   const response = await axios.put(`${API_URL}/edit/${partnerType.typeId}`, partnerType, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: authHeader(),
   });
 
   console.log("✅ Kết quả từ Server:", response.data);

@@ -17,6 +17,7 @@ import NotFoundPage from "@/components/NotFoundPage";
 import LoginPage from "@/features/login/LoginPage";
 import AdminDashboard from "@/features/admin/dashboard/AdminDashboard";
 import WarehousePage from "@/features/user/warehouse/WarehousePage";
+import ProductPage from "@/features/user/products/ProductPage";
 import PartnerTypePage from "@/features/user/partnerType/PartnerTypePage";
 
 const icon = { className: "w-5 h-5 text-inherit" };
@@ -75,6 +76,13 @@ export const routes = [
         name: "Kho",
         path: "/user/warehouse",
         element: <WarehousePage />,
+        roles: ["USER"],
+      },
+      {
+        icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
+        name: "Quản lý sản phẩm",
+        path: "/user/products",
+        element: <ProductPage />, // Trang quản lý sản phẩm
         roles: ["USER"],
       },
       {
