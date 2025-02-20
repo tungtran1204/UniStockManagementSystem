@@ -15,8 +15,4 @@ spring:
     ddl-auto: update
     database-platform: org.hibernate.dialect.MySQLDialect
     show-sql: true
-    properties:
-      hibernate:
-        cache:
-          use_second_level_cache: false  # ❌ Tắt cache cấp 2
-          use_query_cache: false
+

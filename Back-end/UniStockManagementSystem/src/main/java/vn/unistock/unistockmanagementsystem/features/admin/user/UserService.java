@@ -91,6 +91,14 @@ public class UserService {
         // 5️⃣ Cập nhật `UserDetail` nếu có
         Optional<UserDetail> optionalUserDetail = Optional.ofNullable(user.getUserDetail());
 
+        if (updatedUserDTO.getRoleIds() != null && !updatedUserDTO.getRoleIds().isEmpty()) {
+            List<Role> roles = roleRepository.findAllById(updatedUserDTO.getRoleIds());
+            if (roles.isEmpty()) {
+                throw new IllegalArgumentException("Danh sách role không hợp lệ!");
+            }
+            user.setRoles(new HashSet<>(roles));
+        }
+
         if (updatedUserDTO.getUserDetail() != null) {
             UserDetail userDetail = optionalUserDetail.orElseGet(UserDetail::new);
             userDetail.setUser(user); // Gán user

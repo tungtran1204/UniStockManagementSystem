@@ -13,17 +13,17 @@ import { checkEmailExists, createUser } from "../users/userService"; // ✅ Impo
 
 const ModalAddUser = ({ open, onClose, fetchUsers }) => {
   const [email, setEmail] = useState("");
-  const [emailError, setEmailError] = useState(""); // ✅ Lưu lỗi email
+  const [emailError, setEmailError] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState(""); // ✅ Thêm lỗi mật khẩu
   const [fullname, setFullname] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [roles, setRoles] = useState([]);
   const [selectedRoles, setSelectedRoles] = useState(new Set());
   const [isActive, setIsActive] = useState(true);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false); // ✅ Thêm state loading
+  const [loading, setLoading] = useState(false);
 
-  // 🟢 Fetch danh sách role từ API
   useEffect(() => {
     if (open) {
       getAllRoles()
@@ -36,24 +36,51 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
     }
   }, [open]);
 
-  // 🟢 **Kiểm tra email có tồn tại không**
+  // 🟢 Kiểm tra định dạng email hợp lệ
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Regex kiểm tra email chuẩn
+    return emailRegex.test(email);
+  };
+
+  // 🟢 Kiểm tra email đã tồn tại chưa
   const handleCheckEmail = async (newEmail) => {
     setEmail(newEmail);
-    setEmailError(""); // ✅ Reset lỗi
+    setEmailError("");
 
-    if (newEmail.trim()) {
-      try {
-        const emailExists = await checkEmailExists(newEmail);
-        if (emailExists) {
-          setEmailError("Email này đã được sử dụng!"); // ✅ Hiển thị lỗi
-        }
-      } catch (error) {
-        console.error("❌ Lỗi kiểm tra email:", error);
+    if (!newEmail.trim()) {
+      setEmailError("Vui lòng nhập email!");
+      return;
+    }
+
+    if (!isValidEmail(newEmail)) {
+      setEmailError("Email không hợp lệ!");
+      return;
+    }
+
+    try {
+      const emailExists = await checkEmailExists(newEmail);
+      if (emailExists) {
+        setEmailError("Email này đã được sử dụng!");
       }
+    } catch (error) {
+      console.error("❌ Lỗi kiểm tra email:", error);
     }
   };
 
-  // 🟢 Xử lý chọn/bỏ chọn role
+  // 🟢 Kiểm tra mật khẩu có đủ mạnh không
+  const isValidPassword = (password) => {
+    return password.length >= 8 && /[A-Za-z]/.test(password) && /\d/.test(password);
+  };
+
+  const handlePasswordChange = (newPassword) => {
+    setPassword(newPassword);
+    setPasswordError("");
+
+    if (!isValidPassword(newPassword)) {
+      setPasswordError("Mật khẩu phải có ít nhất 8 ký tự, gồm cả số và chữ!");
+    }
+  };
+
   const handleRoleChange = (roleId) => {
     setSelectedRoles((prevRoles) => {
       const updatedRoles = new Set(prevRoles);
@@ -68,16 +95,17 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
 
   const handleAddUser = async () => {
     setError("");
-    if (!email.trim()) {
-      setEmailError("Vui lòng nhập email!");
-      return;
-    }
-    if (emailError) return; // ✅ Nếu email lỗi, không cho submit
 
-    if (!password.trim()) {
-      setError("Vui lòng nhập mật khẩu!");
+    if (!email.trim() || emailError) {
+      setEmailError("Vui lòng nhập email hợp lệ!");
       return;
     }
+
+    if (!password.trim() || passwordError) {
+      setPasswordError("Mật khẩu không hợp lệ!");
+      return;
+    }
+
     if (selectedRoles.size === 0) {
       setError("Vui lòng chọn ít nhất một vai trò!");
       return;
@@ -132,10 +160,16 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
           {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
         </div>
 
-        {/* Mật khẩu */}
+        {/* 🔥 Kiểm tra Mật khẩu */}
         <div>
-          <Input label="Mật khẩu" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          {error.includes("mật khẩu") && <p className="text-red-500 text-xs mt-1">{error}</p>}
+          <Input
+            label="Mật khẩu"
+            type="password"
+            value={password}
+            onChange={(e) => handlePasswordChange(e.target.value)}
+            required
+          />
+          {passwordError && <p className="text-red-500 text-xs mt-1">{passwordError}</p>}
         </div>
 
         {/* Số điện thoại */}
