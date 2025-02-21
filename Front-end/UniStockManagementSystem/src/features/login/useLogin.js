@@ -1,40 +1,52 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "../../context/AuthContext"; // ✅ Import AuthContext
-import { login, getUser } from "../../services/authService";
+import { useAuth } from "../../context/AuthContext";
+import { login, fetchProfile } from "../../services/authService";
 
 const useLogin = () => {
-  const { user, setUser, isAuth, setIsAuth } = useAuth(); // ✅ Lấy từ AuthContext
-  const [loading, setLoading] = useState(true); // ✅ Thêm trạng thái loading
+  const { user, setUser, isAuth, setIsAuth } = useAuth();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = getUser();
-    if (storedUser) {
-      setUser(storedUser);
-      setIsAuth(true);
-    }
-    setLoading(false);
+    const loadUserProfile = async () => {
+      const profile = await fetchProfile();
+      if (profile) {
+        console.log("✅ [useLogin] Fetched profile:", profile);
+        setUser(profile);
+        setIsAuth(true);
+        localStorage.setItem("userProfile", JSON.stringify(profile));
+      }
+      setLoading(false);
+    };
+
+    loadUserProfile();
   }, []);
 
-  // 🟢 Hàm đăng nhập
   const handleLogin = async (email, password) => {
     try {
-      const result = await login({ email, password });
-      console.log("📢 API Login Response:", JSON.stringify(result, null, 2));
+      // 1️⃣ **Login để lấy token**
+      const loginResult = await login({ email, password });
 
-      if (result.success === false) {
-        return { success: false, message: result.message };
+      if (!loginResult.success) {
+        return { success: false, message: loginResult.message };
       }
 
-      setUser(result);
-      setIsAuth(true);
+      // 2️⃣ **Fetch profile ngay sau khi login**
+      const profile = await fetchProfile();
+      console.log("✅ [useLogin] Profile after login:", profile);
 
-      return { success: true, user: result };
+      if (!profile || !profile.roles) {
+        return { success: false, message: "Không thể lấy thông tin user" };
+      }
+
+      // 3️⃣ **Cập nhật state & localStorage**
+      setUser(profile);
+      setIsAuth(true);
+      localStorage.setItem("userProfile", JSON.stringify(profile));
+
+      return { success: true, user: profile };
     } catch (error) {
-      console.error("❌ Lỗi khi đăng nhập:", error);
-      return {
-        success: false,
-        message: error.message || "Lỗi khi đăng nhập, vui lòng thử lại",
-      };
+      console.error("❌ [useLogin] Lỗi khi đăng nhập:", error);
+      return { success: false, message: "Lỗi hệ thống, vui lòng thử lại." };
     }
   };
 

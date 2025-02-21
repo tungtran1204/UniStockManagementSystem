@@ -3,18 +3,18 @@ package vn.unistock.unistockmanagementsystem.features.auth.login;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import vn.unistock.unistockmanagementsystem.entities.Permission;
 import vn.unistock.unistockmanagementsystem.entities.Role;
 import vn.unistock.unistockmanagementsystem.entities.User;
 import vn.unistock.unistockmanagementsystem.security.Jwt;
+import vn.unistock.unistockmanagementsystem.security.filter.CustomUserDetails;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -49,4 +49,37 @@ public class LoginController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Sai email hoặc mật khẩu!");
         }
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if (!(auth.getPrincipal() instanceof CustomUserDetails userDetails)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        User user = userDetails.getUser();
+
+        List<String> roles = user.getRoles().stream()
+                .map(Role::getRoleName)
+                .collect(Collectors.toList());
+
+        List<String> permissions = userDetails.getAllPermissions().stream()
+                .map(Permission::getPermissionName)
+                .collect(Collectors.toList());
+
+        // Tạo MeDTO
+        MeDTO meDto = new MeDTO(
+                user.getUserId(),
+                user.getEmail(),
+                roles,
+                permissions
+        );
+
+        return ResponseEntity.ok(meDto);
+    }
+
 }

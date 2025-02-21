@@ -1,5 +1,6 @@
 package vn.unistock.unistockmanagementsystem.security;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -7,33 +8,48 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
+import vn.unistock.unistockmanagementsystem.security.filter.DynamicAuthorizationFilter;
+import vn.unistock.unistockmanagementsystem.security.filter.JwtAuthenticationFilter;
 
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final DynamicAuthorizationFilter dynamicAuthorizationFilter;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
                 .csrf(csrf -> csrf.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ Thêm CORS Global
-                .authorizeHttpRequests(request -> request.anyRequest().permitAll()); // ✅ Không yêu cầu Authentication
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .authorizeHttpRequests(auth -> auth
+                        // Các endpoint public (login, register, v.v.) không yêu cầu login
+                        .requestMatchers("/api/unistock/auth/login", "/api/unistock/auth/me").permitAll()
+                        // Tất cả các endpoint khác yêu cầu phải đăng nhập
+                        .anyRequest().authenticated()
+                )
+                // Thêm filter xác thực JWT (đọc token) trước UsernamePasswordAuthenticationFilter
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                // Thêm filter phân quyền động (check method+url) sau khi xác thực
+                .addFilterAfter(dynamicAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        return httpSecurity.build();
+        return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:3000")); // ✅ Cho phép React gọi API
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
 
@@ -42,13 +58,9 @@ public class SecurityConfig {
         return source;
     }
 
-    //Hashing
-    //Step 1: User send plain password
-    //Step 2: Spring encode plain password to encrypted password
-    //Step 3: Check encrypted password with stored password in db
+    // Mật khẩu => Bcrypt
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
 }

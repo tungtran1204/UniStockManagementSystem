@@ -19,41 +19,28 @@ export const login = async (credentials) => {
     });
 
     if (!response.ok) {
-      // Nếu API trả về mã lỗi (401, 403), lấy message từ response
       const errorData = await response.text();
       throw new Error(errorData || "Lỗi đăng nhập: Sai email hoặc mật khẩu");
     }
 
-    const userData = await response.json();
-    console.log("📢 API Login Response:", JSON.stringify(userData, null, 2));
+    const loginData = await response.json();
+    console.log("📢 API Login Response:", loginData);
 
-    if (!userData.token) {
+    if (!loginData.token) {
       throw new Error("Token không hợp lệ từ server");
     }
 
-    // ✅ Giải mã token
-    const decodedToken = jwtDecode(userData.token);
-    console.log("📢 Decoded Token:", decodedToken);
+    // ✅ Lưu token vào localStorage
+    localStorage.setItem("token", loginData.token);
 
-    const roles = Array.isArray(decodedToken.roles)
-      ? decodedToken.roles
-      : decodedToken.roles.split(",").map((role) => role.trim());
-
-    if (!decodedToken.email || roles.length === 0) {
-      throw new Error("Token không chứa email hoặc role hợp lệ.");
+    // 🟢 Gọi API `/me` để lấy thông tin đầy đủ của user
+    const profile = await fetchProfile();
+    if (profile) {
+      localStorage.setItem("userProfile", JSON.stringify(profile));
+      return { success: true, user: profile };
+    } else {
+      throw new Error("Không thể lấy profile user");
     }
-
-    // ✅ Lưu vào localStorage
-    const userObject = {
-      email: decodedToken.email,
-      token: userData.token,
-      roles,
-    };
-
-    localStorage.setItem("user", JSON.stringify(userObject));
-    localStorage.setItem("token", userData.token);
-
-    return userObject;
   } catch (error) {
     console.error("🚨 Lỗi đăng nhập:", error.message);
     return { success: false, message: error.message };
@@ -63,12 +50,12 @@ export const login = async (credentials) => {
 // 🟢 **Hàm Đăng xuất**
 export const logout = () => {
   localStorage.removeItem("token");
-  localStorage.removeItem("user");
+  localStorage.removeItem("userProfile"); // ✅ Xoá thông tin user thay vì `user`
 };
 
 // 🟢 **Lấy user từ LocalStorage**
 export const getUser = () => {
-  const storedUser = localStorage.getItem("user");
+  const storedUser = localStorage.getItem("userProfile");
   console.log("📢 getUser() - Raw data from localStorage:", storedUser);
 
   try {
@@ -90,6 +77,21 @@ export const isAuthenticated = () => {
   } catch (error) {
     console.error("🚨 Lỗi kiểm tra Token:", error);
     return false;
+  }
+};
+
+// 🟢 **Gọi API `/me` để lấy profile user**
+export const fetchProfile = async () => {
+  try {
+    console.log("===> fetchProfile called");
+
+    const response = await apiClient.get("/me");
+    console.log("===> fetchProfile success, data =", response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error("🚨 Lỗi lấy thông tin user:", error.message);
+    return null;
   }
 };
 
