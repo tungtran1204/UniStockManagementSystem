@@ -1,6 +1,7 @@
 package vn.unistock.unistockmanagementsystem.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -14,9 +15,11 @@ public class PartnerType {
     @Column(name = "type_id")
     private Long typeId;
 
+    @NotBlank(message = "Mã nhóm đối tác không được để trống.")
     @Column(name = "type_code")
     private String typeCode;
 
+    @NotBlank(message = "Tên nhóm đối tác không được để trống.")
     @Column(name = "type_name")
     private String typeName;
 
