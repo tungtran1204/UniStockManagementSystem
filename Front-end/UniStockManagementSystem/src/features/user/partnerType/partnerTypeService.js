@@ -50,3 +50,18 @@ export const updatePartnerType = async (partnerType, token) => {
   console.log("✅ Kết quả từ Server:", response.data);
   return response.data;
 };
+
+export const togglePartnerTypeStatus = async (typeId, newStatus) => {
+  try {
+    const response = await axios.patch(
+      `${API_URL}/${typeId}/status`,
+      { status: newStatus },
+      { headers: authHeader() }
+    );
+    console.log("✅ API Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi khi cập nhật trạng thái:", error);
+    throw error;
+  }
+};

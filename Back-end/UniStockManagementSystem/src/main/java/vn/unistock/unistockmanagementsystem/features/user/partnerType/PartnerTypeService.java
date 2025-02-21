@@ -22,6 +22,17 @@ public class PartnerTypeService {
 
     //Thêm mới loại đối tác
     public PartnerTypeDTO addPartnerType(PartnerTypeDTO partnerTypeDTO) {
+        boolean codeExists = partnerTypeRepository.existsByTypeCode(partnerTypeDTO.getTypeCode());
+        boolean nameExists = partnerTypeRepository.existsByTypeName(partnerTypeDTO.getTypeName());
+
+        if (codeExists && nameExists) {
+            throw new IllegalArgumentException("DUPLICATE_CODE_AND_NAME");
+        } else if (codeExists) {
+            throw new IllegalArgumentException("DUPLICATE_CODE");
+        } else if (nameExists) {
+            throw new IllegalArgumentException("DUPLICATE_NAME");
+        }
+
         PartnerType partnerType = partnerTypeMapper.toEntity(partnerTypeDTO);
         partnerType = partnerTypeRepository.save(partnerType);
         return partnerTypeMapper.toDTO(partnerType);
@@ -32,6 +43,20 @@ public class PartnerTypeService {
         PartnerType partnerType = partnerTypeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Loại đối tác không tồn tại"));
 
+        boolean isTypeCodeChanged = !partnerType.getTypeCode().equals(partnerTypeDTO.getTypeCode());
+        boolean isTypeNameChanged = !partnerType.getTypeName().equals(partnerTypeDTO.getTypeName());
+
+        boolean codeExists = isTypeCodeChanged && partnerTypeRepository.existsByTypeCode(partnerTypeDTO.getTypeCode());
+        boolean nameExists = isTypeNameChanged && partnerTypeRepository.existsByTypeName(partnerTypeDTO.getTypeName());
+
+        if (codeExists && nameExists) {
+            throw new IllegalArgumentException("DUPLICATE_CODE_AND_NAME");
+        } else if (codeExists) {
+            throw new IllegalArgumentException("DUPLICATE_CODE");
+        } else if (nameExists) {
+            throw new IllegalArgumentException("DUPLICATE_NAME");
+        }
+
         partnerType.setTypeCode(partnerTypeDTO.getTypeCode());
         partnerType.setTypeName(partnerTypeDTO.getTypeName());
         partnerType.setStatus(partnerTypeDTO.getStatus());
@@ -41,7 +66,12 @@ public class PartnerTypeService {
         return partnerTypeMapper.toDTO(partnerType);
     }
 
-    public boolean existsByTypeCodeOrTypeName(String typeCode, String typeName) {
-        return partnerTypeRepository.existsByTypeCodeOrTypeName(typeCode, typeName);
+    public PartnerTypeDTO updatePartnerTypeStatus(Long id, Boolean isActive) {
+        PartnerType partnerType = partnerTypeRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Loại đối tác không tồn tại"));
+
+        partnerType.setStatus(isActive);
+        partnerType = partnerTypeRepository.save(partnerType);
+        return partnerTypeMapper.toDTO(partnerType);
     }
 }
