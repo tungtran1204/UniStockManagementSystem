@@ -87,21 +87,21 @@ export const routes = [
       },
       {
         icon: <UserCircleIcon {...icon} />,
-        name: "Partner",
+        name: "Quản lý đối tác",
         path: "/user/partner",
         roles: ["USER"],
         element: <Navigate to="/user/partner/type" replace />, // Add a default redirect
         subPages: [
           {
             icon: <Bars3BottomRightIcon {...icon} />,
-            name: "Partner Type",
+            name: "Nhóm đối tác",
             path: "/user/partner/type", // Relative path
             element: <PartnerTypePage />,
             roles: ["USER"],
           },
           {
             icon: <Bars3BottomRightIcon {...icon} />,
-            name: "Partners",
+            name: "Đối tác",
             path: "/user/partner/list", // Relative path
             element: <div>Partners Page</div>, // Placeholder for Partners Page
             roles: ["USER"],
