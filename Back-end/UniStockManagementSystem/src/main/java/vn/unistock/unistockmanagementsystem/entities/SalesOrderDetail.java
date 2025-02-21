@@ -25,7 +25,7 @@ public class SalesOrderDetail {
     @JoinColumn(name = "product_id")
     private Product product;
 
-    private Double quantity;
+    private int quantity;
     private Double unitPrice;
     private Double discount;
 

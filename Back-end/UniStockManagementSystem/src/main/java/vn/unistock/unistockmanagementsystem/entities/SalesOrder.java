@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 @Data
@@ -24,7 +25,7 @@ public class SalesOrder {
     private Customer customer;
 
     @Column(name = "order_date")
-    private LocalDateTime orderDate;
+    private Date orderDate;
 
     // Ai tạo (nhiều order -> 1 user)
     @ManyToOne
@@ -33,6 +34,7 @@ public class SalesOrder {
 
     private String status;
     private String note;
+    private Double totalAmount;
 
     // Audit
     private LocalDateTime createdAt;
