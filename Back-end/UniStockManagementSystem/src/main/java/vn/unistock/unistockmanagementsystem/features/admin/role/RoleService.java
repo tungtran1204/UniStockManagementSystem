@@ -60,4 +60,8 @@ public class RoleService {
         roleRepository.delete(role);
     }
 
+    public Role getRoleById(Long id) {
+        return roleRepository.findById(id).orElse(null);
+    }
+
 }

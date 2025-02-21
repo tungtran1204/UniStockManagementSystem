@@ -10,12 +10,16 @@ import {
   Tooltip,
   Button,
 } from "@material-tailwind/react";
-import { FaEye, FaTrashAlt, FaPlus, FaEdit } from "react-icons/fa";
-import ModalAddUser from "./ModalAddUser"; // ✅ Import Modal
+import { FaPlus, FaEdit } from "react-icons/fa";
+import ModalAddUser from "./ModalAddUser"; // ✅ Import ModalAddUser
+import ModalEditUser from "./ModalEditUser"; // ✅ Import ModalEditUser
+import { getUserById } from "./userService";
 
 const UserPage = () => {
-  const { users, fetchUsers, deleteUser, toggleStatus } = useUser();
-  const [openModal, setOpenModal] = useState(false); // ✅ State quản lý Modal
+  const { users, fetchUsers, toggleStatus } = useUser();
+  const [openAddModal, setOpenAddModal] = useState(false); // ✅ State quản lý ModalAddUser
+  const [openEditModal, setOpenEditModal] = useState(false); // ✅ State quản lý ModalEditUser
+  const [selectedUser, setSelectedUser] = useState(null); // ✅ State quản lý user được chọn để chỉnh sửa
 
   useEffect(() => {
     fetchUsers().then((data) => {
@@ -23,23 +27,47 @@ const UserPage = () => {
     });
   }, []);
 
+  const handleEditUser = async (user) => {
+    try {
+      const userData = await getUserById(user.userId); // 🟢 Fetch đầy đủ user
+      setSelectedUser(userData);
+      setOpenEditModal(true);
+    } catch (error) {
+      console.error("❌ Lỗi khi lấy thông tin user:", error);
+      alert("Không thể lấy thông tin user!");
+    }
+};
+
   return (
     <div className="mt-12 mb-8 flex flex-col gap-12">
       <Card>
-        <CardHeader variant="gradient" color="gray" className="mb-8 p-6 flex justify-between items-center">
+        <CardHeader
+          variant="gradient"
+          color="gray"
+          className="mb-8 p-6 flex justify-between items-center"
+        >
           <Typography variant="h6" color="white">
             Danh sách người dùng
           </Typography>
 
-          {/* ✅ Nút mở Modal */}
-          <Button
+          {/* ✅ Nút mở ModalAddUser */}
+          {/* <Button
             color="light-blue"
             className="flex items-center gap-2"
-            onClick={() => setOpenModal(true)}
+            onClick={() => setOpenAddModal(true)} // ✅ Sửa lỗi mở modal
           >
             <FaPlus className="text-white" />
             Thêm Người Dùng
-          </Button>
+          </Button> */}
+          <Button
+                        size="sm"
+                        color="white"
+                        variant="text"
+                        className="flex items-center gap-2"
+                        onClick={() => setOpenAddModal(true)}
+                      >
+                        <FaPlus className="h-4 w-4" /> Thêm Người Dùng
+                      </Button>
         </CardHeader>
 
         <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
@@ -63,7 +91,7 @@ const UserPage = () => {
             </thead>
             <tbody>
               {users.length > 0 ? (
-                users.map(({ userId, email, roleNames, isActive }, key) => {
+                users.map(({ userId, username, email, roleNames, isActive, phoneNumber, address, fullname, dateOfBirth, profilePicture }, key) => {
                   const className = `py-3 px-5 ${
                     key === users.length - 1 ? "" : "border-b border-blue-gray-50"
                   }`;
@@ -72,14 +100,17 @@ const UserPage = () => {
                     <tr key={userId}>
                       <td className={className}>
                         <div className="flex items-center gap-4">
-                          <Avatar src="/img/bruce-mars.jpeg" alt={email} size="sm" variant="rounded" />
+                          <Avatar src={profilePicture || "/img/bruce-mars.jpeg"} alt={email} size="sm" variant="rounded" />
                           <div>
                             <Typography
                               variant="small"
                               color="blue-gray"
                               className="font-semibold"
                             >
-                              {email}
+                              {username} {/* 🟢 Hiển thị username */}
+                            </Typography>
+                            <Typography variant="small" color="gray" className="text-xs">
+                              {email} {/* 🟢 Hiển thị email phía dưới */}
                             </Typography>
                           </div>
                         </div>
@@ -110,20 +141,12 @@ const UserPage = () => {
                         <div className="flex items-center gap-2">
                           <Tooltip content="Chỉnh sửa">
                             <button
-                              onClick={() => console.log("Edit User:", userId)}
+                              onClick={() => handleEditUser({ userId, username, email, roleNames, isActive, phoneNumber, address, fullname, dateOfBirth, profilePicture })}
                               className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
                             >
                               <FaEdit />
                             </button>
                           </Tooltip>
-                          {/* <Tooltip content="Xóa người dùng">
-                            <button
-                              onClick={() => deleteUser(userId)}
-                              className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white"
-                            >
-                              <FaTrashAlt />
-                            </button>
-                          </Tooltip> */}
                         </div>
                       </td>
                     </tr>
@@ -131,10 +154,7 @@ const UserPage = () => {
                 })
               ) : (
                 <tr>
-                  <td
-                    colSpan="4"
-                    className="border-b border-gray-200 px-3 py-4 text-center text-gray-500"
-                  >
+                  <td colSpan="4" className="border-b border-gray-200 px-3 py-4 text-center text-gray-500">
                     Không có dữ liệu
                   </td>
                 </tr>
@@ -145,7 +165,10 @@ const UserPage = () => {
       </Card>
 
       {/* ✅ Modal Thêm Người Dùng */}
-      <ModalAddUser open={openModal} onClose={() => setOpenModal(false)} />
+      {openAddModal && <ModalAddUser open={openAddModal} onClose={() => setOpenAddModal(false)} fetchUsers={fetchUsers} />}
+      
+      {/* ✅ Modal Chỉnh Sửa Người Dùng */}
+      {openEditModal && <ModalEditUser open={openEditModal} onClose={() => setOpenEditModal(false)} user={selectedUser} fetchUsers={fetchUsers} />}
     </div>
   );
 };

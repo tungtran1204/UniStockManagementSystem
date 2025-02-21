@@ -22,13 +22,21 @@ const AppRoutes = () => {
           const hasAccess =
             !route.roles || route.roles.length === 0 || route.roles.some((role) => userRoles.includes(role));
 
-          return (
+            return route.subPages ? (
+            route.subPages.map((subPage, subIndex) => (
+              <Route
+              key={`${index}-${subIndex}`}
+              path={subPage.path}
+              element={hasAccess ? subPage.element : <UnauthorizedPage />}
+              />
+            ))
+            ) : (
             <Route
               key={index}
               path={route.path}
               element={hasAccess ? route.element : <UnauthorizedPage />}
             />
-          );
+            );
         })
       )}
     </Routes>

@@ -8,6 +8,35 @@ const authHeader = () => {
   return token ? { Authorization: `Bearer ${token}` } : {}; // ✅ Nếu không có token, trả về object rỗng
 };
 
+// 🟢 **API Tạo User**
+export const createUser = async (userData) => {
+  try {
+    const response = await axios.post(API_URL, userData, {
+      headers: { ...authHeader(), "Content-Type": "application/json" },
+    });
+    console.log("✅ [createUser] API Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ [createUser] Lỗi khi tạo user:", error);
+    throw error;
+  }
+};
+
+
+// ✅ API kiểm tra email
+export const checkEmailExists = async (email) => {
+  try {
+    const response = await axios.get(`${API_URL}/check-email`, {
+      params: { email },
+      headers: authHeader(), // ✅ Gửi token cùng request
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi kiểm tra email:", error);
+    return false;
+  }
+};
+
 // 🟢 **Lấy danh sách Users**
 export const getUsers = async () => {
   try {
@@ -41,6 +70,34 @@ export const toggleUserStatus = async (userId, newStatus) => {
     return response.data;
   } catch (error) {
     console.error("❌ Lỗi khi cập nhật trạng thái:", error);
+    throw error;
+  }
+};
+
+// 🟢 **Cập nhật User**
+export const updateUser = async (userId, updatedUser) => {
+  try {
+    const response = await axios.put(`${API_URL}/${userId}`, updatedUser, {
+      headers: { ...authHeader(), "Content-Type": "application/json" },
+    });
+    console.log("✅ [updateUser] API Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ [updateUser] Lỗi khi cập nhật user:", error);
+    throw error;
+  }
+};
+
+export const getUserById = async (userId) => {
+  try {
+    const response = await axios.get(`${API_URL}/${userId}`, {
+      headers: authHeader(),
+    });
+
+    console.log("✅ [getUserById] API Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ [getUserById] Lỗi khi lấy thông tin user:", error);
     throw error;
   }
 };
