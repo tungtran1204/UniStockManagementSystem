@@ -17,6 +17,7 @@ import LoginPage from "@/features/login/LoginPage";
 import AdminDashboard from "@/features/admin/dashboard/AdminDashboard";
 import WarehousePage from "@/features/user/warehouse/WarehousePage";
 import ProductPage from "@/features/user/products/ProductPage";
+import SaleOrdersPage from "../features/user/saleorders/SaleOrdersPage";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -81,6 +82,13 @@ export const routes = [
         name: "Quản lý sản phẩm",
         path: "/user/products",
         element: <ProductPage />, // Trang quản lý sản phẩm
+        roles: ["USER"],
+      },
+      {
+        icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
+        name: "Quản lý đơn hàng",
+        path: "/user/sale-orders",
+        element: <SaleOrdersPage />, // Trang quản lý đơn hàng 
         roles: ["USER"],
       },
     
