@@ -4,8 +4,7 @@ import { saveAs } from "file-saver";
 
 
 const API_URL = "http://localhost:8080/api/unistock/user/products";
-const UNIT_API = "http://localhost:8080/api/unistock/user/units";
-const TYPE_API = "http://localhost:8080/api/unistock/user/product-types";
+
 
 // ✅ Lấy danh sách tất cả sản phẩm
 export const getAllProducts = async () => {
@@ -20,21 +19,43 @@ export const getUserProducts = async (userId) => {
 };
 
 // ✅ Thêm sản phẩm mới 
-export const createProduct = async (product, token) => {
+export const createProduct = async (productData) => {
+  try {
+    const formData = new FormData();
 
-  const response = await axios.post(API_URL, product, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+    formData.append("productCode", productData.productCode.trim());
+    formData.append("productName", productData.productName.trim());
+    formData.append("description", productData.description?.trim() || "");
+    formData.append("unitId", parseInt(productData.unitId) || "");
+    formData.append("productTypeId", parseInt(productData.typeId) || "");
+    formData.append("price", parseFloat(productData.price) || 0);
+    formData.append("isProductionActive", productData.isProductionActive === "true");
 
-  console.log("✅ Kết quả từ Server:", response.data);
-  return response.data;
+    // 🟢 Kiểm tra và thêm ảnh vào FormData
+    if (productData.image) {
+      formData.append("image", productData.image);
+    } else {
+      console.warn("⚠️ No image attached");
+    }
+
+    const response = await axios.post(
+      "http://localhost:8080/api/unistock/user/products/create",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi khi tạo sản phẩm:", error.response?.data || error.message);
+    throw error;
+  }
 };
 
 
-// ✅ Xóa sản phẩm
-export const deleteProduct = async (productId) => {
-  return axios.delete(`${API_URL}/${productId}`);
-};
 
 
 export const fetchUnits = async () => {
@@ -47,11 +68,10 @@ export const fetchUnits = async () => {
   }
 };
 
-// ... existing code ...
+
 
 export const fetchProductTypes = async () => {
   try {
-    // Sửa lại URL từ port 3000 thành 8080
     const response = await axios.get('http://localhost:8080/api/unistock/user/product-types');
     return response.data;
   } catch (error) {
@@ -77,6 +97,16 @@ export const updateProduct = async (productId, productData) => {
     return response.data;
   } catch (error) {
     console.error("❌ Lỗi khi cập nhật sản phẩm:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const checkProductCodeExists = async (productCode) => {
+  try {
+    const response = await axios.get(`http://localhost:8080/api/unistock/user/products/check-product-code/${productCode}`);
+    return response.data.exists;
+  } catch (error) {
+    console.error("Lỗi kiểm tra mã sản phẩm:", error);
     throw error;
   }
 };

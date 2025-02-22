@@ -3,9 +3,13 @@ package vn.unistock.unistockmanagementsystem.entities;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "products")
 public class Product {
@@ -35,13 +39,22 @@ public class Product {
     private ProductType productType;
 
     // ✅ Chỉ lưu tên người tạo, không dùng Foreign Key
-    @Column(name = "created_by", nullable = false)
+    @Column(name = "created_by", nullable = true)
     private String createdBy;
 
-    @Column(name = "updated_by", nullable = false)
+    @Column(name = "updated_by", nullable = true)
     private String updatedBy;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    @Column(name = "is_production_active", nullable = false)
+    private Boolean isProductionActive = true;  
+
+    @Column(name = "image_url")
+    private String imageUrl;
+
+
+
 
 }
