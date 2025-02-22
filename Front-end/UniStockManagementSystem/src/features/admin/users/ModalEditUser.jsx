@@ -183,11 +183,21 @@ const ModalEditUser = ({ open, onClose, user, fetchUsers }) => {
         <div>
           <p className="text-sm font-semibold text-gray-700">Chọn Vai Trò:</p>
           <div className="flex flex-wrap gap-2">
-            {roles.map((r) => (
-              <button key={r.id} onClick={() => handleRoleChange(r.id)} className={`px-4 py-2 text-sm rounded-lg transition-all ${selectedRoles.has(r.id) ? "bg-blue-500 text-white shadow-md" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}>
-                {r.name}
-              </button>
-            ))}
+            {roles
+              .filter((r) => r.name !== "USER" && (isAdmin || r.name !== "ADMIN")) // Exclude "USER" role and "ADMIN" role if not admin
+              .map((r) => (
+                <button
+                  key={r.id}
+                  onClick={() => handleRoleChange(r.id)}
+                  className={`px-4 py-2 text-sm rounded-lg transition-all ${selectedRoles.has(r.id) ? "bg-blue-500 text-white shadow-md" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+                  disabled={isAdmin} // Disable role selection if current role is "ADMIN"
+                >
+                  {r.name}
+                </button>
+              ))}
+            {roles.filter((r) => r.name !== "USER" && (isAdmin || r.name !== "ADMIN")).length === 0 && (
+              <p className="text-sm text-gray-500">Không có sẵn vai trò.</p>
+            )}
           </div>
         </div>
       </DialogBody>

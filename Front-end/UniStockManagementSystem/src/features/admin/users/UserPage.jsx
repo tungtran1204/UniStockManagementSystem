@@ -9,34 +9,53 @@ import {
   Switch,
   Tooltip,
   Button,
+  Input,
 } from "@material-tailwind/react";
-import { FaPlus, FaEdit } from "react-icons/fa";
+import { FaPlus, FaEdit, FaAngleLeft, FaAngleRight } from "react-icons/fa";
 import ModalAddUser from "./ModalAddUser"; // ✅ Import ModalAddUser
 import ModalEditUser from "./ModalEditUser"; // ✅ Import ModalEditUser
 import { getUserById } from "./userService";
+import ReactPaginate from "react-paginate"; // ✅ Import ReactPaginate
+import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 const UserPage = () => {
-  const { users, fetchUsers, toggleStatus } = useUser();
-  const [openAddModal, setOpenAddModal] = useState(false); // ✅ State quản lý ModalAddUser
-  const [openEditModal, setOpenEditModal] = useState(false); // ✅ State quản lý ModalEditUser
-  const [selectedUser, setSelectedUser] = useState(null); // ✅ State quản lý user được chọn để chỉnh sửa
+  const { users, fetchPaginatedUsers, toggleStatus, totalPages, totalElements } = useUser();
+  const [openAddModal, setOpenAddModal] = useState(false);
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
+  // 🟢 State quản lý phân trang
+  const [currentPage, setCurrentPage] = useState(0); // Trang hiện tại
+  const [pageSize, setPageSize] = useState(5); // Số lượng user mỗi trang
+
+  // 🟢 Fetch users khi mở trang hoặc chuyển trang
   useEffect(() => {
-    fetchUsers().then((data) => {
-      console.log("📢 API trả về danh sách Users:", data);
-    });
-  }, []);
+    fetchPaginatedUsers(currentPage, pageSize);
+  }, [currentPage, pageSize]);
 
   const handleEditUser = async (user) => {
     try {
-      const userData = await getUserById(user.userId); // 🟢 Fetch đầy đủ user
+      const userData = await getUserById(user.userId);
       setSelectedUser(userData);
       setOpenEditModal(true);
     } catch (error) {
       console.error("❌ Lỗi khi lấy thông tin user:", error);
       alert("Không thể lấy thông tin user!");
     }
-};
+  };
+
+  // 🟢 Xử lý chuyển trang
+  const handlePageChange = (selectedItem) => {
+    setCurrentPage(selectedItem.selected);
+  };
+
+  // 🟢 Lọc người dùng theo từ khóa tìm kiếm
+  const filteredUsers = users.filter(
+    (user) =>
+      (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   return (
     <div className="mt-12 mb-8 flex flex-col gap-12">
@@ -49,28 +68,53 @@ const UserPage = () => {
           <Typography variant="h6" color="white">
             Danh sách người dùng
           </Typography>
-
-          {/* ✅ Nút mở ModalAddUser */}
-          {/* <Button
-            color="light-blue"
-            className="flex items-center gap-2"
-            onClick={() => setOpenAddModal(true)} // ✅ Sửa lỗi mở modal
-          >
-            <FaPlus className="text-white" />
-            Thêm Người Dùng
-          </Button> */}
           <Button
-                        size="sm"
-                        color="white"
-                        variant="text"
-                        className="flex items-center gap-2"
-                        onClick={() => setOpenAddModal(true)}
-                      >
-                        <FaPlus className="h-4 w-4" /> Thêm Người Dùng
-                      </Button>
+            size="sm"
+            color="white"
+            variant="text"
+            className="flex items-center gap-2"
+            onClick={() => setOpenAddModal(true)}
+          >
+            <FaPlus className="h-4 w-4" /> Thêm Người Dùng
+          </Button>
         </CardHeader>
 
         <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
+          {/* Phần chọn số items/trang và tìm kiếm */}
+          <div className="px-4 py-2 flex items-center gap-4">
+  {/* Phần chọn số items/trang */}
+  <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
+    Hiển thị
+  </Typography>
+  <select
+    value={pageSize}
+    onChange={(e) => {
+      setPageSize(Number(e.target.value));
+      setCurrentPage(0);
+    }}
+    className="border rounded px-2 py-1"
+  >
+    {[5, 10, 20, 50].map((size) => (
+      <option key={size} value={size}>
+        {size}
+      </option>
+    ))}
+  </select>
+  <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
+    người dùng mỗi trang
+  </Typography>
+
+  {/* Ô tìm kiếm nằm chung hàng */}
+  <Input
+    label="Tìm kiếm người dùng"
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    className="w-64"
+    containerProps={{ className: "w-64" }}
+  />
+</div>
+
+
           <table className="w-full min-w-[640px] table-auto">
             <thead>
               <tr>
@@ -90,10 +134,10 @@ const UserPage = () => {
               </tr>
             </thead>
             <tbody>
-              {users.length > 0 ? (
-                users.map(({ userId, username, email, roleNames, isActive, phoneNumber, address, fullname, dateOfBirth, profilePicture }, key) => {
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map(({ userId, username, email, roleNames, isActive, phoneNumber, address, fullname, dateOfBirth, profilePicture }, key) => {
                   const className = `py-3 px-5 ${
-                    key === users.length - 1 ? "" : "border-b border-blue-gray-50"
+                    key === filteredUsers.length - 1 ? "" : "border-b border-blue-gray-50"
                   }`;
 
                   return (
@@ -107,17 +151,17 @@ const UserPage = () => {
                               color="blue-gray"
                               className="font-semibold"
                             >
-                              {username} {/* 🟢 Hiển thị username */}
+                              {username}
                             </Typography>
                             <Typography variant="small" color="gray" className="text-xs">
-                              {email} {/* 🟢 Hiển thị email phía dưới */}
+                              {email}
                             </Typography>
                           </div>
                         </div>
                       </td>
                       <td className={className}>
                         <Typography className="text-xs font-semibold text-blue-gray-600">
-                          {Array.isArray(roleNames) ? roleNames.join(", ") : roleNames}
+                          {Array.isArray(roleNames) ? roleNames.filter(role => role !== "USER").join(", ") : roleNames}
                         </Typography>
                       </td>
                       <td className={className}>
@@ -162,13 +206,40 @@ const UserPage = () => {
             </tbody>
           </table>
         </CardBody>
+
+        {/* 🟢 PHÂN TRANG */}
+        <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+          <div className="flex items-center gap-2">
+            <Typography variant="small" color="blue-gray" className="font-normal">
+              Trang {currentPage + 1} / {totalPages} • {totalElements} người dùng
+            </Typography>
+          </div>
+          <ReactPaginate
+            previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
+            nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
+            breakLabel="..."
+            pageCount={totalPages}
+            marginPagesDisplayed={2}
+            pageRangeDisplayed={5}
+            onPageChange={handlePageChange}
+            containerClassName="flex items-center gap-1"
+            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+            pageLinkClassName="flex items-center justify-center w-full h-full"
+            previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+            nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+            breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
+            activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+            forcePage={currentPage}
+            disabledClassName="opacity-50 cursor-not-allowed"
+          />
+        </div>
       </Card>
 
       {/* ✅ Modal Thêm Người Dùng */}
-      {openAddModal && <ModalAddUser open={openAddModal} onClose={() => setOpenAddModal(false)} fetchUsers={fetchUsers} />}
+      {openAddModal && <ModalAddUser open={openAddModal} onClose={() => setOpenAddModal(false)} fetchUsers={fetchPaginatedUsers} />}
       
       {/* ✅ Modal Chỉnh Sửa Người Dùng */}
-      {openEditModal && <ModalEditUser open={openEditModal} onClose={() => setOpenEditModal(false)} user={selectedUser} fetchUsers={fetchUsers} />}
+      {openEditModal && <ModalEditUser open={openEditModal} onClose={() => setOpenEditModal(false)} user={selectedUser} fetchUsers={fetchPaginatedUsers} />}
     </div>
   );
 };

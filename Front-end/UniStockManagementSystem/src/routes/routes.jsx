@@ -34,26 +34,26 @@ export const routes = [
     ],
   },
   {
-    title: "Admin Routes",
+    title: "Quản lý",
     layout: "admin",
     pages: [
       {
         icon: <UserCircleIcon {...icon} />,
-        name: "Admin Dashboard",
+        name: "Bảng Điều Khiển",
         path: "/admin/dashboard",
         element: <AdminDashboard />,
         roles: ["ADMIN"],
       },
       {
         icon: <TableCellsIcon {...icon} />,
-        name: "Manage Users",
+        name: "Quản Lý Người Dùng",
         path: "/admin/users",
         element: <UserPage />,
         roles: ["ADMIN"],
       },
       {
         icon: <InformationCircleIcon {...icon} />,
-        name: "Manage Roles",
+        name: "Quản Lý Vai Trò",
         path: "/admin/roles",
         element: <RolePage />,
         roles: ["ADMIN"],

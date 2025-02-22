@@ -7,24 +7,24 @@ import {
   Input,
   Button,
   Switch,
-  Alert,
 } from "@material-tailwind/react";
 import { getAllRoles } from "../roles/roleService";
-import { checkEmailExists, createUser } from "../users/userService"; 
-import { InformationCircleIcon, CheckCircleIcon } from "@heroicons/react/24/outline"; // ✅ Import icon
+import { checkEmailExists, createUser } from "../users/userService"; // ✅ Import API kiểm tra email
+import { FaEye, FaEyeSlash } from "react-icons/fa"; // ✅ Import icons
 
 const ModalAddUser = ({ open, onClose, fetchUsers }) => {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [password, setPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
+  const [passwordError, setPasswordError] = useState(""); // ✅ Thêm lỗi mật khẩu
+  const [showPassword, setShowPassword] = useState(false); // ✅ State to toggle password visibility
   const [fullname, setFullname] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [roles, setRoles] = useState([]);
   const [selectedRoles, setSelectedRoles] = useState(new Set());
   const [isActive, setIsActive] = useState(true);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState({ open: false, type: "", message: "" }); // ✅ Toast State
 
   useEffect(() => {
     if (open) {
@@ -38,13 +38,13 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
     }
   }, [open]);
 
-  const showToast = (type, message) => {
-    setToast({ open: true, type, message });
-    setTimeout(() => setToast({ open: false }), 3000);
+  // 🟢 Kiểm tra định dạng email hợp lệ
+  const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Regex kiểm tra email chuẩn
+    return emailRegex.test(email);
   };
 
-  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
+  // 🟢 Kiểm tra email đã tồn tại chưa
   const handleCheckEmail = async (newEmail) => {
     setEmail(newEmail);
     setEmailError("");
@@ -69,11 +69,16 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
     }
   };
 
+  // 🟢 Kiểm tra mật khẩu có đủ mạnh không
+  const isValidPassword = (password) => {
+    return password.length >= 8 && /[A-Za-z]/.test(password) && /\d/.test(password);
+  };
+
   const handlePasswordChange = (newPassword) => {
     setPassword(newPassword);
     setPasswordError("");
 
-    if (newPassword.length < 8 || !/[A-Za-z]/.test(newPassword) || !/\d/.test(newPassword)) {
+    if (!isValidPassword(newPassword)) {
       setPasswordError("Mật khẩu phải có ít nhất 8 ký tự, gồm cả số và chữ!");
     }
   };
@@ -91,8 +96,7 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
   };
 
   const handleAddUser = async () => {
-    setEmailError("");
-    setPasswordError("");
+    setError("");
 
     if (!email.trim() || emailError) {
       setEmailError("Vui lòng nhập email hợp lệ!");
@@ -101,11 +105,6 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
 
     if (!password.trim() || passwordError) {
       setPasswordError("Mật khẩu không hợp lệ!");
-      return;
-    }
-
-    if (selectedRoles.size === 0) {
-      showToast("red", "⚠️ Vui lòng chọn ít nhất một vai trò!");
       return;
     }
 
@@ -128,13 +127,13 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
 
     try {
       setLoading(true);
-      await createUser(userData);
+      const response = await createUser(userData);
       fetchUsers();
-      showToast("green", "✅ Thêm người dùng thành công!");
-      setTimeout(onClose, 2000); // ✅ Đóng modal sau 2 giây
+      console.log("✅ User đã tạo:", response);
+      onClose();
     } catch (error) {
       console.error("❌ Lỗi khi tạo user:", error);
-      showToast("red", "❌ Lỗi khi tạo user! Vui lòng kiểm tra lại.");
+      setError("Lỗi khi tạo user, vui lòng kiểm tra lại!");
     } finally {
       setLoading(false);
     }
@@ -143,60 +142,81 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
   return (
     <Dialog open={open} handler={onClose} size="md" className="rounded-lg shadow-lg">
       <DialogHeader className="text-lg font-bold text-gray-800">Thêm Người Dùng</DialogHeader>
-
-      {/* ✅ Hiển thị thông báo Toast */}
-      {toast.open && (
-        <div className="p-4">
-          <Alert color={toast.type} icon={toast.type === "green" ? <CheckCircleIcon className="h-6 w-6" /> : <InformationCircleIcon className="h-6 w-6" />}>
-            {toast.message}
-          </Alert>
-        </div>
-      )}
-
       <DialogBody className="space-y-4">
         <Input label="Họ và Tên" type="text" value={fullname} onChange={(e) => setFullname(e.target.value)} required />
 
+        {/* 🔥 Kiểm tra Email */}
         <div>
-          <Input label="Email" type="email" value={email} onChange={(e) => handleCheckEmail(e.target.value)} required />
+          <Input
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => handleCheckEmail(e.target.value)}
+            required
+          />
           {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
         </div>
 
-        <div>
-          <Input label="Mật khẩu" type="password" value={password} onChange={(e) => handlePasswordChange(e.target.value)} required />
+        {/* 🔥 Kiểm tra Mật khẩu */}
+        <div className="relative">
+          <Input
+            label="Mật khẩu"
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => handlePasswordChange(e.target.value)}
+            required
+          />
+          <button
+            type="button"
+            className="absolute inset-y-0 right-3 flex items-center text-gray-600"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+          </button>
           {passwordError && <p className="text-red-500 text-xs mt-1">{passwordError}</p>}
         </div>
 
+        {/* Số điện thoại */}
         <Input label="Số điện thoại" type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required />
 
+        {/* Vai trò (Role) */}
         <div className="flex flex-col">
           <p className="text-sm font-semibold text-gray-700">Chọn Vai Trò:</p>
           <div className="flex flex-wrap gap-2">
-            {roles.length > 0 ? (
-              roles.map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => handleRoleChange(r.id)}
-                  className={`px-4 py-2 text-sm rounded-lg transition-all ${
-                    selectedRoles.has(r.id) ? "bg-blue-500 text-white shadow-md" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  }`}
-                >
-                  {r.name}
-                </button>
-              ))
+            {roles
+              .filter((r) => r.name !== "USER" && r.name !== "ADMIN").length > 0 ? (
+              roles
+                .filter((r) => r.name !== "USER" && r.name !== "ADMIN") // Exclude "USER" and "ADMIN" roles
+                .map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => handleRoleChange(r.id)}
+                    className={`px-4 py-2 text-sm rounded-lg transition-all ${
+                      selectedRoles.has(r.id)
+                        ? "bg-blue-500 text-white shadow-md"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    {r.name}
+                  </button>
+                ))
             ) : (
-              <p className="text-sm text-gray-500">Không có vai trò nào.</p>
+              <p className="text-sm text-gray-500">Không có sẵn vai trò.</p>
             )}
           </div>
         </div>
 
+        {/* Trạng thái */}
         <div className="flex items-center gap-2">
           <Switch color="green" checked={isActive} onChange={() => setIsActive(!isActive)} />
           <span>{isActive ? "Hoạt động" : "Vô hiệu hóa"}</span>
         </div>
       </DialogBody>
 
-      <DialogFooter>
-        <Button variant="text" color="gray" onClick={onClose}>Hủy</Button>
+      <DialogFooter className="flex justify-between">
+        <Button variant="text" color="gray" onClick={onClose}>
+          Hủy
+        </Button>
         <Button color="blue" onClick={handleAddUser} disabled={loading}>
           {loading ? "Đang tạo..." : "Thêm"}
         </Button>
