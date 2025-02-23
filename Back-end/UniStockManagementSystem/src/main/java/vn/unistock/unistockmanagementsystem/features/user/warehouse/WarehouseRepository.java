@@ -6,4 +6,5 @@ import vn.unistock.unistockmanagementsystem.entities.Warehouse;
 
 @Repository
 public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
+    boolean existsByWarehouseName(String warehouseName);
 }

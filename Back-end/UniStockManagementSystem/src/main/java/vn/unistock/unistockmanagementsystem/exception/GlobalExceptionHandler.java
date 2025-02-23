@@ -1,6 +1,7 @@
 package vn.unistock.unistockmanagementsystem.exception;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -19,11 +20,31 @@ public class GlobalExceptionHandler {
         errorResponse.setStatus((HttpStatus.BAD_REQUEST.value()));
         errorResponse.setPath(request.getDescription(false).replace("uri=",""));
         errorResponse.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
-        String message = e.getMessage();
-        int start = message.lastIndexOf("[");
-        int end = message.lastIndexOf("]");
-        message = message.substring(start+1, end-1);
-        errorResponse.setMessage(message);
+        errorResponse.setMessage(e.getMessage());
+        return errorResponse;
+    }
+
+    @ExceptionHandler(value = RuntimeException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse handleGeneralException(Exception e, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setTimestamp(new Date());
+        errorResponse.setStatus((HttpStatus.INTERNAL_SERVER_ERROR.value()));
+        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+        errorResponse.setError(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase());
+        errorResponse.setMessage(e.getMessage());
+        return errorResponse;
+    }
+
+    @ExceptionHandler(value = AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ErrorResponse handleDefaultException(Exception e, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setTimestamp(new Date());
+        errorResponse.setStatus((HttpStatus.FORBIDDEN.value()));
+        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+        errorResponse.setError(HttpStatus.FORBIDDEN.getReasonPhrase());
+        errorResponse.setMessage(e.getMessage());
         return errorResponse;
     }
 }
