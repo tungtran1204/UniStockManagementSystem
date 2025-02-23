@@ -17,7 +17,7 @@ const useWarehouse = () => {
   useEffect(() => {
     fetchWarehousesData();
   }, []);
-
+s
   return {
     warehouses,
     fetchWarehouses: fetchWarehousesData,
