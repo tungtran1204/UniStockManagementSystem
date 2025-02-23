@@ -5,7 +5,6 @@ import {
   Button,
   IconButton,
   Breadcrumbs,
-  Input,
   Menu,
   MenuHandler,
   MenuList,
@@ -52,17 +51,17 @@ export function DashboardNavbar() {
       blurred={fixedNavbar}
     >
       <div className="flex flex-col-reverse justify-between gap-6 md:flex-row md:items-center">
-        <div className="capitalize flex items-center gap-4">
+        <div className="capitalize flex items-center gap-3">
         <IconButton
             variant="text"
             color="blue-gray"
-            className="grid "
+            
             onClick={() => setOpenSidenav(dispatch, !openSidenav)}
           >
             <Bars3Icon strokeWidth={3} className="h-6 w-6 text-blue-gray-500" />
           </IconButton>
           <div>
-          <Breadcrumbs
+            <Breadcrumbs
             className={`bg-transparent p-0 transition-all ${
               fixedNavbar ? "mt-1" : ""
             }`}
@@ -84,23 +83,14 @@ export function DashboardNavbar() {
               {page}
             </Typography>
           </Breadcrumbs>
+          
           <Typography variant="h6" color="blue-gray">
             {page}
           </Typography>
           </div>
         </div>
         <div className="flex items-center">
-          <div className="mr-auto md:mr-4 md:w-56">
-            <Input label="Search" />
-          </div>
-          {/* <IconButton
-            variant="text"
-            color="blue-gray"
-            className="grid "
-            onClick={() => setOpenSidenav(dispatch, !openSidenav)}
-          >
-            <Bars3Icon strokeWidth={3} className="h-6 w-6 text-blue-gray-500" />
-          </IconButton> */}
+          
           {user ? (
             <>
               <Typography variant="small" color="blue-gray" className="mr-4">

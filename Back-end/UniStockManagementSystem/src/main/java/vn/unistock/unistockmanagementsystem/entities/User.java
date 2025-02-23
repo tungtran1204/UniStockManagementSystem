@@ -20,8 +20,19 @@ public class User {
     @Column(name = "user_id")
     private Long userId;
 
+    @Column(nullable = true)
     private String username;
+
+    @Column(nullable = false)
     private String password;
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    private Boolean isActive;
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private UserDetail userDetail;
 
     // 🟢 Nhiều Roles: dùng ManyToMany => user_roles là bảng trung gian
     @ManyToMany(fetch = FetchType.LAZY)
@@ -32,8 +43,20 @@ public class User {
     )
     private Set<Role> roles = new HashSet<>();
 
-    private String fullname;
-    private String email;
-    private Boolean isActive;
+    // 🟢 Thêm timestamp để quản lý thời gian tạo và cập nhật user
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

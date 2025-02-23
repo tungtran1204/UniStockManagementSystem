@@ -33,7 +33,11 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         // Các endpoint public (login, register, v.v.) không yêu cầu login
+<<<<<<< HEAD
                         .requestMatchers("/api/unistock/auth/login","/api/unistock/auth/me").permitAll()
+=======
+                        .requestMatchers("/api/unistock/auth/login", "/api/unistock/auth/me").permitAll()
+>>>>>>> b7cdb08f9f4d1de896dd326f390cab3ec95016ed
                         // Tất cả các endpoint khác yêu cầu phải đăng nhập
                         .anyRequest().authenticated()
                 )

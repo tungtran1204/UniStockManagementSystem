@@ -21,7 +21,7 @@ const MainLayout = ({ children }) => {
     <div className="min-h-screen bg-blue-gray-50/50 flex">
       {/* Sidebar */}
       <Sidenav
-        routes={routes.filter(route => route.layout !== "default")}
+        routes={routes.filter(route => route.layout !== "default" && route.layout !== "auth" && route.layout !== "other")}
         brandImg={sidenavType === "dark" ? "/img/logo-ct.png" : "/img/logo-ct-dark.png"}
       />
 
