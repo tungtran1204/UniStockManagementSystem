@@ -2,8 +2,13 @@ package vn.unistock.unistockmanagementsystem.features.user.warehouse;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import vn.unistock.unistockmanagementsystem.entities.Product;
 import vn.unistock.unistockmanagementsystem.entities.Warehouse;
+import vn.unistock.unistockmanagementsystem.features.user.products.ProductsDTO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +29,11 @@ public class WarehouseService {
         return warehouseRepository.save(warehouse);
     }
 
+    public Page<Warehouse> getAllWarehouses(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Warehouse> warehousePage = warehouseRepository.findAll(pageable);
+        return warehousePage;
+    }
     public List<Warehouse> getAllWarehouses() {
         return warehouseRepository.findAll();
     }

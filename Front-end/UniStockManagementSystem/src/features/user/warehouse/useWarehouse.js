@@ -1,26 +1,40 @@
 import { useState, useEffect } from "react";
-import { fetchWarehouses } from "./warehouseService";
+import { fetchWarehouses, updateWarehouseStatus } from "./warehouseService";
 
-// Custom hook to manage warehouse state and fetch warehouses
 const useWarehouse = () => {
   const [warehouses, setWarehouses] = useState([]);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
 
-  const fetchWarehousesData = async () => {
+  const fetchPaginatedWarehouses = async (page, size) => {
     try {
-      const data = await fetchWarehouses();
-      setWarehouses(data);
+      const response = await fetchWarehouses(page, size);
+      console.log("Fetched warehouses:", response.data); // Log fetched warehouses
+      console.log("Total pages:", response.totalPages); // Log total pages
+      console.log("Total elements:", response.totalElements); // Log total elements
+      setWarehouses(response.data || []); // Ensure warehouses is always an array
+      setTotalPages(response.totalPages);
+      setTotalElements(response.totalElements);
     } catch (error) {
-      console.error("Lỗi khi lấy danh sách kho:", error);
+      console.error("Error fetching warehouses:", error);
+    }
+  };
+  
+  const toggleStatus = async (warehouseId, isActive) => {
+    try {
+      await updateWarehouseStatus(warehouseId, !isActive);
+      fetchPaginatedWarehouses();
+    } catch (error) {
+      console.error("Error updating warehouse status:", error);
     }
   };
 
-  useEffect(() => {
-    fetchWarehousesData();
-  }, []);
-s
   return {
     warehouses,
-    fetchWarehouses: fetchWarehousesData,
+    fetchPaginatedWarehouses,
+    toggleStatus,
+    totalPages,
+    totalElements,
   };
 };
 

@@ -3,12 +3,16 @@ package vn.unistock.unistockmanagementsystem.features.user.warehouse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.unistock.unistockmanagementsystem.entities.Warehouse;
+import vn.unistock.unistockmanagementsystem.features.user.products.ProductsDTO;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/unistock/user/warehouses")
@@ -24,10 +28,21 @@ public class WarehouseController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Warehouse>> getAllWarehouses(){
-        List<Warehouse> warehouses = warehouseService.getAllWarehouses();
-        return ResponseEntity.ok(warehouses);
+    public ResponseEntity<Map<String, Object>> getAllWarehouses(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Page<Warehouse> warehousePage = warehouseService.getAllWarehouses(page, size);
+
+        // Tạo response object có `content`, `totalPages`, `totalElements`
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", warehousePage.getContent());
+        response.put("totalPages", warehousePage.getTotalPages());
+        response.put("totalElements", warehousePage.getTotalElements());
+
+        return ResponseEntity.ok(response);
     }
+    
 
     @GetMapping("/{warehouseId}")
     public ResponseEntity<Warehouse> getWarehouseById(@PathVariable Long warehouseId){

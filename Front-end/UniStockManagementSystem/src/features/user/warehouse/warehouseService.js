@@ -3,16 +3,23 @@ import axios from "axios";
 // API endpoint for warehouses
 const API_URL = "http://localhost:8080/api/unistock/user/warehouses";
 
+// take token from local storage
+const authHeader = () => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {}; // If there is no token, return an empty object
+};
+
+
 // Fetch all warehouses
-export const fetchWarehouses = async () => {
+export const fetchWarehouses = async (page, size) => {
   try {
-    const response = await axios.get(API_URL, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`, // Thêm token xác thực
-      },
-    });
+    const response = await axios.get(`${API_URL}?page=${page}&size=${size}`, { headers: authHeader() });
     console.log("Dữ liệu kho:", response.data); // Kiểm tra dữ liệu trả về từ API
-    return response.data;
+    return {
+      data: response.data.content,
+      totalPages: response.data.totalPages,
+      totalElements: response.data.totalElements,
+    };
   } catch (error) {
     console.error("Lỗi khi lấy danh sách kho:", error);
     throw error;

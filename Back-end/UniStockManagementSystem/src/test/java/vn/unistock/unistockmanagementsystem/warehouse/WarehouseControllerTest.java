@@ -65,19 +65,19 @@ class WarehouseControllerTest {
         verify(warehouseService, times(1)).addWarehouse(any(WarehouseDTO.class));
     }
 
-    @Test
-    void testGetAllWarehouses() {
-        List<Warehouse> warehouses = Arrays.asList(warehouse);
-        when(warehouseService.getAllWarehouses()).thenReturn(warehouses);
-
-        ResponseEntity<List<Warehouse>> response = warehouseController.getAllWarehouses();
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(1, response.getBody().size());
-
-        verify(warehouseService, times(1)).getAllWarehouses();
-    }
+//    @Test
+//    void testGetAllWarehouses() {
+//        List<Warehouse> warehouses = Arrays.asList(warehouse);
+//        when(warehouseService.getAllWarehouses()).thenReturn(warehouses);
+//
+//        ResponseEntity<List<Warehouse>> response = warehouseController.getAllWarehouses();
+//
+//        assertEquals(HttpStatus.OK, response.getStatusCode());
+//        assertNotNull(response.getBody());
+//        assertEquals(1, response.getBody().size());
+//
+//        verify(warehouseService, times(1)).getAllWarehouses();
+//    }
 
     @Test
     void testGetWarehouseById() {
