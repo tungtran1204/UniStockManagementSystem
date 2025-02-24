@@ -81,39 +81,36 @@ const UserPage = () => {
 
         <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
           {/* Phần chọn số items/trang và tìm kiếm */}
-          <div className="px-4 py-2 flex items-center gap-4">
-  {/* Phần chọn số items/trang */}
-  <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-    Hiển thị
-  </Typography>
-  <select
-    value={pageSize}
-    onChange={(e) => {
-      setPageSize(Number(e.target.value));
-      setCurrentPage(0);
-    }}
-    className="border rounded px-2 py-1"
-  >
-    {[5, 10, 20, 50].map((size) => (
-      <option key={size} value={size}>
-        {size}
-      </option>
-    ))}
-  </select>
-  <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-    người dùng mỗi trang
-  </Typography>
-
-  {/* Ô tìm kiếm nằm chung hàng */}
-  <Input
-    label="Tìm kiếm người dùng"
-    value={searchTerm}
-    onChange={(e) => setSearchTerm(e.target.value)}
-    className="w-64"
-    containerProps={{ className: "w-64" }}
-  />
-</div>
-
+          <div className="px-4 py-2 flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
+                Hiển thị
+              </Typography>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(0);
+                }}
+                className="border rounded px-2 py-1"
+              >
+                {[5, 10, 20, 50].map(size => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+              <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
+                người dùng mỗi trang
+              </Typography>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                label="Tìm kiếm người dùng"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-64"
+              />
+            </div>
+          </div>
 
           <table className="w-full min-w-[640px] table-auto">
             <thead>

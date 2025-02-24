@@ -6,6 +6,7 @@ import {
   updateRole,
   toggleRoleStatus,
   deleteRole,
+  addRole,
 } from "./roleService";
 
 const useRole = () => {
