@@ -18,6 +18,7 @@ import {
         Switch,
     } from "@material-tailwind/react";
 import { FaEdit, FaPlus } from "react-icons/fa";
+import { node } from "prop-types";
 
 const SaleOrdersPage = () => {
     const {saleOrders, fetchSaleOrders, toggleStatus} = useSaleOrders();
@@ -32,8 +33,10 @@ const SaleOrdersPage = () => {
         const [newSaleOrders, setNewSaleOrders] = useState({
             orderId: "",
             custName: "",
-            status: true,
             totalAmount: "",
+            status: "",
+            orderDate: "",
+            note: "",
         });
     
         useEffect(() => {
@@ -82,8 +85,10 @@ const SaleOrdersPage = () => {
                 setNewSaleOrders({
                     orderId: "",
                     custName: "",
-                    status: true,
                     totalAmount: "",
+                    status: "",
+                    orderDate: "",
+                    note: "",
                 });
                 setErrorMessage("");
             } catch (error) {
@@ -296,7 +301,7 @@ const SaleOrdersPage = () => {
                                     {errororderId && <Typography variant="small" color="red">{errororderId}</Typography>}
                                 </div>
                                 <div className="col-span-2">
-                                    <Typography variant="small" className="mb-2">Tên order *</Typography>
+                                    <Typography variant="small" className="mb-2">Tên khach hang *</Typography>
                                     <Input
                                         type="text"
                                         value={newSaleOrders.custName}
@@ -309,11 +314,50 @@ const SaleOrdersPage = () => {
                                     {errorcustomerName && <Typography variant="small" color="red">{errorcustomerName}</Typography>}
                                 </div>
                                 <div className="col-span-2">
+                                    <Typography variant="small" className="mb-2">Tong gia *</Typography>
+                                    <Input
+                                        type="text"
+                                        value={newSaleOrders.totalAmount}
+                                        onChange={(e) => {
+                                            setNewSaleOrders({ ...newSaleOrders, totalAmount: e.target.value });
+                                            setErrorCustomerName(""); // Reset lỗi khi user nhập lại
+                                        }}
+                                        className="w-full"
+                                    />
+                                    {errorcustomerName && <Typography variant="small" color="red">{errorcustomerName}</Typography>}
+                                </div>
+                                <div className="col-span-2">
+                                    <Typography variant="small" className="mb-2">Trang thai *</Typography>
+                                    <Input
+                                        type="text"
+                                        value={newSaleOrders.status}
+                                        onChange={(e) => {
+                                            setNewSaleOrders({ ...newSaleOrders, status: e.target.value });
+                                            setErrorCustomerName(""); // Reset lỗi khi user nhập lại
+                                        }}
+                                        className="w-full"
+                                    />
+                                    {errorcustomerName && <Typography variant="small" color="red">{errorcustomerName}</Typography>}
+                                </div>
+                                <div className="col-span-2">
+                                    <Typography variant="small" className="mb-2">Ngay dat hang *</Typography>
+                                    <Input
+                                        type="text"
+                                        value={newSaleOrders.orderDate}
+                                        onChange={(e) => {
+                                            setNewSaleOrders({ ...newSaleOrders, orderDate: e.target.value });
+                                            setErrorCustomerName(""); // Reset lỗi khi user nhập lại
+                                        }}
+                                        className="w-full"
+                                    />
+                                    {errorcustomerName && <Typography variant="small" color="red">{errorcustomerName}</Typography>}
+                                </div>
+                                <div className="col-span-2">
                                     <Typography variant="small" className="mb-2">Mô tả</Typography>
                                     <Textarea
                                         type="text"
-                                        value={newSaleOrders.totalAmount}
-                                        onChange={(e) => setNewSaleOrders({ ...newSaleOrders, totalAmount: e.target.value })}
+                                        value={newSaleOrders.note}
+                                        onChange={(e) => setNewSaleOrders({ ...newSaleOrders, note: e.target.value })}
                                         className="w-full"
                                     />
                                 </div>
@@ -372,7 +416,7 @@ const SaleOrdersPage = () => {
                                     {errororderId && <Typography variant="small" color="red">{errororderId}</Typography>}
                                 </div>
                                 <div className="col-span-2">
-                                    <Typography variant="small" className="mb-2">Tên order *</Typography>
+                                    <Typography variant="small" className="mb-2">Tên khach hang *</Typography>
                                     <Input
                                         type="text"
                                         value={editSaleOrders.custName}
@@ -383,6 +427,19 @@ const SaleOrdersPage = () => {
                                         className="w-full"
                                     />
                                     {errorcustomerName && <Typography variant="small" color="red">{errorcustomerName}</Typography>}
+                                </div>
+                                <div className="col-span-2">
+                                    <Typography variant="small" className="mb-2">Tong gia *</Typography>
+                                    <Input
+                                        type="text"
+                                        value={editSaleOrders.totalAmount}
+                                        onChange={(e) => {
+                                            setEditSaleOrders({ ...editSaleOrders, totalAmount: e.target.value });
+                                            setErrorOrderId(""); // Reset lỗi khi user nhập lại
+                                        }}
+                                        className="w-full"
+                                    />
+                                    {errororderId && <Typography variant="small" color="red">{errororderId}</Typography>}
                                 </div>
                                 <div className="col-span-2">
                                     <Typography variant="small" className="mb-2">Trạng thái</Typography>
@@ -396,11 +453,23 @@ const SaleOrdersPage = () => {
                                     </Select>
                                 </div>
                                 <div className="col-span-2">
-                                    <Typography variant="small" className="mb-2">Mô tả</Typography>
+                                    <Typography variant="small" className="mb-2">Ngay dat hang *</Typography>
+                                    <Input
+                                        type="date"
+                                        value={editSaleOrders.orderDate}
+                                        onChange={(e) => {
+                                            setEditSaleOrders({ ...editSaleOrders, orderDate: e.target.value });
+                                        }}
+                                        className="w-full"
+                                    />
+                                    {errororderId && <Typography variant="small" color="red">{errororderId}</Typography>}
+                                </div>
+                                <div className="col-span-2">
+                                    <Typography variant="small" className="mb-2">Ghi chu</Typography>
                                     <Textarea
                                         type="text"
-                                        value={editSaleOrders.totalAmount}
-                                        onChange={(e) => setEditSaleOrders({ ...editSaleOrders, totalAmount: e.target.value })}
+                                        value={editSaleOrders.note}
+                                        onChange={(e) => setEditSaleOrders({ ...editSaleOrders, note: e.target.value })}
                                         className="w-full"
                                     />
                                 </div>
