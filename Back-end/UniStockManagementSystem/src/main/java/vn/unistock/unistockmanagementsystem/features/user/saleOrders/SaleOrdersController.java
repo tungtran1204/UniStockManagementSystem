@@ -33,7 +33,7 @@ public class SaleOrdersController {
     /**
      * Tạo mới một đơn hàng
      */
-    @PostMapping
+    @PostMapping("/add")
     public ResponseEntity<SaleOrdersDTO> createOrder(@RequestBody SaleOrdersDTO orderDTO) {
         SaleOrdersDTO createdOrder = saleOrdersService.createOrder(orderDTO);
         return ResponseEntity.ok(createdOrder);

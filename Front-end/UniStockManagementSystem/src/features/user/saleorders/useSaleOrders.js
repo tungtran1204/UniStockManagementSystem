@@ -1,19 +1,39 @@
-import { useState, useEffect } from "react";
-import { getSaleOrders } from "./saleOrdersService";
+import { useState } from "react";
+import { getSaleOrders , toggleSaleOrdersStatus} from "./saleOrdersService";
 
 const useSaleOrders = () => {
-  const [orders, setOrders] = useState([]);
+  const [saleOrders, setSaleOrders] = useState([]);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+    const fetchSaleOrders = async () => {
+        try {
+            const data = await getSaleOrders();
+            setSaleOrders(data);
+        } catch (err) {
+            console.error("Failed to fetch sale orders", err);
+        }
+    };
 
-  const fetchOrders = async () => {
-    const data = await getSaleOrders();
-    setOrders(data);
-  };
-
-  return { orders, fetchOrders };
+// 🔄 **Toggle trạng thái `isActive`**
+    const toggleStatus = async (typeId, currentStatus) => {
+      try {
+        const newStatus = !currentStatus; // ✅ Đảo trạng thái hiện tại
+        const updatedSaleOrder = await toggleSaleOrdersStatus(typeId, newStatus);
+        setSaleOrders((prevSaleOrders) =>
+            prevSaleOrders.map((saleOrders) =>
+                saleOrders.typeId === typeId
+              ? { ...saleOrders, status: updatedSaleOrder.status }
+              : saleOrders
+          )
+        );
+      } catch (error) {
+        console.error("❌ Lỗi khi cập nhật trạng thái:", error);
+      }
+    };
+return { 
+    saleOrders, 
+    fetchSaleOrders, 
+    toggleStatus 
+};
 };
 
 export default useSaleOrders;
