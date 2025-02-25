@@ -34,8 +34,8 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
       setError("Tên kho không được để trống.");
       return;
     }
-    if (!/^[A-Za-z0-9\s]{1,50}$/.test(warehouseName)) {
-      setError("Tên kho chỉ được chứa chữ cái, số và khoảng trắng, tối đa 50 ký tự.");
+    if (warehouseName.length > 100) {
+      setError("Tên kho không được vượt quá 100 ký tự.");
       return;
     }
   
