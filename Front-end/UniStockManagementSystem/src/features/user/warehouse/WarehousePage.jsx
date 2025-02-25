@@ -46,7 +46,7 @@ const WarehousePage = () => {
       setSelectedWarehouse(warehouseData);
       setOpenEditModal(true);
     } catch (error) {
-      console.error("❌ Error fetching warehouse data:", error);
+      console.error(" Error fetching warehouse data:", error);
       alert("Unable to fetch warehouse data!");
     }
   };
@@ -172,10 +172,19 @@ const WarehousePage = () => {
                           <Switch
                             color="green"
                             checked={isActive}
-                            onChange={() => toggleStatus(warehouseId, isActive)}
+                            onChange={() => {
+                              const confirmMessage = isActive
+                                ? "Bạn có chắc muốn vô hiệu hóa kho này không?"
+                                : "Bạn có chắc muốn kích hoạt kho này không?";
+                        
+                              if (window.confirm(confirmMessage)) {
+                                console.log("Toggling warehouse:", warehouseId, "Current status:", isActive);
+                                toggleStatus(warehouseId, isActive);
+                              }}
+                              }
                           />
                           <Typography className="text-xs font-semibold text-blue-gray-600">
-                            {isActive ? "Active" : "Inactive"}
+                            {isActive ? "Đang hoạt động" : "Không hoạt động"}
                           </Typography>
                         </div>
                       </td>
@@ -234,7 +243,7 @@ const WarehousePage = () => {
       </Card>
 
       {/* Modal Add Warehouse */}
-      {openAddModal && <ModalAddWarehouse show={openAddModal} onClose={() => setOpenAddModal(false)} onAdd={() => fetchPaginatedWarehouses(currentPage, pageSize)} />}
+            {openAddModal && <ModalAddWarehouse show={openAddModal} onClose={() => setOpenAddModal(false)} onAdd={() => fetchPaginatedWarehouses(currentPage, pageSize)} />}
 
       {/* Modal Edit Warehouse */}
       {openEditModal && <ModalEditWarehouse open={openEditModal} onClose={() => setOpenEditModal(false)} warehouse={selectedWarehouse} fetchWarehouses={fetchPaginatedWarehouses} />}

@@ -10,4 +10,6 @@ import vn.unistock.unistockmanagementsystem.entities.Warehouse;
 public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
     boolean existsByWarehouseName(String warehouseName);
     Page<Warehouse> findAll(Pageable pageable);
+    Warehouse findByWarehouseName(String warehouseName);
+    Warehouse findByWarehouseId(Long warehouseId);
 }

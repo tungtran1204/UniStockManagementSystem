@@ -39,9 +39,13 @@ export const createWarehouse = async (warehouse) => {
 };
 
 // Update warehouse status by ID
-export const updateWarehouseStatus = async (warehouseId) => {
+export const updateWarehouseStatus = async (warehouseId, newStatus) => {
   try {
-    const response = await axios.patch(`${API_URL}/${warehouseId}/status`);
+    const response = await axios.patch(
+      `${API_URL}/${warehouseId}/status`,
+      { isActive: newStatus }, 
+      { headers: { ...authHeader(), "Content-Type": "application/json" } }
+    );
     return response.data;
   } catch (error) {
     console.error("Lỗi khi thay đổi trạng thái kho:", error);
@@ -52,11 +56,7 @@ export const updateWarehouseStatus = async (warehouseId) => {
 // Update warehouse information by ID
 export const updateWarehouse = async (warehouseId, warehouse) => {
   try {
-    const response = await axios.put(`${API_URL}/${warehouseId}`, warehouse, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`, // Thêm token xác thực
-      },
-    });
+    const response = await axios.patch(`${API_URL}/${warehouseId}`, warehouse, { headers: { ...authHeader(), "Content-Type": "application/json" }, });
     return response.data;
   } catch (error) {
     console.error("Lỗi khi cập nhật thông tin kho:", error);
@@ -64,12 +64,13 @@ export const updateWarehouse = async (warehouseId, warehouse) => {
   }
 };
 
+// Get warehouse by ID
 export const getWarehouseById = async (warehouseId) => {
   try {
-    const response = await axios.get(`${API_URL}/${warehouseId}`);
+    const response = await axios.get(`${API_URL}/${warehouseId}`, { headers: { ...authHeader(), "Content-Type": "application/json" }, });
     return response.data;
   } catch (error) {
-    console.error("❌ Error fetching warehouse by ID:", error);
+    console.error(" Error fetching warehouse by ID:", error);
     throw error;
   }
 };

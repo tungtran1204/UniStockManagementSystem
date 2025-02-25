@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 import vn.unistock.unistockmanagementsystem.validation.CommonStatus;
 
@@ -12,6 +14,8 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
+@Getter
+@Setter
 @Table(name = "warehouse")
 public class Warehouse {
 
@@ -33,5 +37,6 @@ public class Warehouse {
     private String warehouseDescription;
 
     @Column(name = "is_active")
-    private boolean isActive;
+    private Boolean isActive;
+
 }

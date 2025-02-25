@@ -6,11 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import vn.unistock.unistockmanagementsystem.entities.Product;
 import vn.unistock.unistockmanagementsystem.entities.Warehouse;
-import vn.unistock.unistockmanagementsystem.features.user.products.ProductsDTO;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -34,9 +31,6 @@ public class WarehouseService {
         Page<Warehouse> warehousePage = warehouseRepository.findAll(pageable);
         return warehousePage;
     }
-    public List<Warehouse> getAllWarehouses() {
-        return warehouseRepository.findAll();
-    }
 
     public Warehouse getWarehouseById(Long id) {
         return warehouseRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy kho với ID được cung cấp"));
@@ -51,6 +45,10 @@ public class WarehouseService {
         warehouseRepository.deleteById(id);
     }
 
-
+    public Warehouse updateWarehouseStatus(Long id, Boolean isActive) {
+        Warehouse warehouse = getWarehouseById(id);
+        warehouse.setIsActive(isActive);
+        return  warehouseRepository.save(warehouse);
+    }
 
 }

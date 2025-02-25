@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.unistock.unistockmanagementsystem.entities.Warehouse;
+import vn.unistock.unistockmanagementsystem.features.admin.role.RoleDTO;
 import vn.unistock.unistockmanagementsystem.features.user.products.ProductsDTO;
 
 import java.util.HashMap;
@@ -55,4 +56,11 @@ public class WarehouseController {
         Warehouse updatedWarehouse = warehouseService.updateWarehouse(warehouseId, warehouseDTO);
         return ResponseEntity.ok(updatedWarehouse);
     }
+
+    @PatchMapping("/{warehouseId}/status")
+    public ResponseEntity<Warehouse> updateWarehouseStatus(@PathVariable Long warehouseId, @RequestBody Map<String, Boolean> status){
+        Warehouse updatedWarehouse = warehouseService.updateWarehouseStatus(warehouseId, status.get("isActive"));
+        return ResponseEntity.ok(updatedWarehouse);
+    }
+
 }

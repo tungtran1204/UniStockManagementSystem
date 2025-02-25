@@ -65,19 +65,6 @@ class WarehouseServiceTest {
     }
 
     @Test
-    void testGetAllWarehouses() {
-        List<Warehouse> warehouses = Arrays.asList(warehouse);
-        when(warehouseRepository.findAll()).thenReturn(warehouses);
-
-        List<Warehouse> result = warehouseService.getAllWarehouses();
-
-        assertEquals(1, result.size());
-        assertEquals("Kho A", result.get(0).getWarehouseName());
-
-        verify(warehouseRepository, times(1)).findAll();
-    }
-
-    @Test
     void testGetWarehouseById_Found() {
         when(warehouseRepository.findById(1L)).thenReturn(Optional.of(warehouse));
 

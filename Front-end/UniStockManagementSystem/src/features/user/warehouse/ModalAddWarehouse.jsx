@@ -3,6 +3,7 @@ import {
   Typography,
   Button,
   Input,
+  Textarea,
 } from "@material-tailwind/react";
 import useWarehouse from "./useWarehouse"; // Import useWarehouse hook
 
@@ -16,15 +17,34 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
   const { addWarehouse } = useWarehouse(); // Destructure createWarehouse from useWarehouse
 
   const handleSave = async () => {
-    if (!warehouseCode) {
-      setError("Mã kho không để trống");
+    setError("");
+  
+    // Validate mã kho
+    if (!warehouseCode.trim()) {
+      setError("Mã kho không được để trống.");
       return;
     }
-    if (!warehouseName) {
-      setError("Tên kho không để trống");
+    if (!/^[A-Za-z0-9_-]{1,10}$/.test(warehouseCode)) {
+      setError("Mã kho chỉ được chứa chữ, số, dấu '-' hoặc '_', từ 1 đến 10 ký tự.");
       return;
     }
-
+  
+    // Validate tên kho
+    if (!warehouseName.trim()) {
+      setError("Tên kho không được để trống.");
+      return;
+    }
+    if (!/^[A-Za-z0-9\s]{1,50}$/.test(warehouseName)) {
+      setError("Tên kho chỉ được chứa chữ cái, số và khoảng trắng, tối đa 50 ký tự.");
+      return;
+    }
+  
+    // Validate mô tả kho
+    if (warehouseDescription.length > 200) {
+      setError("Mô tả không được vượt quá 200 ký tự.");
+      return;
+    }
+  
     setLoading(true);
     try {
       await addWarehouse({
@@ -32,7 +52,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
         warehouseName,
         warehouseDescription,
       });
-
+  
       alert("Thêm kho thành công!");
       onAdd?.();
       onClose();
@@ -43,6 +63,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
       setLoading(false);
     }
   };
+  
 
   if (!show) return null;
 
@@ -79,7 +100,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
               />
             </div>
             <div className="col-span-12">
-              <Input
+              <Textarea
                 label="Mô tả"
                 value={warehouseDescription}
                 onChange={(e) => setDescription(e.target.value)}
@@ -98,7 +119,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
             Hủy
           </Button>
           <Button color="blue" onClick={handleSave} disabled={loading}>
-            {loading ? "Đang xử lý..." : "Lưu kho"}
+            {loading ? "Đang xử lý..." : "Thêm kho"}
           </Button>
         </div>
       </div>
