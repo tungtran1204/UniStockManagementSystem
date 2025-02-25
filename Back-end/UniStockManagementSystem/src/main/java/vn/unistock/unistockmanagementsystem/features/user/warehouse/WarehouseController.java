@@ -42,7 +42,7 @@ public class WarehouseController {
 
         return ResponseEntity.ok(response);
     }
-    
+
 
     @GetMapping("/{warehouseId}")
     public ResponseEntity<Warehouse> getWarehouseById(@PathVariable Long warehouseId){

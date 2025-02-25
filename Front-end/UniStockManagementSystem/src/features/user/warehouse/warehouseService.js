@@ -29,7 +29,8 @@ export const fetchWarehouses = async (page, size) => {
 // Create a new warehouse
 export const createWarehouse = async (warehouse) => {
   try {
-    const response = await axios.post(API_URL, warehouse);
+    const response = await axios.post(API_URL, warehouse,{ headers: { ...authHeader(), "Content-Type": "application/json" }, } );
+    console.log("[createUser] API Response:", response.data);
     return response.data;
   } catch (error) {
     console.error("Lỗi khi tạo kho:", error);
@@ -59,6 +60,16 @@ export const updateWarehouse = async (warehouseId, warehouse) => {
     return response.data;
   } catch (error) {
     console.error("Lỗi khi cập nhật thông tin kho:", error);
+    throw error;
+  }
+};
+
+export const getWarehouseById = async (warehouseId) => {
+  try {
+    const response = await axios.get(`${API_URL}/${warehouseId}`);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error fetching warehouse by ID:", error);
     throw error;
   }
 };

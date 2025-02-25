@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import useWarehouse from "./useWarehouse";
 import { updateWarehouseStatus, createWarehouse, fetchWarehouses } from "./warehouseService";
+import { getWarehouseById } from "./warehouseService";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -78,7 +79,10 @@ const WarehousePage = () => {
             color="white"
             variant="text"
             className="flex items-center gap-2"
-            onClick={() => setOpenAddModal(true)}
+            onClick={() => {
+              setOpenAddModal(true);
+              console.log("openAddModal:", true);
+            }}
           >
             <FaPlus className="h-4 w-4" /> Add Warehouse
           </Button>
@@ -146,8 +150,7 @@ const WarehousePage = () => {
 
                   return (
                     <tr key={warehouseId}>
-                      <td className={className}>
-              
+                      <td className={className}>             
                             <Typography
                               variant="small"
                               color="blue-gray"
@@ -155,9 +158,7 @@ const WarehousePage = () => {
                             >
                               {warehouseCode}
                               </Typography>
-               
-                        
-                      </td>
+                  </td>
                       <td className={className}>
                             <Typography variant="small" color="gray" className="text-xs">
                               {warehouseName}
@@ -233,8 +234,8 @@ const WarehousePage = () => {
       </Card>
 
       {/* Modal Add Warehouse */}
-      {openAddModal && <ModalAddWarehouse open={openAddModal} onClose={() => setOpenAddModal(false)} fetchWarehouses={fetchPaginatedWarehouses} />}
-      
+      {openAddModal && <ModalAddWarehouse show={openAddModal} onClose={() => setOpenAddModal(false)} onAdd={() => fetchPaginatedWarehouses(currentPage, pageSize)} />}
+
       {/* Modal Edit Warehouse */}
       {openEditModal && <ModalEditWarehouse open={openEditModal} onClose={() => setOpenEditModal(false)} warehouse={selectedWarehouse} fetchWarehouses={fetchPaginatedWarehouses} />}
     </div>

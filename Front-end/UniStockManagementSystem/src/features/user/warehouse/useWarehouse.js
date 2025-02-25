@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { fetchWarehouses, updateWarehouseStatus } from "./warehouseService";
+import { fetchWarehouses, updateWarehouseStatus, createWarehouse } from "./warehouseService";
+console.log("createWarehouse:", createWarehouse); 
 
 const useWarehouse = () => {
   const [warehouses, setWarehouses] = useState([]);
@@ -29,12 +30,24 @@ const useWarehouse = () => {
     }
   };
 
+  const addWarehouse = async (warehouse) => {
+    try {
+      const response = await createWarehouse(warehouse);
+      fetchPaginatedWarehouses();
+      return response;
+    } catch (error) {
+      console.error("Error creating warehouse:", error);
+      throw error;
+    }
+  };
+
   return {
     warehouses,
     fetchPaginatedWarehouses,
     toggleStatus,
     totalPages,
     totalElements,
+    addWarehouse
   };
 };
 
