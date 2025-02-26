@@ -44,10 +44,10 @@ public class User {
     private Set<Role> roles = new HashSet<>();
 
     // 🟢 Thêm timestamp để quản lý thời gian tạo và cập nhật user
-    @Column(nullable = false, updatable = false)
+    @Column//(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Column//(nullable = false)
     private LocalDateTime updatedAt;
 
     @PrePersist
