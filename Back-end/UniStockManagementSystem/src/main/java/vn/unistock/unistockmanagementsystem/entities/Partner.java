@@ -1,12 +1,21 @@
 package vn.unistock.unistockmanagementsystem.entities;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 @Entity
+@Builder
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "partners")
 public class Partner {
     @Id
@@ -14,19 +23,22 @@ public class Partner {
     @Column(name = "partner_id")
     private Long partnerId;
 
+    @NotBlank(message = "Tên đối tác không được để trống.")
     @Column(name = "partner_name")
     private String partnerName;
 
-//    @ManyToMany
-//    @JoinTable(
-//            name = "partner_with_type",
-//            joinColumns = @JoinColumn(name = "partner_id"),
-//            inverseJoinColumns = @JoinColumn(name = "partner_type_id")
-//    )
-//    private Set<PartnerType> partnerTypes = new HashSet<>();
+    @OneToMany(mappedBy = "partner", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<PartnerByType> partnerTypes;
 
+    @NotBlank(message = "Địa chỉ không được để trống.")
     private String address;
+
+    @NotBlank(message = "Số điện thoại không được để trống.")
+    @Size(min = 10, max = 11, message = "Số điện thoại phải từ 10 đến 11 ký tự.")
     private String phone;
+
+    @NotBlank(message = "Email không được để trống.")
+    @Email(message = "Email không hợp lệ.")
     private String email;
 
     // Audit
