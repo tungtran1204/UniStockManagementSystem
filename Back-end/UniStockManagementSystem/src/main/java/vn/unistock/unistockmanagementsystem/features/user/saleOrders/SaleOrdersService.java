@@ -1,7 +1,9 @@
 package vn.unistock.unistockmanagementsystem.features.user.saleOrders;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import vn.unistock.unistockmanagementsystem.entities.Customer;
 import vn.unistock.unistockmanagementsystem.entities.SalesOrder;
 
 import java.util.List;
@@ -11,10 +13,13 @@ import java.util.stream.Collectors;
 public class SaleOrdersService {
     private final SaleOrdersRepository saleOrdersRepository;
     private final SaleOrdersMapper saleOrdersMapper;
+    private final CustomerRepository customerRepository;
 
-    public SaleOrdersService(SaleOrdersRepository saleOrdersRepository, SaleOrdersMapper saleOrdersMapper) {
+
+    public SaleOrdersService(SaleOrdersRepository saleOrdersRepository, SaleOrdersMapper saleOrdersMapper, CustomerRepository customerRepository) {
         this.saleOrdersRepository = saleOrdersRepository;
         this.saleOrdersMapper = saleOrdersMapper;
+        this.customerRepository = customerRepository;
     }
 
     /**
@@ -40,7 +45,21 @@ public class SaleOrdersService {
      */
     @Transactional
     public SaleOrdersDTO createOrder(SaleOrdersDTO orderDTO) {
+        Customer customer;
+        if (orderDTO.getCustId() != null) {
+            // Nếu có customerId, tìm trong database
+            customer = customerRepository.findByName(orderDTO.getCustName())
+                    .orElseThrow(() -> new EntityNotFoundException("Customer not found"));
+        } else {
+            // Nếu không có customerId, đây là khách mới -> Lưu trước khi tạo đơn hàng
+            customer = new Customer();
+            customer.setName(orderDTO.getCustName());
+
+            customer = customerRepository.save(customer); // Lưu Customer trước
+        }
+        // Tạo đơn hàng
         SalesOrder newOrder = saleOrdersMapper.toEntity(orderDTO);
+        newOrder.setCustomer(customer);  // Gán customer đã kiểm tra/lưu vào đơn hàng
         SalesOrder savedOrder = saleOrdersRepository.save(newOrder);
         return saleOrdersMapper.toDTO(savedOrder);
     }

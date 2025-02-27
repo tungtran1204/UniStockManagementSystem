@@ -2,20 +2,25 @@ package vn.unistock.unistockmanagementsystem.features.user.saleOrders;
 
 import lombok.*;
 
-import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class SaleOrdersDTO {
+
     private Long orderId;
-    private String customerName;
-    private double totalAmount;
+    private Long custId;
+    private String custName;
+    private Long  totalAmount;
     private String status;
     private Date orderDate;
     private String note;
+    private Set<SalesOrderDetailDTO> orderDetails = new HashSet<>();
 
 
     //private Date createdAt;
@@ -24,9 +29,12 @@ public class SaleOrdersDTO {
     //private Long createdBy;
     //private Long updatedBy;
 
-    public SaleOrdersDTO(Long orderId, String custName, double totalAmount, String status, Date orderDate, String note) {
+    // Constructor for projection query
+    public SaleOrdersDTO(Long orderId,Long custId, String name, Long totalAmount,
+                         String status, Date orderDate, String note) {
         this.orderId = orderId;
-        this.customerName = custName;
+        this.custId = custId;
+        this.custName = name;
         this.totalAmount = totalAmount;
         this.status = status;
         this.orderDate = orderDate;

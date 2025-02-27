@@ -11,16 +11,19 @@ public interface SaleOrdersMapper {
     SaleOrdersMapper INSTANCE = Mappers.getMapper(SaleOrdersMapper.class);
 
     @Mapping(source = "orderId", target = "orderId")
-    @Mapping(target = "customerName", ignore = true) // Lấy từ JOIN trong service
+    @Mapping(source = "customer.name", target = "custName") // Will be set in service
     @Mapping(source = "totalAmount", target = "totalAmount")
     @Mapping(source = "status", target = "status")
     @Mapping(source = "orderDate", target = "orderDate")
     @Mapping(source = "note", target = "note")
-
-    //@Mapping(source = "createdAt", target = "createdAt")
-    //@Mapping(source = "updatedAt", target = "updatedAt")
-    //@Mapping(source = "createdBy", target = "createdBy")
     SaleOrdersDTO toDTO(SalesOrder salesOrder);
 
+    @Mapping(source = "orderId", target = "orderId")
+    @Mapping(source = "custName", target = "customer.name")
+    @Mapping(source = "totalAmount", target = "totalAmount")
+    @Mapping(source = "status", target = "status")
+    @Mapping(source = "orderDate", target = "orderDate")
+    @Mapping(source = "note", target = "note")
+    @Mapping(source = "orderDetails", target = "details") // Handle separately
     SalesOrder toEntity(SaleOrdersDTO saleOrdersDTO);
 }

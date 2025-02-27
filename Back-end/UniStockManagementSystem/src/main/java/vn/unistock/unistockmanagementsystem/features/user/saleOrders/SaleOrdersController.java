@@ -44,8 +44,9 @@ public class SaleOrdersController {
      */
     @PutMapping("/{orderId}")
     public ResponseEntity<SaleOrdersDTO> updateOrder(
-            @PathVariable Long orderId,
+            @PathVariable("orderId") Long orderId,
             @RequestBody SaleOrdersDTO orderDTO) {
+
         SaleOrdersDTO updatedOrder = saleOrdersService.updateOrder(orderId, orderDTO);
         return ResponseEntity.ok(updatedOrder);
     }
@@ -54,7 +55,7 @@ public class SaleOrdersController {
      * Xóa đơn hàng theo ID
      */
     @DeleteMapping("/{orderId}")
-    public ResponseEntity<Void> deleteOrder(@PathVariable Long orderId) {
+    public ResponseEntity<Void> deleteOrder(@PathVariable("orderId") Long orderId) {
         saleOrdersService.deleteOrder(orderId);
         return ResponseEntity.noContent().build();
     }

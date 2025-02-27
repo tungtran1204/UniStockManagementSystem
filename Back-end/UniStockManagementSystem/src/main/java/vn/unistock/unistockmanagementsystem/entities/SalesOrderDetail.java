@@ -2,12 +2,16 @@ package vn.unistock.unistockmanagementsystem.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
 @Data
 @Entity
 @Table(name = "sales_order_details")
+@EqualsAndHashCode(exclude = {"salesOrder", "product"})
+@ToString(exclude = {"salesOrder", "product"})
 public class SalesOrderDetail {
 
     @Id
@@ -16,13 +20,13 @@ public class SalesOrderDetail {
     private Long orderDetailId;
 
     // Nhiều detail -> 1 salesOrder
-    @ManyToOne
-    @JoinColumn(name = "order_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
     private SalesOrder salesOrder;
 
     // Nhiều detail -> 1 product
-    @ManyToOne
-    @JoinColumn(name = "product_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
     private int quantity;

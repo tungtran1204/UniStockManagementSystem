@@ -33,25 +33,38 @@ export const getSaleOrders = async () => {
 };
 
 // Thêm đơn hàng mới
-export const createSaleOrders = async (orderData, token) => {
-  const response = await axios.post(`${API_URL}/add`, orderData, {
-    headers: authHeader(),
-  });
+export const createSaleOrders = async (orderData) => {
+  try {
+    const response = await axios.post(`${API_URL}/add`, orderData, {
+      headers: authHeader(),
+    });
 
-  console.log("✅ Kết quả từ Server:", response.data);
-  return response.data;
+    console.log("✅ Kết quả từ Server:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error creating sale order:", error);
+    throw error;
+  }
 };
 
 // Cập nhật đơn hàng
-export const updateSaleOrders = async (orderId, updatedData) => {
+export const updateSaleOrders = async (orderData) => {
   try {
-      const response = await axios.put(`${API_URL}/${orderId}`, updatedData,{
+      console.log("🛠️ Gửi dữ liệu cập nhật:", orderData);
+      // Sử dụng typeId nếu có, nếu không thì dùng orderId
+      const id = orderData.typeId || orderData.orderId;
+      
+      const response = await axios.put(`${API_URL}/${id}`, orderData, {
         headers: authHeader(),
       });
       console.log("✅ Kết quả từ Server:", response.data);
       return response.data;
   } catch (error) {
       console.error("Error updating sale order:", error);
+      if (error.response) {
+          console.error("🔴 [updateSaleOrders] Response Data:", error.response.data);
+          console.error("🔴 [updateSaleOrders] Status Code:", error.response.status);
+      }
       throw error;
   }
 };
@@ -59,7 +72,7 @@ export const updateSaleOrders = async (orderId, updatedData) => {
 // Xóa đơn hàng
 export const deleteSaleOrders = async (orderId) => {
   try {
-      const response = await axios.delete(`${API_URL}/${orderId}`,{
+      const response = await axios.delete(`${API_URL}/${orderId}`, {
         headers: authHeader(),
       });
       console.log("✅ Kết quả từ Server:", response.data);
@@ -70,28 +83,48 @@ export const deleteSaleOrders = async (orderId) => {
   }
 };
 
+// Export đơn hàng ra Excel
 export const exportSaleOrders = async () => {
-  const response = await api.get("/sale-orders/export", { responseType: "blob" });
-  const url = window.URL.createObjectURL(new Blob([response.data]));
-  const link = document.createElement("a");
-  link.href = url;
-  link.setAttribute("download", "SaleOrders.xlsx");
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  try {
+    const response = await axios.get(`${API_URL}/export`, { 
+      responseType: "blob",
+      headers: authHeader()
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "SaleOrders.xlsx");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    return true;
+  } catch (error) {
+    console.error("Error exporting sale orders:", error);
+    throw error;
+  }
 };
 
+// Import đơn hàng từ Excel
 export const importSaleOrders = async (file) => {
-  const formData = new FormData();
-  formData.append("file", file);
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
 
-  const response = await api.post("/sale-orders/import", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+    const response = await axios.post(`${API_URL}/import`, formData, {
+      headers: { 
+        ...authHeader(),
+        "Content-Type": "multipart/form-data" 
+      },
+    });
 
-  return response.data;
+    return response.data;
+  } catch (error) {
+    console.error("Error importing sale orders:", error);
+    throw error;
+  }
 };
 
+// Cập nhật trạng thái đơn hàng
 export const toggleSaleOrdersStatus = async (typeId, newStatus) => {
   try {
     const response = await axios.patch(
