@@ -25,10 +25,4 @@ public class PartnerByType {
 
     @Column(name = "partner_code", unique = true, nullable = false)
     private String partnerCode;
-
-    public void generatePartnerCode(int index) {
-        if (partnerType != null) {
-            this.partnerCode = partnerType.getTypeCode() + String.format("%02d", index);
-        }
-    }
 }

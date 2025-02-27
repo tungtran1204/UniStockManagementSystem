@@ -1,6 +1,9 @@
 package vn.unistock.unistockmanagementsystem.features.user.partner;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import vn.unistock.unistockmanagementsystem.entities.Partner;
 import vn.unistock.unistockmanagementsystem.entities.PartnerByType;
@@ -25,10 +28,10 @@ public class PartnerService {
     private final PartnerByTypeService partnerByTypeService;
 
     // Lấy danh sách đối tác kèm danh sách loại đối tác
-    public List<PartnerDTO> getAllPartners() {
-        return partnerRepository.findAll().stream()
-                .map(partnerMapper::toDTO)
-                .collect(Collectors.toList());
+    public Page<PartnerDTO> getAllPartners(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Partner> partnerPage = partnerRepository.findAll(pageable);
+        return partnerPage.map(partnerMapper::toDTO);
     }
 
     // Thêm mới đối tác
@@ -59,5 +62,12 @@ public class PartnerService {
         partner = partnerRepository.save(partner);
 
         return partnerMapper.toDTO(partner);
+    }
+
+    public Page<PartnerDTO> getPartnersByType(Long typeId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<Partner> partnerPage = partnerRepository.findByPartnerTypes_PartnerType_typeId(typeId, pageable);
+        return partnerPage.map(partnerMapper::toDTO);
     }
 }

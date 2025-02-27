@@ -1,6 +1,7 @@
 package vn.unistock.unistockmanagementsystem.features.user.partner;
 
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,8 +17,20 @@ public class PartnerController {
     private PartnerService partnerService;
 
     @GetMapping("/list")
-    public ResponseEntity<List<PartnerDTO>> getAllPartners() {
-        return ResponseEntity.ok(partnerService.getAllPartners());
+    public ResponseEntity<Page<PartnerDTO>> getAllPartners(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(partnerService.getAllPartners(page, size));
+    }
+
+    @GetMapping("/list/type={typeId}")
+    public ResponseEntity<Page<PartnerDTO>> getPartnersByType(
+            @PathVariable Long typeId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+        ) {
+        return ResponseEntity.ok(partnerService.getPartnersByType(typeId, page, size));
     }
 
     @PostMapping("/add")
