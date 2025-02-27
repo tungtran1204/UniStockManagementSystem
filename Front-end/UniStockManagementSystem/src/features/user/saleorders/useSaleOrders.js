@@ -11,37 +11,21 @@ const useSaleOrders = () => {
       setLoading(true);
       setError(null);
       const data = await getSaleOrders();
-      
-      // Asegurarse de que data sea un array
+
+      console.log("📊 Dữ liệu API trả về:", JSON.stringify(data, null, 2));
+
       if (Array.isArray(data)) {
         setSaleOrders(data);
-        console.log("📊 Đã tải xong danh sách đơn hàng:", data.length, "items");
+      } else if (data && data.data && Array.isArray(data.data)) {
+        setSaleOrders(data.data);
       } else {
-        console.warn("⚠️ API trả về dữ liệu không phải array:", data);
-        // Si no es un array, intentar extraer los datos de alguna propiedad común
-        if (data && typeof data === 'object') {
-          if (data.data && Array.isArray(data.data)) {
-            setSaleOrders(data.data);
-            console.log("📊 Đã tải xong danh sách đơn hàng từ data.data:", data.data.length, "items");
-          } else if (data.content && Array.isArray(data.content)) {
-            setSaleOrders(data.content);
-            console.log("📊 Đã tải xong danh sách đơn hàng từ data.content:", data.content.length, "items");
-          } else if (data.items && Array.isArray(data.items)) {
-            setSaleOrders(data.items);
-            console.log("📊 Đã tải xong danh sách đơn hàng từ data.items:", data.items.length, "items");
-          } else {
-            setSaleOrders([]);
-            console.error("❌ Không thể xác định dữ liệu trả về từ API:", data);
-          }
-        } else {
-          setSaleOrders([]);
-          console.error("❌ Dữ liệu trả về không hợp lệ:", data);
-        }
+        setSaleOrders([]);
+        console.error("❌ API không trả về danh sách hợp lệ:", data);
       }
-      
+
       return data;
     } catch (err) {
-      console.error("❌ Failed to fetch sale orders", err);
+      console.error("❌ Lỗi khi lấy danh sách đơn hàng", err);
       setError("Không thể tải danh sách đơn hàng");
       setSaleOrders([]);
       return [];
@@ -50,13 +34,14 @@ const useSaleOrders = () => {
     }
   };
 
+
   // Cập nhật trạng thái
   const toggleStatus = async (typeId, currentStatus) => {
     try {
       setLoading(true);
       const newStatus = !currentStatus; // Đảo trạng thái hiện tại
       const updatedSaleOrder = await toggleSaleOrdersStatus(typeId, newStatus);
-      
+
       // Cập nhật state để UI hiển thị ngay lập tức
       setSaleOrders((prevSaleOrders) =>
         prevSaleOrders.map((saleOrder) =>
@@ -65,7 +50,21 @@ const useSaleOrders = () => {
             : saleOrder
         )
       );
-      
+
+      const updateOrder = async (orderData) => {
+        try {
+          setLoading(true);
+          await updateSaleOrders(orderData);
+          await fetchSaleOrders(); // Làm mới danh sách
+        } catch (error) {
+          console.error("Lỗi khi cập nhật đơn hàng:", error);
+          setError("Không thể cập nhật đơn hàng");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+
       console.log(`✅ Đã cập nhật trạng thái của đơn hàng ${typeId} thành ${newStatus ? "Hoạt động" : "Vô hiệu hóa"}`);
       return updatedSaleOrder;
     } catch (error) {
@@ -77,12 +76,12 @@ const useSaleOrders = () => {
     }
   };
 
-  return { 
-    saleOrders, 
+  return {
+    saleOrders,
     loading,
     error,
-    fetchSaleOrders, 
-    toggleStatus 
+    fetchSaleOrders,
+    toggleStatus
   };
 };
 

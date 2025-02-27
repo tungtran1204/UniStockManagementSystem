@@ -30,8 +30,6 @@ public class SalesOrderDetail {
     private Product product;
 
     private int quantity;
-    private Double unitPrice;
-    private Double discount;
 
     // Audit
     private LocalDateTime createdAt;

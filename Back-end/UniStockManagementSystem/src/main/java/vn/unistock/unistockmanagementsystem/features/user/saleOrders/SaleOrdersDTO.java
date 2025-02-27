@@ -16,7 +16,6 @@ public class SaleOrdersDTO {
     private Long orderId;
     private Long custId;
     private String custName;
-    private Long  totalAmount;
     private String status;
     private Date orderDate;
     private String note;
@@ -35,7 +34,6 @@ public class SaleOrdersDTO {
         this.orderId = orderId;
         this.custId = custId;
         this.custName = name;
-        this.totalAmount = totalAmount;
         this.status = status;
         this.orderDate = orderDate;
         this.note = note;

@@ -36,7 +36,6 @@ public class SalesOrder {
 
     private String status;
     private String note;
-    private Long totalAmount;
 
     // Audit
     private LocalDateTime createdAt;

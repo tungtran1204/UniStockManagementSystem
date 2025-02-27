@@ -31,6 +31,23 @@ export const getSaleOrders = async () => {
       throw error;
   }
 };
+// Lấy danh sách chi tiết 1 đơn hàng theo id
+export const getSaleOrderById = async (orderId) => {
+  try {
+    const headers = authHeader(); // Thêm headers
+    console.log("📢 [getSaleOrders] Headers:", headers);
+
+    const response = await axios.get(`${API_URL}/${orderId}`, { headers }); // Thêm headers vào request
+    console.log("📥 Dữ liệu nhận từ API:", response.data);
+
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy chi tiết đơn hàng:", error);
+    return null;
+  }
+};
+
+
 
 // Thêm đơn hàng mới
 export const createSaleOrders = async (orderData) => {
@@ -50,24 +67,20 @@ export const createSaleOrders = async (orderData) => {
 // Cập nhật đơn hàng
 export const updateSaleOrders = async (orderData) => {
   try {
-      console.log("🛠️ Gửi dữ liệu cập nhật:", orderData);
-      // Sử dụng typeId nếu có, nếu không thì dùng orderId
-      const id = orderData.typeId || orderData.orderId;
-      
-      const response = await axios.put(`${API_URL}/${id}`, orderData, {
-        headers: authHeader(),
-      });
-      console.log("✅ Kết quả từ Server:", response.data);
-      return response.data;
+    console.log("🛠️ Gửi dữ liệu cập nhật:", orderData);
+    const id = orderData.typeId || orderData.orderId;
+
+    const response = await axios.put(`${API_URL}/${id}`, orderData, {
+      headers: authHeader(),
+    });
+    console.log("✅ Kết quả từ Server:", response.data);
+    return response.data;
   } catch (error) {
-      console.error("Error updating sale order:", error);
-      if (error.response) {
-          console.error("🔴 [updateSaleOrders] Response Data:", error.response.data);
-          console.error("🔴 [updateSaleOrders] Status Code:", error.response.status);
-      }
-      throw error;
+    console.error("Error updating sale order:", error);
+    throw error;
   }
 };
+
 
 // Xóa đơn hàng
 export const deleteSaleOrders = async (orderId) => {
