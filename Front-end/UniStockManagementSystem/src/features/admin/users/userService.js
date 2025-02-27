@@ -38,9 +38,9 @@ export const checkEmailExists = async (email) => {
 };
 
 // 🟢 **Lấy danh sách Users**
-export const getUsers = async () => {
+export const getUsers = async (page,size) => {
   try {
-    const response = await axios.get(API_URL, { headers: authHeader() });
+    const response = await axios.get(API_URL, {params: { page, size }, headers: authHeader() });
     return response.data;
   } catch (error) {
     console.error("❌ Lỗi khi lấy danh sách Users:", error);

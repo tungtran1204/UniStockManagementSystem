@@ -3,12 +3,16 @@ import { getUsers, deleteUserById, toggleUserStatus } from "./userService";
 
 const useUser = () => {
   const [users, setUsers] = useState([]);
+  const [totalPages, setTotalPages] = useState(1); // ✅ Thêm state tổng số trang
+  const [totalElements, setTotalElements] = useState(0); // ✅ Thêm state tổng số người dùng
 
   // 🟢 **Lấy danh sách Users từ API**
-  const fetchUsers = async () => {
+  const fetchPaginatedUsers = async (page = 0, size = 5) => {
     try {
-      const data = await getUsers();
-      setUsers(data);
+      const data = await getUsers(page, size);
+      setUsers(data.content || []); // ✅ Đảm bảo dữ liệu là mảng
+      setTotalPages(data.totalPages || 1); // ✅ Cập nhật tổng số trang
+      setTotalElements(data.totalElements || 0); // ✅ Cập nhật tổng số người dùng
     } catch (error) {
       console.error("❌ Không thể tải danh sách Users:", error);
     }
@@ -43,12 +47,12 @@ const useUser = () => {
     }
   };
 
-  // ✅ Gọi `fetchUsers` khi Component được mount
+  // ✅ Gọi `fetchPaginatedUsers` khi Component được mount
   useEffect(() => {
-    fetchUsers();
+    fetchPaginatedUsers();
   }, []);
 
-  return { users, fetchUsers, deleteUser, toggleStatus };
+  return { users, fetchPaginatedUsers, deleteUser, toggleStatus, totalPages, totalElements };
 };
 
 export default useUser;

@@ -6,6 +6,7 @@ export function Footer({ brandName, brandLink, routes }) {
   const year = new Date().getFullYear();
 
   return (
+<<<<<<< HEAD
     <footer className="py-2">
       <div className="flex w-full flex-wrap items-center justify-center gap-6 px-2 md:justify-between">
         <Typography variant="small" className="font-normal text-inherit">
@@ -35,6 +36,17 @@ export function Footer({ brandName, brandLink, routes }) {
             </li>
           ))}
         </ul>
+=======
+    <footer className="bg-dark text-white text-center p-3 mt-5">
+      <div className="container">
+        <p>&copy; {new Date().getFullYear()} UniStock Management System</p>
+        <p>
+          Made with ❤️ by{"Hiroshiba"}
+          <a href="https://yourcompany.com" className="text-light">
+            Your Company
+          </a>
+        </p>
+>>>>>>> 13837008952e7da7615cbc4a455e699364736d21
       </div>
     </footer>
   );
