@@ -14,11 +14,11 @@ import java.util.Date;
 public class GlobalExceptionHandler {
     @ExceptionHandler({MethodArgumentNotValidException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleValidationException(Exception e, WebRequest request){
+    public ErrorResponse handleValidationException(Exception e, WebRequest request) {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setTimestamp(new Date());
         errorResponse.setStatus((HttpStatus.BAD_REQUEST.value()));
-        errorResponse.setPath(request.getDescription(false).replace("uri=",""));
+        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
         errorResponse.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
         errorResponse.setMessage(e.getMessage());
         return errorResponse;
@@ -47,3 +47,4 @@ public class GlobalExceptionHandler {
         errorResponse.setMessage(e.getMessage());
         return errorResponse;
     }
+}
