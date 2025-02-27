@@ -10,12 +10,14 @@ import {
 } from "@material-tailwind/react";
 import { getAllRoles } from "../roles/roleService";
 import { checkEmailExists, createUser } from "../users/userService"; // ✅ Import API kiểm tra email
+import { FaEye, FaEyeSlash } from "react-icons/fa"; // ✅ Import icons
 
 const ModalAddUser = ({ open, onClose, fetchUsers }) => {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState(""); // ✅ Thêm lỗi mật khẩu
+  const [showPassword, setShowPassword] = useState(false); // ✅ State to toggle password visibility
   const [fullname, setFullname] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [roles, setRoles] = useState([]);
@@ -106,11 +108,6 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
       return;
     }
 
-    if (selectedRoles.size === 0) {
-      setError("Vui lòng chọn ít nhất một vai trò!");
-      return;
-    }
-
     const userData = {
       username: email.split("@")[0],
       email,
@@ -161,14 +158,21 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
         </div>
 
         {/* 🔥 Kiểm tra Mật khẩu */}
-        <div>
+        <div className="relative">
           <Input
             label="Mật khẩu"
-            type="password"
+            type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => handlePasswordChange(e.target.value)}
             required
           />
+          <button
+            type="button"
+            className="absolute inset-y-0 right-3 flex items-center text-gray-600"
+            onClick={() => setShowPassword(!showPassword)}
+          >
+            {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+          </button>
           {passwordError && <p className="text-red-500 text-xs mt-1">{passwordError}</p>}
         </div>
 
@@ -179,25 +183,27 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
         <div className="flex flex-col">
           <p className="text-sm font-semibold text-gray-700">Chọn Vai Trò:</p>
           <div className="flex flex-wrap gap-2">
-            {roles.length > 0 ? (
-              roles.map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => handleRoleChange(r.id)}
-                  className={`px-4 py-2 text-sm rounded-lg transition-all ${
-                    selectedRoles.has(r.id)
-                      ? "bg-blue-500 text-white shadow-md"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  }`}
-                >
-                  {r.name}
-                </button>
-              ))
+            {roles
+              .filter((r) => r.name !== "USER" && r.name !== "ADMIN").length > 0 ? (
+              roles
+                .filter((r) => r.name !== "USER" && r.name !== "ADMIN") // Exclude "USER" and "ADMIN" roles
+                .map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => handleRoleChange(r.id)}
+                    className={`px-4 py-2 text-sm rounded-lg transition-all ${
+                      selectedRoles.has(r.id)
+                        ? "bg-blue-500 text-white shadow-md"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    {r.name}
+                  </button>
+                ))
             ) : (
-              <p className="text-sm text-gray-500">Không có vai trò nào.</p>
+              <p className="text-sm text-gray-500">Không có sẵn vai trò.</p>
             )}
           </div>
-          {error.includes("vai trò") && <p className="text-red-500 text-xs mt-2">{error}</p>}
         </div>
 
         {/* Trạng thái */}

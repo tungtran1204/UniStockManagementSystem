@@ -1,6 +1,9 @@
 package vn.unistock.unistockmanagementsystem.features.admin.user;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,6 +17,7 @@ import vn.unistock.unistockmanagementsystem.features.admin.role.RoleRepository;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,19 +44,35 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(userDTO.getPassword())); // ✅ Mã hóa mật khẩu
         }
 
-        // 4) Kiểm tra Role hợp lệ trước khi lưu
+        // 4) **Lấy role `USER` (Nếu chưa có thì tạo mới)**
+        Role userRole = roleRepository.findByRoleName("USER")
+                .orElseGet(() -> {
+                    Role newUserRole = new Role();
+                    newUserRole.setRoleName("USER");
+                    newUserRole.setDescription("Vai trò mặc định cho tất cả user");
+                    newUserRole.setIsActive(true);
+                    return roleRepository.save(newUserRole);
+                });
+
+        // 5) Kiểm tra Role hợp lệ trước khi lưu
+        Set<Role> userRoles = new HashSet<>();
+
         if (userDTO.getRoleIds() != null && !userDTO.getRoleIds().isEmpty()) {
             List<Role> roles = roleRepository.findAllById(userDTO.getRoleIds());
             if (roles.isEmpty()) {
                 throw new IllegalArgumentException("Danh sách role không hợp lệ!");
             }
-            user.setRoles(new HashSet<>(roles));
+            userRoles.addAll(roles);
         }
 
-        // 5) Lưu User
+        // 🟢 **Gán role `USER` mặc định nếu chưa có role nào**
+        userRoles.add(userRole);
+        user.setRoles(userRoles);
+
+        // 6) Lưu User
         user = userRepository.save(user);
 
-        // 6) **Tạo UserDetail**
+        // 7) **Tạo UserDetail**
         UserDetail userDetail = new UserDetail();
         userDetail.setUser(user);
         if (userDTO.getUserDetail() != null) {
@@ -64,11 +84,12 @@ public class UserService {
         }
         userDetailRepository.save(userDetail);
 
-        // 7) Trả lại DTO (Không trả về mật khẩu)
+        // 8) Trả lại DTO (Không trả về mật khẩu)
         UserDTO responseDTO = userMapper.toDTO(user);
         responseDTO.setPassword(null); // ✅ Không trả về password
         return responseDTO;
     }
+
 
     public UserDTO updateUser(Long userId, UserDTO updatedUserDTO) {
         // 1️⃣ Kiểm tra User có tồn tại không
@@ -122,10 +143,10 @@ public class UserService {
     }
 
     // 🟢 Lấy danh sách Users
-    public List<UserDTO> getAllUsers() {
-        return userRepository.findAll().stream()
-                .map(userMapper::toDTO) // ✅ Dùng Mapper
-                .collect(Collectors.toList());
+    public Page<UserDTO> getAllUsers(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<User> userPage = userRepository.findAll(pageable);
+        return userPage.map(userMapper::toDTO);
     }
 
     public UserDTO updateUserStatus(Long id, Boolean isActive) {

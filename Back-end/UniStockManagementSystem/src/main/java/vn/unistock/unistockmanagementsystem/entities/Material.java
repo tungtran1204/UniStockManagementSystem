@@ -14,20 +14,45 @@ public class Material {
     @Column(name = "material_id")
     private Long materialId;
 
-    @Column(name = "material_name")
+    @Column(name = "material_code", nullable = false, unique = true)
+    private String materialCode;
+
+    @Column(name = "material_name", nullable = false)
     private String materialName;
 
-    private String unit;
+    @ManyToOne
+    @JoinColumn(name = "unit_id")
+    private Unit unit;
+
+    @ManyToOne
+    @JoinColumn(name = "type_id")
+    private MaterialType materialType;
+
     private String description;
 
-    // Nhiều material -> 1 group (VD: NVL, CCDC)
-    @ManyToOne
-    @JoinColumn(name = "group_id")
-    private ItemGroup itemGroup;
+    @Column(name = "is_using_active", nullable = false)
+    private Boolean isUsing = true;
+
+    @Column(name = "image_url")
+    private String imageUrl;
 
     // Audit
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private Long createdBy;
-    private Long updatedBy;
+    private String createdBy;
+    private String updatedBy;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        if (isUsing == null) {
+            isUsing = true;
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

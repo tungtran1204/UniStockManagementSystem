@@ -16,5 +16,4 @@ public class ProductTypeController {
     public ResponseEntity<List<ProductTypeDTO>> getAllProductTypes() {
         return ResponseEntity.ok(productTypeService.getAllProductTypes());
     }
-
 }

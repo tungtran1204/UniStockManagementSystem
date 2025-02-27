@@ -17,6 +17,7 @@ export function Sidenav({ brandImg, brandName, routes }) {
     white: "bg-white shadow-sm",
     transparent: "bg-transparent",
   };
+  console.log("🚀 openSidenav:", openSidenav);
 
   // ✅ Chuyển role về dạng mảng nếu cần
   const userRoles = Array.isArray(user?.roles)
@@ -35,12 +36,13 @@ export function Sidenav({ brandImg, brandName, routes }) {
 
   return (
     <aside
-      className={`${sidenavTypes[sidenavType]} ${
-        openSidenav ? "translate-x-0" : "-translate-x-80"
-      } fixed inset-0 z-50 my-4 ml-4 h-[calc(100vh-32px)] w-72 rounded-xl transition-transform duration-300 xl:translate-x-0 border border-blue-gray-100`}
-    >
+  className={`fixed inset-0 z-50 my-4 ml-4 h-[calc(100vh-32px)] w-72 rounded-xl border border-blue-gray-100 transition-transform duration-300 ${
+    openSidenav ? "translate-x-0 opacity-100" : "-translate-x-80 "
+  } ${sidenavTypes[sidenavType]}`}
+>
+
       <div className="relative">
-        <Link to="/" className="py-6 px-8 text-center">
+        <Link to="/home" className="py-6 px-8 text-center">
           <Typography
             variant="h6"
             color={sidenavType === "dark" ? "white" : "blue-gray"}
@@ -70,108 +72,108 @@ export function Sidenav({ brandImg, brandName, routes }) {
           // ✅ Ẩn category nếu không có item nào hợp lệ
           if (filteredPages.length === 0) return null;
 
-            return (
+          return (
             <ul key={key} className="mb-4 flex flex-col gap-1">
               {title && (
-              <li className="mx-3.5 mt-4 mb-2">
-                <Typography
-                variant="small"
-                color={sidenavType === "dark" ? "white" : "blue-gray"}
-                className="font-black uppercase opacity-75"
-                >
-                {title}
-                </Typography>
-              </li>
+                <li className="mx-3.5 mt-4 mb-2">
+                  <Typography
+                    variant="small"
+                    color={sidenavType === "dark" ? "white" : "blue-gray"}
+                    className="font-black uppercase opacity-75"
+                  >
+                    {title}
+                  </Typography>
+                </li>
               )}
               {filteredPages.map(({ icon, name, path, subPages }) => (
-              <li key={name}>
-                {subPages ? (
-                <>
-                  <Button
-                  variant="text"
-                  color={sidenavType === "dark" ? "white" : "blue-gray"}
-                  className="flex items-center justify-between gap-4 px-4 capitalize"
-                  fullWidth
-                  onClick={() => handleDropdownClick(name)}
-                  >
-                  <div className="flex items-center gap-4">
-                    {icon}
-                    <Typography
-                    color="inherit"
-                    className="font-medium capitalize"
-                    >
-                    {name}
-                    </Typography>
-                  </div>
-                  {openDropdown === name ? (
-                    <ChevronUpIcon className="w-5 h-5" />
+                <li key={name}>
+                  {subPages ? (
+                    <>
+                      <Button
+                        variant="text"
+                        color={sidenavType === "dark" ? "white" : "blue-gray"}
+                        className="flex items-center justify-between gap-4 px-4 capitalize"
+                        fullWidth
+                        onClick={() => handleDropdownClick(name)}
+                      >
+                        <div className="flex items-center gap-4">
+                          {icon}
+                          <Typography
+                            color="inherit"
+                            className="font-medium capitalize"
+                          >
+                            {name}
+                          </Typography>
+                        </div>
+                        {openDropdown === name ? (
+                          <ChevronUpIcon className="w-5 h-5" />
+                        ) : (
+                          <ChevronDownIcon className="w-5 h-5" />
+                        )}
+                      </Button>
+                      {openDropdown === name && (
+                        <ul className="ml-4">
+                          {subPages.map(({ icon, name, path }) => (
+                            <li key={name}>
+                              <NavLink to={path}>
+                                {({ isActive }) => (
+                                  <Button
+                                    variant={isActive ? "gradient" : "text"}
+                                    color={
+                                      isActive
+                                        ? sidenavColor
+                                        : sidenavType === "dark"
+                                        ? "white"
+                                        : "blue-gray"
+                                    }
+                                    className="flex items-center gap-4 px-4 capitalize"
+                                    fullWidth
+                                  >
+                                    {icon}
+                                    <Typography
+                                      color="inherit"
+                                      className="font-medium capitalize"
+                                    >
+                                      {name}
+                                    </Typography>
+                                  </Button>
+                                )}
+                              </NavLink>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
                   ) : (
-                    <ChevronDownIcon className="w-5 h-5" />
-                  )}
-                  </Button>
-                  {openDropdown === name && (
-                  <ul className="ml-4">
-                    {subPages.map(({ icon, name, path }) => (
-                    <li key={name}>
-                      <NavLink to={path}>
+                    <NavLink to={path}>
                       {({ isActive }) => (
                         <Button
-                        variant={isActive ? "gradient" : "text"}
-                        color={
-                          isActive
-                          ? sidenavColor
-                          : sidenavType === "dark"
-                          ? "white"
-                          : "blue-gray"
-                        }
-                        className="flex items-center gap-4 px-4 capitalize"
-                        fullWidth
+                          variant={isActive ? "gradient" : "text"}
+                          color={
+                            isActive
+                              ? sidenavColor
+                              : sidenavType === "dark"
+                              ? "white"
+                              : "blue-gray"
+                          }
+                          className="flex items-center gap-4 px-4 capitalize"
+                          fullWidth
                         >
-                        {icon}
-                        <Typography
-                          color="inherit"
-                          className="font-medium capitalize"
-                        >
-                          {name}
-                        </Typography>
+                          {icon}
+                          <Typography
+                            color="inherit"
+                            className="font-medium capitalize"
+                          >
+                            {name}
+                          </Typography>
                         </Button>
                       )}
-                      </NavLink>
-                    </li>
-                    ))}
-                  </ul>
+                    </NavLink>
                   )}
-                </>
-                ) : (
-                <NavLink to={path}>
-                  {({ isActive }) => (
-                  <Button
-                    variant={isActive ? "gradient" : "text"}
-                    color={
-                    isActive
-                      ? sidenavColor
-                      : sidenavType === "dark"
-                      ? "white"
-                      : "blue-gray"
-                    }
-                    className="flex items-center gap-4 px-4 capitalize"
-                    fullWidth
-                  >
-                    {icon}
-                    <Typography
-                    color="inherit"
-                    className="font-medium capitalize"
-                    >
-                    {name}
-                    </Typography>
-                  </Button>
-                  )}
-                </NavLink>
-                )}
-              </li>
+                </li>
               ))}
             </ul>
-            );
+          );
         })}
       </div>
     </aside>
