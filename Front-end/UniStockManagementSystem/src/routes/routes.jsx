@@ -20,7 +20,9 @@ import WarehousePage from "@/features/user/warehouse/WarehousePage";
 import ProductPage from "@/features/user/products/ProductPage";
 import SaleOrdersPage from "../features/user/saleorders/SaleOrdersPage";
 import PartnerTypePage from "@/features/user/partnerType/PartnerTypePage";
+import PartnerPage from "@/features/user/partner/PartnerPage";
 import MaterialPage from "@/features/user/materials/MaterialPage";
+
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -118,8 +120,8 @@ export const routes = [
           {
             icon: <Bars3BottomRightIcon {...icon} />,
             name: "Đối tác",
-            path: "/user/partner/list",
-            element: <div>Partners Page</div>,
+            path: "/user/partner/list", // Relative path
+            element: <PartnerPage />, 
             roles: ["USER"],
           },
         ],
