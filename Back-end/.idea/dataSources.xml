@@ -1,17 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-<<<<<<< HEAD
-    <data-source source="LOCAL" name="UniStock@localhost" uuid="b307b53a-9312-44d9-9834-fadc8119434e">
-=======
-    <data-source source="LOCAL" name="UniStock@localhost" uuid="efec5692-a262-4dea-8cec-7d32e6a78bdc">
->>>>>>> 13837008952e7da7615cbc4a455e699364736d21
+    <data-source source="LOCAL" name="@localhost" uuid="fa3acc08-6db9-4956-8695-4a0f026aa717">
       <driver-ref>mysql.8</driver-ref>
       <synchronize>true</synchronize>
-      <imported>true</imported>
-      <remarks>$PROJECT_DIR$/UniStockManagementSystem/src/main/resources/application-dev.yml</remarks>
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
-      <jdbc-url>jdbc:mysql://localhost:3306/UniStock?createDatabaseIfNotExist=true</jdbc-url>
+      <jdbc-url>jdbc:mysql://localhost:3306</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.host.port" />
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />

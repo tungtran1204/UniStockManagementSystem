@@ -18,6 +18,7 @@ import LoginPage from "@/features/login/LoginPage";
 import AdminDashboard from "@/features/admin/dashboard/AdminDashboard";
 import WarehousePage from "@/features/user/warehouse/WarehousePage";
 import ProductPage from "@/features/user/products/ProductPage";
+import SaleOrdersPage from "../features/user/saleorders/SaleOrdersPage";
 import PartnerTypePage from "@/features/user/partnerType/PartnerTypePage";
 import MaterialPage from "@/features/user/materials/MaterialPage";
 
@@ -91,6 +92,13 @@ export const routes = [
         name: "Quản lý nguyên vật liệu",
         path: "/user/materials",
         element: <MaterialPage />,
+        roles: ["USER"],
+      },
+      {
+        icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
+        name: "Quản lý đơn hàng",
+        path: "/user/sale-orders",
+        element: <SaleOrdersPage />, // Trang quản lý đơn hàng 
         roles: ["USER"],
       },
       {
