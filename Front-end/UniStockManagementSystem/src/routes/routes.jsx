@@ -23,6 +23,7 @@ import PartnerTypePage from "@/features/user/partnerType/PartnerTypePage";
 import PartnerPage from "@/features/user/partner/PartnerPage";
 import MaterialPage from "@/features/user/materials/MaterialPage";
 
+import ReceiptNotePage from "../features/user/receiptNote/ReceiptNotePage";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -80,6 +81,13 @@ export const routes = [
         name: "Kho",
         path: "/user/warehouse",
         element: <WarehousePage />,
+        roles: ["USER"],
+      },
+      {
+        icon: <ArchiveBoxIcon {...icon} />, // Changed from BoxIcon to ArchiveBoxIcon
+        name: "Phiếu nhập",
+        path: "/user/receiptNote",
+        element: <ReceiptNotePage />,
         roles: ["USER"],
       },
       {
