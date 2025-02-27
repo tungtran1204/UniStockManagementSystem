@@ -12,9 +12,10 @@ spring:
     hibernate:
 #      ddl-auto: validate
 #      ddl-auto: create
-      ddl-auto: update
+        ddl-auto: update
     database-platform: org.hibernate.dialect.MySQLDialect
     show-sql: true
+    generate-ddl: true
 
 azure:
   storage:

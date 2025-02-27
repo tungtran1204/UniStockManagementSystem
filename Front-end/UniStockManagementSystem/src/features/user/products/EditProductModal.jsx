@@ -15,7 +15,6 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
         description: "",
         unitId: "",
         typeId: "",
-        price: "",
         isProductionActive: false,
         image: null,
         imageUrl: null
@@ -27,9 +26,13 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
         productName: "",
         unitId: "",
         typeId: "",
-        price: "",
         description: ""
     });
+
+    // Lấy token từ localStorage
+    const getAuthToken = () => {
+        return localStorage.getItem("token") || "";
+    };
 
     useEffect(() => {
         if (product) {
@@ -40,7 +43,6 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
                 description: product.description || "",
                 unitId: product.unitId?.toString() || "",
                 typeId: product.typeId?.toString() || "",
-                price: product.price?.toString() || "",
                 isProductionActive: product.isProductionActive || false,
                 imageUrl: product.imageUrl || null
             });
@@ -52,17 +54,12 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
         return !str || /^\s*$/.test(str);
     };
 
-    const isValidPrice = (price) => {
-        return !isNaN(price) && Number(price) > 0;
-    };
-
     const validateProduct = async (product) => {
         const newErrors = {
             productCode: "",
             productName: "",
             unitId: "",
             typeId: "",
-            price: "",
             description: ""
         };
         let isValid = true;
@@ -77,25 +74,25 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
             isValid = false;
         }
 
-        if (isEmptyOrWhitespace(product.price)) {
-            newErrors.price = "Giá không được để trống";
-            isValid = false;
-        } else if (!isValidPrice(product.price)) {
-            newErrors.price = "Giá phải là số dương";
-            isValid = false;
-        }
-
         // Check if product code exists but exclude current product
         if (!isEmptyOrWhitespace(product.productCode)) {
             try {
+                const token = getAuthToken();
                 const response = await axios.get(
-                    `http://localhost:8080/api/unistock/user/products/check-product-code/${product.productCode}?excludeId=${product.productId}`
+                    `http://localhost:8080/api/unistock/user/products/check-product-code/${product.productCode}?excludeId=${product.productId}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
                 );
                 if (response.data.exists) {
                     newErrors.productCode = "Mã sản phẩm đã tồn tại trong hệ thống";
                     isValid = false;
                 }
             } catch (error) {
+                console.error("Lỗi kiểm tra mã sản phẩm:", error);
                 if (error.response?.data?.message) {
                     newErrors.productCode = error.response.data.message;
                     isValid = false;
@@ -144,12 +141,14 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
             formData.append('description', editedProduct.description || '');
             formData.append('unitId', editedProduct.unitId || '');
             formData.append('typeId', editedProduct.typeId || '');
-            formData.append('price', editedProduct.price);
             formData.append('isProductionActive', editedProduct.isProductionActive);
 
             if (editedProduct.image) {
                 formData.append('image', editedProduct.image);
             }
+
+            // Get token
+            const token = getAuthToken();
 
             // Call API to update product
             await axios.put(
@@ -157,7 +156,8 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
                 formData,
                 {
                     headers: {
-                        'Content-Type': 'multipart/form-data',
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
                     },
                 }
             );
@@ -176,7 +176,7 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
     if (!show) return null;
 
     return (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-[500px]">
                 <div className="flex justify-between items-center mb-4">
                     <Typography variant="h6">Chỉnh sửa sản phẩm</Typography>
@@ -258,21 +258,7 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
                                 {errors.typeId}
                             </Typography>
                         )}
-                    </div>
-                    <div>
-                        <Typography variant="small" className="mb-2">Giá *</Typography>
-                        <Input
-                            type="number"
-                            value={editedProduct.price}
-                            onChange={(e) => setEditedProduct({ ...editedProduct, price: e.target.value })}
-                            className={`w-full ${errors.price ? 'border-red-500' : ''}`}
-                        />
-                        {errors.price && (
-                            <Typography className="text-xs text-red-500 mt-1">
-                                {errors.price}
-                            </Typography>
-                        )}
-                    </div>
+                    </div>     
                     <div className="col-span-2">
                         <Typography variant="small" className="mb-2">Mô tả</Typography>
                         <Input

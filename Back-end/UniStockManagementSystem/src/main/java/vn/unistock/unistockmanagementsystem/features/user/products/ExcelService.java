@@ -76,7 +76,6 @@ public class ExcelService {
                 Product product = new Product();
                 product.setProductName(productName);
                 product.setDescription(description);
-                product.setPrice(price);
                 product.setUnit(unit);
                 product.setProductType(type);
                 product.setCreatedBy(createdBy);

@@ -1,20 +1,14 @@
 import React, { useEffect, useState } from "react";
 import usePartnerType from "./usePartnerType";
-import {
-    createPartnerType,
-    updatePartnerType,
-} from "./partnerTypeService";
+import CreatePartnerTypePopUp from "./CreatePartnerTypePopUp";
+import EditPartnerTypePopUp from "./EditPartnerTypePopUp";
 import {
     Card,
     CardHeader,
     CardBody,
     Typography,
-    Input,
-    Textarea,
     Button,
     Tooltip,
-    Select,
-    Option,
     Switch,
 } from "@material-tailwind/react";
 import { FaEdit, FaPlus } from "react-icons/fa";
@@ -24,117 +18,12 @@ const PartnerTypePage = () => {
     const [showCreatePopup, setShowCreatePopup] = useState(false);
     const [showEditPopup, setShowEditPopup] = useState(false);
     const [editPartnerType, setEditPartnerType] = useState(null);
-    const [errorMessage, setErrorMessage] = useState("");
-    const [errorTypeCode, setErrorTypeCode] = useState("");
-    const [errorTypeName, setErrorTypeName] = useState("");
-
-    // State cho form tạo nhóm đối tác mới
-    const [newPartnerType, setNewPartnerType] = useState({
-        typeCode: "",
-        typeName: "",
-        status: true,
-        description: "",
-    });
 
     useEffect(() => {
         fetchPartnerTypes().then((data) => {
             console.log("📢 API trả về danh sách Partner Types:", data);
         });
     }, []);
-
-    const resetErrorMessages = () => {
-        setErrorMessage("");
-        setErrorTypeCode("");
-        setErrorTypeName("");
-    };
-
-    const validatePartnerType = (partnerType) => {
-        let isValid = true;
-        setErrorTypeCode("");
-        setErrorTypeName("");
-        setErrorMessage("");
-
-        if (!partnerType.typeCode.trim()) {
-            setErrorTypeCode("Mã nhóm đối tác không được để trống.");
-            isValid = false;
-        }
-
-        if (!partnerType.typeName.trim()) {
-            setErrorTypeName("Tên nhóm đối tác không được để trống.");
-            isValid = false;
-        }
-
-        return isValid;
-    };
-
-
-    const handleCreatePartnerType = async () => {
-        resetErrorMessages();
-
-        if (!validatePartnerType(newPartnerType)) {
-            return; // Nếu có lỗi, dừng không gọi API
-        }
-
-        try {
-            await createPartnerType(newPartnerType);
-            fetchPartnerTypes();
-            setShowCreatePopup(false);
-            setNewPartnerType({
-                typeCode: "",
-                typeName: "",
-                status: true,
-                description: "",
-            });
-            setErrorMessage("");
-        } catch (error) {
-            console.error("Lỗi khi tạo nhóm đối tác:", error);
-            if (error.response && error.response.status === 409) {
-                const errorCode = error.response.data;
-
-                if (errorCode === "DUPLICATE_CODE_AND_NAME") {
-                    setErrorMessage("Mã nhóm đối tác và tên nhóm đối tác đã tồn tại.");
-                } else if (errorCode === "DUPLICATE_CODE") {
-                    setErrorTypeCode("Mã nhóm đối tác đã tồn tại.");
-                } else if (errorCode === "DUPLICATE_NAME") {
-                    setErrorTypeName("Tên nhóm đối tác đã tồn tại.");
-                }
-
-            } else {
-                alert("Lỗi khi tạo nhóm đối tác! Vui lòng thử lại.");
-            }
-        }
-    };
-
-    const handleEditPartnerType = async () => {
-        resetErrorMessages(); // Xóa lỗi trước khi kiểm tra
-
-        if (!validatePartnerType(editPartnerType)) {
-            return; // Nếu có lỗi, dừng không gọi API
-        }
-
-        try {
-            await updatePartnerType(editPartnerType);
-            fetchPartnerTypes();
-            setShowEditPopup(false);
-            setEditPartnerType(null);
-            setErrorMessage("");
-        } catch (error) {
-            console.error("Lỗi khi cập nhật nhóm đối tác:", error);
-            if (error.response && error.response.status === 409) {
-                const errorCode = error.response.data;
-
-                if (errorCode === "DUPLICATE_CODE_AND_NAME") {
-                    setErrorMessage("Mã nhóm đối tác và tên nhóm đối tác đã tồn tại.");
-                } else if (errorCode === "DUPLICATE_CODE") {
-                    setErrorTypeCode("Mã nhóm đối tác đã tồn tại.");
-                } else if (errorCode === "DUPLICATE_NAME") {
-                    setErrorTypeName("Tên nhóm đối tác đã tồn tại.");
-                }
-            } else {
-                alert("Lỗi khi cập nhật nhóm đối tác! Vui lòng thử lại.");
-            }
-        }
-    };
 
     return (
         <div className="mt-12 mb-8 flex flex-col gap-12">
@@ -151,7 +40,6 @@ const PartnerTypePage = () => {
                                 variant="text"
                                 className="flex items-center gap-2"
                                 onClick={() => {
-                                    resetErrorMessages();  // Xóa lỗi cũ trước khi mở popup
                                     setShowCreatePopup(true);
                                 }}
                             >
@@ -229,7 +117,6 @@ const PartnerTypePage = () => {
                                                     <Tooltip content="Chỉnh sửa">
                                                         <button
                                                             onClick={() => {
-                                                                resetErrorMessages();  // Xóa lỗi cũ trước khi mở popup
                                                                 setEditPartnerType({ typeId, typeCode, typeName, description, status });
                                                                 setShowEditPopup(true);
                                                             }}
@@ -261,165 +148,19 @@ const PartnerTypePage = () => {
 
             {/* Popup tạo nhóm đối tác mới */}
             {showCreatePopup && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-[500px]">
-                        <div className="flex justify-between items-center mb-4">
-                            <Typography variant="h6">Tạo nhóm đối tác mới</Typography>
-                            <button
-                                className="text-gray-500 hover:text-gray-700"
-                                onClick={() => {
-                                    resetErrorMessages();
-                                    setShowCreatePopup(false);
-                                }}
-                            >
-                                ✕
-                            </button>
-                        </div>
-                        {errorMessage && (
-                            <Typography variant="small" color="red" className="mb-4">
-                                {errorMessage}
-                            </Typography>
-                        )}
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div className="col-span-2">
-                                <Typography variant="small" className="mb-2">Mã nhóm đối tác *</Typography>
-                                <Input
-                                    type="text"
-                                    value={newPartnerType.typeCode}
-                                    onChange={(e) => {
-                                        setNewPartnerType({ ...newPartnerType, typeCode: e.target.value });
-                                        setErrorTypeCode(""); // Reset lỗi khi user nhập lại
-                                    }}
-                                    className="w-full"
-                                />
-                                {errorTypeCode && <Typography variant="small" color="red">{errorTypeCode}</Typography>}
-                            </div>
-                            <div className="col-span-2">
-                                <Typography variant="small" className="mb-2">Tên nhóm đối tác *</Typography>
-                                <Input
-                                    type="text"
-                                    value={newPartnerType.typeName}
-                                    onChange={(e) => {
-                                        setNewPartnerType({ ...newPartnerType, typeName: e.target.value });
-                                        setErrorTypeName(""); // Reset lỗi khi user nhập lại
-                                    }}
-                                    className="w-full"
-                                />
-                                {errorTypeName && <Typography variant="small" color="red">{errorTypeName}</Typography>}
-                            </div>
-                            <div className="col-span-2">
-                                <Typography variant="small" className="mb-2">Mô tả</Typography>
-                                <Textarea
-                                    type="text"
-                                    value={newPartnerType.description}
-                                    onChange={(e) => setNewPartnerType({ ...newPartnerType, description: e.target.value })}
-                                    className="w-full"
-                                />
-                            </div>
-                        </div>
-                        <div className="flex justify-end gap-2">
-                            <Button
-                                color="gray"
-                                onClick={() => setShowCreatePopup(false)}
-                            >
-                                Hủy
-                            </Button>
-                            <Button
-                                color="blue"
-                                onClick={handleCreatePartnerType}
-                            >
-                                Lưu
-                            </Button>
-                        </div>
-                    </div>
-                </div>
+                <CreatePartnerTypePopUp
+                    onClose={() => setShowCreatePopup(false)}
+                    onSuccess={fetchPartnerTypes}
+                />
             )}
 
             {/* Popup chỉnh sửa nhóm đối tác */}
-            {showEditPopup && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-[500px]">
-                        <div className="flex justify-between items-center mb-4">
-                            <Typography variant="h6">Chỉnh sửa nhóm đối tác</Typography>
-                            <button
-                                className="text-gray-500 hover:text-gray-700"
-                                onClick={() => {
-                                    resetErrorMessages();
-                                    setShowEditPopup(false);
-                                }}
-                            >
-                                ✕
-                            </button>
-                        </div>
-                        {errorMessage && (
-                            <Typography variant="small" color="red" className="mb-4">
-                                {errorMessage}
-                            </Typography>
-                        )}
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div className="col-span-2">
-                                <Typography variant="small" className="mb-2">Mã nhóm đối tác *</Typography>
-                                <Input
-                                    type="text"
-                                    value={editPartnerType.typeCode}
-                                    onChange={(e) => {
-                                        setEditPartnerType({ ...editPartnerType, typeCode: e.target.value });
-                                        setErrorTypeCode(""); // Reset lỗi khi user nhập lại
-                                    }}
-                                    className="w-full"
-                                />
-                                {errorTypeCode && <Typography variant="small" color="red">{errorTypeCode}</Typography>}
-                            </div>
-                            <div className="col-span-2">
-                                <Typography variant="small" className="mb-2">Tên nhóm đối tác *</Typography>
-                                <Input
-                                    type="text"
-                                    value={editPartnerType.typeName}
-                                    onChange={(e) => {
-                                        setEditPartnerType({ ...editPartnerType, typeName: e.target.value });
-                                        setErrorTypeName(""); // Reset lỗi khi user nhập lại
-                                    }}
-                                    className="w-full"
-                                />
-                                {errorTypeName && <Typography variant="small" color="red">{errorTypeName}</Typography>}
-                            </div>
-                            <div className="col-span-2">
-                                <Typography variant="small" className="mb-2">Trạng thái</Typography>
-                                <Select
-                                    value={editPartnerType.status ? "active" : "inactive"}
-                                    onChange={(value) => setEditPartnerType({ ...editPartnerType, status: value === "active" })}
-                                    className="w-full"
-                                >
-                                    <Option value="active">Đang hoạt động</Option>
-                                    <Option value="inactive">Ngừng hoạt động</Option>
-                                </Select>
-                            </div>
-                            <div className="col-span-2">
-                                <Typography variant="small" className="mb-2">Mô tả</Typography>
-                                <Textarea
-                                    type="text"
-                                    value={editPartnerType.description}
-                                    onChange={(e) => setEditPartnerType({ ...editPartnerType, description: e.target.value })}
-                                    className="w-full"
-                                />
-                            </div>
-                        </div>
-                        <div className="flex justify-end gap-2">
-                            <Button
-                                color="gray"
-                                onClick={() => setShowEditPopup(false)}
-                            >
-                                Hủy
-                            </Button>
-                            <Button
-                                color="blue"
-                                onClick={handleEditPartnerType}
-                            >
-                                Lưu
-                            </Button>
-                        </div>
-                    </div>
-                </div>
+            {showEditPopup && editPartnerType &&(
+                <EditPartnerTypePopUp
+                    partnerType={editPartnerType}
+                    onClose={() => setShowEditPopup(false)}
+                    onSuccess={fetchPartnerTypes}
+                />
             )}
         </div>
     );
