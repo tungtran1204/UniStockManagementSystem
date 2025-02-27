@@ -3,14 +3,16 @@ package vn.unistock.unistockmanagementsystem.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.ToString;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 @Data
 @Entity
 @Table(name = "sales_orders")
+@EqualsAndHashCode(exclude = "details")
 public class SalesOrder {
 
     @Id
@@ -23,8 +25,9 @@ public class SalesOrder {
     @JoinColumn(name = "customer_id")
     private Customer customer;
 
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "order_date")
-    private LocalDateTime orderDate;
+    private Date orderDate;
 
     // Ai tạo (nhiều order -> 1 user)
     @ManyToOne
@@ -33,6 +36,7 @@ public class SalesOrder {
 
     private String status;
     private String note;
+    private Long totalAmount;
 
     // Audit
     private LocalDateTime createdAt;
@@ -41,7 +45,17 @@ public class SalesOrder {
 
     // 1 SalesOrder -> nhiều SalesOrderDetail
     @OneToMany(mappedBy = "salesOrder", cascade = CascadeType.ALL, orphanRemoval = true)
-    @ToString.Exclude
     private List<SalesOrderDetail> details;
+
+    // Helper methods
+    public void addDetail(SalesOrderDetail detail) {
+        details.add(detail);
+        detail.setSalesOrder(this);
+    }
+
+    public void removeDetail(SalesOrderDetail detail) {
+        details.remove(detail);
+        detail.setSalesOrder(null);
+    }
 }
 

@@ -5,10 +5,23 @@ import { saveAs } from "file-saver";
 
 const API_URL = "http://localhost:8080/api/unistock/user/products";
 
+const authHeader = () => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    console.warn("🚨 Không tìm thấy token trong localStorage!");
+    return {};
+  }
+
+  console.log("🔑 Gửi Token:", token);
+  return { Authorization: `Bearer ${token}` };
+};
 
 // ✅ Lấy danh sách tất cả sản phẩm
 export const getAllProducts = async () => {
-  const response = await axios.get(API_URL);
+  const headers = authHeader();
+  console.log("📢 [getPartnerTypes] Headers:", headers);
+    const response = await axios.get(API_URL, { headers });
   return response.data;
 };
 

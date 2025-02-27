@@ -69,13 +69,14 @@ const ProductPage = () => {
 
   const fetchPaginatedProducts = async () => {
     try {
+      console.log("📢 [getPartnerTypes] Headers:", headers);
       const response = await axios.get(`http://localhost:8080/api/unistock/user/products`, {
         params: {
           page: currentPage, // 🛠 Truyền số trang hiện tại
           size: pageSize, // 🛠 Truyền số sản phẩm mỗi trang
         }
       });
-
+headers
       console.log("📌 API Response:", response.data);
 
       // ✅ Kiểm tra dữ liệu trả về từ API
