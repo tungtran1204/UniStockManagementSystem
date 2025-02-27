@@ -1,3 +1,4 @@
+// ProductPage.jsx
 import React, { useEffect, useState } from "react";
 import useProduct from "./useProduct";
 import EditProductModal from './EditProductModal';
@@ -28,6 +29,21 @@ import {
 } from "@material-tailwind/react";
 
 const ProductPage = () => {
+  // Sử dụng useProduct hook
+  const {
+    products,
+    loading,
+    currentPage,
+    pageSize,
+    totalPages,
+    totalElements,
+    fetchPaginatedProducts,
+    handleToggleStatus,
+    handlePageChange,
+    handlePageSizeChange
+  } = useProduct();
+
+  // Các state trong component
   const [showMaterialsModal, setShowMaterialsModal] = useState(false);
   const [selectedProductForMaterials, setSelectedProductForMaterials] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -35,21 +51,15 @@ const ProductPage = () => {
   const [showImportPopup, setShowImportPopup] = useState(false);
   const [showCreatePopup, setShowCreatePopup] = useState(false);
   const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
   const [units, setUnits] = useState([]);
   const [productTypes, setProductTypes] = useState([]);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
-  const [products, setProducts] = useState([]);
-  
+
   const [errors, setErrors] = useState({
     productCode: "",
     productName: "",
     unitId: "",
     typeId: "",
-    price: "",
     description: ""
   });
 
@@ -59,44 +69,10 @@ const ProductPage = () => {
     description: "",
     unitId: "",
     typeId: "",
-    price: "",
     isProductionActive: "true"
   });
 
-  useEffect(() => {
-    fetchPaginatedProducts();
-  }, [currentPage, pageSize]);
-
-  const fetchPaginatedProducts = async () => {
-    try {
-      const response = await axios.get(`http://localhost:8080/api/unistock/user/products`, {
-        params: {
-          page: currentPage, // 🛠 Truyền số trang hiện tại
-          size: pageSize, // 🛠 Truyền số sản phẩm mỗi trang
-        }
-      });
-
-      console.log("📌 API Response:", response.data);
-
-      // ✅ Kiểm tra dữ liệu trả về từ API
-      if (response.data && response.data.content) {
-        setProducts(response.data.content);
-        setTotalPages(response.data.totalPages || 1); // 🔥 API có totalPages, sử dụng luôn
-        setTotalElements(response.data.totalElements || response.data.content.length);
-      } else {
-        console.warn("⚠️ API không trả về dữ liệu hợp lệ!");
-        setProducts([]);
-        setTotalPages(1);
-        setTotalElements(0);
-      }
-    } catch (error) {
-      console.error("❌ Lỗi khi lấy danh sách sản phẩm:", error);
-      setProducts([]);
-      setTotalPages(1);
-      setTotalElements(0);
-    }
-  };
-
+  // Fetch unit và product types
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -108,12 +84,12 @@ const ProductPage = () => {
         console.log("Fetched units:", unitsData);
         console.log("Fetched productTypes:", typesData);
 
-        setUnits(Array.isArray(unitsData) ? unitsData : []); // ✅ Đảm bảo là mảng
-        setProductTypes(Array.isArray(typesData) ? typesData : []); // ✅ Đảm bảo là mảng
+        setUnits(Array.isArray(unitsData) ? unitsData : []);
+        setProductTypes(Array.isArray(typesData) ? typesData : []);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách đơn vị và dòng sản phẩm:", error);
-        setUnits([]); // ✅ Tránh lỗi
-        setProductTypes([]); // ✅ Tránh lỗi
+        setUnits([]);
+        setProductTypes([]);
       }
     };
     fetchData();
@@ -156,10 +132,6 @@ const ProductPage = () => {
       newErrors.productName = "Tên sản phẩm không được để trống";
     }
 
-    // Validate giá
-    if (!product.price || parseFloat(product.price) <= 0) {
-      newErrors.price = "Giá sản phẩm phải là số dương";
-    }
 
     // Validate đơn vị
     if (!product.unitId) {
@@ -184,7 +156,7 @@ const ProductPage = () => {
       return;
     }
 
-    setLoading(true);
+    setLocalLoading(true);
     try {
       await importExcel(file);
       alert("Import thành công!");
@@ -195,7 +167,7 @@ const ProductPage = () => {
       console.error("Lỗi khi import file:", error);
       alert("Lỗi import file! Kiểm tra lại dữ liệu.");
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
     }
   };
 
@@ -206,7 +178,7 @@ const ProductPage = () => {
       // Sử dụng await với hàm validate
       await validateProduct(newProduct);
 
-      setLoading(true);
+      setLocalLoading(true);
       await createProduct(newProduct);
       alert("Tạo sản phẩm thành công!");
       fetchPaginatedProducts();
@@ -238,29 +210,15 @@ const ProductPage = () => {
         alert("Lỗi khi tạo sản phẩm! Vui lòng thử lại.");
       }
     } finally {
-      setLoading(false);
+      setLocalLoading(false);
     }
   };
 
-  const handleToggleStatus = async (productId) => {
-    if (!productId) {
-      alert("❌ Lỗi: Không tìm thấy ID sản phẩm!");
-      return;
-    }
-
-    try {
-      await axios.patch(`http://localhost:8080/api/unistock/user/products/${productId}/toggle-production`);
-      fetchPaginatedProducts();
-    } catch (error) {
-      console.error("❌ Lỗi khi thay đổi trạng thái:", error);
-      alert("Lỗi khi thay đổi trạng thái sản xuất!");
-    }
+  const handlePageChangeWrapper = (selectedItem) => {
+    handlePageChange(selectedItem.selected);
   };
 
-  const handlePageChange = (selectedItem) => {
-    setCurrentPage(selectedItem.selected);
-  };
-
+  // Phần JSX giữ nguyên như cũ
   return (
     <div className="mt-12 mb-8 flex flex-col gap-12">
       <Card>
@@ -309,8 +267,7 @@ const ProductPage = () => {
             <select
               value={pageSize}
               onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(0);
+                handlePageSizeChange(Number(e.target.value));
               }}
               className="border rounded px-2 py-1"
             >
@@ -333,7 +290,6 @@ const ProductPage = () => {
                   "Mô tả",
                   "Đơn vị",
                   "Dòng sản phẩm",
-                  "Giá",
                   "Hình ảnh",
                   "Trạng thái",
                   "Thao tác",
@@ -382,11 +338,6 @@ const ProductPage = () => {
                       <td className={className}>
                         <Typography className="text-xs font-normal text-blue-gray-600">
                           {product.typeName || "N/A"}
-                        </Typography>
-                      </td>
-                      <td className={className}>
-                        <Typography className="text-xs font-semibold text-blue-gray-600">
-                          {product.price?.toLocaleString()} ₫
                         </Typography>
                       </td>
                       <td className={className}>
@@ -473,7 +424,7 @@ const ProductPage = () => {
               pageCount={totalPages}
               marginPagesDisplayed={2}
               pageRangeDisplayed={5}
-              onPageChange={handlePageChange}
+              onPageChange={handlePageChangeWrapper}
               containerClassName="flex items-center gap-1"
               pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               pageLinkClassName="flex items-center justify-center w-full h-full"
@@ -505,7 +456,7 @@ const ProductPage = () => {
           setShowCreatePopup(false);
           setErrors({});
         }}
-        loading={loading}
+        loading={localLoading}
         newProduct={newProduct}
         setNewProduct={setNewProduct}
         handleCreateProduct={handleCreateProduct}
@@ -539,16 +490,16 @@ const ProductPage = () => {
               <Button
                 color="gray"
                 onClick={() => setShowImportPopup(false)}
-                disabled={loading}
+                disabled={localLoading}
               >
                 Hủy
               </Button>
               <Button
                 color="blue"
                 onClick={handleImport}
-                disabled={loading}
+                disabled={localLoading}
               >
-                {loading ? "Đang xử lý..." : "Import"}
+                {localLoading ? "Đang xử lý..." : "Import"}
               </Button>
             </div>
           </div>

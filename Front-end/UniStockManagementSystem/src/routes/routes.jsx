@@ -5,7 +5,7 @@ import {
   InformationCircleIcon,
   ServerStackIcon,
   Bars3BottomRightIcon,
-  ArchiveBoxIcon, // Changed from BoxIcon to ArchiveBoxIcon
+  ArchiveBoxIcon,
 } from "@heroicons/react/24/solid";
 
 import { Navigate } from "react-router-dom";
@@ -19,6 +19,7 @@ import AdminDashboard from "@/features/admin/dashboard/AdminDashboard";
 import WarehousePage from "@/features/user/warehouse/WarehousePage";
 import ProductPage from "@/features/user/products/ProductPage";
 import PartnerTypePage from "@/features/user/partnerType/PartnerTypePage";
+import MaterialPage from "@/features/user/materials/MaterialPage";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -72,17 +73,24 @@ export const routes = [
         roles: ["USER"],
       },
       {
-        icon: <ArchiveBoxIcon {...icon} />, // Changed from BoxIcon to ArchiveBoxIcon
+        icon: <ArchiveBoxIcon {...icon} />,
         name: "Kho",
         path: "/user/warehouse",
         element: <WarehousePage />,
         roles: ["USER"],
       },
       {
-        icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
+        icon: <TableCellsIcon {...icon} />,
         name: "Quản lý sản phẩm",
         path: "/user/products",
-        element: <ProductPage />, // Trang quản lý sản phẩm
+        element: <ProductPage />,
+        roles: ["USER"],
+      },
+      {
+        icon: <TableCellsIcon {...icon} />, // Sử dụng TableCellsIcon cho phần quản lý nguyên vật liệu
+        name: "Quản lý nguyên vật liệu",
+        path: "/user/materials",
+        element: <MaterialPage />,
         roles: ["USER"],
       },
       {
@@ -90,20 +98,20 @@ export const routes = [
         name: "Quản lý đối tác",
         path: "/user/partner",
         roles: ["USER"],
-        element: <Navigate to="/user/partner/type" replace />, // Add a default redirect
+        element: <Navigate to="/user/partner/type" replace />,
         subPages: [
           {
             icon: <Bars3BottomRightIcon {...icon} />,
             name: "Nhóm đối tác",
-            path: "/user/partner/type", // Relative path
+            path: "/user/partner/type",
             element: <PartnerTypePage />,
             roles: ["USER"],
           },
           {
             icon: <Bars3BottomRightIcon {...icon} />,
             name: "Đối tác",
-            path: "/user/partner/list", // Relative path
-            element: <div>Partners Page</div>, // Placeholder for Partners Page
+            path: "/user/partner/list",
+            element: <div>Partners Page</div>,
             roles: ["USER"],
           },
         ],
