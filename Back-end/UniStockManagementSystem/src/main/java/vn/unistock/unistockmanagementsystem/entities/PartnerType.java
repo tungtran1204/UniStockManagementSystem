@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 @Entity
@@ -23,8 +24,8 @@ public class PartnerType {
     @Column(name = "type_name")
     private String typeName;
 
-//    @ManyToMany(mappedBy = "partnerTypes")
-//    private Set<Partner> partners = new HashSet<>();
+    @OneToMany(mappedBy = "partnerType", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<PartnerByType> partners;
 
     private Boolean status;
     private String description;
