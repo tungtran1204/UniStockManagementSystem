@@ -41,7 +41,7 @@ const SaleOrdersPage = () => {
   // State cho form tạo order mới
   const [newSaleOrder, setNewSaleOrder] = useState({
     nextOrderId: "Đang tải...",
-    custName: "",
+    partnerName: "",
     orderDate: new Date().toISOString().split("T")[0],
     note: "",
     productDetails: []
@@ -100,10 +100,10 @@ const SaleOrdersPage = () => {
     setErrorMessage("");
 
 
-    if (typeof saleOrder.custName === 'string' && !saleOrder.custName.trim()) {
+    if (typeof saleOrder.partnerName === 'string' && !saleOrder.partnerName.trim()) {
       setErrorCustomerName("Tên khách hàng không được để trống.");
       isValid = false;
-    } else if (!saleOrder.custName) {
+    } else if (!saleOrder.partnerName) {
       setErrorCustomerName("Tên khách hàng không được để trống.");
       isValid = false;
     }
@@ -133,7 +133,7 @@ const SaleOrdersPage = () => {
 
       const orderData = {
         orderId: newSaleOrder.nextOrderId,
-        custName: newSaleOrder.custName,
+        partnerName: newSaleOrder.partnerName,
         status: "PENDING", // Luôn là PENDING khi tạo mới
         orderDate: newSaleOrder.orderDate,
         note: newSaleOrder.note,
@@ -156,7 +156,7 @@ const SaleOrdersPage = () => {
       // Reset form
       setNewSaleOrder({
         nextOrderId: (parseInt(newSaleOrder.nextOrderId) + 1).toString(),
-        custName: "",
+        partnerName: "",
         orderDate: new Date().toISOString().split("T")[0],
         note: "",
         productDetails: []
@@ -377,7 +377,7 @@ const SaleOrdersPage = () => {
             </thead>
             <tbody>
               {saleOrders && saleOrders.length > 0 ? (
-                saleOrders.map(({ typeId, orderId, custName, totalAmount, status, orderDate, note }, key) => {
+                saleOrders.map(({ typeId, orderId, partnerName, totalAmount, status, orderDate, note }, key) => {
                   const className = `py-3 px-5 ${key === saleOrders.length - 1 ? "" : "border-b border-blue-gray-50"
                     }`;
 
@@ -408,7 +408,7 @@ const SaleOrdersPage = () => {
                           color="blue-gray"
                           className="font-semibold"
                         >
-                          {custName || "Không có tên"}
+                          {partnerName || "Không có tên"}
                         </Typography>
                       </td>
                       <td className={className}>
@@ -431,7 +431,7 @@ const SaleOrdersPage = () => {
                         <div style={styles.actionBtns}>
                           <Tooltip content="Xem chi tiết">
                             <button
-                              onClick={() => handleViewDetails({ typeId, orderId, custName, totalAmount, status, orderDate, note })}
+                              onClick={() => handleViewDetails({ typeId, orderId, partnerName, totalAmount, status, orderDate, note })}
                               style={styles.viewBtn}
                             >
                               <FaEye />
@@ -458,7 +458,7 @@ const SaleOrdersPage = () => {
 
                                 setEditSaleOrder({
                                   orderId: order.orderId,
-                                  custName: order.custName || "Không có tên",
+                                  partnerName: order.partnerName || "Không có tên",
                                   status: order.status || "PENDING",
                                   orderDate: order.orderDate || new Date().toISOString().split("T")[0],
                                   note: order.note || "",
@@ -539,9 +539,9 @@ const SaleOrdersPage = () => {
                 <Typography variant="small" className="mb-2">Tên khách hàng *</Typography>
                 <Input
                   type="text"
-                  value={newSaleOrder.custName}
+                  value={newSaleOrder.partnerName}
                   onChange={(e) => {
-                    setNewSaleOrder({ ...newSaleOrder, custName: e.target.value });
+                    setNewSaleOrder({ ...newSaleOrder, partnerName: e.target.value });
                     setErrorCustomerName("");
                   }}
                   className="w-full"
@@ -672,7 +672,7 @@ const SaleOrdersPage = () => {
               </div>
               <div>
                 <Typography variant="small" className="font-bold">Khách hàng:</Typography>
-                <Typography variant="small">{editSaleOrder.custName}</Typography>
+                <Typography variant="small">{editSaleOrder.partnerName}</Typography>
               </div>
               <div>
                 <Typography variant="small" className="font-bold">Trạng thái:</Typography>
@@ -761,7 +761,7 @@ const SaleOrdersPage = () => {
               </div>
               <div>
                 <Typography variant="small" className="font-bold">Khách hàng:</Typography>
-                <Typography variant="small">{selectedOrder.custName}</Typography>
+                <Typography variant="small">{selectedOrder.partnerName}</Typography>
               </div>
               <div>
                 <Typography variant="small" className="font-bold">Trạng thái:</Typography>

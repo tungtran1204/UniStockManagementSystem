@@ -22,8 +22,8 @@ public class SalesOrder {
 
     // Nhiều đơn hàng -> 1 khách
     @ManyToOne
-    @JoinColumn(name = "customer_id")
-    private Customer customer;
+    @JoinColumn(name = "partner_id")
+    private Partner partner;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "order_date")

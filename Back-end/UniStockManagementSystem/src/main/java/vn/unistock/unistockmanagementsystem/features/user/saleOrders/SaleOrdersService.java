@@ -6,8 +6,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import vn.unistock.unistockmanagementsystem.entities.Customer;
+import vn.unistock.unistockmanagementsystem.entities.Partner;
 import vn.unistock.unistockmanagementsystem.entities.SalesOrder;
 import vn.unistock.unistockmanagementsystem.entities.SalesOrderDetail;
+import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,12 +21,14 @@ public class SaleOrdersService {
     private final SaleOrdersRepository saleOrdersRepository;
     private final SaleOrdersMapper saleOrdersMapper;
     private final CustomerRepository customerRepository;
+    private final PartnerRepository partnerRepository;
 
 
-    public SaleOrdersService(SaleOrdersRepository saleOrdersRepository, SaleOrdersMapper saleOrdersMapper, CustomerRepository customerRepository) {
+    public SaleOrdersService(SaleOrdersRepository saleOrdersRepository, SaleOrdersMapper saleOrdersMapper, CustomerRepository customerRepository, PartnerRepository partnerRepository) {
         this.saleOrdersRepository = saleOrdersRepository;
         this.saleOrdersMapper = saleOrdersMapper;
         this.customerRepository = customerRepository;
+        this.partnerRepository = partnerRepository;
     }
 
     /**
@@ -82,7 +86,7 @@ public class SaleOrdersService {
     public SaleOrdersDTO createOrder(SaleOrdersDTO orderDTO) {
         System.out.println("📝 Dữ liệu nhận từ frontend: " + orderDTO);
 
-        if (orderDTO.getCustName() == null || orderDTO.getCustName().trim().isEmpty()) {
+        if (orderDTO.getPartnerName() == null || orderDTO.getPartnerName().trim().isEmpty()) {
             System.out.println("🚨 Lỗi: Tên khách hàng bị thiếu!");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tên khách hàng không được để trống.");
         }
@@ -92,18 +96,18 @@ public class SaleOrdersService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Đơn hàng phải có ít nhất một sản phẩm.");
         }
 
-        Customer customer;
-        if (orderDTO.getCustId() != null) {
-            customer = customerRepository.findByName(orderDTO.getCustName())
+        Partner partner;
+        if (orderDTO.getPartnerId() != null) {
+            partner = partnerRepository.findByPartnerName(orderDTO.getPartnerName())
                     .orElseThrow(() -> {
-                        System.out.println("🚨 Lỗi: Không tìm thấy khách hàng " + orderDTO.getCustName());
+                        System.out.println("🚨 Lỗi: Không tìm thấy khách hàng " + orderDTO.getPartnerName());
                         return new ResponseStatusException(HttpStatus.BAD_REQUEST, "Khách hàng không tồn tại.");
                     });
         } else {
-            System.out.println("✅ Tạo khách hàng mới: " + orderDTO.getCustName());
-            customer = new Customer();
-            customer.setName(orderDTO.getCustName());
-            customer = customerRepository.save(customer);
+            System.out.println("✅ Tạo khách hàng mới: " + orderDTO.getPartnerName());
+            partner = new Partner();
+            partner.setPartnerName(orderDTO.getPartnerName());
+            partner = partnerRepository.save(partner);
         }
 
         System.out.println("✅ Lưu đơn hàng với dữ liệu: " + orderDTO);
@@ -126,7 +130,7 @@ public class SaleOrdersService {
             detail.setSalesOrder(newOrder);
         }
 
-        newOrder.setCustomer(customer);
+        newOrder.setPartner(partner);
 
         try {
             System.out.println("📝 Kiểm tra danh sách sản phẩm trước khi lưu:");

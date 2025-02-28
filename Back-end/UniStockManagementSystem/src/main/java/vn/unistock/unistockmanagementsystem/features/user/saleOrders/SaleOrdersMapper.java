@@ -11,7 +11,8 @@ public interface SaleOrdersMapper {
     SaleOrdersMapper INSTANCE = Mappers.getMapper(SaleOrdersMapper.class);
 
     @Mapping(source = "orderId", target = "orderId")
-    @Mapping(source = "customer.name", target = "custName") // Will be set in service
+    @Mapping(source = "partner.partnerId", target = "partnerId")
+    @Mapping(source = "partner.partnerName", target = "partnerName") // Will be set in service
     @Mapping(source = "status", target = "status")
     @Mapping(source = "orderDate", target = "orderDate")
     @Mapping(source = "note", target = "note")
@@ -19,7 +20,7 @@ public interface SaleOrdersMapper {
     SaleOrdersDTO toDTO(SalesOrder salesOrder);
 
     @Mapping(source = "orderId", target = "orderId")
-    @Mapping(source = "custName", target = "customer.name")
+    @Mapping(source = "partnerName", target = "partner.partnerName")
     @Mapping(source = "status", target = "status")
     @Mapping(source = "orderDate", target = "orderDate")
     @Mapping(source = "note", target = "note")

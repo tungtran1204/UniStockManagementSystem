@@ -16,6 +16,6 @@ public interface SaleOrdersRepository extends JpaRepository<SalesOrder, Long> {
     @Query("SELECT s FROM SalesOrder s WHERE s.status = ?1")
     List<SalesOrder> findByStatus(String status);
 
-    @Query("SELECT s FROM SalesOrder s WHERE s.customer.id = ?1")
-    List<SalesOrder> findByCustomerId(Long customerId);
+    @Query("SELECT s FROM SalesOrder s WHERE s.partner.partnerId = ?1")
+    List<SalesOrder> findByCustomerId(Long partnerId);
 }

@@ -14,8 +14,8 @@ import java.util.Set;
 public class SaleOrdersDTO {
 
     private Long orderId;
-    private Long custId;
-    private String custName;
+    private Long partnerId;
+    private String partnerName;
     private String status;
     private Date orderDate;
     private String note;
@@ -32,8 +32,8 @@ public class SaleOrdersDTO {
     public SaleOrdersDTO(Long orderId,Long custId, String name, Long totalAmount,
                          String status, Date orderDate, String note) {
         this.orderId = orderId;
-        this.custId = custId;
-        this.custName = name;
+        this.partnerId = custId;
+        this.partnerName = name;
         this.status = status;
         this.orderDate = orderDate;
         this.note = note;
