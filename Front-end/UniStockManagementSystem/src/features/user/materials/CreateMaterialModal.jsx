@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   Button,
@@ -6,6 +6,7 @@ import {
   Select,
   Option,
 } from "@material-tailwind/react";
+import axios from "axios"; // Thêm axios để gọi API
 
 const CreateMaterialModal = ({
   show,
@@ -15,9 +16,41 @@ const CreateMaterialModal = ({
   setNewMaterial,
   handleCreateMaterial,
   errors,
+  setErrors,
   units = [],
   materialCategories = [],
 }) => {
+  const [checkingCode, setCheckingCode] = useState(false); // Trạng thái kiểm tra mã
+
+  // Hàm kiểm tra mã nguyên vật liệu tồn tại
+  const checkMaterialCodeExists = async (code) => {
+    if (!code.trim()) return; // Không kiểm tra nếu mã trống
+
+    setCheckingCode(true);
+    try {
+      const response = await axios.get(
+        `http://localhost:8080/api/unistock/user/materials/check-material-code/${code}`
+      );
+      if (response.data.exists) {
+        setErrors((prev) => ({ ...prev, materialCode: "Mã nguyên vật liệu đã tồn tại" }));
+      } else {
+        setErrors((prev) => ({ ...prev, materialCode: "" }));
+      }
+    } catch (error) {
+      console.error("Lỗi kiểm tra mã nguyên vật liệu:", error);
+    }
+    setCheckingCode(false);
+  };
+
+  // Theo dõi sự thay đổi của mã nguyên vật liệu và kiểm tra sau 500ms
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      checkMaterialCodeExists(newMaterial.materialCode);
+    }, 500); // Delay để tránh spam API
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [newMaterial.materialCode]);
+
   if (!show) return null;
 
   return (
@@ -39,6 +72,7 @@ const CreateMaterialModal = ({
               onChange={(e) => setNewMaterial({ ...newMaterial, materialCode: e.target.value })}
               className={`w-full ${errors.materialCode ? "border-red-500" : ""}`}
             />
+            {checkingCode && <Typography className="text-xs text-blue-500 mt-1">Đang kiểm tra...</Typography>}
             {errors.materialCode && (
               <Typography className="text-xs text-red-500 mt-1">
                 {errors.materialCode}
@@ -71,15 +105,11 @@ const CreateMaterialModal = ({
               className="w-full"
               label={newMaterial.unitId ? "" : "Chọn đơn vị"}
             >
-              {units.length > 0 ? (
-                units.map((unit) => (
-                  <Option key={unit.unitId} value={String(unit.unitId)}>
-                    {unit.unitName}
-                  </Option>
-                ))
-              ) : (
-                <Option disabled>Không có đơn vị nào</Option>
-              )}
+              {units.map((unit) => (
+                <Option key={unit.unitId} value={String(unit.unitId)}>
+                  {unit.unitName}
+                </Option>
+              ))}
             </Select>
             {errors.unitId && (
               <Typography className="text-xs text-red-500 mt-1">
@@ -92,23 +122,16 @@ const CreateMaterialModal = ({
           <div>
             <Typography variant="small" className="mb-2">Danh mục *</Typography>
             <Select
-              value={newMaterial.typeId || ""}
-              onChange={(value) => {
-                console.log("Selected typeId:", value);
-                setNewMaterial({ ...newMaterial, typeId: value });
-              }}
+              value={newMaterial.categoryId || ""}
+              onChange={(value) => setNewMaterial({ ...newMaterial, categoryId: value })}
               className="w-full"
-              label={newMaterial.typeId ? "" : "Chọn danh mục"}
+              label={newMaterial.categoryId ? "" : "Chọn danh mục"}
             >
-              {materialCategories.length > 0 ? (
-                materialCategories.map((category) => (
-                  <Option key={category.typeId} value={String(category.typeId)}>
-                    {category.name}
-                  </Option>
-                ))
-              ) : (
-                <Option disabled>Không có danh mục nào</Option>
-              )}
+              {materialCategories.map((category) => (
+                <Option key={category.categoryId} value={String(category.categoryId)}>
+                  {category.name}
+                </Option>
+              ))}
             </Select>
             {errors.categoryId && (
               <Typography className="text-xs text-red-500 mt-1">
@@ -132,7 +155,6 @@ const CreateMaterialModal = ({
           </div>
 
           {/* Ảnh nguyên vật liệu */}
-          {/* Hình ảnh nguyên vật liệu */}
           <div className="col-span-2">
             <Typography variant="small" className="mb-2">Hình ảnh nguyên vật liệu</Typography>
             <Input
@@ -146,19 +168,17 @@ const CreateMaterialModal = ({
                     e.target.value = "";
                     return;
                   }
-                  // ✅ Tạo URL để hiển thị ảnh xem trước
                   const imageUrl = URL.createObjectURL(file);
                   setNewMaterial((prev) => ({
                     ...prev,
                     image: file,
-                    imageUrl: imageUrl, // Lưu URL của ảnh để hiển thị
+                    imageUrl: imageUrl,
                   }));
                 }
               }}
               className="w-full"
             />
 
-            {/* ✅ Hiển thị ảnh xem trước */}
             {newMaterial.imageUrl && (
               <div className="mt-2 relative">
                 <img
@@ -177,7 +197,7 @@ const CreateMaterialModal = ({
           <Button color="gray" onClick={onClose} disabled={loading}>
             Hủy
           </Button>
-          <Button color="blue" onClick={handleCreateMaterial} disabled={loading}>
+          <Button color="blue" onClick={handleCreateMaterial} disabled={loading || !!errors.materialCode}>
             {loading ? "Đang xử lý..." : "Tạo nguyên vật liệu"}
           </Button>
         </div>
