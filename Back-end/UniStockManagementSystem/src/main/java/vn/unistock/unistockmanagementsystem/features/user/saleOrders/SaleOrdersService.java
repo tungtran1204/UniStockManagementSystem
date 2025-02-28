@@ -20,14 +20,12 @@ import java.util.stream.Collectors;
 public class SaleOrdersService {
     private final SaleOrdersRepository saleOrdersRepository;
     private final SaleOrdersMapper saleOrdersMapper;
-    private final CustomerRepository customerRepository;
     private final PartnerRepository partnerRepository;
 
 
-    public SaleOrdersService(SaleOrdersRepository saleOrdersRepository, SaleOrdersMapper saleOrdersMapper, CustomerRepository customerRepository, PartnerRepository partnerRepository) {
+    public SaleOrdersService(SaleOrdersRepository saleOrdersRepository, SaleOrdersMapper saleOrdersMapper, PartnerRepository partnerRepository) {
         this.saleOrdersRepository = saleOrdersRepository;
         this.saleOrdersMapper = saleOrdersMapper;
-        this.customerRepository = customerRepository;
         this.partnerRepository = partnerRepository;
     }
 

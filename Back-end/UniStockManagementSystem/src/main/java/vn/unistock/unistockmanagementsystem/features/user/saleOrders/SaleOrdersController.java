@@ -16,9 +16,6 @@ import java.util.stream.Collectors;
 public class SaleOrdersController {
 
     private final SaleOrdersService saleOrdersService;
-    private final SaleOrdersRepository saleOrdersRepository;
-    private final SaleOrdersMapper saleOrdersMapper;
-    private final SaleOrdersDetailMapper saleOrdersDetailMapper;
 
     /**
      * Lấy danh sách tất cả đơn hàng

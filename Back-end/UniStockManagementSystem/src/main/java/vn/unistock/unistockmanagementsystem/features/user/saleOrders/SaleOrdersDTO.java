@@ -29,15 +29,15 @@ public class SaleOrdersDTO {
     //private Long updatedBy;
 
     // Constructor for projection query
-    public SaleOrdersDTO(Long orderId,Long custId, String name, Long totalAmount,
-                         String status, Date orderDate, String note) {
-        this.orderId = orderId;
-        this.partnerId = custId;
-        this.partnerName = name;
-        this.status = status;
-        this.orderDate = orderDate;
-        this.note = note;
-    }
+    //public SaleOrdersDTO(Long orderId,Long custId, String name, Long totalAmount,
+    //                    String status, Date orderDate, String note) {
+    //   this.orderId = orderId;
+    //   this.partnerId = custId;
+    //   this.partnerName = name;
+    //   this.status = status;
+    //   this.orderDate = orderDate;
+    //   this.note = note;
+    //}
 }
 
 
