@@ -1,11 +1,9 @@
 package vn.unistock.unistockmanagementsystem.features.user.saleOrders;
 
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import vn.unistock.unistockmanagementsystem.entities.Customer;
 import vn.unistock.unistockmanagementsystem.entities.Partner;
 import vn.unistock.unistockmanagementsystem.entities.SalesOrder;
 import vn.unistock.unistockmanagementsystem.entities.SalesOrderDetail;
@@ -123,7 +121,7 @@ public class SaleOrdersService {
             newOrder.setDetails(new ArrayList<>()); // Khởi tạo danh sách chi tiết đơn hàng
         }
 
-// Thiết lập order_id cho từng detail
+        // Thiết lập order_id cho từng detail
         for (SalesOrderDetail detail : newOrder.getDetails()) {
             detail.setSalesOrder(newOrder);
         }

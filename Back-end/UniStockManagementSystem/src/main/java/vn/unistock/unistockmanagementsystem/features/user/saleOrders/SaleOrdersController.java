@@ -1,14 +1,10 @@
 package vn.unistock.unistockmanagementsystem.features.user.saleOrders;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import vn.unistock.unistockmanagementsystem.entities.SalesOrder;
 
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/unistock/user/sale-orders")
@@ -36,6 +32,9 @@ public class SaleOrdersController {
         return ResponseEntity.ok(order);
     }
 
+    /**
+     * Lấy chi tiết đơn hàng theo ID kèm danh sách sản phẩm cho popup (Dùng cái này)
+     */
     @GetMapping("/{orderId}/popup")
     public ResponseEntity<SaleOrdersDTO> getOrderDetailPopup(@PathVariable Long orderId) {
         SaleOrdersDTO orderDetails = saleOrdersService.getOrderDetailsPopup(orderId);

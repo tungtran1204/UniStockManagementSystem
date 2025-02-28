@@ -24,6 +24,7 @@ public interface SaleOrdersMapper {
     @Mapping(source = "status", target = "status")
     @Mapping(source = "orderDate", target = "orderDate")
     @Mapping(source = "note", target = "note")
-    @Mapping(source = "orderDetails", target = "details") // Handle separately
+    @Mapping(source = "orderDetails", target = "details")
+        // Handle separately
     SalesOrder toEntity(SaleOrdersDTO saleOrdersDTO);
 }
