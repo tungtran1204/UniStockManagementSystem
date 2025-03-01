@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.unistock.unistockmanagementsystem.entities.Product;
-import vn.unistock.unistockmanagementsystem.storage.AzureBlobService;
+import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
 
 import java.io.IOException;
 import java.util.HashMap;

@@ -1,153 +1,339 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Card,
   CardHeader,
   CardBody,
   Typography,
-  Tooltip,
-  Button,
+  Checkbox,
+  Input,
   Switch,
+  Button,
 } from "@material-tailwind/react";
 import { FaPlus, FaEdit } from "react-icons/fa";
-import ModalAddRole from "./ModalAddRole";
-import ModalEditRole from "./ModalEditRole";
-import useRole from "./useRole";
-import { useAuth } from "@/context/AuthContext";
-import usePermissions from "./usePermissions";
+import useRole from "./useRole"; // Hook của bạn
 
-const RolePage = () => {
-  const { user } = useAuth();
-  const { roles, loading, handleAddRole, handleUpdateRole, handleToggleRoleStatus } = useRole();
-  const { allPermissions, fetchAllPermissions, fetchRolePermissions } = usePermissions();
-  const [openAddModal, setOpenAddModal] = useState(false);
-  const [openEditModal, setOpenEditModal] = useState(false);
-  const [selectedRole, setSelectedRole] = useState(null);
-  const [rolePermissions, setRolePermissions] = useState([]); // 🔹 Permissions của role đang chọn
+// 1) Danh mục quyền
+const PERMISSION_CATEGORIES = {
+  "Quản lý sản phẩm": ["viewProduct", "createProduct", "updateProduct"],
+  "Quản lý đối tác": ["viewPartner", "createPartner", "updatePartner"],
+  "Quản lý kho": ["viewWarehouse", "createWarehouse", "updateWarehouse"],
+  "Quản lý báo cáo": ["viewReport", "createReport", "updateReport"],
+};
 
-  // 🔹 Lấy danh sách tất cả permissions khi trang được tải
-  useEffect(() => {
-    fetchAllPermissions();
-  }, [fetchAllPermissions]);
+// 2) Tên hiển thị
+const PERMISSION_LABELS = {
+  viewProduct: "Xem",
+  createProduct: "Thêm",
+  updateProduct: "Sửa",
 
-  // 🔹 Khi chọn role để chỉnh sửa, lấy permissions của role đó
-  const handleEditRole = async (role) => {
-    setSelectedRole(role);
-    setOpenEditModal(true);
+  viewPartner: "Xem",
+  createPartner: "Thêm",
+  updatePartner: "Sửa",
 
-    // Check if the user has the necessary permissions
-    if (!user?.permissions?.includes("getRolePermissions")) {
-      console.error("❌ [RolePage] User does not have permission to view role permissions");
-      return;
-    }
+  viewWarehouse: "Xem",
+  createWarehouse: "Thêm",
+  updateWarehouse: "Sửa",
 
+  viewReport: "Xem",
+  createReport: "Thêm",
+  updateReport: "Sửa",
+};
+
+// Hàm tạo className cho <td>
+function getTdClassName(isLast) {
+  return `py-3 px-5 ${isLast ? "" : "border-b border-blue-gray-50"}`;
+}
+
+export default function RolePage() {
+  const {
+    roles,
+    loading,
+    error,
+    handleAddRole,
+    handleUpdateRole,
+    handleToggleRoleStatus, // Nếu bạn cần Switch toggle trạng thái
+  } = useRole();
+
+  // State thêm role
+  const [addingNewRole, setAddingNewRole] = useState(false);
+  const [newRoleName, setNewRoleName] = useState("");
+  const [newRolePermissions, setNewRolePermissions] = useState([]);
+
+  // State edit tên role
+  const [editingRole, setEditingRole] = useState(null);
+  const [editingRoleName, setEditingRoleName] = useState("");
+
+  // Thêm role
+  const onAddRole = async () => {
+    const newRole = {
+      name: newRoleName,
+      permissionKeys: newRolePermissions,
+      active: true, // nếu có trạng thái
+    };
     try {
-      const permissions = await fetchRolePermissions(role.id);
-      setRolePermissions(permissions);
-    } catch (error) {
-      console.error("❌ [RolePage] Lỗi lấy danh sách permissions của role:", error);
+      await handleAddRole(newRole);
+      setAddingNewRole(false);
+      setNewRoleName("");
+      setNewRolePermissions([]);
+    } catch (err) {
+      console.error("Lỗi khi thêm vai trò:", err);
     }
   };
 
-  // ✅ Kiểm tra quyền của user
-  const canCreateRole = user?.permissions?.includes("createRole");
-  const canUpdateRole = user?.permissions?.includes("updateRole");
-  const canUpdateRoleStatus = user?.permissions?.includes("updateRoleStatus");
+  // Toggle 1 permission
+  const handleTogglePermission = useCallback(
+    (role, permissionKey) => {
+      const { permissionKeys = [] } = role;
+      const hasPerm = permissionKeys.includes(permissionKey);
+      const updatedKeys = hasPerm
+        ? permissionKeys.filter((k) => k !== permissionKey)
+        : [...permissionKeys, permissionKey];
+
+      handleUpdateRole(role.id, {
+        ...role,
+        permissionKeys: updatedKeys,
+      });
+    },
+    [handleUpdateRole]
+  );
+
+  // Blur => update tên role
+  const handleBlurEditRole = (role) => {
+    handleUpdateRole(role.id, {
+      ...role,
+      name: editingRoleName,
+    });
+    setEditingRole(null);
+  };
+
+  if (loading) return <div>Loading ...</div>;
+  if (error) return <div className="text-red-500">Error: {error}</div>;
+
+  // Lọc bỏ ADMIN & USER
+  const filteredRoles = roles.filter(
+    (r) => r.name !== "ADMIN" && r.name !== "USER"
+  );
 
   return (
     <div className="mt-12 mb-8 flex flex-col gap-12">
       <Card>
-        <CardHeader variant="gradient" color="gray" className="mb-8 p-6 flex justify-between items-center">
-          <Typography variant="h6" color="white">Danh sách Vai Trò</Typography>
-          {canCreateRole && (
-            <Button
-              size="sm"
-              color="white"
-              variant="text"
-              className="flex items-center gap-2"
-              onClick={() => setOpenAddModal(true)}
-            >
-              <FaPlus className="h-4 w-4" /> Thêm Vai Trò
-            </Button>
-          )}
+        <CardHeader
+          variant="gradient"
+          color="gray"
+          className="mb-8 p-6 flex justify-between items-center"
+        >
+          <Typography variant="h6" color="white">
+            Danh sách Vai Trò
+          </Typography>
+          <Button
+            size="sm"
+            color="white"
+            variant="text"
+            className="flex items-center gap-2"
+            onClick={() => setAddingNewRole(true)}
+          >
+            <FaPlus className="h-4 w-4" /> Thêm Vai Trò
+          </Button>
         </CardHeader>
 
         <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
-          {loading ? (
-            <Typography className="text-center">Đang tải...</Typography>
-          ) : (
-            <table className="w-full min-w-[640px] table-auto">
-              <thead>
-                <tr>
-                  {["Tên Vai Trò", "Mô Tả", "Trạng Thái", "Hành Động"].map((el) => (
-                    <th key={el} className="border-b border-blue-gray-50 py-3 px-5 text-left">
-                      <Typography variant="small" className="text-[11px] font-bold uppercase text-blue-gray-400">
-                        {el}
-                      </Typography>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {roles.length > 0 ? (
-                  roles.map((role) => {
-                    const isAdminRole = role.name === "ADMIN";
+          <table className="w-full min-w-[640px] table-auto">
+          <thead>
+  {/* Dòng 1: chỉ hiển thị danh mục */}
+  <tr>
+    {/* Ô đầu tiên để trống */}
+    <th className="border-b border-blue-gray-50 py-3 px-5 text-left" />
+    {Object.keys(PERMISSION_CATEGORIES).map((cat) => {
+      const colSpan = PERMISSION_CATEGORIES[cat].length;
+      return (
+        <th
+          key={cat}
+          colSpan={colSpan}
+          className="border-b border-blue-gray-50 py-3 px-5 text-center"
+        >
+          <Typography
+            variant="small"
+            className="text-[11px] font-bold uppercase text-blue-gray-400"
+          >
+            {cat}
+          </Typography>
+        </th>
+      );
+    })}
+  </tr>
 
-                    return (
-                      <tr key={role.id}>
-                        <td className="py-3 px-5">{role.name}</td>
-                        <td className="py-3 px-5">{role.description}</td>
-                        <td className="py-3 px-5">
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              color="green"
-                              checked={role.active}
-                              disabled={!canUpdateRoleStatus || isAdminRole}
-                              onChange={() => handleToggleRoleStatus(role.id, role.active)}
-                            />
-                            <Typography className="text-xs font-semibold text-blue-gray-600">
-                              {role.active ? "Hoạt động" : "Vô hiệu hóa"}
-                            </Typography>
-                          </div>
-                        </td>
-                        <td className="py-3 px-5 flex gap-2">
-                          {canUpdateRole && (
-                            <Tooltip content="Chỉnh sửa">
-                              <button onClick={() => handleEditRole(role)} className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white">
-                                <FaEdit />
-                              </button>
-                            </Tooltip>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan="4" className="border-b border-gray-200 px-3 py-4 text-center text-gray-500">Không có dữ liệu</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          )}
+  {/* Dòng 2: cột đầu là “Roles”, các cột tiếp theo là tên quyền */}
+  <tr>
+    <th className="border-b border-blue-gray-50 py-3 px-5 text-center">
+      <Typography
+        variant="small"
+        className="text-[11px] font-bold uppercase text-blue-gray-400"
+      >
+        Roles
+      </Typography>
+    </th>
+    {Object.values(PERMISSION_CATEGORIES)
+      .flat()
+      .map((perm) => (
+        <th
+          key={perm}
+          className="border-b border-blue-gray-50 py-3 px-2 text-center w-5" // Adjusted px-5 to px-2
+        >
+          <Typography
+            variant="small"
+            className="text-[11px] font-bold uppercase text-blue-gray-400"
+          >
+            {PERMISSION_LABELS[perm] || perm}
+          </Typography>
+        </th>
+      ))}
+  </tr>
+</thead>
+
+            <tbody>
+              {filteredRoles.length > 0 ? (
+                filteredRoles.map((role, idx) => {
+                  const isLast = idx === filteredRoles.length - 1;
+                  return (
+                    <tr key={role.id}>
+                      {/* Cột Roles */}
+                      <td className={getTdClassName(isLast)}>
+  <div className="flex items-center justify-between">
+    {/* Khối (Tên Role + Switch) bên trái */}
+    <div className="flex flex-col gap-2 min-w-[200px]">
+      {/* Dòng trên: Tên Role (hoặc Input nếu đang edit) */}
+      {editingRole === role.id ? (
+        <Input
+          value={editingRoleName}
+          onChange={(e) => setEditingRoleName(e.target.value)}
+          onBlur={() => handleBlurEditRole(role)}
+          className="  "
+        />
+      ) : (
+        <Typography
+          variant="small"
+          color="blue-gray"
+          className="font-semibold"
+        >
+          {role.name}
+        </Typography>
+      )}
+
+      {/* Dòng dưới: Switch + Trạng thái */}
+      {role.active !== undefined && (
+        <div className="flex items-center gap-2">
+          <Switch
+            color="green"
+            checked={!!role.active}
+            onChange={() =>
+              handleToggleRoleStatus &&
+              handleToggleRoleStatus(role.id, role.active)
+            }
+          />
+          <Typography className="text-xs font-semibold text-blue-gray-600">
+            {role.active ? "Hoạt động" : "Vô hiệu hóa"}
+          </Typography>
+        </div>
+      )}
+    </div>
+
+    {/* Icon Edit bên phải */}
+    <Button
+      size="sm"
+      className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+      onClick={() => {
+        setEditingRole(role.id);
+        setEditingRoleName(role.name);
+      }}
+    >
+      <FaEdit />
+    </Button>
+  </div>
+</td>
+
+
+                      {/* Cột checkbox quyền */}
+                      {Object.values(PERMISSION_CATEGORIES)
+                        .flat()
+                        .map((perm) => {
+                          const checked = role.permissionKeys?.includes(perm);
+                          return (
+                            <td key={perm} className={getTdClassName(isLast)}>
+                              <div className="flex items-center justify-center">
+                                <Checkbox
+                                  checked={checked}
+                                  onChange={() =>
+                                    handleTogglePermission(role, perm)
+                                  }
+                                  className="w-4 h-4" // Adjusted width and height
+                                />
+                              </div>
+                            </td>
+                          );
+                        })}
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td
+                    colSpan={
+                      1 + Object.values(PERMISSION_CATEGORIES).flat().length
+                    }
+                    className="border-b border-gray-200 px-3 py-4 text-center text-gray-500"
+                  >
+                    Không có dữ liệu
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </CardBody>
       </Card>
 
-      {canCreateRole && (
-        <ModalAddRole open={openAddModal} onClose={() => setOpenAddModal(false)} onAddRole={handleAddRole} />
-      )}
+      {/* Form thêm role */}
+      {addingNewRole && (
+        <Card className="p-4">
+          <Typography variant="h6">Thêm vai trò mới</Typography>
+          <div className="flex items-center gap-4 mt-2">
+            <Input
+              label="Tên vai trò"
+              value={newRoleName}
+              onChange={(e) => setNewRoleName(e.target.value)}
+            />
+            <Button onClick={onAddRole}>Lưu</Button>
+            <Button color="red" onClick={() => setAddingNewRole(false)}>
+              Huỷ
+            </Button>
+          </div>
 
-      {selectedRole && canUpdateRole && (
-        <ModalEditRole
-          open={openEditModal}
-          onClose={() => setOpenEditModal(false)}
-          role={selectedRole}
-          allPermissions={allPermissions}
-          rolePermissions={rolePermissions} // ✅ Truyền danh sách permission thực tế của role
-          onUpdateRole={handleUpdateRole}
-        />
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            {Object.entries(PERMISSION_CATEGORIES).map(([catName, perms]) => (
+              <div key={catName}>
+                <Typography variant="small" className="font-bold">
+                  {catName}
+                </Typography>
+                {perms.map((perm) => (
+                  <label key={perm} className="flex items-center gap-2">
+                    <Checkbox
+                      checked={newRolePermissions.includes(perm)}
+                      onChange={() => {
+                        setNewRolePermissions((prev) => {
+                          const has = prev.includes(perm);
+                          return has
+                            ? prev.filter((p) => p !== perm)
+                            : [...prev, perm];
+                        });
+                      }}
+                    />
+                    <span>{PERMISSION_LABELS[perm]}</span>
+                  </label>
+                ))}
+              </div>
+            ))}
+          </div>
+        </Card>
       )}
     </div>
   );
-};
-
-export default RolePage;
+}
