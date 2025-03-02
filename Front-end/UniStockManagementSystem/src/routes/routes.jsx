@@ -24,6 +24,7 @@ import PartnerPage from "@/features/user/partner/PartnerPage";
 import MaterialPage from "@/features/user/materials/MaterialPage";
 
 import ReceiptNotePage from "../features/user/receiptNote/ReceiptNotePage";
+import AddSaleOrderPage from "../features/user/saleorders/AddSaleOrderPage";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -111,6 +112,7 @@ export const routes = [
         element: <SaleOrdersPage />, // Trang quản lý đơn hàng 
         roles: ["USER"],
       },
+      
       {
         icon: <UserCircleIcon {...icon} />,
         name: "Quản lý đối tác",
@@ -159,6 +161,13 @@ export const routes = [
       {
         path: "*",
         element: <NotFoundPage />,
+      },
+      {
+        icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
+        name: "Thêm đơn hàng",
+        path: "/user/sale-orders/add",
+        element: <AddSaleOrderPage />, // Trang quản lý đơn hàng 
+        roles: ["USER"],
       },
     ],
   },
