@@ -11,27 +11,27 @@ import {
 } from "@material-tailwind/react";
 
 const ModalAddSaleOrder = ({ open, onClose, fetchOrders, nextCode }) => {
-  // Lấy mã order từ prop nextCode
+  // Các state lưu trữ giá trị của form
   const [orderCode, setOrderCode] = useState("");
   const [orderDate, setOrderDate] = useState("");
   const [customerCode, setCustomerCode] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [address, setAddress] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [creator, setCreator] = useState("");
+  const [salesman, setSalesman] = useState(""); // Nhân viên bán hàng
   const [description, setDescription] = useState("");
 
-  // Danh sách hàng (dòng chi tiết)
+  // Danh sách sản phẩm/dòng chi tiết
   const [items, setItems] = useState([]);
-  // Tăng ID tạm cho dòng
+  // Tăng ID tạm cho từng dòng để map
   const [nextId, setNextId] = useState(1);
 
-  // Cập nhật orderCode khi nextCode thay đổi
+  // Mỗi lần prop nextCode thay đổi, cập nhật lại mã phiếu
   useEffect(() => {
     setOrderCode(nextCode || "");
   }, [nextCode]);
 
-  // Thêm 1 dòng chi tiết
+  // Thêm 1 dòng sản phẩm
   const handleAddRow = () => {
     setItems((prev) => [
       ...prev,
@@ -39,10 +39,8 @@ const ModalAddSaleOrder = ({ open, onClose, fetchOrders, nextCode }) => {
         id: nextId,
         maHang: "",
         tenHang: "",
-        kho: "",
         donVi: "",
         soLuong: 0,
-        donGia: 0,
       },
     ]);
     setNextId((id) => id + 1);
@@ -54,7 +52,7 @@ const ModalAddSaleOrder = ({ open, onClose, fetchOrders, nextCode }) => {
     setNextId(1);
   };
 
-  // Xử lý Lưu
+  // Nút Lưu
   const handleSave = async () => {
     const payload = {
       orderCode,
@@ -63,104 +61,120 @@ const ModalAddSaleOrder = ({ open, onClose, fetchOrders, nextCode }) => {
       customerName,
       address,
       phoneNumber,
-      creator,
+      salesman,
       description,
       items,
     };
     console.log("Tạo mới đơn hàng:", payload);
-    // TODO: Gọi API createSaleOrder(payload) nếu cần
 
-    // Reload danh sách nếu có hàm fetchOrders
+    // Gọi hàm fetchOrders (nếu có) để reload danh sách
     if (fetchOrders) {
       fetchOrders();
     }
-    // Đóng modal
+    // Đóng modal sau khi lưu
     onClose();
   };
 
   return (
-    <Dialog open={open} handler={onClose} size="xl" className="max-h-screen overflow-auto">
+    <Dialog
+      open={open}
+      handler={onClose}
+      size="xl"
+      className="w-[900px] max-h-screen overflow-auto"
+    >
       {/* Tiêu đề */}
       <DialogHeader className="border-b border-blue-gray-100">
         <Typography variant="h5" color="blue-gray">
-          Đơn đặt hàng – {orderCode}
+          Tạo đơn đặt hàng bán
         </Typography>
       </DialogHeader>
 
-      {/* Nội dung form */}
       <DialogBody divider className="flex flex-col gap-4">
-        {/* Thông tin chung (2 cột) */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Form 2 cột - Thông tin chung */}
+        <div className="grid grid-cols-2 gap-12">
+          {/* Cột trái */}
           <div className="flex flex-col gap-4">
             <Input
               label="Mã phiếu"
               value={orderCode}
               disabled
-              className="w-[300px]"
+              className="w-64"
               onChange={(e) => setOrderCode(e.target.value)}
             />
             <Input
               label="Mã khách hàng"
               value={customerCode}
-              className="w-[300px]"
-              variant="outlined"
+              className="w-64"
               onChange={(e) => setCustomerCode(e.target.value)}
             />
             <Input
               label="Địa chỉ"
               value={address}
-              className="w-[300px]"
+              className="w-64"
               onChange={(e) => setAddress(e.target.value)}
             />
             <Input
-              label="Người lập phiếu"
-              value={creator}
-              className="w-[300px]"
-              onChange={(e) => setCreator(e.target.value)}
+              label="Nhân viên bán hàng"
+              value={salesman}
+              className="w-64"
+              onChange={(e) => setSalesman(e.target.value)}
             />
           </div>
+
+          {/* Cột phải */}
           <div className="flex flex-col gap-4">
             <Input
               label="Ngày lập phiếu"
               type="date"
+              className="w-64"
               value={orderDate}
               onChange={(e) => setOrderDate(e.target.value)}
             />
             <Input
               label="Tên khách hàng"
               value={customerName}
+              className="w-64"
               onChange={(e) => setCustomerName(e.target.value)}
             />
             <Input
               label="Số điện thoại"
               value={phoneNumber}
+              className="w-64"
               onChange={(e) => setPhoneNumber(e.target.value)}
             />
             <Textarea
               label="Diễn giải"
               value={description}
+              className="w-64"
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
         </div>
 
-        {/* Bảng các dòng sản phẩm */}
+        {/* Bảng chi tiết sản phẩm */}
         <div className="mt-2 overflow-auto rounded border border-gray-200">
           <table className="w-full text-left min-w-max">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                {["STT", "Mã hàng", "Tên hàng", "Kho", "Đơn vị", "Số lượng", "Đơn giá"].map((head) => (
-                  <th key={head} className="px-4 py-2 text-sm font-semibold text-gray-600">
-                    {head}
-                  </th>
-                ))}
+                {["STT", "Mã hàng", "Tên hàng", "Đơn vị", "Số lượng"].map(
+                  (head) => (
+                    <th
+                      key={head}
+                      className="px-4 py-2 text-sm font-semibold text-gray-600"
+                    >
+                      {head}
+                    </th>
+                  )
+                )}
               </tr>
             </thead>
             <tbody>
               {items.length > 0 ? (
                 items.map((item, index) => (
                   <tr key={item.id} className="border-b last:border-none">
-                    <td className="px-4 py-2 text-sm text-gray-700">{index + 1}</td>
+                    <td className="px-4 py-2 text-sm text-gray-700">
+                      {index + 1}
+                    </td>
                     <td className="px-4 py-2 text-sm">
                       <Input
                         variant="standard"
@@ -169,7 +183,9 @@ const ModalAddSaleOrder = ({ open, onClose, fetchOrders, nextCode }) => {
                         onChange={(e) =>
                           setItems((prev) =>
                             prev.map((row) =>
-                              row.id === item.id ? { ...row, maHang: e.target.value } : row
+                              row.id === item.id
+                                ? { ...row, maHang: e.target.value }
+                                : row
                             )
                           )
                         }
@@ -183,21 +199,9 @@ const ModalAddSaleOrder = ({ open, onClose, fetchOrders, nextCode }) => {
                         onChange={(e) =>
                           setItems((prev) =>
                             prev.map((row) =>
-                              row.id === item.id ? { ...row, tenHang: e.target.value } : row
-                            )
-                          )
-                        }
-                      />
-                    </td>
-                    <td className="px-4 py-2 text-sm">
-                      <Input
-                        variant="standard"
-                        className="w-20"
-                        value={item.kho}
-                        onChange={(e) =>
-                          setItems((prev) =>
-                            prev.map((row) =>
-                              row.id === item.id ? { ...row, kho: e.target.value } : row
+                              row.id === item.id
+                                ? { ...row, tenHang: e.target.value }
+                                : row
                             )
                           )
                         }
@@ -211,7 +215,9 @@ const ModalAddSaleOrder = ({ open, onClose, fetchOrders, nextCode }) => {
                         onChange={(e) =>
                           setItems((prev) =>
                             prev.map((row) =>
-                              row.id === item.id ? { ...row, donVi: e.target.value } : row
+                              row.id === item.id
+                                ? { ...row, donVi: e.target.value }
+                                : row
                             )
                           )
                         }
@@ -234,28 +240,14 @@ const ModalAddSaleOrder = ({ open, onClose, fetchOrders, nextCode }) => {
                         }
                       />
                     </td>
-                    <td className="px-4 py-2 text-sm">
-                      <Input
-                        variant="standard"
-                        type="number"
-                        className="w-24"
-                        value={item.donGia}
-                        onChange={(e) =>
-                          setItems((prev) =>
-                            prev.map((row) =>
-                              row.id === item.id
-                                ? { ...row, donGia: Number(e.target.value) }
-                                : row
-                            )
-                          )
-                        }
-                      />
-                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-4 py-2 text-center text-gray-500">
+                  <td
+                    colSpan={5}
+                    className="px-4 py-2 text-center text-gray-500"
+                  >
                     Chưa có dòng sản phẩm nào
                   </td>
                 </tr>
@@ -264,7 +256,7 @@ const ModalAddSaleOrder = ({ open, onClose, fetchOrders, nextCode }) => {
           </table>
         </div>
 
-        {/* Nút Thêm dòng & Xóa hết dòng */}
+        {/* Nút thêm & xoá dòng */}
         <div className="flex gap-2">
           <Button variant="outlined" onClick={handleAddRow}>
             + Thêm dòng
@@ -275,7 +267,7 @@ const ModalAddSaleOrder = ({ open, onClose, fetchOrders, nextCode }) => {
         </div>
       </DialogBody>
 
-      {/* Footer: Hủy & Lưu */}
+      {/* Footer */}
       <DialogFooter className="flex justify-end gap-2">
         <Button variant="text" color="gray" onClick={onClose}>
           Hủy

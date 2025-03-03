@@ -40,7 +40,7 @@ public class DataInitializer implements CommandLineRunner {
                 });
 
         // 🟢 **Tạo Role USER nếu chưa tồn tại**
-        roleRepository.findByRoleName("USER")
+        Role userRole =  roleRepository.findByRoleName("USER")
                 .orElseGet(() -> {
                     Role role = new Role();
                     role.setRoleName("USER");
@@ -76,5 +76,34 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         System.out.println("🚀 [INIT] Hoàn tất!");
+
+        if (userRole != null) {
+            // Lấy tất cả permission bắt đầu bằng /api/unistock/user/
+            List<Permission> userPermissions = permissionRepository.findByUrlPatternStartingWith("/api/unistock/user/");
+            if (!userPermissions.isEmpty()) {
+                System.out.println("🔹 Tổng số permission dành cho USER: " + userPermissions.size());
+
+                // Xoá tất cả role-permission cũ của USER
+                Iterator<RolePermission> userIterator = userRole.getRolePermissions().iterator();
+                while (userIterator.hasNext()) {
+                    userIterator.next();
+                    userIterator.remove();
+                }
+
+                // Thêm quyền mới cho USER
+                for (Permission permission : userPermissions) {
+                    userRole.getRolePermissions().add(new RolePermission(null, userRole, permission));
+                }
+
+                // Lưu lại role
+                roleRepository.save(userRole);
+                System.out.println("✅ Đã gán tất cả permission user cho role USER!");
+            } else {
+                System.out.println("⚠️ Không có permission nào cho role USER!");
+            }
+        }
+
+        System.out.println("🚀 [INIT] Hoàn tất!");
     }
+
 }
