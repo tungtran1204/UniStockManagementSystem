@@ -1,22 +1,15 @@
-package vn.unistock.unistockmanagementsystem.warehouse;
+package vn.unistock.unistockmanagementsystem.features.user.warehouse;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import vn.unistock.unistockmanagementsystem.entities.Warehouse;
-import vn.unistock.unistockmanagementsystem.features.user.warehouse.WarehouseController;
-import vn.unistock.unistockmanagementsystem.features.user.warehouse.WarehouseDTO;
-import vn.unistock.unistockmanagementsystem.features.user.warehouse.WarehouseService;
-
-import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
