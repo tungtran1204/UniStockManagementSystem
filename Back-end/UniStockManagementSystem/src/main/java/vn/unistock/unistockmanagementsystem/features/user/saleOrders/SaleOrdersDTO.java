@@ -14,6 +14,7 @@ import java.util.Set;
 public class SaleOrdersDTO {
 
     private Long orderId;
+    private String orderCode;
     private Long partnerId;
     private String partnerName;
     private String status;

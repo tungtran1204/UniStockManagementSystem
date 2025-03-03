@@ -1,5 +1,8 @@
 package vn.unistock.unistockmanagementsystem.features.user.saleOrders;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,15 +33,19 @@ public class SaleOrdersService {
     /**
      * Lấy danh sách tất cả đơn hàng
      */
-    public List<SaleOrdersDTO> getAllOrders() {
-        return saleOrdersRepository.findAll().stream()
-                .map(saleOrdersMapper::toDTO)
-                .collect(Collectors.toList());
+    public Page<SaleOrdersDTO> getAllOrders(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<SalesOrder> salesOrderPage = saleOrdersRepository.findAll(pageable);
+        return salesOrderPage.map(saleOrdersMapper::toDTO);
     }
 
-    /**
-     * Lấy thông tin chi tiết đơn hàng theo ID
-     */
+    public String getNextOrderCode() {
+
+        Long maxId = saleOrdersRepository.findMaxOrderId(); // SELECT MAX(order_id)
+        Long nextId = (maxId != null ? maxId : 0L) + 1;
+        return String.format("ĐH%05d", nextId);
+    }
+
     public SaleOrdersDTO getOrderById(Long orderId) {
         SalesOrder saleOrder = saleOrdersRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found with ID: " + orderId));
@@ -48,7 +55,7 @@ public class SaleOrdersService {
     /**
      * Lấy chi tiết đơn hàng kèm sản phẩm theo ID cho popup
      */
-    public SaleOrdersDTO getOrderDetailsPopup(Long orderId) {
+    public SaleOrdersDTO getOrderDetail(Long orderId) {
         // Lấy đơn hàng từ repository
         SalesOrder salesOrder = saleOrdersRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found with ID: " + orderId));
