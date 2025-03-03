@@ -27,7 +27,6 @@ public class Product {
 
     private String description;
 
-    private Double price;
 
     // ✅ Cho phép nullable để tránh lỗi khi dữ liệu thiếu
     @ManyToOne

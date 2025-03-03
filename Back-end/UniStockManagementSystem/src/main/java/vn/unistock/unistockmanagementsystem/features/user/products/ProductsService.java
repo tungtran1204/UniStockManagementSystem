@@ -36,7 +36,6 @@ public class ProductsService {
         dto.setProductCode(product.getProductCode());
         dto.setProductName(product.getProductName());
         dto.setDescription(product.getDescription());
-        dto.setPrice(product.getPrice());
 
         if (product.getUnit() != null) {
             dto.setUnitId(product.getUnit().getUnitId());
@@ -71,7 +70,6 @@ public class ProductsService {
         product.setProductCode(productDTO.getProductCode());
         product.setProductName(productDTO.getProductName());
         product.setDescription(productDTO.getDescription());
-        product.setPrice(productDTO.getPrice());
 
         if (productDTO.getUnitId() != null) {
             product.setUnit(unitRepository.findById(productDTO.getUnitId()).orElse(null));
@@ -139,7 +137,6 @@ public class ProductsService {
         product.setProductCode(updatedProduct.getProductCode());
         product.setProductName(updatedProduct.getProductName());
         product.setDescription(updatedProduct.getDescription());
-        product.setPrice(updatedProduct.getPrice());
 
         if (updatedProduct.getUnitId() != null) {
             product.setUnit(unitRepository.findById(updatedProduct.getUnitId()).orElse(null));

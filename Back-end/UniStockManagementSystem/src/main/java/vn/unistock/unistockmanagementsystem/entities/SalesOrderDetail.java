@@ -1,13 +1,18 @@
 package vn.unistock.unistockmanagementsystem.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
 @Data
 @Entity
 @Table(name = "sales_order_details")
+@EqualsAndHashCode(exclude = {"salesOrder", "product"})
+@ToString(exclude = {"salesOrder", "product"})
 public class SalesOrderDetail {
 
     @Id
@@ -15,23 +20,17 @@ public class SalesOrderDetail {
     @Column(name = "order_detail_id")
     private Long orderDetailId;
 
-    // Nhiều detail -> 1 salesOrder
-    @ManyToOne
-    @JoinColumn(name = "order_id")
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
     private SalesOrder salesOrder;
 
-    // Nhiều detail -> 1 product
-    @ManyToOne
-    @JoinColumn(name = "product_id")
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    private Double quantity;
-    private Double unitPrice;
-    private Double discount;
+    @Column(nullable = false)
+    private int quantity;
 
-    // Audit
-    private LocalDateTime createdAt;
-    private Long createdBy;
-    private LocalDateTime updatedAt;
-    private Long updatedBy;
 }

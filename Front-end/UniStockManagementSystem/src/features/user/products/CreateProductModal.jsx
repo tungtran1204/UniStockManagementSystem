@@ -101,20 +101,6 @@ const CreateProductModal = ({
               </Typography>
             )}
           </div>
-          <div>
-            <Typography variant="small" className="mb-2">Giá *</Typography>
-            <Input
-              type="number"
-              value={newProduct.price}
-              onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-              className={`w-full ${errors.price ? 'border-red-500' : ''}`}
-            />
-            {errors.price && (
-              <Typography className="text-xs text-red-500 mt-1">
-                {errors.price}
-              </Typography>
-            )}
-          </div>
           <div className="col-span-2">
             <Typography variant="small" className="mb-2">Mô tả</Typography>
             <Input

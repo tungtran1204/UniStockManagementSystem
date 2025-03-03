@@ -74,4 +74,14 @@ public class PartnerTypeService {
         partnerType = partnerTypeRepository.save(partnerType);
         return partnerTypeMapper.toDTO(partnerType);
     }
+
+    public PartnerType getPartnerTypeByCode(String typeCode) {
+        return partnerTypeRepository.findByTypeCode(typeCode)
+               .orElseThrow(() -> new IllegalArgumentException("Loại đối tác không tồn tại"));
+    }
+
+    public PartnerType getPartnerTypeById(Long typeId) {
+        return partnerTypeRepository.findById(typeId)
+                .orElseThrow(() -> new IllegalArgumentException("Loại đối tác không tồn tại"));
+    }
 }

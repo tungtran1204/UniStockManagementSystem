@@ -2,12 +2,21 @@ package vn.unistock.unistockmanagementsystem.entities;
 
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
+import vn.unistock.unistockmanagementsystem.validation.CommonStatus;
+
 import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "warehouses")
+@Getter
+@Setter
+@Table(name = "warehouse")
 public class Warehouse {
 
     @Id
@@ -15,20 +24,19 @@ public class Warehouse {
     @Column(name = "warehouse_id")
     private Long warehouseId;
 
-    @Column(name = "wh_name")
-    private String whName;
+    @Column(name = "warehouse_code")
+    //@NotBlank(message = "Mã kho không được để trống")
+    private String warehouseCode;
 
-    @Column(name = "wh_location")
-    private String whLocation;
+    @Column(name = "warehouse_name")
+    @NotBlank(message = "Tên kho không được để trống")
+    private String warehouseName;
 
-    // Nhiều warehouse -> 1 user (manager)
-    @ManyToOne
-    @JoinColumn(name = "manager_id")
-    private User manager;
+    @Column(name = "warehouse_description")
+    @Size(max=255, message = "Trường mô tả quá dài")
+    private String warehouseDescription;
 
-    // Audit
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private Long createdBy;
-    private Long updatedBy;
+    @Column(name = "is_active")
+    private Boolean isActive;
+
 }

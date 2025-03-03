@@ -19,7 +19,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/unistock/user/products") // ✅ API dành riêng cho User
 @RequiredArgsConstructor
-public class ProductsController {
+public class    ProductsController {
     private final ProductsService productsService;
     private final AzureBlobService azureBlobService;
     private final ExcelService excelService;
@@ -55,7 +55,6 @@ public class ProductsController {
     // 🟢 API bật/tắt trạng thái sản xuất
     @PatchMapping("/{id}/toggle-production")
     public ResponseEntity<ProductsDTO> toggleProductionStatus(@PathVariable Long id) {
-        System.out.println("📌 [DEBUG] Toggle production status for ID: " + id);
         return ResponseEntity.ok(productsService.toggleProductionStatus(id));
     }
 
@@ -66,7 +65,6 @@ public class ProductsController {
             @RequestParam("productCode") String productCode,
             @RequestParam("productName") String productName,
             @RequestParam("description") String description,
-            @RequestParam("price") Double price,
             @RequestParam(value = "unitId", required = false) Long unitId,
             @RequestParam(value = "productTypeId", required = false) Long productTypeId,
             @RequestParam(value = "isProductionActive", required = false) Boolean isProductionActive,
@@ -83,7 +81,6 @@ public class ProductsController {
         productDTO.setProductCode(productCode);
         productDTO.setProductName(productName);
         productDTO.setDescription(description);
-        productDTO.setPrice(price);
         productDTO.setUnitId(unitId);
         productDTO.setTypeId(productTypeId);
         productDTO.setIsProductionActive(isProductionActive);
@@ -115,7 +112,6 @@ public class ProductsController {
             @RequestParam("productCode") String productCode,
             @RequestParam("productName") String productName,
             @RequestParam("description") String description,
-            @RequestParam("price") Double price,
             @RequestParam(value = "unitId", required = false) Long unitId,
             @RequestParam(value = "typeId", required = false) Long typeId,
             @RequestParam(value = "isProductionActive", required = false) Boolean isProductionActive,
@@ -125,7 +121,6 @@ public class ProductsController {
         productDTO.setProductCode(productCode);
         productDTO.setProductName(productName);
         productDTO.setDescription(description);
-        productDTO.setPrice(price);
         productDTO.setUnitId(unitId);
         productDTO.setTypeId(typeId);
         productDTO.setIsProductionActive(isProductionActive);
