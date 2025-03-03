@@ -7,7 +7,7 @@ public class PermissionHierarchy {
     public static final Map<String, List<String>> PERMISSION_MAP = new HashMap<>();
 
     static {
-        PERMISSION_MAP.put("updateProduct", List.of("getProductById", "checkProductCode"));
+        PERMISSION_MAP.put("viewProduct", List.of("getProductById", "checkProductCode"));
 
         PERMISSION_MAP.put("deleteRole", List.of("getAllRoles", "getRolePermissions"));
 
