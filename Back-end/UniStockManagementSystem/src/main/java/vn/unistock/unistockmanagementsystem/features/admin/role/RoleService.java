@@ -8,6 +8,7 @@ import vn.unistock.unistockmanagementsystem.entities.RolePermission;
 import vn.unistock.unistockmanagementsystem.features.admin.permission.PermissionHierarchy;
 import vn.unistock.unistockmanagementsystem.features.admin.permission.PermissionRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,6 +35,35 @@ public class RoleService {
             throw new RuntimeException("Vai trò đã tồn tại");
         }
         Role entity = roleMapper.toEntity(dto);
+
+        // Xử lý permissionKeys từ DTO để khởi tạo rolePermissions
+        if (dto.getPermissionKeys() != null && !dto.getPermissionKeys().isEmpty()) {
+            // Mở rộng sub-permissions
+            Set<String> expandedKeys = PermissionHierarchy.expandPermissions(dto.getPermissionKeys());
+
+            // Tìm Permissions trong DB
+            List<Permission> foundPermissions = permissionRepository.findByPermissionNameIn(expandedKeys);
+
+            // Khởi tạo rolePermissions nếu null
+            if (entity.getRolePermissions() == null) {
+                entity.setRolePermissions(new ArrayList<>());
+            }
+
+            // Thêm RolePermission
+            for (Permission p : foundPermissions) {
+                RolePermission rp = RolePermission.builder()
+                        .role(entity)
+                        .permission(p)
+                        .build();
+                entity.getRolePermissions().add(rp);
+            }
+        } else {
+            // Nếu không có permissionKeys, khởi tạo rolePermissions rỗng
+            if (entity.getRolePermissions() == null) {
+                entity.setRolePermissions(new ArrayList<>());
+            }
+        }
+
         entity = roleRepository.save(entity);
         return roleMapper.toDTO(entity);
     }

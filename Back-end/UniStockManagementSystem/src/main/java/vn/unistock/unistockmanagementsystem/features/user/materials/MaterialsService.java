@@ -11,7 +11,7 @@ import org.springframework.web.multipart.MultipartFile;
 import vn.unistock.unistockmanagementsystem.entities.Material;
 import vn.unistock.unistockmanagementsystem.features.user.materialType.MaterialTypeRepository;
 import vn.unistock.unistockmanagementsystem.features.user.units.UnitRepository;
-import vn.unistock.unistockmanagementsystem.storage.AzureBlobService;
+import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
