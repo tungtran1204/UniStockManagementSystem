@@ -26,36 +26,12 @@ public class MaterialsService {
     private final MaterialsMapper materialsMapper = MaterialsMapper.INSTANCE;
     private final AzureBlobService azureBlobService;
 
-    // Chuyển entity -> DTO
-    private MaterialsDTO convertToDTO(Material material) {
-        MaterialsDTO dto = new MaterialsDTO();
-
-        dto.setMaterialId(material.getMaterialId());
-        dto.setMaterialCode(material.getMaterialCode());
-        dto.setMaterialName(material.getMaterialName());
-        dto.setDescription(material.getDescription());
-
-        if (material.getUnit() != null) {
-            dto.setUnitId(material.getUnit().getUnitId());
-            dto.setUnitName(material.getUnit().getUnitName());
-        }
-
-        if (material.getMaterialType() != null) {
-            dto.setTypeId(material.getMaterialType().getMaterialTypeId());
-            dto.setTypeName(material.getMaterialType().getName());
-        }
-
-        dto.setIsUsing(Boolean.TRUE.equals(material.getIsUsing())); // Xử lý null an toàn
-        dto.setImageUrl(material.getImageUrl());
-
-        return dto;
-    }
 
     // 🟢 Lấy tất cả nguyên liệu có phân trang
     public Page<MaterialsDTO> getAllMaterials(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Material> materialPage = materialsRepository.findAll(pageable);
-        return materialPage.map(this::convertToDTO);
+        return materialPage.map(materialsMapper::toDTO);
     }
 
     // 🟢 Tạo nguyên vật liệu mới
@@ -140,6 +116,6 @@ public class MaterialsService {
         }
 
         Material savedMaterial = materialsRepository.save(material);
-        return convertToDTO(savedMaterial);
+        return materialsMapper.toDTO(savedMaterial);
     }
 }
