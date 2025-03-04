@@ -5,54 +5,57 @@ import {
   Input,
   Textarea,
 } from "@material-tailwind/react";
-import useWarehouse from "./useWarehouse"; // Import useWarehouse hook
+import useWarehouse from "./useWarehouse";
 
 const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
   const [warehouseCode, setWarehouseCode] = useState("");
   const [warehouseName, setWarehouseName] = useState("");
   const [warehouseDescription, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState({});
 
-  const { addWarehouse } = useWarehouse(); // Destructure createWarehouse from useWarehouse
+  const { addWarehouse } = useWarehouse();
+
+  const validateFields = (field, value) => {
+    let errors = { ...error };
+    
+    if (field === "warehouseCode") {
+      if (!value.trim()) {
+        errors.warehouseCode = "Mã kho không được để trống.";
+      } else if (!/^[A-Za-z0-9_-]{1,10}$/.test(value)) {
+        errors.warehouseCode = "Mã kho chỉ được chứa chữ, số, dấu '-' hoặc '_', từ 1 đến 10 ký tự.";
+      } else {
+        delete errors.warehouseCode;
+      }
+    }
+
+    if (field === "warehouseName") {
+      if (!value.trim()) {
+        errors.warehouseName = "Tên kho không được để trống.";
+      } else if (value.length > 100) {
+        errors.warehouseName = "Tên kho không được vượt quá 100 ký tự.";
+      } else {
+        delete errors.warehouseName;
+      }
+    }
+
+    if (field === "warehouseDescription") {
+      if (value.length > 200) {
+        errors.warehouseDescription = "Mô tả không được vượt quá 200 ký tự.";
+      } else {
+        delete errors.warehouseDescription;
+      }
+    }
+    
+    setError(errors);
+  };
 
   const handleSave = async () => {
-    setError("");
-  
-    // Validate mã kho
-    if (!warehouseCode.trim()) {
-      setError("Mã kho không được để trống.");
-      return;
-    }
-    if (!/^[A-Za-z0-9_-]{1,10}$/.test(warehouseCode)) {
-      setError("Mã kho chỉ được chứa chữ, số, dấu '-' hoặc '_', từ 1 đến 10 ký tự.");
-      return;
-    }
-  
-    // Validate tên kho
-    if (!warehouseName.trim()) {
-      setError("Tên kho không được để trống.");
-      return;
-    }
-    if (warehouseName.length > 100) {
-      setError("Tên kho không được vượt quá 100 ký tự.");
-      return;
-    }
-  
-    // Validate mô tả kho
-    if (warehouseDescription.length > 200) {
-      setError("Mô tả không được vượt quá 200 ký tự.");
-      return;
-    }
-  
+    if (Object.keys(error).length > 0) return;
+    
     setLoading(true);
     try {
-      await addWarehouse({
-        warehouseCode,
-        warehouseName,
-        warehouseDescription,
-      });
-  
+      await addWarehouse({ warehouseCode, warehouseName, warehouseDescription });
       alert("Thêm kho thành công!");
       onAdd?.();
       onClose();
@@ -63,7 +66,6 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
       setLoading(false);
     }
   };
-  
 
   if (!show) return null;
 
@@ -72,51 +74,50 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
       <div className="bg-white rounded-lg p-6 w-[600px] max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <Typography variant="h6">Thêm kho mới</Typography>
-          <button
-            className="text-gray-500 hover:text-gray-700"
-            onClick={onClose}
-          >
-            ✕
-          </button>
+          <button className="text-gray-500 hover:text-gray-700" onClick={onClose}>✕</button>
         </div>
 
-                <div className="grid grid-cols-12 gap-4">
-            <div className="col-span-6">
-              <Input
-                label="Mã kho*"
-                value={warehouseCode}
-                onChange={(e) => setWarehouseCode(e.target.value)}
-                error={!!error && !warehouseCode}
-              />
-            </div>
-            <div className="col-span-6">
-              <Input
-                label="Tên kho*"
-                value={warehouseName}
-                onChange={(e) => setWarehouseName(e.target.value)}
-                error={!!error && !warehouseName}
-              />
-            </div>
-            <div className="col-span-12">
-              <Textarea
-                label="Mô tả"
-                value={warehouseDescription}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
+        <div className="grid grid-cols-12 gap-4">
+          <div className="col-span-6">
+            <Input
+              label="Mã kho*"
+              value={warehouseCode}
+              onChange={(e) => {
+                setWarehouseCode(e.target.value);
+                validateFields("warehouseCode", e.target.value);
+              }}
+              error={!!error.warehouseCode}
+            />
+            {error.warehouseCode && <Typography variant="small" color="red">{error.warehouseCode}</Typography>}
           </div>
-          {error && (
-            <Typography variant="small" color="red" className="mt-2">
-              {error}
-            </Typography>
-          )}
-        
+          <div className="col-span-6">
+            <Input
+              label="Tên kho*"
+              value={warehouseName}
+              onChange={(e) => {
+                setWarehouseName(e.target.value);
+                validateFields("warehouseName", e.target.value);
+              }}
+              error={!!error.warehouseName}
+            />
+            {error.warehouseName && <Typography variant="small" color="red">{error.warehouseName}</Typography>}
+          </div>
+          <div className="col-span-12">
+            <Textarea
+              label="Mô tả"
+              value={warehouseDescription}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                validateFields("warehouseDescription", e.target.value);
+              }}
+            />
+            {error.warehouseDescription && <Typography variant="small" color="red">{error.warehouseDescription}</Typography>}
+          </div>
+        </div>
 
         <div className="flex justify-end gap-2 mt-4">
-          <Button color="gray" onClick={onClose} disabled={loading}>
-            Hủy
-          </Button>
-          <Button color="blue" onClick={handleSave} disabled={loading}>
+          <Button color="gray" onClick={onClose} disabled={loading}>Hủy</Button>
+          <Button color="blue" onClick={handleSave} disabled={loading || Object.keys(error).length > 0}>
             {loading ? "Đang xử lý..." : "Thêm kho"}
           </Button>
         </div>
