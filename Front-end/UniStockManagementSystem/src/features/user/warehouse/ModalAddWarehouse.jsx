@@ -80,9 +80,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
           </button>
         </div>
 
-        <div className="mb-6 p-4 border border-gray-200 rounded-md">
-          <Typography variant="small" className="mb-2 font-semibold">Thông tin kho</Typography>
-          <div className="grid grid-cols-12 gap-4">
+                <div className="grid grid-cols-12 gap-4">
             <div className="col-span-6">
               <Input
                 label="Mã kho*"
@@ -112,7 +110,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
               {error}
             </Typography>
           )}
-        </div>
+        
 
         <div className="flex justify-end gap-2 mt-4">
           <Button color="gray" onClick={onClose} disabled={loading}>

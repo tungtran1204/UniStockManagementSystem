@@ -68,15 +68,15 @@ const WarehousePage = () => {
       <Card>
         <CardHeader
           variant="gradient"
-          color="gray"
+          color="white"
           className="mb-8 p-6 flex justify-between items-center"
         >
-          <Typography variant="h6" color="white">
+          <Typography variant="h6" color="green">
             Danh sách kho
           </Typography>
           <Button
             size="sm"
-            color="white"
+            color="green"
             variant="text"
             className="flex items-center gap-2"
             onClick={() => {
@@ -160,7 +160,7 @@ const WarehousePage = () => {
                               </Typography>
                   </td>
                       <td className={className}>
-                            <Typography variant="small" color="gray" className="text-xs">
+                            <Typography variant="small" color="blue-gray" className="text-xs">
                               {warehouseName}
                             </Typography>
                
