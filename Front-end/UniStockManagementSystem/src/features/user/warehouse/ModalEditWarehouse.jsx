@@ -18,15 +18,15 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, fetchWarehouses }) => {
 
   useEffect(() => {
     if (warehouse) {
-      setWarehouseCode(warehouse.warehouseCode);
-      setWarehouseName(warehouse.warehouseName);
-      setDescription(warehouse.warehouseDescription);
+      setWarehouseCode(warehouse.warehouseCode || "");
+      setWarehouseName(warehouse.warehouseName || "");
+      setDescription(warehouse.warehouseDescription || "");
     }
   }, [warehouse]);
 
   const handleUpdate = async () => {
     setError("");
-  
+
     // Validate mã kho
     if (!warehouseCode.trim()) {
       setError("Mã kho không được để trống.");
@@ -36,7 +36,7 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, fetchWarehouses }) => {
       setError("Mã kho chỉ được chứa chữ, số, dấu '-' hoặc '_', từ 1 đến 10 ký tự.");
       return;
     }
-  
+
     // Validate tên kho
     if (!warehouseName.trim()) {
       setError("Tên kho không được để trống.");
@@ -46,27 +46,27 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, fetchWarehouses }) => {
       setError("Tên kho không được vượt quá 100 ký tự.");
       return;
     }
-  
+
     // Validate mô tả kho
     if (warehouseDescription.length > 200) {
       setError("Mô tả không được vượt quá 200 ký tự.");
       return;
     }
-  
+
     setLoading(true);
     try {
-      await editWarehouse({
+      await editWarehouse(warehouse.warehouseId, {
         warehouseCode,
         warehouseName,
         warehouseDescription,
       });
-  
-      alert("Thêm kho thành công!");
-      onAdd?.();
+
+      alert("Chỉnh sửa thông tin kho thành công!");
+      fetchWarehouses();
       onClose();
     } catch (error) {
-      console.error("Lỗi khi thêm kho:", error);
-      alert("Lỗi khi thêm kho!");
+      console.error("Lỗi khi sửa thông tin kho:", error);
+      alert("Lỗi khi sửa kho!");
     } finally {
       setLoading(false);
     }

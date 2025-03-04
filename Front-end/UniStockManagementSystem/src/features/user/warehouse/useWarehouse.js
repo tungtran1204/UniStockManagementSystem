@@ -39,6 +39,7 @@ const useWarehouse = () => {
 
   const editWarehouse = async (warehouseId, updatedWarehouse) => {
     try {
+      console.log(`Updating warehouse ${warehouseId}:`, updatedWarehouse);
       const response = await updateWarehouse(warehouseId, updatedWarehouse);
       fetchPaginatedWarehouses();
       return response;

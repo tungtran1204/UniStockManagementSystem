@@ -72,7 +72,7 @@ const WarehousePage = () => {
           className="mb-8 p-6 flex justify-between items-center"
         >
           <Typography variant="h6" color="white">
-            Warehouse List
+            Danh sách kho
           </Typography>
           <Button
             size="sm"
@@ -84,7 +84,7 @@ const WarehousePage = () => {
               console.log("openAddModal:", true);
             }}
           >
-            <FaPlus className="h-4 w-4" /> Add Warehouse
+            <FaPlus className="h-4 w-4" /> Thêm
           </Button>
         </CardHeader>
 
@@ -93,7 +93,7 @@ const WarehousePage = () => {
           <div className="px-4 py-2 flex items-center gap-4">
             {/* Items per page */}
             <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-              Show
+              Hiển thị
             </Typography>
             <select
               value={pageSize}
@@ -110,12 +110,12 @@ const WarehousePage = () => {
               ))}
             </select>
             <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-              warehouses per page
+              kết quả mỗi trang
             </Typography>
 
             {/* Search input */}
             <Input
-              label="Search Warehouses"
+              label="Tìm kiếm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-64"
@@ -206,7 +206,7 @@ const WarehousePage = () => {
               ) : (
                 <tr>
                   <td colSpan="4" className="border-b border-gray-200 px-3 py-4 text-center text-gray-500">
-                    No data available
+                    Không có dữ liệu
                   </td>
                 </tr>
               )}
@@ -218,7 +218,7 @@ const WarehousePage = () => {
         <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
           <div className="flex items-center gap-2">
             <Typography variant="small" color="blue-gray" className="font-normal">
-              Page {currentPage + 1} / {totalPages} • {totalElements} warehouses
+              Trang {currentPage + 1} / {totalPages} • {totalElements} kho hàng
             </Typography>
           </div>
           <ReactPaginate
