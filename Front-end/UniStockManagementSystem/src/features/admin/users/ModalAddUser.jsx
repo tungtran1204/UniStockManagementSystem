@@ -7,17 +7,18 @@ import {
   Input,
   Button,
   Switch,
+  Typography,
 } from "@material-tailwind/react";
 import { getAllRoles } from "../roles/roleService";
-import { checkEmailExists, createUser } from "../users/userService"; // ✅ Import API kiểm tra email
-import { FaEye, FaEyeSlash } from "react-icons/fa"; // ✅ Import icons
+import { checkEmailExists, createUser } from "../users/userService";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const ModalAddUser = ({ open, onClose, fetchUsers }) => {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [password, setPassword] = useState("");
-  const [passwordError, setPasswordError] = useState(""); // ✅ Thêm lỗi mật khẩu
-  const [showPassword, setShowPassword] = useState(false); // ✅ State to toggle password visibility
+  const [passwordError, setPasswordError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [fullname, setFullname] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [roles, setRoles] = useState([]);
@@ -38,13 +39,11 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
     }
   }, [open]);
 
-  // 🟢 Kiểm tra định dạng email hợp lệ
   const isValidEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Regex kiểm tra email chuẩn
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
-  // 🟢 Kiểm tra email đã tồn tại chưa
   const handleCheckEmail = async (newEmail) => {
     setEmail(newEmail);
     setEmailError("");
@@ -69,7 +68,6 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
     }
   };
 
-  // 🟢 Kiểm tra mật khẩu có đủ mạnh không
   const isValidPassword = (password) => {
     return password.length >= 8 && /[A-Za-z]/.test(password) && /\d/.test(password);
   };
@@ -143,50 +141,68 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
     <Dialog open={open} handler={onClose} size="md" className="rounded-lg shadow-lg">
       <DialogHeader className="text-lg font-bold text-gray-800">Thêm Người Dùng</DialogHeader>
       <DialogBody className="space-y-4">
-        <Input label="Họ và Tên" type="text" value={fullname} onChange={(e) => setFullname(e.target.value)} required />
-
-        {/* 🔥 Kiểm tra Email */}
         <div>
+          <Typography variant="small" className="mb-2">Họ và Tên *</Typography>
           <Input
-            label="Email"
+            type="text"
+            value={fullname}
+            onChange={(e) => setFullname(e.target.value)}
+            required
+            className="w-full"
+          />
+        </div>
+
+        <div>
+          <Typography variant="small" className="mb-2">Email *</Typography>
+          <Input
             type="email"
             value={email}
             onChange={(e) => handleCheckEmail(e.target.value)}
             required
+            className={`w-full ${emailError ? 'border-red-500' : ''}`}
           />
-          {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
+          {emailError && <Typography className="text-xs text-red-500 mt-1">{emailError}</Typography>}
         </div>
 
-        {/* 🔥 Kiểm tra Mật khẩu */}
         <div className="relative">
-          <Input
-            label="Mật khẩu"
-            type={showPassword ? "text" : "password"}
-            value={password}
-            onChange={(e) => handlePasswordChange(e.target.value)}
-            required
-          />
-          <button
-            type="button"
-            className="absolute inset-y-0 right-3 flex items-center text-gray-600"
-            onClick={() => setShowPassword(!showPassword)}
-          >
-            {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
-          </button>
-          {passwordError && <p className="text-red-500 text-xs mt-1">{passwordError}</p>}
+          <Typography variant="small" className="mb-2">Mật khẩu *</Typography>
+          <div className="relative">
+            <Input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => handlePasswordChange(e.target.value)}
+              required
+              className={`w-full ${passwordError ? 'border-red-500' : ''}`}
+            />
+            <button
+              type="button"
+              className="absolute inset-y-0 right-3 flex items-center text-gray-600"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+            </button>
+          </div>
+          {passwordError && <Typography className="text-xs text-red-500 mt-1">{passwordError}</Typography>}
         </div>
 
-        {/* Số điện thoại */}
-        <Input label="Số điện thoại" type="tel" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required />
+        <div>
+          <Typography variant="small" className="mb-2">Số điện thoại *</Typography>
+          <Input
+            type="tel"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            required
+            className="w-full"
+          />
+        </div>
 
-        {/* Vai trò (Role) */}
         <div className="flex flex-col">
-          <p className="text-sm font-semibold text-gray-700">Chọn Vai Trò:</p>
+          <Typography variant="small" className="mb-2">Chọn Vai Trò:</Typography>
           <div className="flex flex-wrap gap-2">
             {roles
               .filter((r) => r.name !== "USER" && r.name !== "ADMIN").length > 0 ? (
               roles
-                .filter((r) => r.name !== "USER" && r.name !== "ADMIN") // Exclude "USER" and "ADMIN" roles
+                .filter((r) => r.name !== "USER" && r.name !== "ADMIN")
                 .map((r) => (
                   <button
                     key={r.id}
@@ -206,20 +222,24 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
           </div>
         </div>
 
-        {/* Trạng thái */}
         <div className="flex items-center gap-2">
+          <Typography variant="small" className="mb-0 mr-2">Trạng thái:</Typography>
           <Switch color="green" checked={isActive} onChange={() => setIsActive(!isActive)} />
           <span>{isActive ? "Hoạt động" : "Vô hiệu hóa"}</span>
         </div>
+        
+        {error && <Typography className="text-sm text-red-500">{error}</Typography>}
       </DialogBody>
 
-      <DialogFooter className="flex justify-between">
-        <Button variant="text" color="gray" onClick={onClose}>
-          Hủy
-        </Button>
-        <Button color="blue" onClick={handleAddUser} disabled={loading}>
-          {loading ? "Đang tạo..." : "Thêm"}
-        </Button>
+      <DialogFooter className="flex justify-end">
+        <div className="flex gap-2">
+          <Button variant="text" color="red" onClick={onClose}>
+            Hủy
+          </Button>
+          <Button color="green" onClick={handleAddUser} disabled={loading}>
+            {loading ? "Đang tạo..." : "Lưu"}
+          </Button>
+        </div>
       </DialogFooter>
     </Dialog>
   );
