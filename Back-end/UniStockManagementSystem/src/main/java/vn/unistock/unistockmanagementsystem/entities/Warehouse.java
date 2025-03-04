@@ -24,11 +24,11 @@ public class Warehouse {
     @Column(name = "warehouse_id")
     private Long warehouseId;
 
-    @Column(name = "warehouse_code")
-    //@NotBlank(message = "Mã kho không được để trống")
+    @Column(name = "warehouse_code", unique = true)
+    @NotBlank(message = "Tên kho không được để trống")
     private String warehouseCode;
 
-    @Column(name = "warehouse_name")
+    @Column(name = "warehouse_name", unique = true)
     @NotBlank(message = "Tên kho không được để trống")
     private String warehouseName;
 
@@ -37,6 +37,7 @@ public class Warehouse {
     private String warehouseDescription;
 
     @Column(name = "is_active")
-    private Boolean isActive;
+    @ColumnDefault("true")
+    private Boolean isActive = true;
 
 }
