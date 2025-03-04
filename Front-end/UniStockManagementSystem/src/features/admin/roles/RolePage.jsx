@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState, useEffect } from "react"; // Sửa lại import để thêm useCallback
 import {
   Card,
   CardHeader,
@@ -93,37 +93,40 @@ function RolePage() {
     }
   };
 
-  const handleTogglePermission = (role, permissionKey) => {
-    const currentPerms = role.permissionKeys || [];
-    const hasPerm = currentPerms.includes(permissionKey);
+  const handleTogglePermission = useCallback(
+    (role, permissionKey) => {
+      const currentPerms = role.permissionKeys || [];
+      const hasPerm = currentPerms.includes(permissionKey);
 
-    let updatedKeys;
-    if (hasPerm) {
-      updatedKeys = currentPerms.filter((k) => k !== permissionKey);
-    } else {
-      updatedKeys = [...currentPerms, permissionKey];
-      const catName = findCategoryByPermission(permissionKey);
-      if (catName) {
-        const [p1, p2] = PERMISSION_CATEGORIES[catName];
-        const other = p1 === permissionKey ? p2 : p1;
-        updatedKeys = updatedKeys.filter((k) => k !== other);
+      let updatedKeys;
+      if (hasPerm) {
+        updatedKeys = currentPerms.filter((k) => k !== permissionKey);
+      } else {
+        updatedKeys = [...currentPerms, permissionKey];
+        const catName = findCategoryByPermission(permissionKey);
+        if (catName) {
+          const [p1, p2] = PERMISSION_CATEGORIES[catName];
+          const other = p1 === permissionKey ? p2 : p1;
+          updatedKeys = updatedKeys.filter((k) => k !== other);
+        }
       }
-    }
 
-    const updatedRole = { ...role, permissionKeys: updatedKeys };
+      const updatedRole = { ...role, permissionKeys: updatedKeys };
 
-    if (role.isTemp) {
-      setTempRoles((prev) =>
-        prev.map((r) => (r.id === role.id ? updatedRole : r))
-      );
-    } else {
-      updateRolePermissions(role.id, updatedKeys);
-      handleUpdateRole(role.id, updatedRole).catch((err) => {
-        updateRolePermissions(role.id, currentPerms);
-        console.error("❌ Lỗi khi cập nhật permission:", err);
-      });
-    }
-  };
+      if (role.isTemp) {
+        setTempRoles((prev) =>
+          prev.map((r) => (r.id === role.id ? updatedRole : r))
+        );
+      } else {
+        updateRolePermissions(role.id, updatedKeys);
+        handleUpdateRole(role.id, updatedRole).catch((err) => {
+          updateRolePermissions(role.id, currentPerms);
+          console.error("❌ Lỗi khi cập nhật permission:", err);
+        });
+      }
+    },
+    [handleUpdateRole, updateRolePermissions]
+  );
 
   const handleTempRoleNameChange = (tempId, value) => {
     setTempRoles((prev) =>
@@ -175,7 +178,22 @@ function RolePage() {
           <table className="w-full min-w-[640px] table-auto">
             <thead>
               <tr>
-                <th className="border-b border-blue-gray-50 py-3 px-5 text-left" />
+                <th className="border-b border-blue-gray-50 py-3 px-5 text-center">
+                  <Typography
+                    variant="small"
+                    className="text-[11px] font-bold uppercase text-blue-gray-400"
+                  >
+                    
+                  </ Typography>
+                </th>
+                <th className="border-b border-blue-gray-50 py-3 px-5 text-center">
+                  <Typography
+                    variant="small"
+                    className="text-[11px] font-bold uppercase text-blue-gray-400"
+                  >
+                    Vai trò
+                  </Typography>
+                </th>
                 {Object.keys(PERMISSION_CATEGORIES).map((cat) => (
                   <th
                     key={cat}
@@ -192,12 +210,20 @@ function RolePage() {
                 ))}
               </tr>
               <tr>
+                <th className="border-b border-blue-gray-50 py-3 px-5 text-left">
+                  <Typography
+                    variant="small"
+                    className="text-[11px] font-bold uppercase text-blue-gray-400"
+                  >
+                    STT
+                  </Typography>
+                </th>
                 <th className="border-b border-blue-gray-50 py-3 px-5 text-center">
                   <Typography
                     variant="small"
                     className="text-[11px] font-bold uppercase text-blue-gray-400"
                   >
-                    Roles
+                   
                   </Typography>
                 </th>
                 {Object.values(PERMISSION_CATEGORIES)
@@ -226,6 +252,15 @@ function RolePage() {
                   return (
                     <React.Fragment key={role.id}>
                       <tr>
+                        <td className={getTdClassName(isLast)}>
+                          <Typography
+                            variant="small"
+                            color="blue-gray"
+                            className="font-semibold text-left"
+                          >
+                            {idx + 1}
+                          </Typography>
+                        </td>
                         <td className={getTdClassName(isLast)}>
                           <div className="flex items-center justify-between">
                             <div className="flex flex-col gap-2 min-w-[200px]">
@@ -272,7 +307,7 @@ function RolePage() {
                             {!role.isTemp && (
                               <Button
                                 size="sm"
-                                className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+                                className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white items-center"
                                 onClick={() => {
                                   setEditingRole(role.id);
                                   setEditingRoleName(role.name);
@@ -305,24 +340,25 @@ function RolePage() {
                         <tr>
                           <td
                             colSpan={
-                              1 + Object.values(PERMISSION_CATEGORIES).flat().length
+                              2 + Object.values(PERMISSION_CATEGORIES).flat().length
                             }
                           >
-                            <div className="flex justify-end gap-2 py-2 pr-5">
+                            <div className="flex justify-end py-2 pr-5">
+                              <Button
+                                size="sm"
+                                color="red"
+                                variant="text"
+                                onClick={() => onRemoveTempRole(role.id)}
+                                className="mr-4"
+                              >
+                                Hủy
+                              </Button>
                               <Button
                                 size="sm"
                                 color="green"
                                 onClick={() => onSaveTempRole(role)}
                               >
                                 Lưu
-                              </Button>
-                              <Button
-                                size="sm"
-                                color="red"
-                                variant="text"
-                                onClick={() => onRemoveTempRole(role.id)}
-                              >
-                                Hủy
                               </Button>
                             </div>
                           </td>
@@ -334,7 +370,7 @@ function RolePage() {
               ) : (
                 <tr>
                   <td
-                    colSpan={1 + Object.values(PERMISSION_CATEGORIES).flat().length}
+                    colSpan={2 + Object.values(PERMISSION_CATEGORIES).flat().length}
                     className="border-b border-gray-200 px-3 py-4 text-center text-gray-500"
                   >
                     Không có dữ liệu

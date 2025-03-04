@@ -135,7 +135,7 @@ const UserPage = () => {
           <table className="w-full min-w-[640px] table-auto">
             <thead>
               <tr>
-                {["STT", "User", "Chức vụ", "Trạng thái", "Hành động"].map(
+                {["STT", "Người dùng", "Vai trò", "Trạng thái", "Hành động"].map(
                   (el) => (
                     <th
                       key={el}
@@ -247,7 +247,7 @@ const UserPage = () => {
                         <td className={className}>
                           <div className="flex items-center gap-2">
                             <Tooltip content="Chỉnh sửa">
-                              <button
+                              <span
                                 onClick={() =>
                                   handleEditUser({
                                     userId,
@@ -262,10 +262,10 @@ const UserPage = () => {
                                     profilePicture,
                                   })
                                 }
-                                className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+                                className="cursor-pointer text-m text-blue-500 hover:text-blue-600"
                               >
-                                <FaEdit />
-                              </button>
+                                Xem
+                              </span>
                             </Tooltip>
                           </div>
                         </td>
