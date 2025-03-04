@@ -35,7 +35,6 @@ public class WarehouseController {
     ) {
         Page<Warehouse> warehousePage = warehouseService.getAllWarehouses(page, size);
 
-        // Tạo response object có `content`, `totalPages`, `totalElements`
         Map<String, Object> response = new HashMap<>();
         response.put("content", warehousePage.getContent());
         response.put("totalPages", warehousePage.getTotalPages());
