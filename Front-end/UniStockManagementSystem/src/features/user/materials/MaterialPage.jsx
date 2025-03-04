@@ -8,7 +8,6 @@ import CreateMaterialModal from './CreateMaterialModal';
 import EditMaterialModal from './EditMaterialModal';
 
 import axios from "axios";
-
 import {
     importExcel,
     exportExcel,
@@ -65,10 +64,8 @@ const MaterialPage = () => {
         materialName: "",
         description: "",
         unitId: "",
-        categoryId: "",
-        isActive: true,
-        image: null,
-        imageUrl: null
+        typeId: "",
+        isActive: "true"
     });
 
     // Tải danh sách đơn vị và danh mục
@@ -97,38 +94,49 @@ const MaterialPage = () => {
         setShowEditModal(true);
     };
 
-    // Validate nguyên vật liệu - Sửa lại để giống với EditMaterialModal
+    // Validate nguyên vật liệu
     const validateMaterial = async (material) => {
         const newErrors = {
             materialCode: "",
             materialName: "",
             unitId: "",
-            categoryId: "",
+            typeId: "",
             description: ""
         };
         let isValid = true;
-
-        if (!material.materialCode?.trim()) {
+    
+        // Log toàn bộ dữ liệu để kiểm tra
+        console.log("🔍 Validate Material:", material);
+    
+        if (!material.materialCode || material.materialCode.trim() === "") {
             newErrors.materialCode = "Mã nguyên vật liệu không được để trống";
             isValid = false;
         }
-
-        if (!material.materialName?.trim()) {
+    
+        if (!material.materialName || material.materialName.trim() === "") {
             newErrors.materialName = "Tên nguyên vật liệu không được để trống";
             isValid = false;
         }
-
-        if (!material.unitId) {
+    
+        // Kiểm tra unitId
+        if (!material.unitId || material.unitId.toString().trim() === "") {
             newErrors.unitId = "Vui lòng chọn đơn vị";
             isValid = false;
         }
-
-        if (!material.categoryId) {
-            newErrors.categoryId = "Vui lòng chọn danh mục";
+    
+        // Kiểm tra typeId
+        if (!material.typeId || material.typeId.toString().trim() === "") {
+            newErrors.typeId = "Vui lòng chọn danh mục";
             isValid = false;
         }
-
-        setErrors(newErrors);
+    
+        // Nếu có lỗi, set errors và ném exception
+        if (!isValid) {
+            console.log("🚨 Validation Errors:", newErrors);
+            setErrors(newErrors);
+            throw new Error("Validation failed");
+        }
+    
         return isValid;
     };
 
@@ -154,39 +162,36 @@ const MaterialPage = () => {
         }
     };
 
-    // Xử lý tạo nguyên vật liệu mới - Sửa lại để giống với EditMaterialModal
+    // Xử lý tạo nguyên vật liệu mới
     const handleCreateMaterial = async () => {
         try {
-            setErrors({});
-            const isValid = await validateMaterial(newMaterial);
-            if (!isValid) return;
-
+            setErrors({}); // Xóa lỗi cũ trước khi kiểm tra
+    
+            console.log("📌 Kiểm tra dữ liệu trước khi validate:", {
+                materialCode: newMaterial.materialCode,
+                materialName: newMaterial.materialName,
+                unitId: newMaterial.unitId,
+                typeId: newMaterial.typeId,
+                typeIdType: typeof newMaterial.typeId
+            });
+    
+            // Kiểm tra và ép kiểu trước khi validate
+            const materialToValidate = {
+                ...newMaterial,
+                typeId: newMaterial.typeId ? String(newMaterial.typeId).trim() : ""
+            };
+    
+            // 🛠 Kiểm tra dữ liệu có hợp lệ không
+            await validateMaterial(materialToValidate);
+    
             setLocalLoading(true);
-
-            const formData = new FormData();
-            formData.append('materialCode', newMaterial.materialCode);
-            formData.append('materialName', newMaterial.materialName);
-            formData.append('description', newMaterial.description || '');
-            formData.append('unitId', newMaterial.unitId || '');
-            formData.append('categoryId', newMaterial.categoryId || '');
-            formData.append('isUsingActive', newMaterial.isActive);
-
-            if (newMaterial.image) {
-                formData.append('image', newMaterial.image);
-            }
-
-            await axios.post(
-                'http://localhost:8080/api/unistock/user/materials',
-                formData,
-                {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                }
-            );
-
+    
+            console.log("✅ Dữ liệu hợp lệ, gửi yêu cầu tạo nguyên vật liệu...");
+    
+            await createMaterial(newMaterial);
+    
             alert("Tạo nguyên vật liệu thành công!");
+    
             fetchPaginatedMaterials();
             setShowCreatePopup(false);
             setNewMaterial({
@@ -194,18 +199,26 @@ const MaterialPage = () => {
                 materialName: "",
                 description: "",
                 unitId: "",
-                categoryId: "",
-                isActive: true,
+                typeId: "",
                 image: null,
-                imageUrl: null
+                imageUrl: null,
             });
         } catch (error) {
-            console.error("Lỗi khi tạo nguyên vật liệu:", error);
-            alert(error.response?.data?.message || "Lỗi khi tạo nguyên vật liệu!");
+            console.error("🚨 Chi tiết lỗi:", error);
+    
+            if (error.response) {
+                const errorMessage = error.response.data.message || "Lỗi khi tạo nguyên vật liệu!";
+                alert(errorMessage);
+            } else if (error.message === "Validation failed") {
+                // Lỗi validate đã được xử lý trong `setErrors`
+            } else {
+                alert("Lỗi không xác định! Vui lòng thử lại.");
+            }
         } finally {
             setLocalLoading(false);
         }
     };
+
 
     // Xử lý thay đổi trang
     const handlePageChangeWrapper = (selectedItem) => {
@@ -440,6 +453,8 @@ const MaterialPage = () => {
                 units={units}
                 materialCategories={materialCategories}
             />
+
+
 
             {/* Popup import Excel */}
             {showImportPopup && (
