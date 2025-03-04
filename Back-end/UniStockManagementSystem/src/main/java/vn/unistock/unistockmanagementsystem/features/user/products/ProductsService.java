@@ -28,37 +28,11 @@ public class ProductsService {
     private final AzureBlobService azureBlobService;
 
 
-
-    private ProductsDTO convertToDTO(Product product) {
-        ProductsDTO dto = new ProductsDTO();
-
-        dto.setProductId(product.getProductId());
-        dto.setProductCode(product.getProductCode());
-        dto.setProductName(product.getProductName());
-        dto.setDescription(product.getDescription());
-
-        if (product.getUnit() != null) {
-            dto.setUnitId(product.getUnit().getUnitId());
-            dto.setUnitName(product.getUnit().getUnitName());
-        }
-
-        if (product.getProductType() != null) {
-            dto.setTypeId(product.getProductType().getTypeId());
-            dto.setTypeName(product.getProductType().getTypeName());
-        }
-
-        dto.setIsProductionActive(product.getIsProductionActive());
-        dto.setImageUrl(product.getImageUrl());
-
-        return dto;
-    }
-
-
     // 🟢 Lấy tất cả sản phẩm
     public Page<ProductsDTO> getAllProducts(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Product> productPage = productsRepository.findAll(pageable);
-        return productPage.map(this::convertToDTO);
+        return productPage.map(productsMapper::toDTO);
     }
 
 
@@ -146,6 +120,6 @@ public class ProductsService {
         }
 
         Product savedProduct = productsRepository.save(product);
-        return convertToDTO(savedProduct);
+        return productsMapper.toDTO(savedProduct);
     }
 }
