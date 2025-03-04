@@ -1,8 +1,10 @@
 package vn.unistock.unistockmanagementsystem.features.user.saleOrders;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
@@ -16,19 +18,27 @@ public class SaleOrdersController {
      * Lấy danh sách tất cả đơn hàng
      */
     @GetMapping
-    public ResponseEntity<List<SaleOrdersDTO>> getAllOrders() {
-        List<SaleOrdersDTO> orders = saleOrdersService.getAllOrders();
-        return ResponseEntity.ok(orders);
+    public ResponseEntity<Page<SaleOrdersDTO>> getAllOrders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(saleOrdersService.getAllOrders(page, size));
     }
 
-    /**
-     * Lấy chi tiết đơn hàng theo ID
-     */
+    @GetMapping("/next-code")
+    public ResponseEntity<String> getNextOrderCode() {
+        String nextCode = saleOrdersService.getNextOrderCode();
+        return ResponseEntity.ok(nextCode);
+    }
+
     @GetMapping("/{orderId}")
     public ResponseEntity<SaleOrdersDTO> getOrderById(@PathVariable Long orderId) {
         SaleOrdersDTO order = saleOrdersService.getOrderById(orderId);
+        System.out.println("📝 Kiểm tra dữ liệu trả về: " + order);
         return ResponseEntity.ok(order);
     }
+
+
 
     /**
      * Tạo mới một đơn hàng

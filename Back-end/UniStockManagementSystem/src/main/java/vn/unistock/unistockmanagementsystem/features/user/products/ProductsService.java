@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import vn.unistock.unistockmanagementsystem.entities.Product;
 import vn.unistock.unistockmanagementsystem.features.user.productTypes.ProductTypeRepository;
-import vn.unistock.unistockmanagementsystem.storage.AzureBlobService;
+import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
 import vn.unistock.unistockmanagementsystem.features.user.units.UnitRepository;
 import lombok.extern.slf4j.Slf4j;
 

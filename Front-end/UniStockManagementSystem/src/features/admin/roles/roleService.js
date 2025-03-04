@@ -15,6 +15,26 @@ const authHeader = () => {
   return { Authorization: `Bearer ${token}` };
 };
 
+// 🟢 **Thêm Vai Trò mới**
+export const addRole = async (newRole) => {
+  try {
+    console.log("📢 [addRole] Gửi request thêm vai trò:", newRole);
+    
+    const response = await axios.post(`${API_URL}/roles`, newRole, {
+      headers: {
+        ...authHeader(), // ✅ Gửi token xác thực
+        "Content-Type": "application/json", // ✅ Định dạng dữ liệu gửi đi
+      },
+    });
+
+    console.log("✅ [addRole] API Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ [addRole] Lỗi khi thêm Vai Trò:", error);
+    throw error;
+  }
+};
+
 // 🟢 **Lấy danh sách Vai Trò**
 export const getAllRoles = async () => {
   try {

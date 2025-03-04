@@ -18,9 +18,7 @@ public class SalesOrderDetailDTO {
     private Long productId;
     private String productName; // Added for UI display
     private Integer quantity;
-    private Double unitPrice;
-    private Double discount;
-    private Double lineTotal; // Calculated field for UI display
+    private String unitName; // Đơn vị tính
 
     // Audit fields
     private LocalDateTime createdAt;
