@@ -12,7 +12,7 @@ const usePermissions = () => {
     } catch (error) {
       console.error("❌ Lỗi lấy danh sách permissions:", error);
     }
-  }, []);
+  }, []); // 🟢 Empty dependency array to avoid unnecessary re-renders
 
   const fetchRolePermissions = useCallback(async (roleId) => {
     try {
@@ -23,7 +23,7 @@ const usePermissions = () => {
       console.error(`❌ Lỗi lấy danh sách permissions của role ID ${roleId}:`, error);
       throw error;
     }
-  }, []);
+  }, []); // 🟢 Empty dependency array to avoid unnecessary re-renders
 
   return {
     allPermissions,

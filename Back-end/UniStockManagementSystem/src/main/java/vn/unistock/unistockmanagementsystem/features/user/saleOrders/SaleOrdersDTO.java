@@ -14,9 +14,9 @@ import java.util.Set;
 public class SaleOrdersDTO {
 
     private Long orderId;
-    private Long custId;
-    private String custName;
-    private Long  totalAmount;
+    private String orderCode;
+    private Long partnerId;
+    private String partnerName;
     private String status;
     private Date orderDate;
     private String note;
@@ -30,16 +30,15 @@ public class SaleOrdersDTO {
     //private Long updatedBy;
 
     // Constructor for projection query
-    public SaleOrdersDTO(Long orderId,Long custId, String name, Long totalAmount,
-                         String status, Date orderDate, String note) {
-        this.orderId = orderId;
-        this.custId = custId;
-        this.custName = name;
-        this.totalAmount = totalAmount;
-        this.status = status;
-        this.orderDate = orderDate;
-        this.note = note;
-    }
+    //public SaleOrdersDTO(Long orderId,Long custId, String name, Long totalAmount,
+    //                    String status, Date orderDate, String note) {
+    //   this.orderId = orderId;
+    //   this.partnerId = custId;
+    //   this.partnerName = name;
+    //   this.status = status;
+    //   this.orderDate = orderDate;
+    //   this.note = note;
+    //}
 }
 
 

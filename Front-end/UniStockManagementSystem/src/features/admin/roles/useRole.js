@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   getAllRoles,
   getAllPermissions,
@@ -6,111 +6,160 @@ import {
   updateRole,
   toggleRoleStatus,
   deleteRole,
+  addRole,
 } from "./roleService";
+
+const API_TO_FE_KEY   = {
+  checkProductCode: "manageProduct",
+  getProductById: "manageProduct",
+  importProducts: "manageProduct",
+  updateOrder: "manageSaleOrder",
+  createOrder: "manageSaleOrder",
+  getOrderDetailPopup: "viewSaleOrder",
+  getAllOrders: "viewSaleOrder",
+  getOrderById: "viewSaleOrder",
+};
 
 const useRole = () => {
   const [roles, setRoles] = useState([]);
-  const [allPermissions, setAllPermissions] = useState([]); // 🟢 Lưu danh sách permissions
+  const [allPermissions, setAllPermissions] = useState([]);
+  const [rolePermissions, setRolePermissions] = useState([]);
+  const [selectedRole, setSelectedRole] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [selectedRole, setSelectedRole] = useState(null);
-  const [rolePermissions, setRolePermissions] = useState([]); // 🟢 Permissions của role
 
-  // 🟢 Tải danh sách Vai Trò từ backend
   useEffect(() => {
-    setLoading(true);
     const fetchData = async () => {
+      setLoading(true);
       try {
         const rolesData = await getAllRoles();
         setRoles(rolesData);
-        console.log("✅ [useRole] Danh sách roles:", rolesData);
 
-        const permissionsData = await getAllPermissions();
-        setAllPermissions(permissionsData);
-        console.log("✅ [useRole] Danh sách permissions:", permissionsData);
+        const permsData = await getAllPermissions();
+        setAllPermissions(permsData);
+
+        console.log("✅ [useRole] roles + allPermissions:", rolesData, permsData);
+
+        await Promise.all(
+          rolesData.map(async (role) => {
+            const rolePerms = await getRolePermissions(role.id);
+            const feKeys = new Set();
+            rolePerms.permissions.forEach((p) => {
+              const mappedKey = API_TO_FE_KEY[p.name];
+              if (mappedKey) feKeys.add(mappedKey);
+            });
+            setRoles((prev) =>
+              prev.map((r) =>
+                r.id === role.id ? { ...r, permissionKeys: Array.from(feKeys) } : r
+              )
+            );
+          })
+        );
       } catch (err) {
-        console.error("🚨 [useRole] Lỗi khi tải dữ liệu:", err);
+        console.error("🚨 [useRole] Lỗi khi tải:", err);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
-  // 🟢 Lấy danh sách permissions của một role cụ thể
-  const fetchRolePermissions = async (roleId) => {
+  const fetchRolePermissions = useCallback(async (roleId) => {
     try {
-      setLoading(true);
       const rolePerms = await getRolePermissions(roleId);
-      setRolePermissions(rolePerms);
-      console.log(`✅ [useRole] Danh sách permissions cho Role ID ${roleId}:`, rolePerms);
+      const feKeys = new Set();
+      rolePerms.permissions.forEach((p) => {
+        const mappedKey = API_TO_FE_KEY[p.name];
+        if (mappedKey) feKeys.add(mappedKey);
+      });
+
+      const updatedKeys = Array.from(feKeys);
+      setRoles((prev) =>
+        prev.map((r) =>
+          r.id === roleId ? { ...r, permissionKeys: updatedKeys } : r
+        )
+      );
+      setRolePermissions(updatedKeys);
+      console.log(`✅ [useRole] Permissions cho Role ID ${roleId}:`, updatedKeys);
     } catch (err) {
-      console.error(`🚨 [useRole] Lỗi khi lấy danh sách permissions của role ${roleId}:`, err);
+      console.error("❌ [useRole] Lỗi fetchRolePermissions:", err);
       setRolePermissions([]);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, []);
 
-  // 🟢 Chọn role để chỉnh sửa (hiển thị trong modal)
-  const handleSelectRole = (role) => {
-    setSelectedRole(role);
-    fetchRolePermissions(role.id);
-  };
+  const handleSelectRole = useCallback(
+    (role) => {
+      setSelectedRole(role);
+      fetchRolePermissions(role.id);
+    },
+    [fetchRolePermissions]
+  );
 
-  // 🟢 Thêm Vai Trò mới
-  const handleAddRole = async (role) => {
+  const handleAddRole = useCallback(async (role) => {
     try {
       const newRole = await addRole(role);
       if (newRole) {
-        setRoles([...roles, newRole]);
-        console.log("✅ [useRole] Vai trò mới đã được thêm:", newRole);
+        setRoles((prev) => [...prev, { ...newRole, permissionKeys: role.permissionKeys }]);
       }
-    } catch (error) {
-      console.error("❌ [useRole] Lỗi khi thêm Vai Trò:", error);
+    } catch (err) {
+      console.error("❌ [useRole] Lỗi khi add Role:", err);
+      throw err;
     }
-  };
+  }, []);
 
-  // 🟢 Cập nhật Vai Trò
-  const handleUpdateRole = async (id, updatedRole) => {
+  const handleUpdateRole = useCallback(async (id, updatedRole) => {
     try {
       const updated = await updateRole(id, updatedRole);
       if (updated) {
-        setRoles(roles.map((role) => (role.id === id ? updated : role)));
-        console.log("✅ [useRole] Vai trò đã được cập nhật:", updated);
+        setRoles((prev) =>
+          prev.map((r) =>
+            r.id === id
+              ? { ...r, ...updated, permissionKeys: updatedRole.permissionKeys }
+              : r
+          )
+        );
+        console.log("✅ [useRole] Role updated:", updated);
       }
-    } catch (error) {
-      console.error("❌ [useRole] Lỗi khi cập nhật Vai Trò:", error);
+    } catch (err) {
+      console.error("❌ [useRole] Lỗi khi updateRole:", err);
+      throw err;
     }
-  };
+  }, []);
 
-  // 🔄 **Toggle trạng thái `isActive` của Vai Trò**
-  const handleToggleRoleStatus = async (id, currentStatus) => {
+  const updateRolePermissions = useCallback((roleId, permissionKeys) => {
+    setRoles((prev) =>
+      prev.map((r) =>
+        r.id === roleId ? { ...r, permissionKeys } : r
+      )
+    );
+  }, []);
+
+  const handleToggleRoleStatus = useCallback(async (id, currentStatus) => {
     try {
       const updated = await toggleRoleStatus(id, !currentStatus);
       if (updated) {
-        setRoles(roles.map((role) => (role.id === id ? { ...role, active: !currentStatus } : role)));
-        console.log("✅ [useRole] Trạng thái Vai Trò đã được cập nhật:", updated);
+        setRoles((prev) =>
+          prev.map((r) =>
+            r.id === id ? { ...r, active: !currentStatus } : r
+          )
+        );
       }
-    } catch (error) {
-      console.error("❌ [useRole] Lỗi khi cập nhật trạng thái Vai Trò:", error);
+    } catch (err) {
+      console.error("❌ [useRole] Lỗi toggle status:", err);
     }
-  };
+  }, []);
 
-  // 🔴 Xóa Vai Trò
-  const handleDeleteRole = async (id) => {
+  const handleDeleteRole = useCallback(async (id) => {
     try {
       const success = await deleteRole(id);
       if (success) {
-        setRoles(roles.filter((role) => role.id !== id));
-        console.log(`✅ [useRole] Vai trò ID ${id} đã bị xóa.`);
+        setRoles((prev) => prev.filter((r) => r.id !== id));
       }
-    } catch (error) {
-      console.error("❌ [useRole] Lỗi khi xóa Vai Trò:", error);
+    } catch (err) {
+      console.error("❌ [useRole] Lỗi deleteRole:", err);
     }
-  };
+  }, []);
 
   return {
     roles,
@@ -124,6 +173,8 @@ const useRole = () => {
     handleUpdateRole,
     handleToggleRoleStatus,
     handleDeleteRole,
+    fetchRolePermissions,
+    updateRolePermissions, // Đảm bảo hàm này được trả về
   };
 };
 

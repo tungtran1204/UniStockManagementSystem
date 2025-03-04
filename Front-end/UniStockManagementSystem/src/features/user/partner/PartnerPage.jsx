@@ -4,6 +4,7 @@ import CreatePartnerPopup from "./CreatePartnerPopUp";
 import {
     fetchPartnerTypes
 } from "./partnerService";
+import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 import { useNavigate } from "react-router-dom";
 import {
@@ -13,20 +14,27 @@ import {
     Typography,
     Tooltip,
     Button,
-    Input,
-    Select,
-    Option,
 } from "@material-tailwind/react";
-import { FaEdit, FaTrashAlt, FaFileExcel, FaPlus } from "react-icons/fa";
+import { FaEdit, FaPlus, FaTimes } from "react-icons/fa";
+import ReactPaginate from "react-paginate";
 
 const PartnerPage = () => {
-    const { partners, fetchPartners } = usePartner();
+    const {
+        partners,
+        currentPage,
+        pageSize,
+        totalPages,
+        totalElements,
+        selectedType,
+        fetchPaginatedPartners,
+        handleSelectType,
+        handlePageSizeChange,
+        handlePageChange } = usePartner();
+
     const navigate = useNavigate();
     const [showImportPopup, setShowImportPopup] = useState(false);
     const [showCreatePopup, setShowCreatePopup] = useState(false);
     const [file, setFile] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [units, setUnits] = useState([]);
     const [partnerTypes, setPartnerTypes] = useState([]);
 
     useEffect(() => {
@@ -44,6 +52,18 @@ const PartnerPage = () => {
 
         fetchData();
     }, []);
+
+    const handlePageChangeWrapper = (selectedItem) => {
+        handlePageChange(selectedItem.selected);
+    };
+    // "bg-red-100 text-red-700",
+    // "bg-blue-100 text-blue-700",
+    // "bg-green-100 text-green-700",
+    // "bg-yellow-100 text-yellow-700",
+    // "bg-purple-100 text-purple-700",
+    // "bg-pink-100 text-pink-700",
+    // "bg-indigo-100 text-indigo-700",
+    // "bg-gray-100 text-gray-700"
 
     // const handleImport = async () => {
     //     if (!file) {
@@ -88,7 +108,7 @@ const PartnerPage = () => {
                             {showCreatePopup && (
                                 <CreatePartnerPopup
                                     onClose={() => setShowCreatePopup(false)}
-                                    onSuccess={fetchPartners} // Có thể gọi API fetch lại danh sách nếu cần
+                                    onSuccess={fetchPaginatedPartners} // Có thể gọi API fetch lại danh sách nếu cần
                                 />
                             )}
                             {/* <Button
@@ -113,6 +133,39 @@ const PartnerPage = () => {
                     </div>
                 </CardHeader>
                 <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
+                    {/* Phần chọn số items/trang */}
+                    <div className="px-4 py-2 flex items-center gap-2">
+                        <Typography variant="small" color="blue-gray" className="font-normal">
+                            Hiển thị
+                        </Typography>
+                        <select
+                            value={pageSize}
+                            onChange={(e) => {
+                                handlePageSizeChange(Number(e.target.value));
+                            }}
+                            className="border text-sm rounded px-2 py-1"
+                        >
+                            {[5, 10, 20, 50].map(size => (
+                                <option key={size} value={size}>{size}</option>
+                            ))}
+                        </select>
+                        <Typography variant="small" color="blue-gray" className="font-normal">
+                            đối tác mỗi trang
+                        </Typography>
+                        {selectedType && (
+                            <div className="flex items-center gap-0 bg-indigo-100 text-indigo-500 px-3 py-1 rounded-full text-xs font-semibold ml-4">
+                                <span>
+                                    {partnerTypes.find(type => type.typeId === selectedType)?.typeName}
+                                </span>
+                                <button
+                                    className="ml-1 bg-indigo-100 text-indigo-500"
+                                    onClick={() => handleSelectType(null)}
+                                >
+                                    <FaTimes className="w-4 h-4" /> {/* Icon X */}
+                                </button>
+                            </div>
+                        )}
+                    </div>
                     <table className="w-full min-w-[640px] table-auto">
                         <thead>
                             <tr>
@@ -146,7 +199,6 @@ const PartnerPage = () => {
                                         ? ""
                                         : "border-b border-blue-gray-50"
                                         }`;
-
                                     return (
                                         <tr key={partner.partnerId}>
                                             <td className={className}>
@@ -169,11 +221,16 @@ const PartnerPage = () => {
                                             </td>
                                             <td className={className}>
                                                 {partner.partnerTypes && partner.partnerTypes.length > 0 ? (
-                                                    <div>
+                                                    <div className="flex flex-col gap-1">
                                                         {partner.partnerTypes.map((type) => (
-                                                            <Typography key={type.partnerType.typeId} className="text-xs font-semibold text-blue-gray-600 block">
+                                                            <button
+                                                                key={type.partnerType.typeId}
+                                                                className={`px-2 py-1 w-fit text-xs hover:text-white hover:bg-indigo-500 transition-all duration-200 font-semibold rounded-full bg-indigo-100 text-indigo-500
+                                                                        ${selectedType === type.partnerType.typeId}`}
+                                                                onClick={() => handleSelectType(type.partnerType.typeId)}
+                                                            >
                                                                 {type.partnerType.typeName}
-                                                            </Typography>
+                                                            </button>
                                                         ))}
                                                     </div>
                                                 ) : (
@@ -225,6 +282,33 @@ const PartnerPage = () => {
                             )}
                         </tbody>
                     </table>
+
+                    {/* Phần phân trang mới sử dụng ReactPaginate */}
+                    <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+                        <div className="flex items-center gap-2">
+                            <Typography variant="small" color="blue-gray" className="font-normal">
+                                Trang {currentPage + 1} / {totalPages} • {totalElements} sản phẩm
+                            </Typography>
+                        </div>
+                        <ReactPaginate
+                            previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
+                            nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
+                            breakLabel="..."
+                            pageCount={totalPages}
+                            marginPagesDisplayed={2}
+                            pageRangeDisplayed={5}
+                            onPageChange={handlePageChangeWrapper}
+                            containerClassName="flex items-center gap-1"
+                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                            pageLinkClassName="flex items-center justify-center w-full h-full"
+                            previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                            nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                            breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
+                            activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+                            forcePage={currentPage}
+                            disabledClassName="opacity-50 cursor-not-allowed"
+                        />
+                    </div>
                 </CardBody>
             </Card>
 

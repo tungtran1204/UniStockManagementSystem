@@ -1,4 +1,4 @@
-package vn.unistock.unistockmanagementsystem.storage;
+package vn.unistock.unistockmanagementsystem.utils.storage;
 
 
 import com.azure.storage.blob.*;
