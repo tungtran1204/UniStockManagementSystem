@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogHeader,
@@ -9,29 +9,104 @@ import {
   Textarea,
   Typography,
 } from "@material-tailwind/react";
+import Select from "react-select";
+import { getPartnersByType } from "@/features/user/partner/partnerService";
+
+const CUSTOMER_TYPE_ID = 1; // ID nhóm khách hàng
+
+//Custom lại Select cho khớp với các trường khác
+const customStyles = {
+  control: (provided, state) => ({
+    ...provided,
+    borderColor: state.isFocused ? "black" : provided.borderColor,
+    boxShadow: state.isFocused ? "0 0 0 1px black" : "none",
+    "&:hover": {
+      borderColor: "black",
+    },
+  }),
+  menuList: (provided) => ({
+    ...provided,
+  }),
+  option: (provided, state) => ({
+    ...provided,
+    backgroundColor: state.isFocused
+      ? "#f3f4f6" // bg-gray-100 khi hover
+      : state.isSelected
+        ? "#e5e7eb" // bg-gray-200 khi chọn
+        : "transparent",
+    color: "#000",
+    cursor: "pointer",
+    "&:active": {
+      backgroundColor: "#e5e7eb", // Đảm bảo không bị đổi màu xanh khi click
+    },
+  }),
+};
 
 const ModalAddSaleOrder = ({ open, onClose, fetchOrders, nextCode }) => {
-  // Các state lưu trữ giá trị của form
   const [orderCode, setOrderCode] = useState("");
   const [orderDate, setOrderDate] = useState("");
   const [customerCode, setCustomerCode] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [address, setAddress] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [salesman, setSalesman] = useState(""); // Nhân viên bán hàng
+  const selectRef = useRef(null);
   const [description, setDescription] = useState("");
-
-  // Danh sách sản phẩm/dòng chi tiết
-  const [items, setItems] = useState([]);
-  // Tăng ID tạm cho từng dòng để map
+  const [customers, setCustomers] = useState([]);
   const [nextId, setNextId] = useState(1);
+  const [items, setItems] = useState([]);
 
-  // Mỗi lần prop nextCode thay đổi, cập nhật lại mã phiếu
   useEffect(() => {
     setOrderCode(nextCode || "");
   }, [nextCode]);
 
-  // Thêm 1 dòng sản phẩm
+  useEffect(() => {
+    if (open && selectRef.current) {
+      setTimeout(() => {
+        selectRef.current.blur(); // Ngăn chặn auto focus khi mở popup
+      }, 0);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const response = await getPartnersByType(CUSTOMER_TYPE_ID);
+        console.log("📢 API Response:", response);
+
+        if (!response || !response.partners) {
+          console.error("⚠️ API không trả về dữ liệu hợp lệ!");
+          setCustomers([]);
+          return;
+        }
+
+        setCustomers(
+          response.partners.map((customer) => {
+            const customerPartnerType = customer.partnerTypes.find(pt => pt.partnerType.typeId === CUSTOMER_TYPE_ID);
+            return {
+              code: customerPartnerType?.partnerCode || "",
+              label: `${customerPartnerType?.partnerCode || ""} - ${customer.partnerName}`,
+              name: customer.partnerName,
+              address: customer.address,
+              phone: customer.phone,
+            };
+          }).filter(customer => customer.code !== "")
+        );
+      } catch (error) {
+        console.error("❌ Lỗi khi tải danh sách khách hàng:", error);
+        setCustomers([]);
+      }
+    };
+    fetchCustomers();
+  }, []);
+
+  const handleCustomerChange = (selectedOption) => {
+    console.log("🔘 [handleCustomerChange] Selected Option:", selectedOption);
+    setCustomerCode(selectedOption.code);
+    setCustomerName(selectedOption.name);
+    setAddress(selectedOption.address);
+    setPhoneNumber(selectedOption.phone);
+  };
+
   const handleAddRow = () => {
     setItems((prev) => [
       ...prev,
@@ -52,115 +127,72 @@ const ModalAddSaleOrder = ({ open, onClose, fetchOrders, nextCode }) => {
     setNextId(1);
   };
 
-  // Nút Lưu
-  const handleSave = async () => {
-    const payload = {
-      orderCode,
-      orderDate,
-      customerCode,
-      customerName,
-      address,
-      phoneNumber,
-      salesman,
-      description,
-      items,
-    };
-    console.log("Tạo mới đơn hàng:", payload);
-
-    // Gọi hàm fetchOrders (nếu có) để reload danh sách
-    if (fetchOrders) {
-      fetchOrders();
-    }
-    // Đóng modal sau khi lưu
-    onClose();
-  };
-
   return (
-    <Dialog
-      open={open}
-      handler={onClose}
-      size="xl"
-      className="w-[900px] max-h-screen overflow-auto"
-    >
-      {/* Tiêu đề */}
-      <DialogHeader className="border-b border-blue-gray-100">
-        <Typography variant="h5" color="blue-gray">
+    <Dialog open={open} handler={onClose} size="xl" className="w-[900px] max-h-screen overflow-auto">
+      <DialogHeader className="bg-gray-50">
+        <Typography variant="h5" color="blue-gray" className="px-5" >
           Tạo đơn đặt hàng bán
         </Typography>
       </DialogHeader>
 
-      <DialogBody divider className="flex flex-col gap-4">
-        {/* Form 2 cột - Thông tin chung */}
-        <div className="grid grid-cols-2 gap-12">
-          {/* Cột trái */}
+      <DialogBody divider className="flex flex-col gap-4 px-10 border-none">
+        <div className="grid grid-cols-2 gap-x-12 gap-y-4">
           <div className="flex flex-col gap-4">
-            <Input
-              label="Mã phiếu"
-              value={orderCode}
-              disabled
-              className="w-64"
-              onChange={(e) => setOrderCode(e.target.value)}
-            />
-            <Input
-              label="Mã khách hàng"
-              value={customerCode}
-              className="w-64"
-              onChange={(e) => setCustomerCode(e.target.value)}
-            />
-            <Input
-              label="Địa chỉ"
-              value={address}
-              className="w-64"
-              onChange={(e) => setAddress(e.target.value)}
-            />
-            <Input
-              label="Nhân viên bán hàng"
-              value={salesman}
-              className="w-64"
-              onChange={(e) => setSalesman(e.target.value)}
-            />
+            <div className="col-span-2">
+              <Typography variant="small" className="mb-2 text-gray-900 font-bold">Mã phiếu</Typography>
+              <Input label="Mã phiếu" value={orderCode} disabled className="w-64" />
+            </div>
+            <div className="col-span-2">
+              <Typography variant="small" className="mb-2 text-gray-900 font-bold">Mã khách hàng</Typography>
+              <Select
+                ref={selectRef}
+                options={customers}
+                value={customers.find(c => c.value === customerCode) || { value: customerCode, label: customerCode }}
+                onChange={handleCustomerChange}
+                label="Chọn khách hàng"
+                isSearchable
+                styles={customStyles}
+                className="w-full rounded"
+              />
+            </div>
+            <div className="col-span-2">
+              <Typography variant="small" className="mb-2 text-gray-900 font-bold">Người liên hệ</Typography>
+              <Input label="Người liên hệ" value={address} className="w-64" disabled />
+            </div>
           </div>
-
-          {/* Cột phải */}
           <div className="flex flex-col gap-4">
-            <Input
-              label="Ngày lập phiếu"
-              type="date"
-              className="w-64"
-              value={orderDate}
-              onChange={(e) => setOrderDate(e.target.value)}
-            />
-            <Input
-              label="Tên khách hàng"
-              value={customerName}
-              className="w-64"
-              onChange={(e) => setCustomerName(e.target.value)}
-            />
-            <Input
-              label="Số điện thoại"
-              value={phoneNumber}
-              className="w-64"
-              onChange={(e) => setPhoneNumber(e.target.value)}
-            />
-            <Textarea
-              label="Diễn giải"
-              value={description}
-              className="w-64"
-              onChange={(e) => setDescription(e.target.value)}
-            />
+            <div className="col-span-2">
+              <Typography variant="small" className="mb-2 text-gray-900 font-bold">Ngày lập phiếu</Typography>
+              <Input type="date" className="w-64" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} />
+            </div>
+            <div>
+              <Typography variant="small" className="mb-2 text-gray-900 font-bold">Tên khách hàng</Typography>
+              <Input label="Tên khách hàng" value={customerName} className="w-64" disabled />
+            </div>
+            <div>
+              <Typography variant="small" className="mb-2 text-gray-900 font-bold">Số điện thoại</Typography>
+              <Input label="Số điện thoại" value={phoneNumber} className="w-64" disabled />
+            </div>
+          </div>
+          <div className="col-span-2">
+            <Typography variant="small" className="mb-2 text-gray-900 font-bold">Địa chỉ</Typography>
+            <Input label="Địa chỉ" value={address} className="w-64" disabled />
+          </div>
+          <div className="col-span-2">
+            <Typography variant="small" className="mb-2 text-gray-900 font-bold">Diễn giải</Typography>
+            <Textarea placeholder="Diễn giải" value={description} className="w-64" onChange={(e) => setDescription(e.target.value)} />
           </div>
         </div>
 
-        {/* Bảng chi tiết sản phẩm */}
-        <div className="mt-2 overflow-auto rounded border border-gray-200">
-          <table className="w-full text-left min-w-max">
-            <thead className="bg-gray-50 border-b border-gray-200">
+        <div className="mt-2 overflow-auto border-none rounded">
+          <table className="w-full text-left min-w-max border border-gray-200">
+            <thead className="bg-gray-50 border border-gray-200">
               <tr>
                 {["STT", "Mã hàng", "Tên hàng", "Đơn vị", "Số lượng"].map(
                   (head) => (
                     <th
                       key={head}
-                      className="px-4 py-2 text-sm font-semibold text-gray-600"
+                      className="px-4 py-2 text-sm border border-gray-200 font-semibold text-gray-600"
                     >
                       {head}
                     </th>
@@ -171,7 +203,7 @@ const ModalAddSaleOrder = ({ open, onClose, fetchOrders, nextCode }) => {
             <tbody>
               {items.length > 0 ? (
                 items.map((item, index) => (
-                  <tr key={item.id} className="border-b last:border-none">
+                  <tr key={item.id} className="border border-gray-200">
                     <td className="px-4 py-2 text-sm text-gray-700">
                       {index + 1}
                     </td>
@@ -256,7 +288,6 @@ const ModalAddSaleOrder = ({ open, onClose, fetchOrders, nextCode }) => {
           </table>
         </div>
 
-        {/* Nút thêm & xoá dòng */}
         <div className="flex gap-2">
           <Button variant="outlined" onClick={handleAddRow}>
             + Thêm dòng
@@ -267,14 +298,11 @@ const ModalAddSaleOrder = ({ open, onClose, fetchOrders, nextCode }) => {
         </div>
       </DialogBody>
 
-      {/* Footer */}
+
+
       <DialogFooter className="flex justify-end gap-2">
-        <Button variant="text" color="gray" onClick={onClose}>
-          Hủy
-        </Button>
-        <Button variant="gradient" color="green" onClick={handleSave}>
-          Lưu
-        </Button>
+        <Button variant="text" color="gray" onClick={onClose}>Hủy</Button>
+        <Button variant="gradient" color="green">Lưu</Button>
       </DialogFooter>
     </Dialog>
   );
