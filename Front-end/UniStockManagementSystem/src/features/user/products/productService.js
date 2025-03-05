@@ -9,7 +9,6 @@ const authHeader = () => {
 };
 
 // Lấy danh sách tất cả sản phẩm
-// Lấy danh sách sản phẩm phân trang
 export const getAllProducts = async (page = 0, size = 10) => {
   try {
     const response = await axios.get(API_URL, { 
@@ -148,7 +147,7 @@ export const fetchProductTypes = async () => {
   } catch (error) {
     console.error('❌ Lỗi khi lấy danh sách dòng sản phẩm:', error);
     throw error;
-  }
+  }F
 };
 
 export const checkProductCodeExists = async (productCode) => {

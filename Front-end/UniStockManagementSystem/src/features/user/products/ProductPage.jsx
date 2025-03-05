@@ -1,4 +1,3 @@
-// ProductPage.jsx
 import React, { useEffect, useState } from "react";
 import useProduct from "./useProduct";
 import EditProductModal from './EditProductModal';
@@ -17,7 +16,6 @@ import {
   createProduct,
   fetchUnits,
   fetchProductTypes,
-  checkProductCodeExists
 } from "./productService";
 import {
   Card,
@@ -54,14 +52,6 @@ const ProductPage = () => {
   const [localLoading, setLocalLoading] = useState(false);
   const [units, setUnits] = useState([]);
   const [productTypes, setProductTypes] = useState([]);
-
-  const [errors, setErrors] = useState({
-    productCode: "",
-    productName: "",
-    unitId: "",
-    typeId: "",
-    description: ""
-  });
 
   const [newProduct, setNewProduct] = useState({
     productCode: "",
@@ -109,47 +99,6 @@ const ProductPage = () => {
     fetchPaginatedProducts();
   };
 
-  const validateProduct = async (product) => {
-    const newErrors = {};
-
-    // Validate mã sản phẩm
-    if (!product.productCode) {
-      newErrors.productCode = "Mã sản phẩm không được để trống";
-    } else {
-      // Kiểm tra trùng mã sản phẩm
-      try {
-        const isCodeExists = await checkProductCodeExists(product.productCode);
-        if (isCodeExists) {
-          newErrors.productCode = "Mã sản phẩm đã tồn tại";
-        }
-      } catch (error) {
-        newErrors.productCode = "Lỗi kiểm tra mã sản phẩm";
-      }
-    }
-
-    // Các validation khác giữ nguyên
-    if (!product.productName) {
-      newErrors.productName = "Tên sản phẩm không được để trống";
-    }
-
-
-    // Validate đơn vị
-    if (!product.unitId) {
-      newErrors.unitId = "Vui lòng chọn đơn vị";
-    }
-
-    // Validate dòng sản phẩm
-    if (!product.typeId) {
-      newErrors.typeId = "Vui lòng chọn dòng sản phẩm";
-    }
-
-    // Nếu có lỗi, throw error
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      throw new Error("Validation failed");
-    }
-  };
-
   const handleImport = async () => {
     if (!file) {
       alert("Vui lòng chọn file Excel!");
@@ -173,11 +122,6 @@ const ProductPage = () => {
 
   const handleCreateProduct = async () => {
     try {
-      setErrors({});
-
-      // Sử dụng await với hàm validate
-      await validateProduct(newProduct);
-
       setLocalLoading(true);
       await createProduct(newProduct);
       alert("Tạo sản phẩm thành công!");
@@ -189,13 +133,11 @@ const ProductPage = () => {
         description: "",
         unitId: "",
         typeId: "",
-        price: "",
         isProductionActive: "true"
       });
     } catch (error) {
       console.error("Chi tiết lỗi:", error);
 
-      // Xử lý các loại lỗi khác nhau
       if (error.response) {
         const errorMessage = error.response.data.message ||
           error.response.data.error ||
@@ -204,8 +146,6 @@ const ProductPage = () => {
         alert(errorMessage);
       } else if (error.request) {
         alert("Không thể kết nối tới máy chủ. Vui lòng kiểm tra kết nối.");
-      } else if (error.message === "Validation failed") {
-        // Lỗi validate đã được xử lý ở setErrors
       } else {
         alert("Lỗi khi tạo sản phẩm! Vui lòng thử lại.");
       }
@@ -218,7 +158,6 @@ const ProductPage = () => {
     handlePageChange(selectedItem.selected);
   };
 
-  // Phần JSX giữ nguyên như cũ
   return (
     <div className="mt-12 mb-8 flex flex-col gap-12">
       <Card>
@@ -259,7 +198,6 @@ const ProductPage = () => {
           </div>
         </CardHeader>
         <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
-          {/* Phần chọn số items/trang */}
           <div className="px-4 py-2 flex items-center gap-2">
             <Typography variant="small" color="blue-gray" className="font-normal">
               Hiển thị
@@ -410,7 +348,6 @@ const ProductPage = () => {
             </tbody>
           </table>
 
-          {/* Phần phân trang mới sử dụng ReactPaginate */}
           <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-normal">
@@ -439,7 +376,6 @@ const ProductPage = () => {
         </CardBody>
       </Card>
 
-      {/* Các Modal */}
       <BillOfMaterialsModal
         show={showMaterialsModal}
         onClose={() => {
@@ -454,18 +390,15 @@ const ProductPage = () => {
         show={showCreatePopup}
         onClose={() => {
           setShowCreatePopup(false);
-          setErrors({});
         }}
         loading={localLoading}
         newProduct={newProduct}
         setNewProduct={setNewProduct}
         handleCreateProduct={handleCreateProduct}
-        errors={errors}
         units={units}
         productTypes={productTypes}
       />
 
-      {/* Popup import Excel */}
       {showImportPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96">

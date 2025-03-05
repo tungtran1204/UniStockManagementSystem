@@ -8,7 +8,6 @@ import {
 } from "@material-tailwind/react";
 import axios from 'axios';
 
-
 const EditMaterialModal = ({ show, onClose, material, onUpdate, units = [], materialCategories = [] }) => {
     const [editedMaterial, setEditedMaterial] = useState({
         materialCode: "",
@@ -29,97 +28,131 @@ const EditMaterialModal = ({ show, onClose, material, onUpdate, units = [], mate
         categoryId: "",
         description: ""
     });
+    const [productCodeError, setProductCodeError] = useState(""); // State để lưu lỗi mã nguyên vật liệu tồn tại
+    const [validationErrors, setValidationErrors] = useState({}); // State để lưu lỗi validation (khoảng trắng/trống)
 
     useEffect(() => {
         if (material) {
+            console.log("Material data:", material);
             setEditedMaterial({
                 materialId: material.materialId,
                 materialCode: material.materialCode || "",
                 materialName: material.materialName || "",
                 description: material.description || "",
-                unitId: material.unitId ? String(material.unitId) : "",  // ✅ Kiểm tra trước khi gọi .toString()
-                categoryId: material.typeId ? String(material.categoryId) : "",  // ✅ Kiểm tra trước khi gọi .toString()
+                unitId: material.unitId ? String(material.unitId) : "",
+                categoryId: material.typeId ? String(material.typeId) : "",  // Giữ nguyên vì API trả về typeId cho material
                 isUsing: material.isUsing || false,
                 imageUrl: material.imageUrl || null
             });
         }
+        console.log("Material Categories:", materialCategories);
     }, [material]);
 
-    const validateMaterial = async (material) => {
-        const newErrors = {
-            materialCode: "",
-            materialName: "",
-            unitId: "",
-            categoryId: "",
-            description: ""
-        };
-        let isValid = true;
+    // Hàm kiểm tra chuỗi có chứa toàn khoảng trắng hoặc trống không
+    const isEmptyOrWhitespace = (str) => !str || /^\s*$/.test(str);
 
-        if (!material.materialCode.trim()) {
-            newErrors.materialCode = "Mã nguyên vật liệu không được để trống";
-            isValid = false;
+    // Hàm kiểm tra mã nguyên vật liệu (kiểm tra ngay khi nhập, loại trừ materialId hiện tại)
+    const handleCheckMaterialCode = async (newCode) => {
+        setEditedMaterial({ ...editedMaterial, materialCode: newCode });
+        setProductCodeError(""); // Reset lỗi mỗi khi nhập
+
+        if (newCode.trim()) {
+            try {
+                const response = await axios.get(
+                    `http://localhost:8080/api/unistock/user/materials/check-material-code/${newCode}?excludeId=${editedMaterial.materialId}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                    }
+                );
+                if (response.data.exists) {
+                    setProductCodeError("Mã nguyên vật liệu này đã tồn tại!");
+                }
+            } catch (error) {
+                console.error("❌ Lỗi kiểm tra mã nguyên vật liệu:", error);
+                setProductCodeError("Lỗi khi kiểm tra mã nguyên vật liệu!");
+            }
         }
 
-        if (!material.materialName.trim()) {
-            newErrors.materialName = "Tên nguyên vật liệu không được để trống";
-            isValid = false;
+        // Xóa lỗi validation nếu dữ liệu hợp lệ
+        if (!isEmptyOrWhitespace(newCode)) {
+            setValidationErrors((prev) => ({ ...prev, materialCode: "" }));
         }
-
-        if (!material.unitId) {
-            newErrors.unitId = "Vui lòng chọn đơn vị";
-            isValid = false;
-        }
-
-        if (!material.categoryId) {
-            newErrors.categoryId = "Vui lòng chọn danh mục";
-            isValid = false;
-        }
-
-        setErrors(newErrors);
-        return isValid;
     };
 
-    const handleUpdateMaterial = async () => {
-        try {
-            setErrors({});
-            const isValid = await validateMaterial(editedMaterial);
-            if (!isValid) return;
+    // Hàm xử lý khi thay đổi tên nguyên vật liệu
+    const handleMaterialNameChange = (newName) => {
+        setEditedMaterial({ ...editedMaterial, materialName: newName });
 
-            setLoading(true);
-
-            const formData = new FormData();
-            formData.append('materialCode', editedMaterial.materialCode);
-            formData.append('materialName', editedMaterial.materialName);
-            formData.append('description', editedMaterial.description || '');
-            formData.append('unitId', editedMaterial.unitId || '');
-            formData.append('categoryId', editedMaterial.categoryId || '');
-            formData.append('isUsingActive', editedMaterial.isUsing);
-
-            if (editedMaterial.image) {
-                formData.append('image', editedMaterial.image);
-            }
-
-            await axios.put(
-                `http://localhost:8080/api/unistock/user/materials/${editedMaterial.materialId}`,
-                formData,
-                {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-
-                }
-            );
-
-            alert("Cập nhật nguyên vật liệu thành công!");
-            onUpdate();
-            onClose();
-        } catch (error) {
-            console.error("Lỗi khi cập nhật nguyên vật liệu:", error);
-            alert(error.response?.data?.message || "Lỗi khi cập nhật nguyên vật liệu!");
-        } finally {
-            setLoading(false);
+        // Xóa lỗi validation nếu dữ liệu hợp lệ
+        if (!isEmptyOrWhitespace(newName)) {
+            setValidationErrors((prev) => ({ ...prev, materialName: "" }));
         }
+    };
+
+    // Hàm xử lý khi nhấn nút "Cập nhật"
+    const handleUpdateMaterial = async () => {
+        const newErrors = {};
+
+        if (isEmptyOrWhitespace(editedMaterial.materialCode)) {
+            newErrors.materialCode = "Mã nguyên vật liệu không được để trống hoặc chỉ chứa khoảng trắng!";
+        }
+        if (isEmptyOrWhitespace(editedMaterial.materialName)) {
+            newErrors.materialName = "Tên nguyên vật liệu không được để trống hoặc chỉ chứa khoảng trắng!";
+        }
+        if (!editedMaterial.unitId) {
+            newErrors.unitId = "Vui lòng chọn đơn vị!";
+        }
+        if (!editedMaterial.categoryId) {
+            newErrors.categoryId = "Vui lòng chọn danh mục!";
+        }
+
+        setValidationErrors(newErrors);
+
+        // Chỉ gọi API nếu không có lỗi validation và không có productCodeError
+        if (Object.keys(newErrors).length === 0 && !productCodeError) {
+            try {
+                setLoading(true);
+
+                const formData = new FormData();
+                formData.append('materialCode', editedMaterial.materialCode);
+                formData.append('materialName', editedMaterial.materialName);
+                formData.append('description', editedMaterial.description || '');
+                formData.append('unitId', editedMaterial.unitId || '');
+                formData.append('categoryId', editedMaterial.categoryId || '');
+                formData.append('isUsing', editedMaterial.isUsing);
+
+                if (editedMaterial.image) {
+                    formData.append('image', editedMaterial.image);
+                }
+
+                await axios.put(
+                    `http://localhost:8080/api/unistock/user/materials/${editedMaterial.materialId}`,
+                    formData,
+                    {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        },
+                    }
+                );
+
+                alert("Cập nhật nguyên vật liệu thành công!");
+                onUpdate();
+                onClose();
+            } catch (error) {
+                console.error("Lỗi khi cập nhật nguyên vật liệu:", error);
+                alert(error.response?.data?.message || "Lỗi khi cập nhật nguyên vật liệu!");
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
+    // Kiểm tra điều kiện để vô hiệu hóa nút "Cập nhật"
+    const isUpdateDisabled = () => {
+        return loading || !!productCodeError;
     };
 
     if (!show) return null;
@@ -129,7 +162,11 @@ const EditMaterialModal = ({ show, onClose, material, onUpdate, units = [], mate
             <div className="bg-white rounded-lg p-6 w-[500px]">
                 <div className="flex justify-between items-center mb-4">
                     <Typography variant="h6">Chỉnh sửa nguyên vật liệu</Typography>
-                    <button className="text-gray-500 hover:text-gray-700" onClick={onClose}>
+                    <button className="text-gray-500 hover:text-gray-700" onClick={() => {
+                        onClose();
+                        setProductCodeError("");
+                        setValidationErrors({});
+                    }}>
                         ✕
                     </button>
                 </div>
@@ -139,10 +176,20 @@ const EditMaterialModal = ({ show, onClose, material, onUpdate, units = [], mate
                         <Input
                             type="text"
                             value={editedMaterial.materialCode}
-                            onChange={(e) => setEditedMaterial({ ...editedMaterial, materialCode: e.target.value })}
-                            className={`w-full ${errors.materialCode ? 'border-red-500' : ''}`}
+                            onChange={(e) => handleCheckMaterialCode(e.target.value)}
+                            className={`w-full ${errors.materialCode || productCodeError || validationErrors.materialCode ? 'border-red-500' : ''}`}
                         />
-                        {errors.materialCode && (
+                        {productCodeError && (
+                            <Typography className="text-xs text-red-500 mt-1">
+                                {productCodeError}
+                            </Typography>
+                        )}
+                        {validationErrors.materialCode && (
+                            <Typography className="text-xs text-red-500 mt-1">
+                                {validationErrors.materialCode}
+                            </Typography>
+                        )}
+                        {errors.materialCode && !productCodeError && !validationErrors.materialCode && (
                             <Typography className="text-xs text-red-500 mt-1">
                                 {errors.materialCode}
                             </Typography>
@@ -153,10 +200,15 @@ const EditMaterialModal = ({ show, onClose, material, onUpdate, units = [], mate
                         <Input
                             type="text"
                             value={editedMaterial.materialName}
-                            onChange={(e) => setEditedMaterial({ ...editedMaterial, materialName: e.target.value })}
-                            className={`w-full ${errors.materialName ? 'border-red-500' : ''}`}
+                            onChange={(e) => handleMaterialNameChange(e.target.value)}
+                            className={`w-full ${errors.materialName || validationErrors.materialName ? 'border-red-500' : ''}`}
                         />
-                        {errors.materialName && (
+                        {validationErrors.materialName && (
+                            <Typography className="text-xs text-red-500 mt-1">
+                                {validationErrors.materialName}
+                            </Typography>
+                        )}
+                        {errors.materialName && !validationErrors.materialName && (
                             <Typography className="text-xs text-red-500 mt-1">
                                 {errors.materialName}
                             </Typography>
@@ -169,7 +221,7 @@ const EditMaterialModal = ({ show, onClose, material, onUpdate, units = [], mate
                         <Select
                             value={editedMaterial.unitId || ""}
                             onChange={(value) => setEditedMaterial({ ...editedMaterial, unitId: value })}
-                            className={`w-full ${errors.unitId ? 'border-red-500' : ''}`}
+                            className={`w-full ${errors.unitId || (validationErrors.unitId && !editedMaterial.unitId) ? 'border-red-500' : ''}`}
                             label="Chọn đơn vị"
                         >
                             {units.length > 0 ? (
@@ -182,6 +234,16 @@ const EditMaterialModal = ({ show, onClose, material, onUpdate, units = [], mate
                                 <Option disabled>Không có đơn vị nào</Option>
                             )}
                         </Select>
+                        {validationErrors.unitId && (
+                            <Typography className="text-xs text-red-500 mt-1">
+                                {validationErrors.unitId}
+                            </Typography>
+                        )}
+                        {errors.unitId && !validationErrors.unitId && (
+                            <Typography className="text-xs text-red-500 mt-1">
+                                {errors.unitId}
+                            </Typography>
+                        )}
                     </div>
 
                     {/* Danh mục */}
@@ -190,12 +252,12 @@ const EditMaterialModal = ({ show, onClose, material, onUpdate, units = [], mate
                         <Select
                             value={editedMaterial.categoryId || ""}
                             onChange={(value) => setEditedMaterial({ ...editedMaterial, categoryId: value })}
-                            className={`w-full ${errors.categoryId ? 'border-red-500' : ''}`}
+                            className={`w-full ${errors.categoryId || (validationErrors.categoryId && !editedMaterial.categoryId) ? 'border-red-500' : ''}`}
                             label="Chọn danh mục"
                         >
                             {materialCategories.length > 0 ? (
                                 materialCategories.map((category) => (
-                                    <Option key={category.typeId} value={String(category.typeId)}>
+                                    <Option key={category.materialTypeId} value={String(category.materialTypeId)}>
                                         {category.name}
                                     </Option>
                                 ))
@@ -203,6 +265,16 @@ const EditMaterialModal = ({ show, onClose, material, onUpdate, units = [], mate
                                 <Option disabled>Không có danh mục nào</Option>
                             )}
                         </Select>
+                        {validationErrors.categoryId && (
+                            <Typography className="text-xs text-red-500 mt-1">
+                                {validationErrors.categoryId}
+                            </Typography>
+                        )}
+                        {errors.categoryId && !validationErrors.categoryId && (
+                            <Typography className="text-xs text-red-500 mt-1">
+                                {errors.categoryId}
+                            </Typography>
+                        )}
                     </div>
 
                     <div className="col-span-2">
@@ -213,6 +285,11 @@ const EditMaterialModal = ({ show, onClose, material, onUpdate, units = [], mate
                             onChange={(e) => setEditedMaterial({ ...editedMaterial, description: e.target.value })}
                             className={`w-full ${errors.description ? 'border-red-500' : ''}`}
                         />
+                        {errors.description && (
+                            <Typography className="text-xs text-red-500 mt-1">
+                                {errors.description}
+                            </Typography>
+                        )}
                     </div>
 
                     {/* Ảnh nguyên vật liệu */}
@@ -224,6 +301,11 @@ const EditMaterialModal = ({ show, onClose, material, onUpdate, units = [], mate
                             onChange={(e) => {
                                 const file = e.target.files[0];
                                 if (file) {
+                                    if (file.size > 5 * 1024 * 1024) {
+                                        alert("Kích thước file không được vượt quá 5MB");
+                                        e.target.value = "";
+                                        return;
+                                    }
                                     setEditedMaterial((prev) => ({
                                         ...prev,
                                         image: file,
@@ -232,13 +314,19 @@ const EditMaterialModal = ({ show, onClose, material, onUpdate, units = [], mate
                                 }
                             }}
                         />
-                        {editedMaterial.imageUrl && <img src={editedMaterial.imageUrl} alt="Preview" className="w-32 h-32 object-cover mt-2" />}
+                        {editedMaterial.imageUrl && (
+                            <img src={editedMaterial.imageUrl} alt="Preview" className="w-32 h-32 object-cover mt-2" />
+                        )}
                     </div>
                 </div>
 
                 <div className="flex justify-end gap-2">
-                    <Button color="gray" onClick={onClose} disabled={loading}>Hủy</Button>
-                    <Button color="blue" onClick={handleUpdateMaterial} disabled={loading}>Cập nhật</Button>
+                    <Button color="gray" onClick={() => {
+                        onClose();
+                        setProductCodeError("");
+                        setValidationErrors({});
+                    }} disabled={loading}>Hủy</Button>
+                    <Button color="blue" onClick={handleUpdateMaterial} disabled={isUpdateDisabled()}>Cập nhật</Button>
                 </div>
             </div>
         </div>

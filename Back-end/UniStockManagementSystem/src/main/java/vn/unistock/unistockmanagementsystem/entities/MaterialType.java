@@ -26,6 +26,7 @@ public class MaterialType {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
     private Long createdBy;
     private Long updatedBy;
 
