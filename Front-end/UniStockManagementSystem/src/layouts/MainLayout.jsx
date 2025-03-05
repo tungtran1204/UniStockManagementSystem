@@ -35,7 +35,7 @@ const MainLayout = ({ children }) => {
       {/* Nội dung chính */}
       <div
         className={`flex flex-col w-full p-4 transition-all duration-300 ${
-          openSidenav ? "xl:ml-80" : "ml-0"
+          openSidenav ? "xl:ml-72" : "ml-0"
         }`}
         style={{
           maxWidth: openSidenav ? "calc(100vw - 320px)" : "100vw",
