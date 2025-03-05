@@ -25,8 +25,19 @@ export const getAllMaterials = async (page = 0, size = 10) => {
     console.log("📌 [getAllMaterials] API Response:", response.data);
 
     if (response.data && response.data.content) {
+      const categories = await fetchMaterialCategories(); // Lấy danh mục để ánh xạ
       return {
-        materials: response.data.content,
+        materials: response.data.content.map(material => {
+          let typeName = material.typeName || "Không có danh mục";
+          if (material.typeId) {
+            const category = categories.find(cat => cat.materialTypeId === material.typeId);
+            typeName = category ? category.name : typeName;
+          }
+          return {
+            ...material,
+            typeName: typeName
+          };
+        }),
         totalPages: response.data.totalPages || 1,
         totalElements: response.data.totalElements || response.data.content.length
       };
@@ -108,7 +119,7 @@ const handleUpdateMaterial = async () => {
     formData.append("description", editedMaterial.description || "");
     formData.append("unitId", editedMaterial.unitId || "");
     formData.append("typeId", editedMaterial.materialTypeId || ""); // ✅ Đổi `materialTypeId` thành `typeId`
-    
+
     if (editedMaterial.image) {
       formData.append("image", editedMaterial.image);
     }
@@ -168,6 +179,7 @@ export const fetchMaterialCategories = async () => {
     const response = await axios.get('http://localhost:8080/api/unistock/user/material-types', {
       headers: authHeader()
     });
+    console.log("Fetched material categories:", response.data);
     return response.data;
   } catch (error) {
     console.error('❌ Lỗi khi lấy danh sách danh mục nguyên vật liệu:', error);

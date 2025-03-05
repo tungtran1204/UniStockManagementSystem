@@ -1,24 +1,87 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-    Typography,
-    Button,
-    Input,
-    Select,
-    Option,
+  Typography,
+  Button,
+  Input,
+  Select,
+  Option,
 } from "@material-tailwind/react";
+import { checkProductCodeExists } from "../products/productService";
 
-const CreateProductModal = ({ 
-  show, 
-  onClose, 
-  loading, 
-  newProduct, 
-  setNewProduct, 
-  handleCreateProduct, 
-  errors,
+const CreateProductModal = ({
+  show,
+  onClose,
+  loading,
+  newProduct = {  // Thêm giá trị mặc định
+    productCode: '',
+    productName: '',
+    description: '',
+    unitId: '',
+    typeId: '',
+    isProductionActive: 'true'
+  },
+  setNewProduct,
+  handleCreateProduct: originalHandleCreateProduct,
+  errors = {},  // Thêm giá trị mặc định cho errors
   units,
-  productTypes 
+  productTypes
 }) => {
+  const [productCodeError, setProductCodeError] = useState("");
+  const [validationErrors, setValidationErrors] = useState({}); // State để lưu lỗi validation
+
   if (!show) return null;
+
+  // Hàm kiểm tra chuỗi có chứa toàn khoảng trắng hoặc trống không
+  const isEmptyOrWhitespace = (str) => !str || /^\s*$/.test(str);
+
+  // Hàm kiểm tra mã sản phẩm (kiểm tra ngay khi nhập)
+  const handleCheckProductCode = async (newCode) => {
+    setNewProduct(prev => ({ 
+      ...prev, 
+      productCode: newCode || '' 
+    }));    setProductCodeError(""); // Reset lỗi mỗi khi nhập
+
+    if (newCode.trim()) {
+      try {
+        const exists = await checkProductCodeExists(newCode);
+        if (exists) {
+          setProductCodeError("Mã sản phẩm này đã tồn tại!");
+        }
+      } catch (error) {
+        console.error("❌ Lỗi kiểm tra mã sản phẩm:", error);
+        setProductCodeError("Lỗi khi kiểm tra mã sản phẩm!");
+      }
+    }
+  };
+
+  // Hàm xử lý khi nhấn nút "Tạo sản phẩm"
+  const handleCreateProduct = () => {
+    const newErrors = {};
+
+    if (isEmptyOrWhitespace(newProduct.productCode)) {
+      newErrors.productCode = "Mã sản phẩm không được để trống hoặc chỉ chứa khoảng trắng!";
+    }
+    if (isEmptyOrWhitespace(newProduct.productName)) {
+      newErrors.productName = "Tên sản phẩm không được để trống hoặc chỉ chứa khoảng trắng!";
+    }
+
+    setValidationErrors(newErrors);
+
+    // Chỉ gọi hàm gốc nếu không có lỗi validation và không có productCodeError
+    if (Object.keys(newErrors).length === 0 && !productCodeError) {
+      originalHandleCreateProduct();
+    }
+  };
+
+  // Kiểm tra điều kiện để vô hiệu hóa nút "Tạo sản phẩm"
+  const isCreateDisabled = () => {
+    return loading || !!productCodeError;
+  };
+
+  // Kiểm tra liệu trường có dữ liệu hợp lệ không (không trống và không chỉ chứa khoảng trắng)
+  const isFieldValid = (value) => {
+    return value && !isEmptyOrWhitespace(value);
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -37,11 +100,21 @@ const CreateProductModal = ({
             <Typography variant="small" className="mb-2">Mã sản phẩm *</Typography>
             <Input
               type="text"
-              value={newProduct.productCode}
-              onChange={(e) => setNewProduct({ ...newProduct, productCode: e.target.value })}
-              className={`w-full ${errors.productCode ? 'border-red-500' : ''}`}
+              value={newProduct.productCode || ""}
+              onChange={(e) => handleCheckProductCode(e.target.value)}
+              className={`w-full ${errors.productCode || productCodeError || (validationErrors.productCode && !isFieldValid(newProduct.productCode)) ? 'border-red-500' : ''}`}
             />
-            {errors.productCode && (
+            {productCodeError && (
+              <Typography className="text-xs text-red-500 mt-1">
+                {productCodeError}
+              </Typography>
+            )}
+            {validationErrors.productCode && !isFieldValid(newProduct.productCode) && (
+              <Typography className="text-xs text-red-500 mt-1">
+                {validationErrors.productCode}
+              </Typography>
+            )}
+            {errors.productCode && !productCodeError && (!validationErrors.productCode || isFieldValid(newProduct.productCode)) && (
               <Typography className="text-xs text-red-500 mt-1">
                 {errors.productCode}
               </Typography>
@@ -51,11 +124,16 @@ const CreateProductModal = ({
             <Typography variant="small" className="mb-2">Tên sản phẩm *</Typography>
             <Input
               type="text"
-              value={newProduct.productName}
+              value={newProduct.productName || ""}
               onChange={(e) => setNewProduct({ ...newProduct, productName: e.target.value })}
-              className={`w-full ${errors.productName ? 'border-red-500' : ''}`}
+              className={`w-full ${errors.productName || (validationErrors.productName && !isFieldValid(newProduct.productName)) ? 'border-red-500' : ''}`}
             />
-            {errors.productName && (
+            {validationErrors.productName && !isFieldValid(newProduct.productName) && (
+              <Typography className="text-xs text-red-500 mt-1">
+                {validationErrors.productName}
+              </Typography>
+            )}
+            {errors.productName && !validationErrors.productName && (
               <Typography className="text-xs text-red-500 mt-1">
                 {errors.productName}
               </Typography>
@@ -105,7 +183,7 @@ const CreateProductModal = ({
             <Typography variant="small" className="mb-2">Mô tả</Typography>
             <Input
               type="text"
-              value={newProduct.description}
+              value={newProduct.description || ""}
               onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
               className={`w-full ${errors.description ? 'border-red-500' : ''}`}
             />
@@ -164,7 +242,7 @@ const CreateProductModal = ({
           <Button
             color="blue"
             onClick={handleCreateProduct}
-            disabled={loading}
+            disabled={isCreateDisabled()}
           >
             {loading ? "Đang xử lý..." : "Tạo sản phẩm"}
           </Button>
