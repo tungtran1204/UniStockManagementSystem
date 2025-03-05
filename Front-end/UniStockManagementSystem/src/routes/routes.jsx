@@ -85,13 +85,6 @@ export const routes = [
         roles: ["USER"],
       },
       {
-        icon: <ArchiveBoxIcon {...icon} />, // Changed from BoxIcon to ArchiveBoxIcon
-        name: "Phiếu nhập",
-        path: "/user/receiptNote",
-        element: <ReceiptNotePage />,
-        roles: ["USER"],
-      },
-      {
         icon: <TableCellsIcon {...icon} />,
         name: "Quản lý sản phẩm",
         path: "/user/products",
@@ -132,6 +125,23 @@ export const routes = [
             name: "Đối tác",
             path: "/user/partner/list", // Relative path
             element: <PartnerPage />, 
+            roles: ["USER"],
+          },
+        ],
+      },
+
+      {
+        icon: <UserCircleIcon {...icon} />,
+        name: "Xuất nhập kho",
+        path: "/user/receiptNote",
+        roles: ["USER"],
+        element: <Navigate to="/user/partner/type" replace />,
+        subPages: [
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Nhập kho",
+            path: "/user/receiptNote",
+            element: <ReceiptNotePage/>,
             roles: ["USER"],
           },
         ],
