@@ -25,6 +25,7 @@ import MaterialPage from "@/features/user/materials/MaterialPage";
 
 import ReceiptNotePage from "../features/user/receiptNote/ReceiptNotePage";
 import AddSaleOrderPage from "../features/user/saleorders/AddSaleOrderPage";
+import AddReceiptNote from "../features/user/receiptNote/AddReceiptNote";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -140,8 +141,8 @@ export const routes = [
           {
             icon: <Bars3BottomRightIcon {...icon} />,
             name: "Nhập kho",
-            path: "/user/receiptNote",
-            element: <ReceiptNotePage/>,
+            path: "/user/receiptNote/list",
+            element: <ReceiptNotePage />,
             roles: ["USER"],
           },
         ],
@@ -177,6 +178,13 @@ export const routes = [
         name: "Thêm đơn hàng",
         path: "/user/sale-orders/add",
         element: <AddSaleOrderPage />, // Trang quản lý đơn hàng 
+        roles: ["USER"],
+      },
+      {
+        icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
+        name: "Thêm đơn hàng",
+        path: "/user/receiptNote/add",
+        element: <AddReceiptNote />, // Trang quản lý đơn hàng 
         roles: ["USER"],
       },
     ],

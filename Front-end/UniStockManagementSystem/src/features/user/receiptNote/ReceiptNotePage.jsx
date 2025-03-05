@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import ReactPaginate from "react-paginate";
 import { Button, Card, CardHeader, CardBody, Typography, Tooltip } from "@material-tailwind/react";
@@ -14,7 +15,7 @@ const ReceiptNotePage = () => {
   const [totalElements, setTotalElements] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
-  const [showCreatePopup, setShowCreatePopup] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchPaginatedImportReceipts();
@@ -62,7 +63,7 @@ const ReceiptNotePage = () => {
               Danh sách phiếu nhập kho
             </Typography>
             <div className="flex gap-2">
-              <Button size="sm" color="white" variant="text" className="flex items-center gap-2" onClick={() => setShowCreatePopup(true)}>
+              <Button size="sm" color="white" variant="text" className="flex items-center gap-2" onClick={() => navigate("/user/receiptNote/add")}>
                 <FaPlus className="h-4 w-4" /> Thêm phiếu nhập
               </Button>
               <Button size="sm" color="white" variant="text" className="flex items-center gap-2">
