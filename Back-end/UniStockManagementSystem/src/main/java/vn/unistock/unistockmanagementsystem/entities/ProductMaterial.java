@@ -7,8 +7,11 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "product_materials")
+@Table(name = "product_materials", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"product_id", "material_id"}) // ✅ Đảm bảo không lưu trùng vật tư
+})
 public class ProductMaterial {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,4 +26,5 @@ public class ProductMaterial {
 
     @Column(name = "quantity", nullable = false)
     private int quantity;
+
 }

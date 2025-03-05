@@ -8,6 +8,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import vn.unistock.unistockmanagementsystem.entities.Product;
+import vn.unistock.unistockmanagementsystem.entities.ProductMaterial;
+import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
+import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsDTO;
+import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.productTypes.ProductTypeRepository;
 import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
 import vn.unistock.unistockmanagementsystem.features.user.units.UnitRepository;
@@ -16,6 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +30,8 @@ public class ProductsService {
     private final ProductsRepository productsRepository;
     private final UnitRepository unitRepository;
     private final ProductTypeRepository productTypeRepository;
+    private final MaterialsRepository materialRepository;
+    private final ProductMaterialsRepository productMaterialsRepository;
     private final ProductsMapper productsMapper = ProductsMapper.INSTANCE;
     private final AzureBlobService azureBlobService;
 
@@ -37,29 +45,58 @@ public class ProductsService {
 
 
     // 🟢 Tạo sản phẩm mới
+    @Transactional
+    public Product createProduct(ProductsDTO dto, String createdBy) throws IOException {
+        // Kiểm tra mã sản phẩm đã tồn tại chưa
+        if (productsRepository.existsByProductCode(dto.getProductCode())) {
+            throw new IllegalArgumentException("Mã sản phẩm đã tồn tại!");
+        }
 
-    public Product createProduct(ProductsDTO productDTO, String createdBy) {
-
+        // Tạo đối tượng Product
         Product product = new Product();
-        product.setProductCode(productDTO.getProductCode());
-        product.setProductName(productDTO.getProductName());
-        product.setDescription(productDTO.getDescription());
+        product.setProductCode(dto.getProductCode());
+        product.setProductName(dto.getProductName());
+        product.setDescription(dto.getDescription());
 
-        if (productDTO.getUnitId() != null) {
-            product.setUnit(unitRepository.findById(productDTO.getUnitId()).orElse(null));
+        // Gán đơn vị và loại sản phẩm (nếu có)
+        if (dto.getUnitId() != null) {
+            product.setUnit(unitRepository.findById(dto.getUnitId())
+                    .orElseThrow(() -> new IllegalArgumentException("Đơn vị không tồn tại!")));
         }
-        if (productDTO.getTypeId() != null) {
-            product.setProductType(productTypeRepository.findById(productDTO.getTypeId()).orElse(null));
+        if (dto.getTypeId() != null) {
+            product.setProductType(productTypeRepository.findById(dto.getTypeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Loại sản phẩm không tồn tại!")));
         }
 
-        product.setIsProductionActive(productDTO.getIsProductionActive() != null ? productDTO.getIsProductionActive() : true);
-
-        // 🛑 Quan trọng: Đảm bảo set imageUrl vào entity trước khi lưu
-        product.setImageUrl(productDTO.getImageUrl());
-
+        product.setIsProductionActive(dto.getIsProductionActive() != null ? dto.getIsProductionActive() : true);
         product.setCreatedBy(createdBy);
         product.setCreatedAt(LocalDateTime.now());
-        return productsRepository.save(product);
+
+        // Xử lý file hình ảnh (nếu có)
+        if (dto.getImage() != null && !dto.getImage().isEmpty()) {
+            String imageUrl = azureBlobService.uploadFile(dto.getImage());
+            product.setImageUrl(imageUrl);
+        }
+
+        // Lưu sản phẩm
+        Product savedProduct = productsRepository.save(product);
+
+        // Lưu danh sách định mức nguyên vật liệu (nếu có)
+        if (dto.getMaterials() != null && !dto.getMaterials().isEmpty()) {
+            List<ProductMaterial> productMaterials = new ArrayList<>();
+            for (ProductMaterialsDTO materialDTO : dto.getMaterials()) {
+                ProductMaterial productMaterial = new ProductMaterial();
+                productMaterial.setProduct(savedProduct);
+                productMaterial.setMaterial(materialRepository.findById(materialDTO.getMaterialId())
+                        .orElseThrow(() -> new IllegalArgumentException("Nguyên vật liệu không tồn tại!")));
+                productMaterial.setQuantity(materialDTO.getQuantity());
+                productMaterials.add(productMaterial);
+            }
+            productMaterialsRepository.saveAll(productMaterials);
+            savedProduct.setProductMaterials(productMaterials);
+        }
+
+        return savedProduct;
     }
 
 

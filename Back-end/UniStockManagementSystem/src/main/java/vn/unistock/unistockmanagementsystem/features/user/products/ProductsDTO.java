@@ -5,6 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.springframework.web.multipart.MultipartFile;
+import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsDTO;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -30,4 +33,5 @@ public class    ProductsDTO {
     private String imageUrl;
     private Boolean isProductionActive;
     private MultipartFile image;
+    private List<ProductMaterialsDTO> materials;
 }
