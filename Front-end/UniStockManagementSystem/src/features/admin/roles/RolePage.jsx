@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from "react"; // Sửa lại import để thêm useCallback
+import React, { useCallback, useState, useEffect } from "react";
 import {
   Card,
   CardHeader,
@@ -60,7 +60,7 @@ function RolePage() {
   const [tempRoles, setTempRoles] = useState([]);
   const [editingRole, setEditingRole] = useState(null);
   const [editingRoleName, setEditingRoleName] = useState("");
-  const [saveError, setSaveError] = useState(null); // Thêm state để hiển thị lỗi lưu
+  const [saveError, setSaveError] = useState(null);
 
   const onAddTempRole = () => {
     const newTempRole = {
@@ -84,12 +84,12 @@ function RolePage() {
       active: true,
     };
     try {
-      await handleAddRole(newRole); // Chờ API thành công
-      setTempRoles((prev) => prev.filter((r) => r.id !== tempRole.id)); // Xóa tempRole ngay lập tức
-      setSaveError(null); // Xóa lỗi nếu có
+      await handleAddRole(newRole);
+      setTempRoles((prev) => prev.filter((r) => r.id !== tempRole.id));
+      setSaveError(null);
     } catch (err) {
       console.error("Lỗi khi lưu vai trò:", err);
-      setSaveError("Không thể lưu vai trò. Vui lòng thử lại."); // Hiển thị lỗi cho người dùng
+      setSaveError("Không thể lưu vai trò. Vui lòng thử lại.");
     }
   };
 
@@ -153,7 +153,8 @@ function RolePage() {
         <CardHeader
           variant="gradient"
           color="gray"
-          className="mb-8 p-6 flex justify-between items-center"
+          className="mb-8 p-6 flex justify-between items-center" // Giảm padding từ p-6 thành p-2 và margin-bottom từ mb-8 thành mb-4
+          style={{ minHeight: "40px", maxHeight: "60px" }} // Giới hạn chiều cao tối đa
         >
           <Typography variant="h6" color="white">
             Danh sách Vai Trò
@@ -182,9 +183,7 @@ function RolePage() {
                   <Typography
                     variant="small"
                     className="text-[11px] font-bold uppercase text-blue-gray-400"
-                  >
-                    
-                  </ Typography>
+                  ></Typography>
                 </th>
                 <th className="border-b border-blue-gray-50 py-3 px-5 text-center">
                   <Typography
@@ -222,9 +221,7 @@ function RolePage() {
                   <Typography
                     variant="small"
                     className="text-[11px] font-bold uppercase text-blue-gray-400"
-                  >
-                   
-                  </Typography>
+                  ></Typography>
                 </th>
                 {Object.values(PERMISSION_CATEGORIES)
                   .flat()
