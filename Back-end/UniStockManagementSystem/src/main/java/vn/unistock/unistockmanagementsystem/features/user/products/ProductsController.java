@@ -1,5 +1,7 @@
 package vn.unistock.unistockmanagementsystem.features.user.products;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -9,10 +11,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.unistock.unistockmanagementsystem.entities.Product;
+import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsDTO;
 import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -64,31 +68,36 @@ public class    ProductsController {
     public ResponseEntity<?> createProduct(
             @RequestParam("productCode") String productCode,
             @RequestParam("productName") String productName,
-            @RequestParam("description") String description,
+            @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "unitId", required = false) Long unitId,
-            @RequestParam(value = "productTypeId", required = false) Long productTypeId,
-            @RequestParam(value = "isProductionActive", required = false) Boolean isProductionActive,
-            @RequestParam(value = "image", required = false) MultipartFile image
-    ) throws IOException {
-        // ✅ Upload ảnh lên Azure nếu có
-        String imageUrl = null;
-        if (image != null && !image.isEmpty()) {
-            imageUrl = azureBlobService.uploadFile(image);
+            @RequestParam(value = "typeId", required = false) Long typeId,
+            @RequestParam(value = "isProductionActive", required = false, defaultValue = "true") Boolean isProductionActive,
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam("materials") String materialsJson) throws IOException {
+
+        try {
+            // Parse JSON materials
+            ObjectMapper objectMapper = new ObjectMapper();
+            List<ProductMaterialsDTO> materials = objectMapper.readValue(materialsJson, new TypeReference<List<ProductMaterialsDTO>>() {});
+
+            // Tạo ProductsDTO
+            ProductsDTO dto = new ProductsDTO();
+            dto.setProductCode(productCode);
+            dto.setProductName(productName);
+            dto.setDescription(description);
+            dto.setUnitId(unitId);
+            dto.setTypeId(typeId);
+            dto.setIsProductionActive(isProductionActive);
+            dto.setImage(image);
+            dto.setMaterials(materials);
+
+            // Gọi service để tạo sản phẩm và định mức
+            Product createdProduct = productsService.createProduct(dto, "Admin");
+            return ResponseEntity.ok(createdProduct);
+        } catch (Exception e) {
+            log.error("Lỗi khi tạo sản phẩm với định mức: ", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lỗi khi tạo sản phẩm: " + e.getMessage());
         }
-
-        // ✅ Tạo DTO để lưu sản phẩm
-        ProductsDTO productDTO = new ProductsDTO();
-        productDTO.setProductCode(productCode);
-        productDTO.setProductName(productName);
-        productDTO.setDescription(description);
-        productDTO.setUnitId(unitId);
-        productDTO.setTypeId(productTypeId);
-        productDTO.setIsProductionActive(isProductionActive);
-        productDTO.setImageUrl(imageUrl);
-
-        // ✅ Gọi service để lưu sản phẩm
-        Product createdProduct = productsService.createProduct(productDTO, "Admin");
-        return ResponseEntity.ok(createdProduct);
     }
 
 

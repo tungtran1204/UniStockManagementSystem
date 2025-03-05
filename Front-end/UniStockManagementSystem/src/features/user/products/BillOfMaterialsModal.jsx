@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Button, Input } from "@material-tailwind/react";
+import {
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  Button,
+  Input,
+  Typography,
+} from "@material-tailwind/react";
 import { FaPlus, FaTrash, FaTimes } from "react-icons/fa";
 import axios from "axios";
 
@@ -219,122 +227,101 @@ const BillOfMaterialsModal = ({ show, onClose, product, onUpdate }) => {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-[800px] max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <Typography variant="h6">Định mức nguyên vật liệu - {product?.productName}</Typography>
-          <button className="text-gray-500 hover:text-gray-700" onClick={onClose}>
-            ✕
-          </button>
-        </div>
+    <Dialog open={show} handler={onClose} size="xl" className="w-[900px] max-h-screen overflow-auto">
+      <DialogHeader className="bg-gray-50">
+        <Typography variant="h5" color="blue-gray" className="px-5">
+          Định mức nguyên vật liệu - {product?.productName}
+        </Typography>
+      </DialogHeader>
 
+      <DialogBody divider className="flex flex-col gap-4 px-10 border-none">
         {/* Form thêm nguyên vật liệu */}
-        <div className="mb-6 p-4 border border-gray-200 rounded-md">
-          <Typography variant="small" className="mb-2 font-semibold">
-            Thêm nguyên vật liệu
-          </Typography>
-          <div className="grid grid-cols-12 gap-4 items-center">
-            <div className="col-span-5 relative">
-              <div className="flex items-center">
-                <Input
-                  label="Tìm kiếm nguyên vật liệu"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full py-3 px-5 text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none transition duration-200"
-                />
-                {searchQuery && (
-                  <button
-                    className="absolute right-3 text-gray-500 hover:text-gray-700 focus:outline-none"
-                    onClick={handleClearSearch}
+        <div className="grid grid-cols-4 gap-4">
+          <div className="col-span-3 relative">
+            <Typography variant="small" className="mb-2 text-gray-900 font-bold">
+              Tìm kiếm nguyên vật liệu
+            </Typography>
+            <Input
+              label="Nhập mã hoặc tên nguyên vật liệu"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full"
+            />
+            {showSuggestions && filteredMaterials.length > 0 && (
+              <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg">
+                {filteredMaterials.map((material) => (
+                  <li
+                    key={material.materialId}
+                    className="p-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => {
+                      setSelectedMaterial(material.materialId.toString());
+                      setSearchQuery(`${material.materialCode} - ${material.materialName}`);
+                      setShowSuggestions(false);
+                    }}
                   >
-                    <FaTimes className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-              {showSuggestions && filteredMaterials.length > 0 && (
-                <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg">
-                  {filteredMaterials.map((material) => (
-                    <li
-                      key={material.materialId}
-                      className="p-2 hover:bg-gray-100 cursor-pointer"
-                      onClick={() => {
-                        setSelectedMaterial(material.materialId.toString());
-                        setSearchQuery(`${material.materialCode} - ${material.materialName}`); // Hiển thị vật tư đã chọn trong thanh tìm kiếm
-                        setShowSuggestions(false);
-                      }}
-                    >
-                      {material.materialCode} - {material.materialName}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {showSuggestions && searchQuery && filteredMaterials.length === 0 && (
-                <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-md mt-1 p-2 text-gray-500">
-                  Không tìm thấy vật tư
-                </div>
-              )}
-            </div>
-            <div className="col-span-5">
-              <Input
-                type="number"
-                label="Số lượng"
-                value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                min="1"
-                step="1"
-                className="w-full py-3 px-5 text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none transition duration-200"
-              />
-            </div>
-            <div className="col-span-2">
-              <Button
-                color="green"
-                className="w-full flex items-center justify-center gap-2"
-                onClick={handleAddMaterial}
-              >
-                <FaPlus className="h-4 w-4" /> Thêm
-              </Button>
-            </div>
+                    {material.materialCode} - {material.materialName}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div>
+            <Typography variant="small" className="mb-2 text-gray-900 font-bold">
+              Số lượng
+            </Typography>
+            <Input
+              type="number"
+              value={quantity}
+              onChange={(e) => setQuantity(Number(e.target.value))}
+              min="1"
+              step="1"
+            />
           </div>
         </div>
 
-        {/* Danh sách nguyên vật liệu */}
-        <div className="mb-4">
-          <Typography variant="small" className="mb-2 font-semibold">
+        <div className="flex gap-2 mb-4">
+          <Button variant="outlined" onClick={handleAddMaterial}>
+            + Thêm nguyên vật liệu
+          </Button>
+        </div>
+
+        {/* Trước bảng nguyên vật liệu, thêm ô tìm kiếm */}
+        <div className="flex items-center gap-4 mb-4">
+          <Typography variant="small" className="text-gray-900 font-bold">
             Danh sách nguyên vật liệu
           </Typography>
-
-          {/* Thêm thanh tìm kiếm */}
-          <div className="mb-4 relative">
+          <div className="flex-1">
             <Input
               label="Tìm kiếm trong danh sách"
               value={tableSearchQuery}
               onChange={(e) => setTableSearchQuery(e.target.value)}
-              className="w-full py-3 px-5 text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none transition duration-200"
+              className="w-full"
+              icon={
+                tableSearchQuery && (
+                  <button
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                    onClick={() => setTableSearchQuery("")}
+                  >
+                    <FaTimes className="h-4 w-4 text-gray-500 hover:text-gray-700" />
+                  </button>
+                )
+              }
             />
-            {tableSearchQuery && (
-              <button
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
-                onClick={() => setTableSearchQuery("")}
-              >
-                <FaTimes className="h-4 w-4" />
-              </button>
-            )}
           </div>
-          <table className="w-full min-w-max table-auto text-left">
-            <thead>
+        </div>
+
+        {/* Bảng nguyên vật liệu */}
+        <div className="mt-2 overflow-auto border-none rounded">
+          <table className="w-full text-left min-w-max border border-gray-200">
+            <thead className="bg-gray-50 border border-gray-200">
               <tr>
                 {["STT", "Mã NVL", "Tên NVL", "Đơn vị", "Số lượng", "Thao tác"].map((head) => (
                   <th
                     key={head}
-                    className="border-b border-blue-gray-100 bg-blue-gray-50 p-4"
+                    className="px-4 py-2 text-sm border border-gray-200 font-semibold text-gray-600"
                   >
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal leading-none opacity-70"
-                    >
-                      {head}
-                    </Typography>
+                    {head}
                   </th>
                 ))}
               </tr>
@@ -344,34 +331,32 @@ const BillOfMaterialsModal = ({ show, onClose, product, onUpdate }) => {
                 filteredTableMaterials.map((item, index) => {
                   const material = item?.material || {};
                   return (
-                    <tr key={index} className="bg-white"> {/* Xóa even:bg-blue-gray-50/50, giữ bg-white */}
-                      <td className="p-4">{index + 1}</td>
-                      <td className="p-4">{material.materialCode || "N/A"}</td>
-                      <td className="p-4">{material.materialName || "N/A"}</td>
-                      <td className="p-4">{material.unitName || "N/A"}</td>
-                      <td className="p-4">
+                    <tr key={index} className="border border-gray-200">
+                      <td className="px-4 py-2 text-sm text-gray-700">{index + 1}</td>
+                      <td className="px-4 py-2 text-sm">{material.materialCode || "N/A"}</td>
+                      <td className="px-4 py-2 text-sm">{material.materialName || "N/A"}</td>
+                      <td className="px-4 py-2 text-sm">{material.unitName || "N/A"}</td>
+                      <td className="px-4 py-2 text-sm">
                         <Input
+                          variant="standard"
                           type="number"
+                          className="w-16"
                           value={item.quantity || 0}
                           onChange={(e) => {
                             const updatedMaterials = [...productMaterials];
                             updatedMaterials[index].quantity = Number(e.target.value);
                             setProductMaterials(updatedMaterials);
                           }}
-                          min="1"
-                          step="1"
-                          className="w-full py-3 px-5 text-gray-700 border border-gray-300 rounded-lg shadow-sm focus:outline-none transition duration-200"
                         />
                       </td>
-                      <td className="p-4">
+                      <td className="px-4 py-2 text-sm">
                         <Button
-                          color="red"
                           variant="text"
+                          color="red"
                           size="sm"
                           onClick={() => handleDeleteMaterial(material.materialId)}
-                          className="flex items-center gap-2"
                         >
-                          <FaTrash className="h-3 w-3" /> Xóa
+                          Xóa
                         </Button>
                       </td>
                     </tr>
@@ -379,7 +364,7 @@ const BillOfMaterialsModal = ({ show, onClose, product, onUpdate }) => {
                 })
               ) : (
                 <tr>
-                  <td colSpan="6" className="p-4 text-center text-gray-500">
+                  <td colSpan="6" className="px-4 py-2 text-center text-gray-500">
                     {productMaterials.length === 0
                       ? "Chưa có nguyên vật liệu nào được thêm"
                       : "Không tìm thấy kết quả phù hợp"}
@@ -389,17 +374,17 @@ const BillOfMaterialsModal = ({ show, onClose, product, onUpdate }) => {
             </tbody>
           </table>
         </div>
+      </DialogBody>
 
-        <div className="flex justify-end gap-2 mt-4">
-          <Button color="gray" onClick={onClose} disabled={loading}>
-            Hủy
-          </Button>
-          <Button color="blue" onClick={handleSave} disabled={loading}>
-            {loading ? "Đang xử lý..." : "Lưu định mức"}
-          </Button>
-        </div>
-      </div>
-    </div>
+      <DialogFooter className="flex justify-end gap-2">
+        <Button variant="text" color="gray" onClick={onClose}>
+          Hủy
+        </Button>
+        <Button variant="gradient" color="green" onClick={handleSave} disabled={loading}>
+          {loading ? "Đang xử lý..." : "Lưu"}
+        </Button>
+      </DialogFooter>
+    </Dialog>
   );
 };
 

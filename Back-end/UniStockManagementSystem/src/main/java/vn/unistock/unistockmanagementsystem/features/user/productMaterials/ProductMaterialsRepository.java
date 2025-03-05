@@ -15,6 +15,8 @@ import java.util.Optional;
 public interface ProductMaterialsRepository extends JpaRepository<ProductMaterial, Long> {
 
     List<ProductMaterial> findByProduct_ProductId(Long productId);
+    Optional<ProductMaterial> findByProduct_ProductIdAndMaterial_MaterialId(Long productId, Long materialId);
+
 
     @Query("SELECT pm FROM ProductMaterial pm WHERE pm.product.id = :productId AND pm.material.id = :materialId")
     Optional<ProductMaterial> findByProductIdAndMaterialId(@Param("productId") Long productId, @Param("materialId") Long materialId);

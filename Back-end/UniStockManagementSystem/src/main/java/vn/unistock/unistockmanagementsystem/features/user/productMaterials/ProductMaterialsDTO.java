@@ -8,9 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProductMaterialsDTO {
-    private Long materialId;  // ID của nguyên vật liệu
-    private String materialCode; // Mã NVL
-    private String materialName; // Tên NVL
-    private String unitName; // Đơn vị của NVL
+    private Long materialId;
+    private String materialCode;
+    private String materialName;
     private int quantity;
 }
