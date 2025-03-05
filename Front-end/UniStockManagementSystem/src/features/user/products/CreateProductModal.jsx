@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogHeader,
@@ -10,9 +10,9 @@ import {
   Option,
   Typography,
 } from "@material-tailwind/react";
-import { checkProductCodeExists } from "../products/productService";
 import { FaPlus, FaTimes } from "react-icons/fa";
-import axios from 'axios';
+import axios from "axios";
+import { checkProductCodeExists, createProduct, fetchUnits, fetchProductTypes } from "./productService";
 import { checkMaterialCodeExists } from "../materials/materialService";
 
 // Thêm hàm lấy token
@@ -21,52 +21,78 @@ const authHeader = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-const CreateProductModal = ({
-  show,
-  onClose,
-  loading,
-  newProduct = {  // Thêm giá trị mặc định
-    productCode: '',
-    productName: '',
-    description: '',
-    unitId: '',
-    typeId: '',
-    isProductionActive: 'true'
-  },
-  setNewProduct,
-  handleCreateProduct: originalHandleCreateProduct,
-  errors = {},  // Thêm giá trị mặc định cho errors
-  units,
-  productTypes
-}) => {
+// Thêm prop fetchProducts vào component
+const CreateProductModal = ({ show, onClose, fetchProducts }) => {
+  const [newProduct, setNewProduct] = useState({
+    productCode: "",
+    productName: "",
+    description: "",
+    unitId: "",
+    productTypeId: "",
+    isProductionActive: "true",
+  });
+  const [loading, setLoading] = useState(false);
   const [productCodeError, setProductCodeError] = useState("");
-  const [validationErrors, setValidationErrors] = useState({}); // State để lưu lỗi validation
+  const [validationErrors, setValidationErrors] = useState({});
   const [materials, setMaterials] = useState([]);
-  const [materialSearchQuery, setMaterialSearchQuery] = useState('');
+  const [materialSearchQuery, setMaterialSearchQuery] = useState("");
   const [filteredMaterials, setFilteredMaterials] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
   const [quantity, setQuantity] = useState(1);
-  const [nextId, setNextId] = useState(1); // Thêm state cho ID tự tăng
+  const [nextId, setNextId] = useState(1);
   const [productMaterials, setProductMaterials] = useState([]);
   const [filteredMaterialsByField, setFilteredMaterialsByField] = useState({});
   const [showSuggestionsByField, setShowSuggestionsByField] = useState({});
-  const [materialErrors, setMaterialErrors] = useState({}); // Thêm state để quản lý lỗi cho từng dòng
-  const [billOfMaterialsError, setBillOfMaterialsError] = useState(""); // Thêm state cho lỗi định mức
+  const [materialErrors, setMaterialErrors] = useState({});
+  const [billOfMaterialsError, setBillOfMaterialsError] = useState("");
+  const [tableSearchQuery, setTableSearchQuery] = useState("");
+  const [units, setUnits] = useState([]);
+  const [productTypes, setProductTypes] = useState([]);
+  const [errors, setErrors] = useState({});
 
-  // useEffect phải đặt sau useState
+  // Fetch dữ liệu khi mở modal
   useEffect(() => {
     if (show) {
       fetchMaterials();
+      loadInitialData();
     }
   }, [show]);
 
+  const loadInitialData = async () => {
+    try {
+      const unitsData = await fetchUnits();
+      const productTypesData = await fetchProductTypes();
+      setUnits(unitsData);
+      setProductTypes(productTypesData);
+    } catch (error) {
+      console.error("Lỗi khi tải dữ liệu ban đầu:", error);
+      setErrors({ message: error.message });
+    }
+  };
+
+  // Fetch danh sách nguyên vật liệu
+  const fetchMaterials = async () => {
+    try {
+      const response = await axios.get("http://localhost:8080/api/unistock/user/materials", {
+        headers: authHeader(),
+      });
+      if (response.data && Array.isArray(response.data.content)) {
+        setMaterials(response.data.content);
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách nguyên vật liệu:", error);
+      setErrors({ message: error.message });
+    }
+  };
+
+  // Lọc danh sách gợi ý khi tìm kiếm nguyên vật liệu
   useEffect(() => {
     if (materialSearchQuery.trim() === "") {
       setFilteredMaterials([]);
       setShowSuggestions(false);
     } else {
-      const filtered = materials.filter(material => 
+      const filtered = materials.filter((material) =>
         material.materialCode?.toLowerCase().includes(materialSearchQuery.toLowerCase()) ||
         material.materialName?.toLowerCase().includes(materialSearchQuery.toLowerCase())
       );
@@ -75,17 +101,13 @@ const CreateProductModal = ({
     }
   }, [materialSearchQuery, materials]);
 
-  if (!show) return null;
-
-  // Hàm kiểm tra chuỗi có chứa toàn khoảng trắng hoặc trống không
+  // Kiểm tra chuỗi có chứa toàn khoảng trắng hoặc trống không
   const isEmptyOrWhitespace = (str) => !str || /^\s*$/.test(str);
 
-  // Hàm kiểm tra mã sản phẩm (kiểm tra ngay khi nhập)
+  // Kiểm tra mã sản phẩm
   const handleCheckProductCode = async (newCode) => {
-    setNewProduct(prev => ({ 
-      ...prev, 
-      productCode: newCode || '' 
-    }));    setProductCodeError(""); // Reset lỗi mỗi khi nhập
+    setNewProduct((prev) => ({ ...prev, productCode: newCode || "" }));
+    setProductCodeError(""); // Reset lỗi mỗi khi nhập
 
     if (newCode.trim()) {
       try {
@@ -100,29 +122,20 @@ const CreateProductModal = ({
     }
   };
 
-  // Sửa lại hàm fetchMaterials để thêm header xác thực
-  const fetchMaterials = async () => {
-    try {
-      const response = await axios.get("http://localhost:8080/api/unistock/user/materials", { headers: authHeader() });
-      if (response.data && Array.isArray(response.data.content)) {
-        setMaterials(response.data.content);
-      }
-    } catch (error) {
-      console.error("Lỗi khi lấy danh sách nguyên vật liệu:", error);
-    }
-  };
-
-  // Bỏ validation trong handleAddRow
+  // Thêm dòng mới cho định mức
   const handleAddRow = () => {
-    setProductMaterials(prev => [...prev, {
-      id: nextId,
-      materialId: "",
-      materialCode: "",
-      materialName: "",
-      unitName: "",
-      quantity: 0
-    }]);
-    setNextId(prev => prev + 1);
+    setProductMaterials((prev) => [
+      ...prev,
+      {
+        id: nextId,
+        materialId: "",
+        materialCode: "",
+        materialName: "",
+        unitName: "",
+        quantity: 0,
+      },
+    ]);
+    setNextId((prev) => prev + 1);
   };
 
   // Xóa hết dòng
@@ -131,35 +144,34 @@ const CreateProductModal = ({
     setNextId(1);
   };
 
-  // Thêm hàm validate material
+  // Validate mã nguyên vật liệu
   const validateMaterial = async (value, index) => {
     try {
       const exists = await checkMaterialCodeExists(value);
       if (!exists) {
-        setMaterialErrors(prev => ({
+        setMaterialErrors((prev) => ({
           ...prev,
-          [index]: "Mã nguyên vật liệu không tồn tại!"
+          [index]: "Mã nguyên vật liệu không tồn tại!",
         }));
         return false;
       }
 
       // Kiểm tra trùng trong danh sách
       const isDuplicate = productMaterials.some(
-        (item, idx) => idx !== index && 
-        item.materialCode?.toLowerCase() === value?.toLowerCase()
+        (item, idx) => idx !== index && item.materialCode?.toLowerCase() === value?.toLowerCase()
       );
 
       if (isDuplicate) {
-        setMaterialErrors(prev => ({
+        setMaterialErrors((prev) => ({
           ...prev,
-          [index]: "Nguyên vật liệu này đã được thêm vào danh sách!"
+          [index]: "Nguyên vật liệu này đã được thêm vào danh sách!",
         }));
         return false;
       }
 
-      setMaterialErrors(prev => ({
+      setMaterialErrors((prev) => ({
         ...prev,
-        [index]: ""
+        [index]: "",
       }));
       return true;
     } catch (error) {
@@ -168,55 +180,53 @@ const CreateProductModal = ({
     }
   };
 
-  // Sửa lại hàm handleMaterialSearch để kiểm tra trùng
+  // Xử lý tìm kiếm nguyên vật liệu trong từng dòng
   const handleMaterialSearch = async (value, index, field) => {
     const updatedMaterials = [...productMaterials];
     updatedMaterials[index][field] = value;
     setProductMaterials(updatedMaterials);
 
-    // Reset error khi người dùng nhập
-    setMaterialErrors(prev => ({
+    setMaterialErrors((prev) => ({
       ...prev,
-      [index]: ""
+      [index]: "",
     }));
 
     if (value.trim()) {
-      // Lấy danh sách mã vật tư đã được chọn
       const selectedCodes = productMaterials
-        .filter((_, idx) => idx !== index) // Không tính dòng đang nhập
-        .map(item => item.materialCode?.toLowerCase());
+        .filter((_, idx) => idx !== index)
+        .map((item) => item.materialCode?.toLowerCase());
 
-      // Lọc materials loại bỏ những vật tư đã được chọn
-      const filtered = materials.filter(material => {
+      const filtered = materials.filter((material) => {
         const searchLower = value.toLowerCase();
-        const isMatch = material.materialCode?.toLowerCase().includes(searchLower) ||
-                       material.materialName?.toLowerCase().includes(searchLower);
+        const isMatch =
+          material.materialCode?.toLowerCase().includes(searchLower) ||
+          material.materialName?.toLowerCase().includes(searchLower);
         const isNotSelected = !selectedCodes.includes(material.materialCode?.toLowerCase());
-        
+
         return isMatch && isNotSelected;
       });
 
-      setFilteredMaterialsByField(prev => ({
+      setFilteredMaterialsByField((prev) => ({
         ...prev,
-        [`${index}-${field}`]: filtered
+        [`${index}-${field}`]: filtered,
       }));
-      setShowSuggestionsByField(prev => ({
+      setShowSuggestionsByField((prev) => ({
         ...prev,
-        [`${index}-${field}`]: filtered.length > 0
+        [`${index}-${field}`]: filtered.length > 0,
       }));
     } else {
-      setFilteredMaterialsByField(prev => ({
+      setFilteredMaterialsByField((prev) => ({
         ...prev,
-        [`${index}-${field}`]: []
+        [`${index}-${field}`]: [],
       }));
-      setShowSuggestionsByField(prev => ({
+      setShowSuggestionsByField((prev) => ({
         ...prev,
-        [`${index}-${field}`]: false
+        [`${index}-${field}`]: false,
       }));
     }
   };
 
-  // Thêm hàm kiểm tra trùng mã NVL
+  // Chọn gợi ý nguyên vật liệu
   const handleSelectSuggestion = async (index, material) => {
     const isValid = await validateMaterial(material.materialCode, index);
     if (!isValid) return;
@@ -227,20 +237,20 @@ const CreateProductModal = ({
       materialId: material.materialId,
       materialCode: material.materialCode,
       materialName: material.materialName,
-      unitName: material.unitName
+      unitName: material.unitName,
     };
     setProductMaterials(updatedMaterials);
-    setShowSuggestionsByField(prev => ({
+    setShowSuggestionsByField((prev) => ({
       ...prev,
       [`${index}-materialCode`]: false,
-      [`${index}-materialName`]: false
+      [`${index}-materialName`]: false,
     }));
   };
 
-  // Sửa lại hàm handleCreateProduct để thêm validation định mức
+  // Xử lý tạo sản phẩm
   const handleCreateProduct = async () => {
     const newErrors = {};
-    setBillOfMaterialsError(""); // Reset lỗi định mức
+    setBillOfMaterialsError("");
   
     if (isEmptyOrWhitespace(newProduct.productCode)) {
       newErrors.productCode = "Mã sản phẩm không được để trống hoặc chỉ chứa khoảng trắng!";
@@ -248,12 +258,11 @@ const CreateProductModal = ({
     if (isEmptyOrWhitespace(newProduct.productName)) {
       newErrors.productName = "Tên sản phẩm không được để trống hoặc chỉ chứa khoảng trắng!";
     }
-
-    // Kiểm tra định mức nguyên vật liệu
+  
     const hasIncompleteRow = productMaterials.some(
-      item => !item.materialCode || !item.materialName || !item.quantity || item.quantity <= 0
+      (item) => !item.materialCode || !item.materialName || !item.quantity || item.quantity <= 0
     );
-
+  
     if (hasIncompleteRow) {
       setBillOfMaterialsError("Vui lòng điền đầy đủ thông tin cho tất cả các dòng nguyên vật liệu!");
       return;
@@ -263,17 +272,21 @@ const CreateProductModal = ({
   
     if (Object.keys(newErrors).length === 0 && !productCodeError && !billOfMaterialsError) {
       const formData = new FormData();
-      formData.append('productCode', newProduct.productCode);
-      formData.append('productName', newProduct.productName);
-      formData.append('description', newProduct.description || '');
-      formData.append('unitId', newProduct.unitId || '');
-      formData.append('typeId', newProduct.typeId || '');
-      formData.append('isProductionActive', newProduct.isProductionActive || 'true');
+      formData.append("productCode", newProduct.productCode.trim());
+      formData.append("productName", newProduct.productName.trim());
+      formData.append("description", newProduct.description?.trim() || "");
+      formData.append("unitId", newProduct.unitId || "");
+      formData.append("productTypeId", newProduct.productTypeId || "");
+      formData.append("isProductionActive", newProduct.isProductionActive === "true" || true);
       if (newProduct.image) {
-        formData.append('image', newProduct.image);
+        formData.append("image", newProduct.image);
       }
-      // Thêm định mức nguyên vật liệu
-      formData.append('materials', JSON.stringify(productMaterials));
+      productMaterials.forEach((item, index) => {
+        formData.append(`materials[${index}].materialId`, item.materialId);
+        formData.append(`materials[${index}].materialCode`, item.materialCode);
+        formData.append(`materials[${index}].materialName`, item.materialName);
+        formData.append(`materials[${index}].quantity`, item.quantity);
+      });
   
       try {
         await axios.post('http://localhost:8080/api/unistock/user/products/create', formData, {
@@ -282,6 +295,9 @@ const CreateProductModal = ({
             'Content-Type': 'multipart/form-data',
           },
         });
+        
+        // Gọi hàm fetch sau khi tạo thành công
+        await fetchProducts();
         onClose();
       } catch (error) {
         console.error("Lỗi khi tạo sản phẩm:", error);
@@ -294,10 +310,23 @@ const CreateProductModal = ({
     return loading || !!productCodeError;
   };
 
-  // Kiểm tra liệu trường có dữ liệu hợp lệ không (không trống và không chỉ chứa khoảng trắng)
+  // Kiểm tra liệu trường có dữ liệu hợp lệ không
   const isFieldValid = (value) => {
     return value && !isEmptyOrWhitespace(value);
   };
+
+  // Lọc danh sách vật tư trong bảng
+  const filteredTableMaterials = productMaterials.filter((item) => {
+    if (!tableSearchQuery.trim()) return true;
+
+    const searchLower = tableSearchQuery.toLowerCase();
+    return (
+      item.materialCode?.toLowerCase().includes(searchLower) ||
+      item.materialName?.toLowerCase().includes(searchLower)
+    );
+  });
+
+  if (!show) return null;
 
   return (
     <Dialog open={show} handler={onClose} size="xl" className="w-[900px] max-h-screen overflow-auto">
@@ -308,6 +337,10 @@ const CreateProductModal = ({
       </DialogHeader>
 
       <DialogBody divider className="flex flex-col gap-4 px-10 border-none">
+        {errors.message && (
+          <Typography className="text-red-500 mb-4">{errors.message}</Typography>
+        )}
+
         <div className="grid grid-cols-2 gap-x-12 gap-y-4">
           <div className="flex flex-col gap-4">
             <div>
@@ -318,7 +351,7 @@ const CreateProductModal = ({
                 type="text"
                 value={newProduct.productCode || ""}
                 onChange={(e) => handleCheckProductCode(e.target.value)}
-                className={`w-full ${errors.productCode || productCodeError || (validationErrors.productCode && !isFieldValid(newProduct.productCode)) ? 'border-red-500' : ''}`}
+                className={`w-full ${errors.productCode || productCodeError || (validationErrors.productCode && !isFieldValid(newProduct.productCode)) ? "border-red-500" : ""}`}
               />
               {(productCodeError || validationErrors.productCode || errors.productCode) && (
                 <Typography className="text-xs text-red-500 mt-1">
@@ -370,7 +403,7 @@ const CreateProductModal = ({
                 type="text"
                 value={newProduct.productName || ""}
                 onChange={(e) => setNewProduct({ ...newProduct, productName: e.target.value })}
-                className={`w-full ${errors.productName || (validationErrors.productName && !isFieldValid(newProduct.productName)) ? 'border-red-500' : ''}`}
+                className={`w-full ${errors.productName || (validationErrors.productName && !isFieldValid(newProduct.productName)) ? "border-red-500" : ""}`}
               />
               {(validationErrors.productName || errors.productName) && (
                 <Typography className="text-xs text-red-500 mt-1">
@@ -384,8 +417,8 @@ const CreateProductModal = ({
                 Dòng sản phẩm
               </Typography>
               <Select
-                value={newProduct.typeId?.toString() || ""}
-                onChange={(value) => setNewProduct({ ...newProduct, typeId: value })}
+                value={newProduct.productTypeId?.toString() || ""}
+                onChange={(value) => setNewProduct({ ...newProduct, productTypeId: value })}
                 label="Chọn dòng sản phẩm"
               >
                 {productTypes.map((type) => (
@@ -416,7 +449,7 @@ const CreateProductModal = ({
                       e.target.value = "";
                       return;
                     }
-                    setNewProduct(prev => ({
+                    setNewProduct((prev) => ({
                       ...prev,
                       image: file,
                     }));
@@ -436,99 +469,117 @@ const CreateProductModal = ({
           </div>
         </div>
 
-        {/* Thêm phần định mức nguyên vật liệu */}
+        {/* Phần định mức nguyên vật liệu */}
         <div className="mt-8">
           <Typography variant="h6" color="blue-gray" className="mb-4">
             Định mức nguyên vật liệu
           </Typography>
 
-          {/* Hiển thị lỗi định mức */}
           {billOfMaterialsError && (
             <Typography className="text-xs text-red-500 mb-2">
               {billOfMaterialsError}
             </Typography>
           )}
 
-          <div className="mt-2 overflow-auto border-none rounded">
-            <table className="w-full text-left min-w-max border border-gray-200">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="flex-1">
+              <Input
+                label="Tìm kiếm nguyên vật liệu"
+                value={tableSearchQuery}
+                onChange={(e) => setTableSearchQuery(e.target.value)}
+                icon={
+                  tableSearchQuery && (
+                    <button
+                      className="absolute right-3 top-1/2 -translate-y-1/2"
+                      onClick={() => setTableSearchQuery("")}
+                    >
+                      <FaTimes className="h-4 w-4 text-gray-500 hover:text-gray-700" />
+                    </button>
+                  )
+                }
+              />
+            </div>
+          </div>
+
+          <div className="mt-2">
+            <table className="w-full border border-gray-200">
               <thead className="bg-gray-50 border border-gray-200">
                 <tr>
-                  {["STT", "Mã NVL", "Tên NVL", "ĐVT", "Số lượng", ""].map(header => (
-                    <th key={header} className="px-4 py-2 text-sm border border-gray-200 font-semibold text-gray-600">
-                      {header}
-                    </th>
-                  ))}
+                  <th className="px-2 py-2 text-sm border border-gray-200 font-semibold text-gray-600 w-[60px]">STT</th>
+                  <th className="px-2 py-2 text-sm border border-gray-200 font-semibold text-gray-600 w-[120px]">Mã NVL</th>
+                  <th className="px-2 py-2 text-sm border border-gray-200 font-semibold text-gray-600 w-[200px]">Tên NVL</th>
+                  <th className="px-2 py-2 text-sm border border-gray-200 font-semibold text-gray-600 w-[80px]">ĐVT</th>
+                  <th className="px-2 py-2 text-sm border border-gray-200 font-semibold text-gray-600 w-[100px]">Số lượng</th>
+                  <th className="px-2 py-2 text-sm border border-gray-200 font-semibold text-gray-600 w-[80px]"></th>
                 </tr>
               </thead>
               <tbody>
-                {productMaterials.length > 0 ? (
-                  productMaterials.map((item, index) => (
+                {filteredTableMaterials.length > 0 ? (
+                  filteredTableMaterials.map((item, index) => (
                     <tr key={item.id} className="border border-gray-200">
-                      <td className="px-4 py-2 text-sm">
-                        {index + 1}
-                      </td>
-                      <td className="px-4 py-2 text-sm relative">
+                      <td className="px-2 py-2 text-sm text-center">{index + 1}</td>
+                      <td className="px-2 py-2 text-sm relative">
                         <Input
                           variant="standard"
                           value={item.materialCode}
-                          onChange={(e) => handleMaterialSearch(e.target.value, index, 'materialCode')}
-                          className={`w-28 ${materialErrors[index] ? 'border-red-500' : ''}`}
-                          label="Nhập mã NVL" // Thêm label
+                          onChange={(e) => handleMaterialSearch(e.target.value, index, "materialCode")}
+                          className={`w-full ${materialErrors[index] ? "border-red-500" : ""}`}
+                          label="Nhập mã NVL"
                         />
                         {materialErrors[index] && (
                           <Typography className="text-xs text-red-500 mt-1 absolute">
                             {materialErrors[index]}
                           </Typography>
                         )}
-                        {showSuggestionsByField[`${index}-materialCode`] && 
-                        filteredMaterialsByField[`${index}-materialCode`]?.length > 0 && (
-                          <ul className="absolute z-50 w-64 bg-white border border-gray-200 rounded-md mt-1 max-h-48 overflow-y-auto shadow-lg">
-                            {filteredMaterialsByField[`${index}-materialCode`].map((material) => (
-                              <li
-                                key={material.materialId}
-                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                                onClick={() => handleSelectSuggestion(index, material)}
-                              >
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{material.materialCode}</span>
-                                  <span className="text-xs text-gray-600">{material.materialName}</span>
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
+                        {showSuggestionsByField[`${index}-materialCode`] &&
+                          filteredMaterialsByField[`${index}-materialCode`]?.length > 0 && (
+                            <ul className="absolute z-50 w-64 bg-white border border-gray-200 rounded-md mt-1 max-h-48 overflow-y-auto shadow-lg">
+                              {filteredMaterialsByField[`${index}-materialCode`].map((material) => (
+                                <li
+                                  key={material.materialId}
+                                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                                  onClick={() => handleSelectSuggestion(index, material)}
+                                >
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{material.materialCode}</span>
+                                    <span className="text-xs text-gray-600">{material.materialName}</span>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                       </td>
-                      <td className="px-4 py-2 text-sm relative">
+                      <td className="px-2 py-2 text-sm relative">
                         <Input
                           variant="standard"
                           value={item.materialName}
-                          onChange={(e) => handleMaterialSearch(e.target.value, index, 'materialName')}
-                          className="w-40"
+                          onChange={(e) => handleMaterialSearch(e.target.value, index, "materialName")}
+                          className="w-full"
                         />
-                        {showSuggestionsByField[`${index}-materialName`] && 
-                        filteredMaterialsByField[`${index}-materialName`]?.length > 0 && (
-                          <ul className="absolute z-50 w-64 bg-white border border-gray-200 rounded-md mt-1 max-h-48 overflow-y-auto shadow-lg">
-                            {filteredMaterialsByField[`${index}-materialName`].map((material) => (
-                              <li
-                                key={material.materialId}
-                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                                onClick={() => handleSelectSuggestion(index, material)}
-                              >
-                                {material.materialCode} - {material.materialName}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
+                        {showSuggestionsByField[`${index}-materialName`] &&
+                          filteredMaterialsByField[`${index}-materialName`]?.length > 0 && (
+                            <ul className="absolute z-50 w-64 bg-white border border-gray-200 rounded-md mt-1 max-h-48 overflow-y-auto shadow-lg">
+                              {filteredMaterialsByField[`${index}-materialName`].map((material) => (
+                                <li
+                                  key={material.materialId}
+                                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                                  onClick={() => handleSelectSuggestion(index, material)}
+                                >
+                                  {material.materialCode} - {material.materialName}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                       </td>
-                      <td className="px-4 py-2 text-sm">
+                      <td className="px-2 py-2 text-sm">
                         <Input
                           variant="standard"
                           value={item.unitName}
                           disabled
-                          className="w-20"
+                          className="w-full"
                         />
                       </td>
-                      <td className="px-4 py-2 text-sm">
+                      <td className="px-2 py-2 text-sm">
                         <Input
                           variant="standard"
                           type="number"
@@ -539,18 +590,16 @@ const CreateProductModal = ({
                             setProductMaterials(updatedMaterials);
                           }}
                           min={1}
-                          className="w-20"
+                          className="w-full"
                         />
                       </td>
-                      <td className="px-4 py-2 text-sm text-center">
+                      <td className="px-2 py-2 text-sm text-center">
                         <Button
                           color="red"
                           variant="text"
                           size="sm"
                           onClick={() => {
-                            setProductMaterials(prev => 
-                              prev.filter((_, i) => i !== index)
-                            );
+                            setProductMaterials((prev) => prev.filter((_, i) => i !== index));
                           }}
                         >
                           Xóa
@@ -561,7 +610,9 @@ const CreateProductModal = ({
                 ) : (
                   <tr>
                     <td colSpan={6} className="px-4 py-2 text-center text-gray-500">
-                      Chưa có dòng nào được thêm
+                      {productMaterials.length === 0
+                        ? "Chưa có dòng nào được thêm"
+                        : "Không tìm thấy kết quả phù hợp"}
                     </td>
                   </tr>
                 )}
@@ -569,8 +620,7 @@ const CreateProductModal = ({
             </table>
           </div>
 
-          {/* Di chuyển nút xuống dưới bảng */}
-          <div className="flex justify-end gap-2 mt-4">
+          <div className="flex justify-start gap-2 mt-4">
             <Button variant="outlined" onClick={handleAddRow}>
               + Thêm dòng
             </Button>

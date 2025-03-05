@@ -11,29 +11,28 @@ const authHeader = () => {
 // Lấy danh sách tất cả sản phẩm
 export const getAllProducts = async (page = 0, size = 10) => {
   try {
-    const response = await axios.get(API_URL, { 
+    const response = await axios.get(API_URL, {
       headers: authHeader(),
       params: {
         page: page,
-        size: size
-      }
+        size: size,
+      },
     });
 
     console.log("📌 [getAllProducts] API Response:", response.data);
 
-    // Kiểm tra dữ liệu trả về từ API
     if (response.data && response.data.content) {
       return {
         products: response.data.content,
         totalPages: response.data.totalPages || 1,
-        totalElements: response.data.totalElements || response.data.content.length
+        totalElements: response.data.totalElements || response.data.content.length,
       };
     } else {
       console.warn("⚠️ API không trả về dữ liệu hợp lệ!");
       return {
         products: [],
         totalPages: 1,
-        totalElements: 0
+        totalElements: 0,
       };
     }
   } catch (error) {
@@ -46,7 +45,7 @@ export const getAllProducts = async (page = 0, size = 10) => {
 export const getProductById = async (productId) => {
   try {
     const response = await axios.get(`${API_URL}/${productId}`, {
-      headers: authHeader()
+      headers: authHeader(),
     });
     return response.data;
   } catch (error) {
@@ -64,16 +63,18 @@ export const createProduct = async (productData) => {
     formData.append("productName", productData.productName.trim());
     formData.append("description", productData.description?.trim() || "");
     formData.append("unitId", parseInt(productData.unitId) || "");
-    formData.append("productTypeId", parseInt(productData.typeId) || "");
-    formData.append("price", parseFloat(productData.price) || 0);
-    formData.append("isProductionActive", productData.isProductionActive === "true");
+    formData.append("productTypeId", parseInt(productData.productTypeId) || "");
+    formData.append("isProductionActive", productData.isProductionActive === true || productData.isProductionActive === "true");
 
     if (productData.image) {
       formData.append("image", productData.image);
     }
 
+    // Thêm định mức nguyên vật liệu (đã được lọc bỏ id trong CreateProductModal)
+    formData.append("materials", JSON.stringify(productData.materials || []));
+
     const response = await axios.post(
-      "http://localhost:8080/api/unistock/user/products/create",
+      `${API_URL}/create`,
       formData,
       {
         headers: {
@@ -108,7 +109,6 @@ export const updateProduct = async (productId, productData) => {
   }
 };
 
-
 // Thay đổi trạng thái sản xuất
 export const toggleProductStatus = async (productId) => {
   try {
@@ -125,35 +125,37 @@ export const toggleProductStatus = async (productId) => {
   }
 };
 
-// Các hàm khác giữ nguyên như cũ
+// Lấy danh sách đơn vị
 export const fetchUnits = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/api/unistock/user/units', {
-      headers: authHeader()
+    const response = await axios.get("http://localhost:8080/api/unistock/user/units", {
+      headers: authHeader(),
     });
     return response.data;
   } catch (error) {
-    console.error('❌ Lỗi khi lấy danh sách đơn vị:', error);
+    console.error("❌ Lỗi khi lấy danh sách đơn vị:", error);
     throw error;
   }
 };
 
+// Lấy danh sách dòng sản phẩm
 export const fetchProductTypes = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/api/unistock/user/product-types', {
-      headers: authHeader()
+    const response = await axios.get("http://localhost:8080/api/unistock/user/product-types", {
+      headers: authHeader(),
     });
     return response.data;
   } catch (error) {
-    console.error('❌ Lỗi khi lấy danh sách dòng sản phẩm:', error);
+    console.error("❌ Lỗi khi lấy danh sách dòng sản phẩm:", error);
     throw error;
-  }F
+  }
 };
 
+// Kiểm tra mã sản phẩm đã tồn tại
 export const checkProductCodeExists = async (productCode) => {
   try {
     const response = await axios.get(
-      `http://localhost:8080/api/unistock/user/products/check-product-code/${productCode}`,
+      `${API_URL}/check-product-code/${productCode}`,
       { headers: authHeader() }
     );
     return response.data.exists;
@@ -163,18 +165,19 @@ export const checkProductCodeExists = async (productCode) => {
   }
 };
 
+// Import sản phẩm từ Excel
 export const importExcel = async (file) => {
   try {
     const formData = new FormData();
     formData.append("file", file);
 
     const response = await axios.post(
-      "http://localhost:8080/api/unistock/user/products/import",
+      `${API_URL}/import`,
       formData,
       {
         headers: {
           ...authHeader(),
-          "Content-Type": "multipart/form-data"
+          "Content-Type": "multipart/form-data",
         },
       }
     );
@@ -187,26 +190,35 @@ export const importExcel = async (file) => {
   }
 };
 
+// Export sản phẩm ra Excel
 export const exportExcel = async () => {
   try {
     const response = await axios.get(API_URL, { headers: authHeader() });
-    const products = response.data;
+    const products = response.data.content;
 
-    // Phần export Excel giữ nguyên
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Sản phẩm");
 
     sheet.columns = [
       { header: "STT", key: "stt", width: 10 },
+      { header: "Mã sản phẩm", key: "productCode", width: 15 },
       { header: "Tên sản phẩm", key: "productName", width: 25 },
       { header: "Mô tả", key: "description", width: 30 },
-      { header: "Giá", key: "price", width: 15 },
       { header: "Đơn vị", key: "unitName", width: 15 },
       { header: "Loại sản phẩm", key: "typeName", width: 20 },
+      { header: "Trạng thái sản xuất", key: "isProductionActive", width: 20 },
     ];
 
     products.forEach((product, index) => {
-      sheet.addRow({ stt: index + 1, ...product });
+      sheet.addRow({
+        stt: index + 1,
+        productCode: product.productCode,
+        productName: product.productName,
+        description: product.description,
+        unitName: product.unitName,
+        typeName: product.typeName,
+        isProductionActive: product.isProductionActive ? "Hoạt động" : "Ngừng hoạt động",
+      });
     });
 
     const buffer = await workbook.xlsx.writeBuffer();

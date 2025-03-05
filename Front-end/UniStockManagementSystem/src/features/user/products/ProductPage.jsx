@@ -397,6 +397,7 @@ const ProductPage = () => {
         handleCreateProduct={handleCreateProduct}
         units={units}
         productTypes={productTypes}
+        fetchProducts={fetchPaginatedProducts} // Truyền hàm fetch vào
       />
 
       {showImportPopup && (
