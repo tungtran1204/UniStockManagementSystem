@@ -17,35 +17,27 @@ export function Sidenav({ brandImg, brandName, routes }) {
     white: "bg-white shadow-sm",
     transparent: "bg-transparent",
   };
-  console.log("🚀 openSidenav:", openSidenav);
 
-  // ✅ Chuyển role về dạng mảng nếu cần
   const userRoles = Array.isArray(user?.roles)
     ? user.roles
     : typeof user?.roles === "string"
     ? user.roles.split(",").map((role) => role.trim())
     : [];
 
-  if (!routes) {
-    return <div>No routes available</div>;
-  }
-
-  const handleDropdownClick = (name) => {
-    setOpenDropdown(openDropdown === name ? null : name);
-  };
+  if (!routes) return <div>No routes available</div>;
 
   return (
     <aside
-  className={`fixed inset-0 z-50 my-4 ml-4 h-[calc(100vh-32px)] w-72 rounded-xl border border-blue-gray-100 transition-transform duration-300 ${
-    openSidenav ? "translate-x-0 opacity-100" : "-translate-x-80 "
-  } ${sidenavTypes[sidenavType]}`}
->
-
-      <div className="relative">
-        <Link to="/home" className="py-6 px-8 text-center">
+      className={`fixed inset-0 z-50 my-4 ml-4 h-[calc(100vh-32px)] w-64 rounded-xl border border-blue-gray-100 transition-transform duration-300 ${
+        openSidenav ? "translate-x-0 opacity-100" : "-translate-x-80"
+      } ${sidenavTypes[sidenavType]}`}
+    >
+      <div className="relative flex items-center justify-between p-4">
+        <Link to="/home" className="text-center">
           <Typography
-            variant="h6"
+            variant="small"
             color={sidenavType === "dark" ? "white" : "blue-gray"}
+            className="text-sm"
           >
             {brandName}
           </Typography>
@@ -54,86 +46,71 @@ export function Sidenav({ brandImg, brandName, routes }) {
           variant="text"
           color="white"
           size="sm"
-          ripple={false}
-          className="absolute right-0 top-0 grid rounded-br-none rounded-tl-none xl:hidden"
+          className="xl:hidden"
           onClick={() => setOpenSidenav(dispatch, false)}
         >
           <XMarkIcon strokeWidth={2.5} className="h-5 w-5 text-white" />
         </IconButton>
       </div>
 
-      <div className="m-4">
+      <div className="p-2">
         {routes.map(({ layout, title, pages }, key) => {
-          // ✅ Lọc menu theo role
           const filteredPages = pages.filter(({ roles }) =>
             roles ? roles.some((role) => userRoles.includes(role)) : true
           );
 
-          // ✅ Ẩn category nếu không có item nào hợp lệ
           if (filteredPages.length === 0) return null;
 
           return (
-            <ul key={key} className="mb-4 flex flex-col gap-1">
+            <ul key={key} className="mb-2 flex flex-col gap-1">
               {title && (
-                <li className="mx-3.5 mt-4 mb-2">
+                <li className="mx-3 mt-2 mb-1">
                   <Typography
                     variant="small"
                     color={sidenavType === "dark" ? "white" : "blue-gray"}
-                    className="font-black uppercase opacity-75"
+                    className="text-xs font-bold uppercase opacity-75"
                   >
                     {title}
                   </Typography>
                 </li>
               )}
               {filteredPages.map(({ icon, name, path, subPages }) => (
-                <li key={name}>
+                <li key={name} className="mb-1">
                   {subPages ? (
                     <>
                       <Button
                         variant="text"
                         color={sidenavType === "dark" ? "white" : "blue-gray"}
-                        className="flex items-center justify-between gap-4 px-4 capitalize"
+                        className="flex items-center justify-between px-3 py-2 capitalize text-xs"
                         fullWidth
-                        onClick={() => handleDropdownClick(name)}
+                        onClick={() => setOpenDropdown(openDropdown === name ? null : name)}
                       >
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
                           {icon}
-                          <Typography
-                            color="inherit"
-                            className="font-medium capitalize"
-                          >
+                          <Typography color="inherit" className="text-xs font-medium capitalize">
                             {name}
                           </Typography>
                         </div>
                         {openDropdown === name ? (
-                          <ChevronUpIcon className="w-5 h-5" />
+                          <ChevronUpIcon className="w-4 h-4" />
                         ) : (
-                          <ChevronDownIcon className="w-5 h-5" />
+                          <ChevronDownIcon className="w-4 h-4" />
                         )}
                       </Button>
                       {openDropdown === name && (
-                        <ul className="ml-4">
+                        <ul className="ml-3">
                           {subPages.map(({ icon, name, path }) => (
-                            <li key={name}>
+                            <li key={name} className="my-1">
                               <NavLink to={path}>
                                 {({ isActive }) => (
                                   <Button
                                     variant={isActive ? "gradient" : "text"}
-                                    color={
-                                      isActive
-                                        ? sidenavColor
-                                        : sidenavType === "dark"
-                                        ? "white"
-                                        : "blue-gray"
-                                    }
-                                    className="flex items-center gap-4 px-4 capitalize"
+                                    color={isActive ? sidenavColor : sidenavType === "dark" ? "white" : "blue-gray"}
+                                    className="flex items-center gap-2 px-3 py-2 capitalize text-xs"
                                     fullWidth
                                   >
                                     {icon}
-                                    <Typography
-                                      color="inherit"
-                                      className="font-medium capitalize"
-                                    >
+                                    <Typography color="inherit" className="text-xs font-medium capitalize">
                                       {name}
                                     </Typography>
                                   </Button>
@@ -149,21 +126,12 @@ export function Sidenav({ brandImg, brandName, routes }) {
                       {({ isActive }) => (
                         <Button
                           variant={isActive ? "gradient" : "text"}
-                          color={
-                            isActive
-                              ? sidenavColor
-                              : sidenavType === "dark"
-                              ? "white"
-                              : "blue-gray"
-                          }
-                          className="flex items-center gap-4 px-4 capitalize"
+                          color={isActive ? sidenavColor : sidenavType === "dark" ? "white" : "blue-gray"}
+                          className="flex items-center gap-2 px-3 py-2 capitalize text-xs"
                           fullWidth
                         >
                           {icon}
-                          <Typography
-                            color="inherit"
-                            className="font-medium capitalize"
-                          >
+                          <Typography color="inherit" className="text-xs font-medium capitalize">
                             {name}
                           </Typography>
                         </Button>
