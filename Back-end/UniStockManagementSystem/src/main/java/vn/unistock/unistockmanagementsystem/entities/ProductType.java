@@ -15,16 +15,9 @@ public class ProductType {
     @Column(name = "type_id")
     private Long typeId;
 
-    @Column(name = "type_code")
-    private String typeCode;
-
     @Column(name = "type_name")
     private String typeName;
 
-    // Nhiều ProductType -> 1 ItemGroup
-    @ManyToOne
-    @JoinColumn(name = "group_id")
-    private ItemGroup itemGroup;
 
     private Boolean status;
     private String description;

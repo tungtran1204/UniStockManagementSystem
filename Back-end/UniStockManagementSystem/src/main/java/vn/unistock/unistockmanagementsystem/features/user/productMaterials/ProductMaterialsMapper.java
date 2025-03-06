@@ -1,0 +1,13 @@
+package vn.unistock.unistockmanagementsystem.features.user.productMaterials;
+
+import vn.unistock.unistockmanagementsystem.entities.ProductMaterial;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+
+@Mapper(componentModel = "spring")
+public interface ProductMaterialsMapper {
+    @Mapping(source = "material.materialId", target = "materialId")
+    @Mapping(source = "material.materialCode", target = "materialCode")
+    @Mapping(source = "material.materialName", target = "materialName")
+    ProductMaterialsDTO toDTO(ProductMaterial productMaterial);
+}

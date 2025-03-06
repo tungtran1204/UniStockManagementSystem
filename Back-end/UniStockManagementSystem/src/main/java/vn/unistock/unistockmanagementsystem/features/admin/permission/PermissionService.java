@@ -19,6 +19,10 @@ public class PermissionService {
     // 🟢 Lấy danh sách tất cả quyền
     public List<PermissionDTO> getAllPermissions() {
         return permissionRepository.findAll().stream()
+                .filter(permission -> {
+                    String url = permission.getUrlPattern().toLowerCase();
+                    return !url.contains("admin") && !url.contains("auth") && !url.contains("error");
+                })
                 .map(permissionMapper::toDTO)
                 .collect(Collectors.toList());
     }

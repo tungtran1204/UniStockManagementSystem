@@ -2,9 +2,15 @@ package vn.unistock.unistockmanagementsystem.features.admin.role;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import vn.unistock.unistockmanagementsystem.entities.Permission;
 import vn.unistock.unistockmanagementsystem.entities.Role;
+import vn.unistock.unistockmanagementsystem.entities.RolePermission;
+import vn.unistock.unistockmanagementsystem.features.admin.permission.PermissionHierarchy;
+import vn.unistock.unistockmanagementsystem.features.admin.permission.PermissionRepository;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -15,6 +21,8 @@ public class RoleService {
 
     @Autowired
     private RoleMapper roleMapper;
+    @Autowired
+    private PermissionRepository permissionRepository;
 
     public List<RoleDTO> getAllRoles() {
         return roleRepository.findAll().stream()
@@ -27,6 +35,35 @@ public class RoleService {
             throw new RuntimeException("Vai trò đã tồn tại");
         }
         Role entity = roleMapper.toEntity(dto);
+
+        // Xử lý permissionKeys từ DTO để khởi tạo rolePermissions
+        if (dto.getPermissionKeys() != null && !dto.getPermissionKeys().isEmpty()) {
+            // Mở rộng sub-permissions
+            Set<String> expandedKeys = PermissionHierarchy.expandPermissions(dto.getPermissionKeys());
+
+            // Tìm Permissions trong DB
+            List<Permission> foundPermissions = permissionRepository.findByPermissionNameIn(expandedKeys);
+
+            // Khởi tạo rolePermissions nếu null
+            if (entity.getRolePermissions() == null) {
+                entity.setRolePermissions(new ArrayList<>());
+            }
+
+            // Thêm RolePermission
+            for (Permission p : foundPermissions) {
+                RolePermission rp = RolePermission.builder()
+                        .role(entity)
+                        .permission(p)
+                        .build();
+                entity.getRolePermissions().add(rp);
+            }
+        } else {
+            // Nếu không có permissionKeys, khởi tạo rolePermissions rỗng
+            if (entity.getRolePermissions() == null) {
+                entity.setRolePermissions(new ArrayList<>());
+            }
+        }
+
         entity = roleRepository.save(entity);
         return roleMapper.toDTO(entity);
     }
@@ -49,9 +86,33 @@ public class RoleService {
         existingRole.setDescription(dto.getDescription());
         existingRole.setIsActive(dto.getActive());
 
+        // (1)
+        if (dto.getPermissionKeys() != null) {
+            // (2) Mở rộng sub-permissions
+            Set<String> expandedKeys = PermissionHierarchy.expandPermissions(dto.getPermissionKeys());
+
+            // (3) Tìm các Permission trong DB theo permissionName
+            List<Permission> foundPermissions = permissionRepository
+                    .findByPermissionNameIn((expandedKeys));
+
+            // (4) Clear cũ
+            existingRole.getRolePermissions().clear();
+
+            // (5) Thêm RolePermission mới
+            for (Permission p : foundPermissions) {
+                RolePermission rp = RolePermission.builder()
+                        .role(existingRole)
+                        .permission(p)
+                        .build();
+                existingRole.getRolePermissions().add(rp);
+            }
+        }
+
+        // Lưu lại
         existingRole = roleRepository.save(existingRole);
         return roleMapper.toDTO(existingRole);
     }
+
 
     public void deleteRole(Long id) {
         Role role = roleRepository.findById(id)

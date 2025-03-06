@@ -7,14 +7,12 @@ import ReactPaginate from "react-paginate";
 import CreateMaterialModal from './CreateMaterialModal';
 import EditMaterialModal from './EditMaterialModal';
 
-import axios from "axios";
 import {
     importExcel,
     exportExcel,
     createMaterial,
     fetchMaterialCategories,
     fetchUnits,
-    checkMaterialCodeExists
 } from "./materialService";
 import {
     CardBody,
@@ -48,15 +46,6 @@ const MaterialPage = () => {
     // Danh sách đơn vị và danh mục
     const [units, setUnits] = useState([]);
     const [materialCategories, setMaterialCategories] = useState([]);
-
-    // Quản lý lỗi validation
-    const [errors, setErrors] = useState({
-        materialCode: "",
-        materialName: "",
-        unitId: "",
-        categoryId: "",
-        description: ""
-    });
 
     // Dữ liệu cho nguyên vật liệu mới
     const [newMaterial, setNewMaterial] = useState({
@@ -94,52 +83,6 @@ const MaterialPage = () => {
         setShowEditModal(true);
     };
 
-    // Validate nguyên vật liệu
-    const validateMaterial = async (material) => {
-        const newErrors = {
-            materialCode: "",
-            materialName: "",
-            unitId: "",
-            typeId: "",
-            description: ""
-        };
-        let isValid = true;
-    
-        // Log toàn bộ dữ liệu để kiểm tra
-        console.log("🔍 Validate Material:", material);
-    
-        if (!material.materialCode || material.materialCode.trim() === "") {
-            newErrors.materialCode = "Mã nguyên vật liệu không được để trống";
-            isValid = false;
-        }
-    
-        if (!material.materialName || material.materialName.trim() === "") {
-            newErrors.materialName = "Tên nguyên vật liệu không được để trống";
-            isValid = false;
-        }
-    
-        // Kiểm tra unitId
-        if (!material.unitId || material.unitId.toString().trim() === "") {
-            newErrors.unitId = "Vui lòng chọn đơn vị";
-            isValid = false;
-        }
-    
-        // Kiểm tra typeId
-        if (!material.typeId || material.typeId.toString().trim() === "") {
-            newErrors.typeId = "Vui lòng chọn danh mục";
-            isValid = false;
-        }
-    
-        // Nếu có lỗi, set errors và ném exception
-        if (!isValid) {
-            console.log("🚨 Validation Errors:", newErrors);
-            setErrors(newErrors);
-            throw new Error("Validation failed");
-        }
-    
-        return isValid;
-    };
-
     // Xử lý import Excel
     const handleImport = async () => {
         if (!file) {
@@ -165,33 +108,12 @@ const MaterialPage = () => {
     // Xử lý tạo nguyên vật liệu mới
     const handleCreateMaterial = async () => {
         try {
-            setErrors({}); // Xóa lỗi cũ trước khi kiểm tra
-    
-            console.log("📌 Kiểm tra dữ liệu trước khi validate:", {
-                materialCode: newMaterial.materialCode,
-                materialName: newMaterial.materialName,
-                unitId: newMaterial.unitId,
-                typeId: newMaterial.typeId,
-                typeIdType: typeof newMaterial.typeId
-            });
-    
-            // Kiểm tra và ép kiểu trước khi validate
-            const materialToValidate = {
-                ...newMaterial,
-                typeId: newMaterial.typeId ? String(newMaterial.typeId).trim() : ""
-            };
-    
-            // 🛠 Kiểm tra dữ liệu có hợp lệ không
-            await validateMaterial(materialToValidate);
-    
             setLocalLoading(true);
-    
-            console.log("✅ Dữ liệu hợp lệ, gửi yêu cầu tạo nguyên vật liệu...");
-    
+
             await createMaterial(newMaterial);
-    
+
             alert("Tạo nguyên vật liệu thành công!");
-    
+
             fetchPaginatedMaterials();
             setShowCreatePopup(false);
             setNewMaterial({
@@ -200,17 +122,16 @@ const MaterialPage = () => {
                 description: "",
                 unitId: "",
                 typeId: "",
-                image: null,
-                imageUrl: null,
+                isActive: "true"
             });
         } catch (error) {
             console.error("🚨 Chi tiết lỗi:", error);
-    
+
             if (error.response) {
                 const errorMessage = error.response.data.message || "Lỗi khi tạo nguyên vật liệu!";
                 alert(errorMessage);
-            } else if (error.message === "Validation failed") {
-                // Lỗi validate đã được xử lý trong `setErrors`
+            } else if (error.request) {
+                alert("Không thể kết nối tới máy chủ. Vui lòng kiểm tra kết nối.");
             } else {
                 alert("Lỗi không xác định! Vui lòng thử lại.");
             }
@@ -218,7 +139,6 @@ const MaterialPage = () => {
             setLocalLoading(false);
         }
     };
-
 
     // Xử lý thay đổi trang
     const handlePageChangeWrapper = (selectedItem) => {
@@ -265,7 +185,6 @@ const MaterialPage = () => {
                     </div>
                 </CardHeader>
                 <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
-                    {/* Phần chọn số items/trang */}
                     <div className="px-4 py-2 flex items-center gap-2">
                         <Typography variant="small" color="blue-gray" className="font-normal">
                             Hiển thị
@@ -343,7 +262,13 @@ const MaterialPage = () => {
                                             </td>
                                             <td className={className}>
                                                 <Typography className="text-xs font-normal text-blue-gray-600">
-                                                    {material.typeName || "N/A"}
+                                                    {(() => {
+                                                        console.log('material.typeId:', material.typeId);
+                                                        console.log('materialCategories:', materialCategories);
+                                                        const category = materialCategories.find(cat => cat.materialTypeId === material.typeId);
+                                                        console.log('Found category:', category);
+                                                        return category ? category.name : material.typeName || "Không có danh mục";
+                                                    })()}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
@@ -409,7 +334,6 @@ const MaterialPage = () => {
                         </tbody>
                     </table>
 
-                    {/* Phần phân trang mới sử dụng ReactPaginate */}
                     <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
                         <div className="flex items-center gap-2">
                             <Typography variant="small" color="blue-gray" className="font-normal">
@@ -438,25 +362,19 @@ const MaterialPage = () => {
                 </CardBody>
             </Card>
 
-            {/* Các Modal */}
             <CreateMaterialModal
                 show={showCreatePopup}
                 onClose={() => {
                     setShowCreatePopup(false);
-                    setErrors({});
                 }}
                 loading={localLoading}
                 newMaterial={newMaterial}
                 setNewMaterial={setNewMaterial}
                 handleCreateMaterial={handleCreateMaterial}
-                errors={errors}
                 units={units}
                 materialCategories={materialCategories}
             />
 
-
-
-            {/* Popup import Excel */}
             {showImportPopup && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 w-96">

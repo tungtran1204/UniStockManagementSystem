@@ -28,8 +28,12 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
         typeId: "",
         description: ""
     });
+    const [validationErrors, setValidationErrors] = useState({
+        productCode: "",
+        productName: "",
+    });
+    const [productCodeError, setProductCodeError] = useState("");
 
-    // Lấy token từ localStorage
     const getAuthToken = () => {
         return localStorage.getItem("token") || "";
     };
@@ -49,37 +53,19 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
         }
     }, [product]);
 
-    // Validation helpers
     const isEmptyOrWhitespace = (str) => {
         return !str || /^\s*$/.test(str);
     };
 
-    const validateProduct = async (product) => {
-        const newErrors = {
-            productCode: "",
-            productName: "",
-            unitId: "",
-            typeId: "",
-            description: ""
-        };
-        let isValid = true;
+    const handleCheckProductCode = async (newCode) => {
+        setEditedProduct({ ...editedProduct, productCode: newCode });
+        setProductCodeError("");
 
-        if (isEmptyOrWhitespace(product.productCode)) {
-            newErrors.productCode = "Mã sản phẩm không được để trống";
-            isValid = false;
-        }
-
-        if (isEmptyOrWhitespace(product.productName)) {
-            newErrors.productName = "Tên sản phẩm không được để trống";
-            isValid = false;
-        }
-
-        // Check if product code exists but exclude current product
-        if (!isEmptyOrWhitespace(product.productCode)) {
+        if (newCode.trim()) {
             try {
                 const token = getAuthToken();
                 const response = await axios.get(
-                    `http://localhost:8080/api/unistock/user/products/check-product-code/${product.productCode}?excludeId=${product.productId}`,
+                    `http://localhost:8080/api/unistock/user/products/check-product-code/${newCode}?excludeId=${editedProduct.productId}`,
                     {
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -88,88 +74,78 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
                     }
                 );
                 if (response.data.exists) {
-                    newErrors.productCode = "Mã sản phẩm đã tồn tại trong hệ thống";
-                    isValid = false;
+                    setProductCodeError("Mã sản phẩm này đã tồn tại!");
                 }
             } catch (error) {
-                console.error("Lỗi kiểm tra mã sản phẩm:", error);
-                if (error.response?.data?.message) {
-                    newErrors.productCode = error.response.data.message;
-                    isValid = false;
-                }
+                console.error("❌ Lỗi kiểm tra mã sản phẩm:", error);
+                setProductCodeError("Lỗi khi kiểm tra mã sản phẩm!");
             }
         }
+    };
 
-        // Validate unit and product type if selected
-        if (product.unitId) {
-            const unitExists = units.some(unit => unit.unitId.toString() === product.unitId.toString());
-            if (!unitExists) {
-                newErrors.unitId = "Vui lòng tạo Đơn vị trước khi cập nhật sản phẩm";
-                isValid = false;
-            }
+    const handleProductCodeChange = (newCode) => {
+        handleCheckProductCode(newCode);
+        if (!isEmptyOrWhitespace(newCode)) {
+            setValidationErrors(prev => ({ ...prev, productCode: "" }));
         }
+    };
 
-        if (product.typeId) {
-            const typeExists = productTypes.some(type => type.typeId.toString() === product.typeId.toString());
-            if (!typeExists) {
-                newErrors.typeId = "Vui lòng tạo Dòng sản phẩm trước khi cập nhật sản phẩm";
-                isValid = false;
-            }
+    const handleProductNameChange = (newName) => {
+        setEditedProduct({ ...editedProduct, productName: newName });
+        if (!isEmptyOrWhitespace(newName)) {
+            setValidationErrors(prev => ({ ...prev, productName: "" }));
         }
-
-        setErrors(newErrors);
-        return isValid;
     };
 
     const handleUpdateProduct = async () => {
-        try {
-            setErrors({});
+        const newErrors = {};
 
-            // Validate the product data
-            const isValid = await validateProduct(editedProduct);
-            if (!isValid) {
-                return;
-            }
+        if (isEmptyOrWhitespace(editedProduct.productCode)) {
+            newErrors.productCode = "Mã sản phẩm không được để trống hoặc chỉ chứa khoảng trắng!";
+        }
+        if (isEmptyOrWhitespace(editedProduct.productName)) {
+            newErrors.productName = "Tên sản phẩm không được để trống hoặc chỉ chứa khoảng trắng!";
+        }
 
-            setLoading(true);
+        setValidationErrors(newErrors);
 
-            // Create FormData if there's an image
-            const formData = new FormData();
-            formData.append('productId', editedProduct.productId);
-            formData.append('productCode', editedProduct.productCode);
-            formData.append('productName', editedProduct.productName);
-            formData.append('description', editedProduct.description || '');
-            formData.append('unitId', editedProduct.unitId || '');
-            formData.append('typeId', editedProduct.typeId || '');
-            formData.append('isProductionActive', editedProduct.isProductionActive);
+        if (Object.keys(newErrors).length === 0 && !productCodeError) {
+            try {
+                setLoading(true);
+                const formData = new FormData();
+                formData.append('productId', editedProduct.productId);
+                formData.append('productCode', editedProduct.productCode);
+                formData.append('productName', editedProduct.productName);
+                formData.append('description', editedProduct.description || '');
+                formData.append('unitId', editedProduct.unitId || '');
+                formData.append('typeId', editedProduct.typeId || '');
+                formData.append('isProductionActive', editedProduct.isProductionActive);
 
-            if (editedProduct.image) {
-                formData.append('image', editedProduct.image);
-            }
-
-            // Get token
-            const token = getAuthToken();
-
-            // Call API to update product
-            await axios.put(
-                `http://localhost:8080/api/unistock/user/products/${editedProduct.productId}`,
-                formData,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'multipart/form-data'
-                    },
+                if (editedProduct.image) {
+                    formData.append('image', editedProduct.image);
                 }
-            );
 
-            alert("Cập nhật sản phẩm thành công!");
-            onUpdate(); // Refresh product list
-            onClose(); // Close modal
-        } catch (error) {
-            console.error("Lỗi khi cập nhật sản phẩm:", error);
-            alert(error.response?.data?.message || "Lỗi khi cập nhật sản phẩm!");
-        } finally {
-            setLoading(false);
+                const token = getAuthToken();
+                await axios.put(
+                    `http://localhost:8080/api/unistock/user/products/${editedProduct.productId}`,
+                    formData,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'multipart/form-data'
+                        },
+                    }
+                );
+
+                alert("Cập nhật sản phẩm thành công!");
+                onUpdate();
+                onClose();
+            } catch (error) {
+                console.error("Lỗi khi cập nhật sản phẩm:", error);
+                alert(error.response?.data?.message || "Lỗi khi cập nhật sản phẩm!");
+            } finally {
+                setLoading(false);
+            }
         }
     };
 
@@ -185,6 +161,8 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
                         onClick={() => {
                             onClose();
                             setErrors({});
+                            setValidationErrors({});
+                            setProductCodeError("");
                         }}
                     >
                         ✕
@@ -196,10 +174,20 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
                         <Input
                             type="text"
                             value={editedProduct.productCode}
-                            onChange={(e) => setEditedProduct({ ...editedProduct, productCode: e.target.value })}
-                            className={`w-full ${errors.productCode ? 'border-red-500' : ''}`}
+                            onChange={(e) => handleProductCodeChange(e.target.value)}
+                            className={`w-full ${errors.productCode || productCodeError || validationErrors.productCode ? 'border-red-500' : ''}`}
                         />
-                        {errors.productCode && (
+                        {productCodeError && (
+                            <Typography className="text-xs text-red-500 mt-1">
+                                {productCodeError}
+                            </Typography>
+                        )}
+                        {validationErrors.productCode && (
+                            <Typography className="text-xs text-red-500 mt-1">
+                                {validationErrors.productCode}
+                            </Typography>
+                        )}
+                        {errors.productCode && !productCodeError && !validationErrors.productCode && (
                             <Typography className="text-xs text-red-500 mt-1">
                                 {errors.productCode}
                             </Typography>
@@ -210,10 +198,15 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
                         <Input
                             type="text"
                             value={editedProduct.productName}
-                            onChange={(e) => setEditedProduct({ ...editedProduct, productName: e.target.value })}
-                            className={`w-full ${errors.productName ? 'border-red-500' : ''}`}
+                            onChange={(e) => handleProductNameChange(e.target.value)}
+                            className={`w-full ${errors.productName || validationErrors.productName ? 'border-red-500' : ''}`}
                         />
-                        {errors.productName && (
+                        {validationErrors.productName && (
+                            <Typography className="text-xs text-red-500 mt-1">
+                                {validationErrors.productName}
+                            </Typography>
+                        )}
+                        {errors.productName && !validationErrors.productName && (
                             <Typography className="text-xs text-red-500 mt-1">
                                 {errors.productName}
                             </Typography>
@@ -258,7 +251,7 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
                                 {errors.typeId}
                             </Typography>
                         )}
-                    </div>     
+                    </div>
                     <div className="col-span-2">
                         <Typography variant="small" className="mb-2">Mô tả</Typography>
                         <Input
@@ -311,6 +304,8 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
                         onClick={() => {
                             onClose();
                             setErrors({});
+                            setValidationErrors({});
+                            setProductCodeError("");
                         }}
                         disabled={loading}
                     >
@@ -319,7 +314,7 @@ const EditProductModal = ({ show, onClose, product, onUpdate, units, productType
                     <Button
                         color="blue"
                         onClick={handleUpdateProduct}
-                        disabled={loading}
+                        disabled={loading || !!productCodeError}
                     >
                         {loading ? "Đang xử lý..." : "Cập nhật"}
                     </Button>
