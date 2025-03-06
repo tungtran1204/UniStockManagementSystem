@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import {
   Card,
   CardHeader,
@@ -10,6 +12,7 @@ import {
 import { FaPlus } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import AddIssueNote from "../receiptNote/AddReceiptNote";
 
 const IssueNotePage = () => {
   const [issueNotes, setIssueNotes] = useState([]);
@@ -19,6 +22,8 @@ const IssueNotePage = () => {
   const [pageSize, setPageSize] = useState(5);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const navigate = useNavigate();
+  
 
   useEffect(() => {
     fetchPaginatedIssueNotes(currentPage, pageSize);
@@ -55,7 +60,7 @@ const IssueNotePage = () => {
             color="white"
             variant="text"
             className="flex items-center gap-2"
-            onClick={() => setOpenAddModal(true)}
+            onClick={() => navigate("/user/issueNote/add")}
           >
             <FaPlus className="h-4 w-4" /> Thêm Phiếu Xuất
           </Button>
