@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 
-const AddIssueNote = () => {
+const AddReceiptNote = () => {
   const navigate = useNavigate();
 
   const [orderType, setOrderType] = useState("Mua hàng vật tư");
@@ -99,12 +99,12 @@ const AddIssueNote = () => {
         {/* Header */}
         <CardHeader variant="gradient" color="gray" className="mb-6 p-4 flex justify-between items-center">
           <Typography variant="h6" color="white">
-            Phiếu nhập kho NK00009
+            Phiếu xuất kho NK00009
           </Typography>
           <div className="w-56">
             <Select value={orderType} onChange={(value) => setOrderType(value)}>
-              <Option value="Nhập kho thành phẩm">Nhập kho thành phẩm</Option>
-              <Option value="Nhập vật tư">Nhập vật tư</Option>
+              <Option value="Xuất kho thành phẩm">Xuất kho thành phẩm</Option>
+              <Option value="Nhập kho nội bộ">Xuất kho nội bộ</Option>
             </Select>
           </div>
         </CardHeader>
@@ -312,26 +312,26 @@ const AddIssueNote = () => {
             </div>
           )}
           <div className="mt-6 border-t pt-4 flex justify-between">
-            <Button
-              size="sm"
-              color="red"
-              variant="text"
-              onClick={() => navigate("/user/receiptNote")}
-              className="mr-4"
-            >
-              Quay lại danh sách
-            </Button>
-            <Button
-              size="sm"
-              color="green"
-            >
-              Lưu
-            </Button>
-          </div>
+                      <Button
+                        size="sm"
+                        color="red"
+                        variant="text"
+                        onClick={() => navigate("/user/issueNote")}
+                        className="mr-4"
+                      >
+                        Quay lại danh sách
+                      </Button>
+                      <Button
+                        size="sm"
+                        color="green"
+                      >
+                        Lưu
+                      </Button>
+                    </div>
         </CardBody>
       </Card>
     </div>
   );
 };
 
-export default AddIssueNote;
+export default AddReceiptNote;

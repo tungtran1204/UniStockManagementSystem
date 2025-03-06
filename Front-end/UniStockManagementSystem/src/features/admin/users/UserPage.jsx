@@ -69,11 +69,6 @@ const UserPage = () => {
   return (
     <div className="mt-12 mb-8 flex flex-col gap-12">
       <Card>
-        <CardHeader
-          variant="gradient"
-          color="gray"
-          className="mb-8 p-6 flex justify-between items-center"
-        >
           <Typography variant="h6" color="white">
             Danh sách người dùng
           </Typography>
@@ -86,7 +81,6 @@ const UserPage = () => {
           >
             <FaPlus className="h-4 w-4" /> Thêm Người Dùng
           </Button>
-        </CardHeader>
 
         <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
           {/* Chọn số items/trang + Tìm kiếm */}
