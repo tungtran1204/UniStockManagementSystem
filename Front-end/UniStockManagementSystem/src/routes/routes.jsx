@@ -27,6 +27,7 @@ import ReceiptNotePage from "../features/user/receiptNote/ReceiptNotePage";
 import AddSaleOrderPage from "../features/user/saleorders/AddSaleOrderPage";
 import AddReceiptNote from "../features/user/receiptNote/AddReceiptNote";
 import IssueNotePage from "../features/user/issueNote/IssueNotePage";
+import AddIssueNote from "../features/user/receiptNote/AddReceiptNote";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -42,7 +43,7 @@ export const routes = [
     ],
   },
   {
-    title: "Quản lý",
+    title: "",
     layout: "admin",
     pages: [
       {
@@ -69,7 +70,7 @@ export const routes = [
     ],
   },
   {
-    title: "User Routes",
+    title: "",
     layout: "user",
     pages: [
       {
@@ -80,24 +81,40 @@ export const routes = [
         roles: ["USER"],
       },
       {
+        icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
+        name: "Quản lý đơn hàng",
+        path: "/user/sale-orders",
+        element: <SaleOrdersPage />, // Trang quản lý đơn hàng 
+        roles: ["USER"],
+      },
+      {
+        icon: <UserCircleIcon {...icon} />,
+        name: "Xuất nhập kho",
+        path: "/user/receiptNote",
+        roles: ["USER"],
+        element: <Navigate to="/user/partner/type" replace />,
+        subPages: [
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Quản lí nhập kho",
+            path: "/user/receiptNote",
+            element: <ReceiptNotePage />,
+            roles: ["USER"],
+          },
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Quản lí xuất kho",
+            path: "/user/issueNote",
+            element: <IssueNotePage />,
+            roles: ["USER"],
+          },
+        ],
+      },
+      {
         icon: <ArchiveBoxIcon {...icon} />,
         name: "Kho",
         path: "/user/warehouse",
         element: <WarehousePage />,
-        roles: ["USER"],
-      },
-      {
-        icon: <ArchiveBoxIcon {...icon} />, // Changed from BoxIcon to ArchiveBoxIcon
-        name: "Phiếu nhập",
-        path: "/user/receiptNote",
-        element: <ReceiptNotePage />,
-        roles: ["USER"],
-      },
-      {
-        icon: <ArchiveBoxIcon {...icon} />, // Changed from BoxIcon to ArchiveBoxIcon
-        name: "Phiếu xuất",
-        path: "/user/issueNote",
-        element: <IssueNotePage />,
         roles: ["USER"],
       },
       {
@@ -114,13 +131,7 @@ export const routes = [
         element: <MaterialPage />,
         roles: ["USER"],
       },
-      {
-        icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
-        name: "Quản lý đơn hàng",
-        path: "/user/sale-orders",
-        element: <SaleOrdersPage />, // Trang quản lý đơn hàng 
-        roles: ["USER"],
-      },
+     
       
       {
         icon: <UserCircleIcon {...icon} />,
@@ -141,23 +152,6 @@ export const routes = [
             name: "Đối tác",
             path: "/user/partner/list", // Relative path
             element: <PartnerPage />, 
-            roles: ["USER"],
-          },
-        ],
-      },
-
-      {
-        icon: <UserCircleIcon {...icon} />,
-        name: "Xuất nhập kho",
-        path: "/user/receiptNote",
-        roles: ["USER"],
-        element: <Navigate to="/user/partner/type" replace />,
-        subPages: [
-          {
-            icon: <Bars3BottomRightIcon {...icon} />,
-            name: "Nhập kho",
-            path: "/user/receiptNote/list",
-            element: <ReceiptNotePage />,
             roles: ["USER"],
           },
         ],
@@ -197,9 +191,16 @@ export const routes = [
       },
       {
         icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
-        name: "Thêm đơn hàng",
+        name: "Thêm phiếu nhập",
         path: "/user/receiptNote/add",
         element: <AddReceiptNote />, // Trang quản lý đơn hàng 
+        roles: ["USER"],
+      },
+      {
+        icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
+        name: "Thêm phiếu xuất",
+        path: "/user/issueNote/add",
+        element: <AddIssueNote />, // Trang quản lý đơn hàng 
         roles: ["USER"],
       },
     ],

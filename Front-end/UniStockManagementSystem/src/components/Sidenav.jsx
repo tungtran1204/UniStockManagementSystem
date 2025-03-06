@@ -140,8 +140,8 @@ export function Sidenav({ brandImg, brandName, routes }) {
 }
 
 Sidenav.defaultProps = {
-  brandImg: " ",
-  brandName: "HRL",
+  brandImg: "/img/logo-ct.png",
+  brandName: "UniStock",
 };
 
 Sidenav.propTypes = {
