@@ -311,6 +311,23 @@ const AddIssueNote = () => {
               />
             </div>
           )}
+          <div className="mt-6 border-t pt-4 flex justify-between">
+            <Button
+              size="sm"
+              color="red"
+              variant="text"
+              onClick={() => navigate("/user/receiptNote")}
+              className="mr-4"
+            >
+              Quay lại danh sách
+            </Button>
+            <Button
+              size="sm"
+              color="green"
+            >
+              Lưu
+            </Button>
+          </div>
         </CardBody>
       </Card>
     </div>

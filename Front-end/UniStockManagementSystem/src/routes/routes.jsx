@@ -97,14 +97,14 @@ export const routes = [
           {
             icon: <Bars3BottomRightIcon {...icon} />,
             name: "Quản lí nhập kho",
-            path: "/user/receiptNote/list",
+            path: "/user/receiptNote",
             element: <ReceiptNotePage />,
             roles: ["USER"],
           },
           {
             icon: <Bars3BottomRightIcon {...icon} />,
             name: "Quản lí xuất kho",
-            path: "/user/issueNote/list",
+            path: "/user/issueNote",
             element: <IssueNotePage />,
             roles: ["USER"],
           },
