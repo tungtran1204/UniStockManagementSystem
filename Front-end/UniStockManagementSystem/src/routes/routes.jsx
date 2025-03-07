@@ -119,14 +119,14 @@ export const routes = [
       },
       {
         icon: <TableCellsIcon {...icon} />,
-        name: "Quản lý sản phẩm",
+        name: "Sản phẩm",
         path: "/user/products",
         element: <ProductPage />,
         roles: ["USER"],
       },
       {
         icon: <TableCellsIcon {...icon} />, // Sử dụng TableCellsIcon cho phần quản lý nguyên vật liệu
-        name: "Quản lý nguyên vật liệu",
+        name: "Vật tư",
         path: "/user/materials",
         element: <MaterialPage />,
         roles: ["USER"],

@@ -15,7 +15,6 @@ import axios from "axios";
 import { checkProductCodeExists, createProduct, fetchUnits, fetchProductTypes } from "./productService";
 import { checkMaterialCodeExists } from "../materials/materialService";
 
-// Thêm hàm lấy token
 const authHeader = () => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -247,7 +246,6 @@ const CreateProductModal = ({ show, onClose, fetchProducts }) => {
     }));
   };
 
-  // Xử lý tạo sản phẩm
   const handleCreateProduct = async () => {
     const newErrors = {};
     setBillOfMaterialsError("");
@@ -276,31 +274,59 @@ const CreateProductModal = ({ show, onClose, fetchProducts }) => {
       formData.append("productName", newProduct.productName.trim());
       formData.append("description", newProduct.description?.trim() || "");
       formData.append("unitId", newProduct.unitId || "");
-      formData.append("productTypeId", newProduct.productTypeId || "");
+      formData.append("typeId", newProduct.productTypeId || "");
       formData.append("isProductionActive", newProduct.isProductionActive === "true" || true);
       if (newProduct.image) {
         formData.append("image", newProduct.image);
       }
-      productMaterials.forEach((item, index) => {
-        formData.append(`materials[${index}].materialId`, item.materialId);
-        formData.append(`materials[${index}].materialCode`, item.materialCode);
-        formData.append(`materials[${index}].materialName`, item.materialName);
-        formData.append(`materials[${index}].quantity`, item.quantity);
-      });
+  
+      // Chuyển productMaterials thành chuỗi JSON và thêm vào formData
+      const materialsData = productMaterials.map((item) => ({
+        materialId: item.materialId,
+        materialCode: item.materialCode,
+        materialName: item.materialName,
+        quantity: item.quantity,
+      }));
+      formData.append("materials", JSON.stringify(materialsData));
   
       try {
-        await axios.post('http://localhost:8080/api/unistock/user/products/create', formData, {
-          headers: {
-            ...authHeader(),
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        
-        // Gọi hàm fetch sau khi tạo thành công
-        await fetchProducts();
-        onClose();
+        setLoading(true);
+        const headers = {
+          ...authHeader(),
+          "Content-Type": "multipart/form-data",
+        };
+  
+        console.log("Request headers:", headers);
+        console.log("Request data:", [...formData.entries()]);
+  
+        const response = await axios.post(
+          "http://localhost:8080/api/unistock/user/products/create",
+          formData,
+          { headers }
+        );
+  
+        console.log("Response:", response);
+  
+        if (response.data) {
+          await fetchProducts();
+          onClose();
+        }
       } catch (error) {
-        console.error("Lỗi khi tạo sản phẩm:", error);
+        console.error("Error details:", {
+          status: error.response?.status,
+          message: error.response?.data?.message || error.message,
+          headers: error.response?.headers,
+        });
+  
+        if (error.response?.status === 403) {
+          setErrors({ message: "Bạn không có quyền thực hiện thao tác này. Vui lòng đăng nhập bằng tài khoản có quyền phù hợp." });
+        } else if (error.response?.status === 401) {
+          setErrors({ message: "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại." });
+        } else {
+          setErrors({ message: `Có lỗi xảy ra khi tạo sản phẩm: ${error.response?.data?.message || error.message}` });
+        }
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -646,6 +672,6 @@ const CreateProductModal = ({ show, onClose, fetchProducts }) => {
       </DialogFooter>
     </Dialog>
   );
-};
+}
 
 export default CreateProductModal;

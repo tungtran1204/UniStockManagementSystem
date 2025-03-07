@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
 import useProduct from "./useProduct";
 import EditProductModal from './EditProductModal';
-import CreateProductModal from './CreateProductModal';
 import { Button, IconButton } from "@material-tailwind/react";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { FaLayerGroup } from "react-icons/fa";
 import { FaEdit, FaFileExcel, FaPlus } from "react-icons/fa";
 import BillOfMaterialsModal from "./BillOfMaterialsModal";
 import ReactPaginate from "react-paginate";
-
+import CreateProductModal from './CreateProductModal';
 import axios from "axios";
 import {
   importExcel,
@@ -115,40 +114,6 @@ const ProductPage = () => {
     } catch (error) {
       console.error("Lỗi khi import file:", error);
       alert("Lỗi import file! Kiểm tra lại dữ liệu.");
-    } finally {
-      setLocalLoading(false);
-    }
-  };
-
-  const handleCreateProduct = async () => {
-    try {
-      setLocalLoading(true);
-      await createProduct(newProduct);
-      alert("Tạo sản phẩm thành công!");
-      fetchPaginatedProducts();
-      setShowCreatePopup(false);
-      setNewProduct({
-        productCode: "",
-        productName: "",
-        description: "",
-        unitId: "",
-        typeId: "",
-        isProductionActive: "true"
-      });
-    } catch (error) {
-      console.error("Chi tiết lỗi:", error);
-
-      if (error.response) {
-        const errorMessage = error.response.data.message ||
-          error.response.data.error ||
-          "Lỗi khi tạo sản phẩm! Vui lòng thử lại.";
-
-        alert(errorMessage);
-      } else if (error.request) {
-        alert("Không thể kết nối tới máy chủ. Vui lòng kiểm tra kết nối.");
-      } else {
-        alert("Lỗi khi tạo sản phẩm! Vui lòng thử lại.");
-      }
     } finally {
       setLocalLoading(false);
     }
@@ -386,20 +351,6 @@ const ProductPage = () => {
         onUpdate={fetchPaginatedProducts}
       />
 
-      <CreateProductModal
-        show={showCreatePopup}
-        onClose={() => {
-          setShowCreatePopup(false);
-        }}
-        loading={localLoading}
-        newProduct={newProduct}
-        setNewProduct={setNewProduct}
-        handleCreateProduct={handleCreateProduct}
-        units={units}
-        productTypes={productTypes}
-        fetchProducts={fetchPaginatedProducts} // Truyền hàm fetch vào
-      />
-
       {showImportPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-96">
@@ -450,6 +401,12 @@ const ProductPage = () => {
         onUpdate={handleUpdateSuccess}
         units={units}
         productTypes={productTypes}
+      />
+
+      <CreateProductModal
+        show={showCreatePopup}
+        onClose={() => setShowCreatePopup(false)}
+        fetchProducts={fetchPaginatedProducts}
       />
     </div>
   );
