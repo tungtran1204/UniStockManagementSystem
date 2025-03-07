@@ -13,7 +13,7 @@ import useSaleOrder from "./useSaleOrder";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
-import ModalAddSaleOrder from "./ModalAddSaleOrder"; 
+import { useNavigate  } from "react-router-dom";
 // Nếu cần edit:
 // import ModalEditSaleOrder from "./ModalEditSaleOrder";
 
@@ -31,38 +31,21 @@ const SaleOrdersPage = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
-  // State quản lý mở modal Thêm đơn hàng
-  const [openAddModal, setOpenAddModal] = useState(false);
-  // State quản lý “mã đơn hàng tiếp theo”
-  const [nextOrderCode, setNextOrderCode] = useState("");
-
-  // Nếu cần edit:
-  // const [openEditModal, setOpenEditModal] = useState(false);
-  // const [selectedSaleOrder, setSelectedSaleOrder] = useState(null);
 
   useEffect(() => {
     // Gọi API lấy danh sách khi thay đổi trang/pageSize
     fetchPaginatedSaleOrders(currentPage, pageSize);
   }, [currentPage, pageSize]);
 
-  // Hàm mở modal Thêm đơn hàng
-  const handleOpenAddModal = async () => {
-    try {
-      const code = await getNextCode(); // Gọi API lấy mã tiếp theo
-      setNextOrderCode(code);
-      setOpenAddModal(true); // Mở modal
-    } catch (error) {
-      console.error("❌ Lỗi khi lấy mã đơn hàng:", error);
-    }
-  };
+  const navigate = useNavigate(); // ✅ Định nghĩa useNavigate
 
-  // Nếu cần edit:
-  // const handleEditOrder = (saleOrder) => {
-  //   setSelectedSaleOrder(saleOrder);
-  //   setOpenEditModal(true);
-  // };
 
-  // Phân trang
+  const handleAddOrder = async () => {
+    const code = await getNextCode();
+    // setNextOrderCode(code);
+    navigate("/user/sale-orders/add", { state: { nextCode: code } });
+  }; 
+
   const handlePageChange = (selectedItem) => {
     setCurrentPage(selectedItem.selected);
   };
@@ -78,16 +61,7 @@ const SaleOrdersPage = () => {
 
   return (
     <div className="mt-12 mb-8 flex flex-col gap-12">
-      {/* ✅ Modal Thêm đơn hàng (chỉ render khi openAddModal = true) */}
-      {openAddModal && (
-        <ModalAddSaleOrder
-          open={openAddModal}
-          onClose={() => setOpenAddModal(false)}
-          // Hàm refetch để cập nhật danh sách sau khi thêm:
-          fetchOrders={() => fetchPaginatedSaleOrders(currentPage, pageSize)}
-          nextCode={nextOrderCode}
-        />
-      )}
+      
 
       <Card>
         <CardHeader
@@ -103,7 +77,7 @@ const SaleOrdersPage = () => {
             color="white"
             variant="text"
             className="flex items-center gap-2"
-            onClick={handleOpenAddModal}
+            onClick={handleAddOrder}
           >
             <FaPlus className="h-4 w-4" /> Thêm đơn hàng
           </Button>

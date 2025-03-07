@@ -13,7 +13,7 @@ public interface SaleOrdersDetailMapper {
 
     SaleOrdersDetailMapper INSTANCE = Mappers.getMapper(SaleOrdersDetailMapper.class);
 
-    // 🟢 **Ánh xạ từ `SalesOrderDetail` → `SalesOrderDetailDTO`**
+    // Ánh xạ từ SalesOrderDetail (Entity) → SalesOrderDetailDTO (DTO)
     @Mapping(source = "orderDetailId", target = "orderDetailId")
     @Mapping(source = "salesOrder.orderId", target = "orderId")
     @Mapping(source = "product.productId", target = "productId")
@@ -23,15 +23,19 @@ public interface SaleOrdersDetailMapper {
     SalesOrderDetailDTO toDTO(SalesOrderDetail entity);
 
     default List<SalesOrderDetailDTO> toDTOList(List<SalesOrderDetail> entityList) {
-        return entityList != null ? entityList.stream().map(this::toDTO).collect(Collectors.toList()) : null;
+        return entityList != null
+                ? entityList.stream().map(this::toDTO).collect(Collectors.toList())
+                : null;
     }
 
-    // 🟢 **Ánh xạ từ `SalesOrderDetailDTO` → `SalesOrderDetail`**
+    // Ánh xạ từ SalesOrderDetailDTO (DTO) → SalesOrderDetail (Entity)
     @Mapping(source = "productId", target = "product.productId")
     @Mapping(source = "quantity", target = "quantity")
     SalesOrderDetail toEntity(SalesOrderDetailDTO dto);
 
     default List<SalesOrderDetail> toEntityList(List<SalesOrderDetailDTO> dtoList) {
-        return dtoList != null ? dtoList.stream().map(this::toEntity).collect(Collectors.toList()) : null;
+        return dtoList != null
+                ? dtoList.stream().map(this::toEntity).collect(Collectors.toList())
+                : null;
     }
 }

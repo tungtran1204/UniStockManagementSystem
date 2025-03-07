@@ -33,6 +33,8 @@ public class Partner {
     @NotBlank(message = "Địa chỉ không được để trống.")
     private String address;
 
+    private String contactName;
+
     @NotBlank(message = "Số điện thoại không được để trống.")
     @Size(min = 10, max = 11, message = "Số điện thoại phải từ 10 đến 11 ký tự.")
     private String phone;
