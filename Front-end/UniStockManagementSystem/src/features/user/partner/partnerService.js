@@ -97,7 +97,7 @@ export const getPartnerCodeByType = async (typeId) => {
     }
 };
 
-export const getPartnersByType = async (typeId, page = 0, size = 10) => {
+export const getPartnersByType = async (typeId, page , size ) => {
     try {
         const headers = authHeader();
         const response = await axios.get(`${API_URL}/list/type=${typeId}`, {
