@@ -1,5 +1,7 @@
 package vn.unistock.unistockmanagementsystem.features.user.productMaterials;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -13,10 +15,10 @@ import java.util.Optional;
 
 @Repository
 public interface ProductMaterialsRepository extends JpaRepository<ProductMaterial, Long> {
+    @Query("SELECT pm FROM ProductMaterial pm WHERE pm.product.id = :productId")
+    Page<ProductMaterial> findByProduct_ProductId(@Param("productId") Long productId, Pageable pageable);
 
-    List<ProductMaterial> findByProduct_ProductId(Long productId);
     Optional<ProductMaterial> findByProduct_ProductIdAndMaterial_MaterialId(Long productId, Long materialId);
-
 
     @Query("SELECT pm FROM ProductMaterial pm WHERE pm.product.id = :productId AND pm.material.id = :materialId")
     Optional<ProductMaterial> findByProductIdAndMaterialId(@Param("productId") Long productId, @Param("materialId") Long materialId);
