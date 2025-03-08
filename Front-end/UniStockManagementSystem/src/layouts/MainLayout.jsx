@@ -5,7 +5,7 @@ import DashboardNavbar from "../components/DashboardNavbar";
 import { useMaterialTailwindController } from "../context";
 import routes from "../routes/routes";
 import { useLocation } from "react-router-dom";
-import Configurator from "../components/Configurator";
+// import Configurator from "../components/Configurator";
 
 const MainLayout = ({ children }) => {
   const [controller] = useMaterialTailwindController();
@@ -18,7 +18,7 @@ const MainLayout = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen bg-blue-gray-50/50 flex overflow-x-hidden">
+    <div className="min-h-screen bg-white flex overflow-x-hidden">
       {/* Sidebar */}
       <Sidenav
         routes={routes.filter(
@@ -27,22 +27,16 @@ const MainLayout = ({ children }) => {
             route.layout !== "auth" &&
             route.layout !== "other"
         )}
-        brandImg={
-          sidenavType === "dark" ? "/img/logo-ct.png" : "/img/logo-ct-dark.png"
-        }
       />
 
       {/* Nội dung chính */}
       <div
-        className={`flex flex-col w-full p-4 transition-all duration-300 ${
+        className={`flex flex-col w-full pt-4 transition-all duration-300 ${
           openSidenav ? "xl:ml-72" : "ml-0"
         }`}
-        style={{
-          maxWidth: openSidenav ? "calc(100vw - 320px)" : "100vw",
-        }}
       >
         <DashboardNavbar />
-        <Configurator />
+        {/* <Configurator /> */}
         <div className="flex-grow max-w-full">
           {children}
         </div>

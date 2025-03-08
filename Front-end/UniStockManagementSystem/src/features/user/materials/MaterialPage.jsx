@@ -6,6 +6,8 @@ import { FaEdit, FaFileExcel, FaPlus } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import CreateMaterialModal from './CreateMaterialModal';
 import EditMaterialModal from './EditMaterialModal';
+import PageHeader from '@/components/PageHeader';
+import TableSearch from '@/components/TableSearch';
 
 import {
     importExcel,
@@ -43,6 +45,8 @@ const MaterialPage = () => {
     const [showCreatePopup, setShowCreatePopup] = useState(false);
     const [file, setFile] = useState(null);
     const [localLoading, setLocalLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState(""); // State for search term
+
 
     // Danh sách đơn vị và danh mục
     const [units, setUnits] = useState([]);
@@ -156,48 +160,21 @@ const MaterialPage = () => {
         : [];
 
     return (
-        <div className="mt-12 mb-8 flex flex-col gap-12">
-            <Card>
-                <CardHeader variant="gradient" color="gray" className="mb-8 p-6">
-                    <div className="flex justify-between items-center">
-                        <Typography variant="h6" color="white">
-                            Danh sách nguyên vật liệu
-                        </Typography>
-                        <div className="flex gap-2">
-                            <Button
-                                size="sm"
-                                color="white"
-                                variant="text"
-                                className="flex items-center gap-2"
-                                onClick={() => setShowCreatePopup(true)}
-                            >
-                                <FaPlus className="h-4 w-4" /> Thêm nguyên vật liệu
-                            </Button>
-                            <Button
-                                size="sm"
-                                color="white"
-                                variant="text"
-                                className="flex items-center gap-2"
-                                onClick={() => setShowImportPopup(true)}
-                            >
-                                <FaFileExcel className="h-4 w-4" /> Import Excel
-                            </Button>
-                            <Button
-                                size="sm"
-                                color="white"
-                                variant="text"
-                                className="flex items-center gap-2"
-                                onClick={exportExcel}
-                            >
-                                <FaFileExcel className="h-4 w-4" /> Export Excel
-                            </Button>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
-                    <div className="px-4 py-2 flex items-center justify-between">
+        <div className="mt-2 mb-8 flex flex-col gap-12">
+            <Card className="bg-gray-100 p-7">
+                <PageHeader
+                    title="Danh sách nguyên vật liệu"
+                    addButtonLabel="Thêm nguyên vật liệu"
+                    onAdd={() => setShowCreatePopup(true)}
+                    onImport={() => setShowImportPopup(true)}
+                    onExport={exportExcel}
+                />
+                <CardBody className="pb-2 bg-white rounded-xl">
+                    {/* Items per page and search */}
+                    <div className="px-4 py-2 flex items-center justify-between gap-2">
+                        {/* Items per page */}
                         <div className="flex items-center gap-2">
-                            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
+                            <Typography variant="small" color="blue-gray" className="font-light">
                                 Hiển thị
                             </Typography>
                             <select
@@ -205,28 +182,31 @@ const MaterialPage = () => {
                                 onChange={(e) => {
                                     handlePageSizeChange(Number(e.target.value));
                                 }}
-                                className="border rounded px-2 py-1"
+                                className="border text-sm rounded px-2 py-1"
                             >
                                 {[5, 10, 20, 50].map(size => (
                                     <option key={size} value={size}>{size}</option>
                                 ))}
                             </select>
-                            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-                                nguyên vật liệu mỗi trang
+                            <Typography variant="small" color="blue-gray" className="font-normal">
+                                bản ghi mỗi trang
                             </Typography>
                         </div>
 
-                        <div className="w-[860px]"> {/* Changed from w-[500px] to w-[800px] */}
-                            <Input
-                                label="Tìm kiếm nguyên vật liệu"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full"
-                            />
-                        </div>
+                        {/* Search input */}
+                        <TableSearch
+                            value={searchTerm}
+                            onChange={setSearchTerm}
+                            onSearch={() => {
+                                // Thêm hàm xử lý tìm kiếm vào đây nếu có
+                                console.log("Tìm kiếm nguyên vật liệu:", searchTerm);
+                            }}
+                            placeholder="Tìm kiếm nguyên vật liệu"
+                        />
+
                     </div>
 
-                    <table className="w-full min-w-[640px] table-auto">
+                    <table className="w-full min-w-[640px] table-auto border border-gray-200">
                         <thead>
                             <tr>
                                 {[

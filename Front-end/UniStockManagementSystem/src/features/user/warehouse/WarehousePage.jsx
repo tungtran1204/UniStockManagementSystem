@@ -3,6 +3,7 @@ import useWarehouse from "./useWarehouse";
 import { updateWarehouseStatus, createWarehouse, fetchWarehouses } from "./warehouseService";
 import { getWarehouseById } from "./warehouseService";
 import { useNavigate } from "react-router-dom";
+import { BiExport, BiImport, BiSearch } from "react-icons/bi";
 import {
   Card,
   CardHeader,
@@ -19,6 +20,8 @@ import ModalAddWarehouse from "./ModalAddWarehouse"; // Import ModalAddWarehouse
 import ModalEditWarehouse from "./ModalEditWarehouse"; // Import ModalEditWarehouse component
 import ReactPaginate from "react-paginate"; // Import ReactPaginate for pagination
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import PageHeader from '@/components/PageHeader';
+import TableSearch from '@/components/TableSearch';
 
 // Define the WarehousePage component
 const WarehousePage = () => {
@@ -64,66 +67,57 @@ const WarehousePage = () => {
   );
 
   return (
-    <div className="mt-12 mb-8 flex flex-col gap-12">
-      <Card>
-        <CardHeader
-          variant="gradient"
-          color="white"
-          className="mb-8 p-6 flex justify-between items-center"
-        >
-          <Typography variant="h6" color="green">
-            Danh sách kho
-          </Typography>
-          <Button
-            size="sm"
-            color="green"
-            variant="text"
-            className="flex items-center gap-2"
-            onClick={() => {
-              setOpenAddModal(true);
-              console.log("openAddModal:", true);
-            }}
-          >
-            <FaPlus className="h-4 w-4" /> Thêm
-          </Button>
-        </CardHeader>
+    <div className="mt-2 mb-8 flex flex-col gap-12">
+      <Card className="bg-gray-100 p-7">
+        <PageHeader
+          title="Danh sách kho"
+          addButtonLabel="Thêm kho"
+          onAdd={() => setOpenAddModal(true)}
+          onImport={() => {/* Xử lý import nếu có */ }}
+          onExport={() => {/* Xử lý export file ở đây nếu có */ }}
+          showImport={false} // Ẩn nút import nếu không dùng
+          showExport={false} // Ẩn xuất file nếu không dùng
+        />
 
-        <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
+        <CardBody className="pb-2 bg-white rounded-xl">
           {/* Items per page and search */}
-          <div className="px-4 py-2 flex items-center gap-4">
+          <div className="px-4 py-2 flex items-center justify-between gap-2">
             {/* Items per page */}
-            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-              Hiển thị
-            </Typography>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(0);
-              }}
-              className="border rounded px-2 py-1"
-            >
-              {[5, 10, 20, 50].map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
-            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-              kết quả mỗi trang
-            </Typography>
+            <div className="flex items-center gap-2">
+              <Typography variant="small" color="blue-gray" className="font-light">
+                Hiển thị
+              </Typography>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(0);
+                }}
+                className="border text-sm rounded px-2 py-1"
+              >
+                {[5, 10, 20, 50].map(size => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                bản ghi mỗi trang
+              </Typography>
+            </div>
 
             {/* Search input */}
-            <Input
-              label="Tìm kiếm"
+            <TableSearch
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-64"
-              containerProps={{ className: "w-64" }}
+              onChange={setSearchTerm}
+              onSearch={() => {
+                // Thêm hàm xử lý tìm kiếm vào đây nếu có
+                console.log("Tìm kiếm kho:", searchTerm);
+              }}
+              placeholder="Tìm kiếm kho"
             />
+
           </div>
 
-          <table className="w-full min-w-[640px] table-auto">
+          <table className="w-full min-w-[640px] table-auto border border-gray-200">
             <thead>
               <tr>
                 {["Mã kho", "Tên kho", "Trạng thái", "Hành động"].map((el) => (
@@ -144,27 +138,26 @@ const WarehousePage = () => {
             <tbody>
               {filteredWarehouses.length > 0 ? (
                 filteredWarehouses.map(({ warehouseId, warehouseCode, warehouseName, warehouseDescription, isActive }, key) => {
-                  const className = `py-3 px-5 ${
-                    key === filteredWarehouses.length - 1 ? "" : "border-b border-blue-gray-50"
-                  }`;
+                  const className = `py-3 px-5 ${key === filteredWarehouses.length - 1 ? "" : "border-b border-blue-gray-50"
+                    }`;
 
                   return (
                     <tr key={warehouseId}>
-                      <td className={className}>             
-                            <Typography
-                              variant="small"
-                              color="blue-gray"
-                              className="font-semibold"
-                            >
-                              {warehouseCode}
-                              </Typography>
-                  </td>
                       <td className={className}>
-                            <Typography variant="small" color="blue-gray" className="text-xs">
-                              {warehouseName}
-                            </Typography>
-               
-                        
+                        <Typography
+                          variant="small"
+                          color="blue-gray"
+                          className="font-semibold"
+                        >
+                          {warehouseCode}
+                        </Typography>
+                      </td>
+                      <td className={className}>
+                        <Typography variant="small" color="blue-gray" className="text-xs">
+                          {warehouseName}
+                        </Typography>
+
+
                       </td>
 
                       <td className={className}>
@@ -176,12 +169,13 @@ const WarehousePage = () => {
                               const confirmMessage = isActive
                                 ? "Bạn có chắc muốn vô hiệu hóa kho này không?"
                                 : "Bạn có chắc muốn kích hoạt kho này không?";
-                        
+
                               if (window.confirm(confirmMessage)) {
                                 console.log("Toggling warehouse:", warehouseId, "Current status:", isActive);
                                 toggleStatus(warehouseId, isActive);
-                              }}
                               }
+                            }
+                            }
                           />
                           <Typography className="text-xs font-semibold text-blue-gray-600">
                             {isActive ? "Đang hoạt động" : "Không hoạt động"}
@@ -243,7 +237,7 @@ const WarehousePage = () => {
       </Card>
 
       {/* Modal Add Warehouse */}
-            {openAddModal && <ModalAddWarehouse show={openAddModal} onClose={() => setOpenAddModal(false)} onAdd={() => fetchPaginatedWarehouses(currentPage, pageSize)} />}
+      {openAddModal && <ModalAddWarehouse show={openAddModal} onClose={() => setOpenAddModal(false)} onAdd={() => fetchPaginatedWarehouses(currentPage, pageSize)} />}
 
       {/* Modal Edit Warehouse */}
       {openEditModal && <ModalEditWarehouse open={openEditModal} onClose={() => setOpenEditModal(false)} warehouse={selectedWarehouse} fetchWarehouses={fetchPaginatedWarehouses} />}
