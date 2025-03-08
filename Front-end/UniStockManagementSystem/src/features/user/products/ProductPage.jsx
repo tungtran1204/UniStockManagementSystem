@@ -19,6 +19,7 @@ import {
   Typography,
   Tooltip,
   Switch,
+  Input,
 } from "@material-tailwind/react";
 import { useNavigate } from "react-router-dom";
 
@@ -44,6 +45,7 @@ const ProductPage = () => {
   const [localLoading, setLocalLoading] = useState(false);
   const [units, setUnits] = useState([]);
   const [productTypes, setProductTypes] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");  // Add this state
 
   const [newProduct, setNewProduct] = useState({
     productCode: "",
@@ -114,6 +116,14 @@ const ProductPage = () => {
     navigate("/user/products/add");
   };
 
+  // Add this function
+  const filteredProducts = Array.isArray(products) 
+    ? products.filter(product => 
+        product.productCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.productName?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
+
   return (
     <div className="mt-12 mb-8 flex flex-col gap-12">
       <Card>
@@ -154,24 +164,35 @@ const ProductPage = () => {
           </div>
         </CardHeader>
         <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
-          <div className="px-4 py-2 flex items-center gap-2">
-            <Typography variant="small" color="blue-gray" className="font-normal">
-              Hiển thị
-            </Typography>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                handlePageSizeChange(Number(e.target.value));
-              }}
-              className="border rounded px-2 py-1"
-            >
-              {[5, 10, 20, 50].map(size => (
-                <option key={size} value={size}>{size}</option>
-              ))}
-            </select>
-            <Typography variant="small" color="blue-gray" className="font-normal">
-              sản phẩm mỗi trang
-            </Typography>
+          <div className="px-4 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
+                Hiển thị
+              </Typography>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  handlePageSizeChange(Number(e.target.value));
+                }}
+                className="border rounded px-2 py-1"
+              >
+                {[5, 10, 20, 50].map(size => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+              <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
+                sản phẩm mỗi trang
+              </Typography>
+            </div>
+
+            <div className="w-[890px]"> {/* Changed from w-[500px] to w-[800px] */}
+              <Input
+                label="Tìm kiếm sản phẩm"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full"
+              />
+            </div>
           </div>
 
           <table className="w-full min-w-[640px] table-auto">
@@ -196,8 +217,8 @@ const ProductPage = () => {
               </tr>
             </thead>
             <tbody>
-              {Array.isArray(products) && products.length > 0 ? (
-                products.map((product, index) => {
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map((product, index) => {
                   const className = `py-3 px-5 ${index === products.length - 1 ? "" : "border-b border-blue-gray-50"}`;
                   const actualIndex = currentPage * pageSize + index + 1;
 

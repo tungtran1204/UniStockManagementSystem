@@ -17,7 +17,8 @@ import {
 import {
     CardBody,
     Tooltip,
-    Switch
+    Switch,
+    Input
 } from "@material-tailwind/react";
 
 const MaterialPage = () => {
@@ -145,6 +146,15 @@ const MaterialPage = () => {
         handlePageChange(selectedItem.selected);
     };
 
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const filteredMaterials = Array.isArray(materials) 
+        ? materials.filter(material => 
+            material.materialCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            material.materialName?.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        : [];
+
     return (
         <div className="mt-12 mb-8 flex flex-col gap-12">
             <Card>
@@ -185,24 +195,35 @@ const MaterialPage = () => {
                     </div>
                 </CardHeader>
                 <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
-                    <div className="px-4 py-2 flex items-center gap-2">
-                        <Typography variant="small" color="blue-gray" className="font-normal">
-                            Hiển thị
-                        </Typography>
-                        <select
-                            value={pageSize}
-                            onChange={(e) => {
-                                handlePageSizeChange(Number(e.target.value));
-                            }}
-                            className="border rounded px-2 py-1"
-                        >
-                            {[5, 10, 20, 50].map(size => (
-                                <option key={size} value={size}>{size}</option>
-                            ))}
-                        </select>
-                        <Typography variant="small" color="blue-gray" className="font-normal">
-                            nguyên vật liệu mỗi trang
-                        </Typography>
+                    <div className="px-4 py-2 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
+                                Hiển thị
+                            </Typography>
+                            <select
+                                value={pageSize}
+                                onChange={(e) => {
+                                    handlePageSizeChange(Number(e.target.value));
+                                }}
+                                className="border rounded px-2 py-1"
+                            >
+                                {[5, 10, 20, 50].map(size => (
+                                    <option key={size} value={size}>{size}</option>
+                                ))}
+                            </select>
+                            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
+                                nguyên vật liệu mỗi trang
+                            </Typography>
+                        </div>
+
+                        <div className="w-[860px]"> {/* Changed from w-[500px] to w-[800px] */}
+                            <Input
+                                label="Tìm kiếm nguyên vật liệu"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full"
+                            />
+                        </div>
                     </div>
 
                     <table className="w-full min-w-[640px] table-auto">
@@ -228,8 +249,8 @@ const MaterialPage = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {Array.isArray(materials) && materials.length > 0 ? (
-                                materials.map((material, index) => {
+                            {filteredMaterials.length > 0 ? (
+                                filteredMaterials.map((material, index) => {
                                     const className = `py-3 px-5 ${index === materials.length - 1 ? "" : "border-b border-blue-gray-50"}`;
                                     const actualIndex = currentPage * pageSize + index + 1;
 
