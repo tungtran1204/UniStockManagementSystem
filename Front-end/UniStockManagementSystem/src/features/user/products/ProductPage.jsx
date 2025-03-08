@@ -1,14 +1,9 @@
 import React, { useEffect, useState } from "react";
 import useProduct from "./useProduct";
-import EditProductModal from './EditProductModal';
-import CreateProductModal from './CreateProductModal';
 import { Button, IconButton } from "@material-tailwind/react";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
-import { FaLayerGroup } from "react-icons/fa";
 import { FaEdit, FaFileExcel, FaPlus } from "react-icons/fa";
-import BillOfMaterialsModal from "./BillOfMaterialsModal";
 import ReactPaginate from "react-paginate";
-
 import axios from "axios";
 import {
   importExcel,
@@ -24,11 +19,13 @@ import {
   Typography,
   Tooltip,
   Switch,
+  Input,
 } from "@material-tailwind/react";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 
 const ProductPage = () => {
+  const navigate = useNavigate();
   // Sử dụng useProduct hook
   const {
     products,
@@ -44,12 +41,7 @@ const ProductPage = () => {
   } = useProduct();
 
   // Các state trong component
-  const [showMaterialsModal, setShowMaterialsModal] = useState(false);
-  const [selectedProductForMaterials, setSelectedProductForMaterials] = useState(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const [showImportPopup, setShowImportPopup] = useState(false);
-  const [showCreatePopup, setShowCreatePopup] = useState(false);
   const [file, setFile] = useState(null);
   const [localLoading, setLocalLoading] = useState(false);
   const [units, setUnits] = useState([]);
@@ -88,14 +80,8 @@ const ProductPage = () => {
     fetchData();
   }, []);
 
-  const handleOpenMaterialsModal = (product) => {
-    setSelectedProductForMaterials(product);
-    setShowMaterialsModal(true);
-  };
-
   const handleEdit = (product) => {
-    setSelectedProduct(product);
-    setShowEditModal(true);
+    navigate(`/user/products/${product.productId}`);
   };
 
   const handleUpdateSuccess = () => {
@@ -123,43 +109,21 @@ const ProductPage = () => {
     }
   };
 
-  const handleCreateProduct = async () => {
-    try {
-      setLocalLoading(true);
-      await createProduct(newProduct);
-      alert("Tạo sản phẩm thành công!");
-      fetchPaginatedProducts();
-      setShowCreatePopup(false);
-      setNewProduct({
-        productCode: "",
-        productName: "",
-        description: "",
-        unitId: "",
-        typeId: "",
-        isProductionActive: "true"
-      });
-    } catch (error) {
-      console.error("Chi tiết lỗi:", error);
-
-      if (error.response) {
-        const errorMessage = error.response.data.message ||
-          error.response.data.error ||
-          "Lỗi khi tạo sản phẩm! Vui lòng thử lại.";
-
-        alert(errorMessage);
-      } else if (error.request) {
-        alert("Không thể kết nối tới máy chủ. Vui lòng kiểm tra kết nối.");
-      } else {
-        alert("Lỗi khi tạo sản phẩm! Vui lòng thử lại.");
-      }
-    } finally {
-      setLocalLoading(false);
-    }
-  };
-
   const handlePageChangeWrapper = (selectedItem) => {
     handlePageChange(selectedItem.selected);
   };
+
+  const handleAddProduct = () => {
+    navigate("/user/products/add");
+  };
+
+  // Add this function
+  const filteredProducts = Array.isArray(products) 
+    ? products.filter(product => 
+        product.productCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.productName?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
 
   return (
     <div className="mt-2 mb-8 flex flex-col gap-12">
@@ -210,9 +174,8 @@ const ProductPage = () => {
                   "STT",
                   "Mã sản phẩm",
                   "Tên sản phẩm",
-                  "Mô tả",
                   "Đơn vị",
-                  "Dòng sản phẩm",
+                  "Dòng sản phẩm", 
                   "Hình ảnh",
                   "Trạng thái",
                   "Thao tác",
@@ -226,8 +189,8 @@ const ProductPage = () => {
               </tr>
             </thead>
             <tbody>
-              {Array.isArray(products) && products.length > 0 ? (
-                products.map((product, index) => {
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map((product, index) => {
                   const className = `py-3 px-5 ${index === products.length - 1 ? "" : "border-b border-blue-gray-50"}`;
                   const actualIndex = currentPage * pageSize + index + 1;
 
@@ -246,11 +209,6 @@ const ProductPage = () => {
                       <td className={className}>
                         <Typography className="text-xs font-semibold text-blue-gray-600">
                           {product.productName}
-                        </Typography>
-                      </td>
-                      <td className={className}>
-                        <Typography className="text-xs font-normal text-blue-gray-600">
-                          {product.description || "N/A"}
                         </Typography>
                       </td>
                       <td className={className}>
@@ -304,18 +262,10 @@ const ProductPage = () => {
                         <div className="flex items-center gap-2">
                           <Tooltip content="Chỉnh sửa">
                             <button
-                              onClick={() => handleEdit(product)}
+                              onClick={() => navigate(`/user/products/${product.productId}`)}
                               className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
                             >
                               <FaEdit className="h-4 w-4" />
-                            </button>
-                          </Tooltip>
-                          <Tooltip content="Định mức nguyên vật liệu">
-                            <button
-                              onClick={() => handleOpenMaterialsModal(product)}
-                              className="p-2 rounded-full bg-green-500 hover:bg-green-600 text-white"
-                            >
-                              <FaLayerGroup className="h-4 w-4" />
                             </button>
                           </Tooltip>
                         </div>
@@ -325,7 +275,7 @@ const ProductPage = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan="10" className="border-b border-gray-200 px-3 py-4 text-center text-gray-500">
+                  <td colSpan="8" className="border-b border-gray-200 px-3 py-4 text-center text-gray-500">
                     Không có dữ liệu
                   </td>
                 </tr>
@@ -360,29 +310,6 @@ const ProductPage = () => {
           </div>
         </CardBody>
       </Card>
-
-      <BillOfMaterialsModal
-        show={showMaterialsModal}
-        onClose={() => {
-          setShowMaterialsModal(false);
-          setSelectedProductForMaterials(null);
-        }}
-        product={selectedProductForMaterials}
-        onUpdate={fetchPaginatedProducts}
-      />
-
-      <CreateProductModal
-        show={showCreatePopup}
-        onClose={() => {
-          setShowCreatePopup(false);
-        }}
-        loading={localLoading}
-        newProduct={newProduct}
-        setNewProduct={setNewProduct}
-        handleCreateProduct={handleCreateProduct}
-        units={units}
-        productTypes={productTypes}
-      />
 
       {showImportPopup && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -423,18 +350,6 @@ const ProductPage = () => {
           </div>
         </div>
       )}
-
-      <EditProductModal
-        show={showEditModal}
-        onClose={() => {
-          setShowEditModal(false);
-          setSelectedProduct(null);
-        }}
-        product={selectedProduct}
-        onUpdate={handleUpdateSuccess}
-        units={units}
-        productTypes={productTypes}
-      />
     </div>
   );
 };

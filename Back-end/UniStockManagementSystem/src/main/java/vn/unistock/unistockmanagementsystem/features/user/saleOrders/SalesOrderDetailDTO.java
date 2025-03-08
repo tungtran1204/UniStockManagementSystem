@@ -16,13 +16,10 @@ public class SalesOrderDetailDTO {
     private Long orderDetailId;
     private Long orderId;
     private Long productId;
+    private String productCode;
     private String productName; // Added for UI display
     private Integer quantity;
     private String unitName; // Đơn vị tính
 
-    // Audit fields
-    private LocalDateTime createdAt;
-    private Long createdBy;
-    private LocalDateTime updatedAt;
-    private Long updatedBy;
+
 }

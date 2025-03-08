@@ -19,7 +19,8 @@ import {
 import {
     CardBody,
     Tooltip,
-    Switch
+    Switch,
+    Input
 } from "@material-tailwind/react";
 
 const MaterialPage = () => {
@@ -149,6 +150,15 @@ const MaterialPage = () => {
         handlePageChange(selectedItem.selected);
     };
 
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const filteredMaterials = Array.isArray(materials) 
+        ? materials.filter(material => 
+            material.materialCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            material.materialName?.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        : [];
+
     return (
         <div className="mt-2 mb-8 flex flex-col gap-12">
             <Card className="bg-gray-100 p-7">
@@ -219,8 +229,8 @@ const MaterialPage = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {Array.isArray(materials) && materials.length > 0 ? (
-                                materials.map((material, index) => {
+                            {filteredMaterials.length > 0 ? (
+                                filteredMaterials.map((material, index) => {
                                     const className = `py-3 px-5 ${index === materials.length - 1 ? "" : "border-b border-blue-gray-50"}`;
                                     const actualIndex = currentPage * pageSize + index + 1;
 

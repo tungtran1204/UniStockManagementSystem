@@ -33,38 +33,21 @@ const SaleOrdersPage = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
-  // State quản lý mở modal Thêm đơn hàng
-  const [openAddModal, setOpenAddModal] = useState(false);
-  // State quản lý “mã đơn hàng tiếp theo”
-  const [nextOrderCode, setNextOrderCode] = useState("");
-
-  // Nếu cần edit:
-  // const [openEditModal, setOpenEditModal] = useState(false);
-  // const [selectedSaleOrder, setSelectedSaleOrder] = useState(null);
 
   useEffect(() => {
     // Gọi API lấy danh sách khi thay đổi trang/pageSize
     fetchPaginatedSaleOrders(currentPage, pageSize);
   }, [currentPage, pageSize]);
 
-  // Hàm mở modal Thêm đơn hàng
-  const handleOpenAddModal = async () => {
-    try {
-      const code = await getNextCode(); // Gọi API lấy mã tiếp theo
-      setNextOrderCode(code);
-      setOpenAddModal(true); // Mở modal
-    } catch (error) {
-      console.error("❌ Lỗi khi lấy mã đơn hàng:", error);
-    }
-  };
+  const navigate = useNavigate(); // ✅ Định nghĩa useNavigate
 
-  // Nếu cần edit:
-  // const handleEditOrder = (saleOrder) => {
-  //   setSelectedSaleOrder(saleOrder);
-  //   setOpenEditModal(true);
-  // };
 
-  // Phân trang
+  const handleAddOrder = async () => {
+    const code = await getNextCode();
+    // setNextOrderCode(code);
+    navigate("/user/sale-orders/add", { state: { nextCode: code } });
+  }; 
+
   const handlePageChange = (selectedItem) => {
     setCurrentPage(selectedItem.selected);
   };
@@ -79,7 +62,7 @@ const SaleOrdersPage = () => {
   );
 
   return (
-    <div className="mt-2 mb-8 flex flex-col gap-12">
+    <div className="mt-12 mb-8 flex flex-col gap-12">
       {/* ✅ Modal Thêm đơn hàng (chỉ render khi openAddModal = true) */}
       {openAddModal && (
         <ModalAddSaleOrder
@@ -91,14 +74,25 @@ const SaleOrdersPage = () => {
         />
       )}
 
-      <Card className="bg-gray-100 p-7">
-        <PageHeader
-          title="Danh sách đơn hàng"
-          addButtonLabel="Thêm đơn hàng"
-          onAdd={handleOpenAddModal}
-          showImport={false}
-          showExport={false}
-        />
+      <Card>
+        <CardHeader
+          variant="gradient"
+          color="gray"
+          className="mb-8 p-6 flex justify-between items-center"
+        >
+          <Typography variant="h6" color="white">
+            Danh sách đơn hàng
+          </Typography>
+          <Button
+            size="sm"
+            color="white"
+            variant="text"
+            className="flex items-center gap-2"
+            onClick={handleOpenAddModal}
+          >
+            <FaPlus className="h-4 w-4" /> Thêm đơn hàng
+          </Button>
+        </CardHeader>
 
         <CardBody className="pb-2 bg-white rounded-xl">
           {/* Tìm kiếm & pageSize */}

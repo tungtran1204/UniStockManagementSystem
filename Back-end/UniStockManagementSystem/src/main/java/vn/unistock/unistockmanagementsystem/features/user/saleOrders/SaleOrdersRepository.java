@@ -12,4 +12,5 @@ public interface SaleOrdersRepository extends JpaRepository<SalesOrder, Long> {
 
     @Query("SELECT COALESCE(MAX(s.orderId), 0) FROM SalesOrder s")
     Long findMaxOrderId();
+
 }

@@ -28,6 +28,8 @@ import AddSaleOrderPage from "../features/user/saleorders/AddSaleOrderPage";
 import AddReceiptNote from "../features/user/receiptNote/AddReceiptNote";
 import IssueNotePage from "../features/user/issueNote/IssueNotePage";
 import AddIssueNote from "../features/user/receiptNote/AddReceiptNote";
+import AddProductPage from "@/features/user/products/AddProductPage";
+import DetailProductPage from "@/features/user/products/DetailProductPage";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -97,14 +99,14 @@ export const routes = [
           {
             icon: <Bars3BottomRightIcon {...icon} />,
             name: "Quản lí nhập kho",
-            path: "/user/receiptNote/list",
+            path: "/user/receiptNote",
             element: <ReceiptNotePage />,
             roles: ["USER"],
           },
           {
             icon: <Bars3BottomRightIcon {...icon} />,
             name: "Quản lí xuất kho",
-            path: "/user/issueNote/list",
+            path: "/user/issueNote",
             element: <IssueNotePage />,
             roles: ["USER"],
           },
@@ -119,14 +121,14 @@ export const routes = [
       },
       {
         icon: <TableCellsIcon {...icon} />,
-        name: "Quản lý sản phẩm",
+        name: "Sản phẩm",
         path: "/user/products",
         element: <ProductPage />,
         roles: ["USER"],
       },
       {
         icon: <TableCellsIcon {...icon} />, // Sử dụng TableCellsIcon cho phần quản lý nguyên vật liệu
-        name: "Quản lý nguyên vật liệu",
+        name: "Vật tư",
         path: "/user/materials",
         element: <MaterialPage />,
         roles: ["USER"],
@@ -201,6 +203,18 @@ export const routes = [
         name: "Thêm phiếu xuất",
         path: "/user/issueNote/add",
         element: <AddIssueNote />, // Trang quản lý đơn hàng 
+        roles: ["USER"],
+      },
+      {
+        icon: <TableCellsIcon {...icon} />,
+        name: "Thêm sản phẩm",
+        path: "/user/products/add",
+        element: <AddProductPage />,
+        roles: ["USER"],
+      },
+      {
+        path: "/user/products/:id",
+        element: <DetailProductPage />,
         roles: ["USER"],
       },
     ],
