@@ -5,7 +5,6 @@ import DashboardNavbar from "../components/DashboardNavbar";
 import { useMaterialTailwindController } from "../context";
 import routes from "../routes/routes";
 import { useLocation } from "react-router-dom";
-// import Configurator from "../components/Configurator";
 
 const MainLayout = ({ children }) => {
   const [controller] = useMaterialTailwindController();
@@ -31,9 +30,9 @@ const MainLayout = ({ children }) => {
 
       {/* Nội dung chính */}
       <div
-        className={`flex flex-col w-full pt-4 transition-all duration-300 ${
-          openSidenav ? "xl:ml-72" : "ml-0"
-        }`}
+        className={`flex flex-col transition-all pt-4 duration-300 ${
+        openSidenav ? "xl:ml-72 xl:w-[calc(100%-288px)]" : "ml-0 w-full"
+          }`}
       >
         <DashboardNavbar />
         {/* <Configurator /> */}
