@@ -1,37 +1,26 @@
 package vn.unistock.unistockmanagementsystem.features.user.products;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsDTO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
-@Getter
-@Setter
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class    ProductsDTO {
-    
+public class ProductsDTO {
     private Long productId;
-
     private String productCode;
-    
     private String productName;
-    
+    private String description;
     private Long unitId;
     private String unitName;
-    
     private Long typeId;
     private String typeName;
-
-    private String description;
-    private String imageUrl;
     private Boolean isProductionActive;
-    private MultipartFile image;
-    private List<ProductMaterialsDTO> materials;
+    private String imageUrl;
+    private LocalDateTime createdAt;
+    private String createdBy;
+    private MultipartFile image; // Dùng cho upload file
+    private List<ProductMaterialsDTO> materials; // Danh sách định mức vật tư
 }

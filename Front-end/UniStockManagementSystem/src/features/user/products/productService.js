@@ -36,7 +36,7 @@ export const getAllProducts = async (page = 0, size = 10) => {
       };
     }
   } catch (error) {
-    console.error("❌ Lỗi khi lấy danh sách sản phẩm:", error);
+    console.error("❌ Lỗi khi lấy danh sách sản phẩm:", error.response?.data || error.message);
     throw error;
   }
 };
@@ -47,9 +47,10 @@ export const getProductById = async (productId) => {
     const response = await axios.get(`${API_URL}/${productId}`, {
       headers: authHeader(),
     });
+    console.log("📌 [getProductById] API Response:", response.data);
     return response.data;
   } catch (error) {
-    console.error(`❌ Lỗi khi lấy sản phẩm có ID ${productId}:`, error);
+    console.error(`❌ Lỗi khi lấy sản phẩm có ID ${productId}:`, error.response?.data || error.message);
     throw error;
   }
 };
@@ -63,14 +64,13 @@ export const createProduct = async (productData) => {
     formData.append("productName", productData.productName.trim());
     formData.append("description", productData.description?.trim() || "");
     formData.append("unitId", parseInt(productData.unitId) || "");
-    formData.append("productTypeId", parseInt(productData.productTypeId) || "");
+    formData.append("typeId", parseInt(productData.productTypeId) || "");
     formData.append("isProductionActive", productData.isProductionActive === true || productData.isProductionActive === "true");
 
     if (productData.image) {
       formData.append("image", productData.image);
     }
 
-    // Thêm định mức nguyên vật liệu (đã được lọc bỏ id trong CreateProductModal)
     formData.append("materials", JSON.stringify(productData.materials || []));
 
     const response = await axios.post(
@@ -95,12 +95,39 @@ export const createProduct = async (productData) => {
 // Cập nhật sản phẩm
 export const updateProduct = async (productId, productData) => {
   try {
-    const response = await axios.put(`${API_URL}/${productId}`, productData, {
-      headers: {
-        ...authHeader(),
-        "Content-Type": "application/json",
-      },
-    });
+    const formData = new FormData();
+
+    formData.append("productCode", productData.productCode?.trim() || "");
+    formData.append("productName", productData.productName.trim());
+    formData.append("description", productData.description?.trim() || "");
+    formData.append("unitId", parseInt(productData.unitId) || "");
+    formData.append("typeId", parseInt(productData.typeId) || "");
+    formData.append("isProductionActive", productData.isProductionActive === true || productData.isProductionActive === "true");
+
+    if (productData.image) {
+      formData.append("image", productData.image);
+    }
+
+    // Lọc và chuẩn hóa materials trước khi gửi
+    const filteredMaterials = (productData.materials || []).map(material => ({
+      materialId: material.materialId,
+      quantity: material.quantity,
+      materialCode: material.materialCode,
+      materialName: material.materialName
+    }));
+    formData.append("materials", JSON.stringify(filteredMaterials));
+
+    const response = await axios.put(
+      `${API_URL}/${productId}`,
+      formData,
+      {
+        headers: {
+          ...authHeader(),
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
     console.log("✅ [updateProduct] API Response:", response.data);
     return response.data;
   } catch (error) {
@@ -120,7 +147,7 @@ export const toggleProductStatus = async (productId) => {
     console.log("✅ [toggleProductStatus] API Response:", response.data);
     return response.data;
   } catch (error) {
-    console.error("❌ Lỗi khi thay đổi trạng thái sản phẩm:", error);
+    console.error("❌ Lỗi khi thay đổi trạng thái sản phẩm:", error.response?.data || error.message);
     throw error;
   }
 };
@@ -131,9 +158,10 @@ export const fetchUnits = async () => {
     const response = await axios.get("http://localhost:8080/api/unistock/user/units", {
       headers: authHeader(),
     });
+    console.log("📌 [fetchUnits] API Response:", response.data);
     return response.data;
   } catch (error) {
-    console.error("❌ Lỗi khi lấy danh sách đơn vị:", error);
+    console.error("❌ Lỗi khi lấy danh sách đơn vị:", error.response?.data || error.message);
     throw error;
   }
 };
@@ -144,23 +172,25 @@ export const fetchProductTypes = async () => {
     const response = await axios.get("http://localhost:8080/api/unistock/user/product-types", {
       headers: authHeader(),
     });
+    console.log("📌 [fetchProductTypes] API Response:", response.data);
     return response.data;
   } catch (error) {
-    console.error("❌ Lỗi khi lấy danh sách dòng sản phẩm:", error);
+    console.error("❌ Lỗi khi lấy danh sách dòng sản phẩm:", error.response?.data || error.message);
     throw error;
   }
 };
 
 // Kiểm tra mã sản phẩm đã tồn tại
-export const checkProductCodeExists = async (productCode) => {
+export const checkProductCodeExists = async (productCode, excludeId = null) => {
   try {
     const response = await axios.get(
       `${API_URL}/check-product-code/${productCode}`,
-      { headers: authHeader() }
+      { headers: authHeader(), params: { excludeId } }
     );
+    console.log("📌 [checkProductCodeExists] API Response:", response.data);
     return response.data.exists;
   } catch (error) {
-    console.error("❌ Lỗi kiểm tra mã sản phẩm:", error);
+    console.error("❌ Lỗi kiểm tra mã sản phẩm:", error.response?.data || error.message);
     throw error;
   }
 };
@@ -182,7 +212,7 @@ export const importExcel = async (file) => {
       }
     );
 
-    console.log("✅ [importExcel] Import thành công");
+    console.log("✅ [importExcel] Import thành công:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Lỗi khi import file:", error.response?.data || error.message);
@@ -224,7 +254,7 @@ export const exportExcel = async () => {
     const buffer = await workbook.xlsx.writeBuffer();
     saveAs(new Blob([buffer]), "San_pham.xlsx");
   } catch (error) {
-    console.error("❌ Lỗi khi export Excel:", error);
+    console.error("❌ Lỗi khi export Excel:", error.response?.data || error.message);
     throw error;
   }
 };

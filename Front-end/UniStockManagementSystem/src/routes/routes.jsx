@@ -28,6 +28,8 @@ import AddSaleOrderPage from "../features/user/saleorders/AddSaleOrderPage";
 import AddReceiptNote from "../features/user/receiptNote/AddReceiptNote";
 import IssueNotePage from "../features/user/issueNote/IssueNotePage";
 import AddIssueNote from "../features/user/receiptNote/AddReceiptNote";
+import AddProductPage from "@/features/user/products/AddProductPage";
+import DetailProductPage from "@/features/user/products/DetailProductPage";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -201,6 +203,18 @@ export const routes = [
         name: "Thêm phiếu xuất",
         path: "/user/issueNote/add",
         element: <AddIssueNote />, // Trang quản lý đơn hàng 
+        roles: ["USER"],
+      },
+      {
+        icon: <TableCellsIcon {...icon} />,
+        name: "Thêm sản phẩm",
+        path: "/user/products/add",
+        element: <AddProductPage />,
+        roles: ["USER"],
+      },
+      {
+        path: "/user/products/:id",
+        element: <DetailProductPage />,
         roles: ["USER"],
       },
     ],

@@ -21,9 +21,9 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/unistock/user/products") // ✅ API dành riêng cho User
+@RequestMapping("/api/unistock/user/products")
 @RequiredArgsConstructor
-public class    ProductsController {
+public class ProductsController {
     private final ProductsService productsService;
     private final AzureBlobService azureBlobService;
     private final ExcelService excelService;
@@ -43,8 +43,6 @@ public class    ProductsController {
         return ResponseEntity.ok(productsService.getProductById(id));
     }
 
-
-
     // 🟢 API import sản phẩm từ file Excel
     @PostMapping("/import")
     public ResponseEntity<String> importProducts(@RequestParam("file") MultipartFile file) {
@@ -62,7 +60,6 @@ public class    ProductsController {
         return ResponseEntity.ok(productsService.toggleProductionStatus(id));
     }
 
-
     // 🟢 API THÊM SẢN PHẨM MỚI
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createProduct(
@@ -74,7 +71,6 @@ public class    ProductsController {
             @RequestParam(value = "isProductionActive", required = false, defaultValue = "true") Boolean isProductionActive,
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam("materials") String materialsJson) throws IOException {
-
         try {
             // Parse JSON materials
             ObjectMapper objectMapper = new ObjectMapper();
@@ -100,7 +96,6 @@ public class    ProductsController {
         }
     }
 
-
     @GetMapping("/check-product-code/{productCode}")
     public ResponseEntity<Map<String, Boolean>> checkProductCode(
             @PathVariable String productCode,
@@ -112,32 +107,45 @@ public class    ProductsController {
         return ResponseEntity.ok(response);
     }
 
-
-
-    // 🟢 API CẬP NHẬT SẢN PHẨM MỚI
+    // 🟢 API CẬP NHẬT SẢN PHẨM
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ProductsDTO> updateProduct(
+    public ResponseEntity<?> updateProduct(
             @PathVariable Long id,
             @RequestParam("productCode") String productCode,
             @RequestParam("productName") String productName,
-            @RequestParam("description") String description,
+            @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "unitId", required = false) Long unitId,
             @RequestParam(value = "typeId", required = false) Long typeId,
-            @RequestParam(value = "isProductionActive", required = false) Boolean isProductionActive,
-            @RequestParam(value = "image", required = false) MultipartFile image
-    ) throws IOException {
-        ProductsDTO productDTO = new ProductsDTO();
-        productDTO.setProductCode(productCode);
-        productDTO.setProductName(productName);
-        productDTO.setDescription(description);
-        productDTO.setUnitId(unitId);
-        productDTO.setTypeId(typeId);
-        productDTO.setIsProductionActive(isProductionActive);
+            @RequestParam(value = "isProductionActive", required = false, defaultValue = "true") Boolean isProductionActive,
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "materials", required = false) String materialsJson) throws IOException {
+        try {
+            // Parse JSON materials nếu có
+            List<ProductMaterialsDTO> materials = null;
+            if (materialsJson != null && !materialsJson.trim().isEmpty()) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                materials = objectMapper.readValue(materialsJson, new TypeReference<List<ProductMaterialsDTO>>() {});
+            } else {
+                log.warn("materialsJson is null or empty, setting materials to null in DTO");
+            }
 
-        return ResponseEntity.ok(productsService.updateProduct(id, productDTO, image));
+            // Tạo ProductsDTO
+            ProductsDTO dto = new ProductsDTO();
+            dto.setProductCode(productCode);
+            dto.setProductName(productName);
+            dto.setDescription(description);
+            dto.setUnitId(unitId);
+            dto.setTypeId(typeId);
+            dto.setIsProductionActive(isProductionActive);
+            dto.setImage(image);
+            dto.setMaterials(materials);
+
+            // Gọi service để cập nhật sản phẩm và định mức
+            ProductsDTO updatedProduct = productsService.updateProduct(id, dto, image);
+            return ResponseEntity.ok(updatedProduct);
+        } catch (Exception e) {
+            log.error("Lỗi khi cập nhật sản phẩm với định mức: ", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lỗi khi cập nhật sản phẩm: " + e.getMessage());
+        }
     }
-
-
-
-
 }
