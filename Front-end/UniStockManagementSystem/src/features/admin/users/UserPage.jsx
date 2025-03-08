@@ -17,6 +17,8 @@ import ModalEditUser from "./ModalEditUser";
 import { getUserById } from "./userService";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import PageHeader from '@/components/PageHeader';
+import TableSearch from '@/components/TableSearch';
 
 const UserPage = () => {
   const {
@@ -67,29 +69,24 @@ const UserPage = () => {
   );
 
   return (
-    <div className="mt-12 mb-8 flex flex-col gap-12">
-      <Card>
-          <Typography variant="h6" color="white">
-            Danh sách người dùng
-          </Typography>
-          <Button
-            size="sm"
-            color="white"
-            variant="text"
-            className="flex items-center gap-2"
-            onClick={() => setOpenAddModal(true)}
-          >
-            <FaPlus className="h-4 w-4" /> Thêm Người Dùng
-          </Button>
+    <div className="mt-2 mb-8 flex flex-col gap-12">
+      <Card className="bg-gray-100 p-7">
+        <PageHeader
+          title="Danh sách Người Dùng"
+          addButtonLabel="Thêm người dùng"
+          onAdd={() => setOpenAddModal(true)}
+          showImport={false}
+          showExport={false}
+        />
 
-        <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
+        <CardBody className="pb-2 bg-white rounded-xl overflow-x-auto">
           {/* Chọn số items/trang + Tìm kiếm */}
-          <div className="px-4 py-2 flex items-center gap-2">
+          <div className="px-4 py-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Typography
                 variant="small"
                 color="blue-gray"
-                className="font-normal whitespace-nowrap"
+                className="font-light"
               >
                 Hiển thị
               </Typography>
@@ -99,7 +96,7 @@ const UserPage = () => {
                   setPageSize(Number(e.target.value));
                   setCurrentPage(0);
                 }}
-                className="border rounded px-2 py-1"
+                className="border text-sm rounded px-2 py-1"
               >
                 {[5, 10, 20, 50].map((size) => (
                   <option key={size} value={size}>
@@ -110,23 +107,25 @@ const UserPage = () => {
               <Typography
                 variant="small"
                 color="blue-gray"
-                className="font-normal whitespace-nowrap"
+                className="font-normal"
               >
-                người dùng mỗi trang
+                bản ghi mỗi trang
               </Typography>
             </div>
-            <div className="flex items-center gap-2">
-              <Input
-                label="Tìm kiếm người dùng"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64"
-              />
-            </div>
+            <TableSearch
+              value={searchTerm}
+              onChange={setSearchTerm}
+              onSearch={() => {
+                // Thêm hàm xử lý tìm kiếm vào đây nếu có
+                console.log("Tìm kiếm người dùng:", searchTerm);
+              }}
+              placeholder="Tìm kiếm người dùng"
+            />
+
           </div>
 
           {/* Bảng danh sách user */}
-          <table className="w-full min-w-[640px] table-auto">
+          <table className="w-full min-w-[640px] table-auto border border-gray-200">
             <thead>
               <tr>
                 {["STT", "Người dùng", "Vai trò", "Trạng thái", "Hành động"].map(
@@ -167,9 +166,8 @@ const UserPage = () => {
                   ) => {
                     // Tính lớp CSS dòng
                     const isLast = index === filteredUsers.length - 1;
-                    const className = `py-3 px-5 ${
-                      isLast ? "" : "border-b border-blue-gray-50"
-                    }`;
+                    const className = `py-3 px-5 ${isLast ? "" : "border-b border-blue-gray-50"
+                      }`;
 
                     // Tính STT: offset = currentPage * pageSize
                     const stt = currentPage * pageSize + (index + 1);
@@ -215,8 +213,8 @@ const UserPage = () => {
                           <Typography className="text-xs font-semibold text-blue-gray-600">
                             {Array.isArray(roleNames)
                               ? roleNames
-                                  .filter((role) => role !== "USER")
-                                  .join(", ")
+                                .filter((role) => role !== "USER")
+                                .join(", ")
                               : roleNames}
                           </Typography>
                         </td>
@@ -280,34 +278,34 @@ const UserPage = () => {
               )}
             </tbody>
           </table>
-        </CardBody>
 
-        {/* PHÂN TRANG */}
-        <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
-          <div className="flex items-center gap-2">
-            <Typography variant="small" color="blue-gray" className="font-normal">
-              Trang {currentPage + 1} / {totalPages} • {totalElements} người dùng
-            </Typography>
+          {/* PHÂN TRANG */}
+          <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+            <div className="flex items-center gap-2">
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                Trang {currentPage + 1} / {totalPages} • {totalElements} người dùng
+              </Typography>
+            </div>
+            <ReactPaginate
+              previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
+              nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
+              breakLabel="..."
+              pageCount={totalPages}
+              marginPagesDisplayed={2}
+              pageRangeDisplayed={5}
+              onPageChange={handlePageChange}
+              containerClassName="flex items-center gap-1"
+              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              pageLinkClassName="flex items-center justify-center w-full h-full"
+              previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
+              activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+              forcePage={currentPage}
+              disabledClassName="opacity-50 cursor-not-allowed"
+            />
           </div>
-          <ReactPaginate
-            previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
-            nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
-            breakLabel="..."
-            pageCount={totalPages}
-            marginPagesDisplayed={2}
-            pageRangeDisplayed={5}
-            onPageChange={handlePageChange}
-            containerClassName="flex items-center gap-1"
-            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-            pageLinkClassName="flex items-center justify-center w-full h-full"
-            previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-            nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-            breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-            activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
-            forcePage={currentPage}
-            disabledClassName="opacity-50 cursor-not-allowed"
-          />
-        </div>
+        </CardBody>
       </Card>
 
       {/* Modal Thêm Người Dùng */}
@@ -318,7 +316,7 @@ const UserPage = () => {
           fetchUsers={fetchPaginatedUsers}
         />
       )}
-      
+
       {/* Modal Chỉnh Sửa Người Dùng */}
       {openEditModal && (
         <ModalEditUser

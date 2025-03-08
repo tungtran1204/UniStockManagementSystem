@@ -11,6 +11,8 @@ import {
 } from "@material-tailwind/react";
 import { FaPlus, FaEdit } from "react-icons/fa";
 import useRole from "./useRole";
+import PageHeader from '@/components/PageHeader';
+import TableSearch from '@/components/TableSearch';
 
 export const PERMISSION_CATEGORIES = {
   "Sản phẩm": ["viewProduct", "manageProduct"],
@@ -148,38 +150,31 @@ function RolePage() {
   const allRoles = [...filteredRoles, ...tempRoles];
 
   return (
-    <div className="mt-12 mb-8 flex flex-col gap-12">
-      <Card>
-        
-<div className="bg-blue-gray-50/50 flex justify-between items-center px-4 py-3">
-        <Typography variant="h6" color="black" className="text-sm">
-          Danh sách Vai Trò
-        </Typography>
-        <Button
-            size="sm"
-            color="green"  // Changed from "white" to "green"
-            className="flex items-center gap-2"
-            onClick={onAddTempRole}
-          >
-            <FaPlus className="h-4 w-4" /> Thêm vai trò
-          </Button>
-      </div>
-        <CardBody className="overflow-x-scroll px-0 pt-0 pb-2 ">
+    <div className="mt-2 mb-8 flex flex-col gap-12">
+      <Card className="bg-gray-100 p-7">
+        <PageHeader
+          title="Danh sách Vai Trò"
+          addButtonLabel="Thêm vai trò"
+          onAdd={onAddTempRole}
+          showImport={false}
+          showExport={false}
+        />
+        <CardBody className="pb-2 bg-white rounded-xl overflow-x-auto">
           {saveError && (
             <Typography color="red" className="mb-4 text-center">
               {saveError}
             </Typography>
           )}
-          <table className="w-full min-w-[640px] table-auto">
+          <table className="w-full min-w-[640px] table-auto overflow-x-auto">
             <thead>
               <tr>
-                <th className="border-b border-blue-gray-50 py-3 px-5 text-center">
+                <th className="border-b border-blue-gray-50 py-3 px-5 text-center sticky left-0 bg-white z-10">
                   <Typography
                     variant="small"
                     className="text-[11px] font-bold uppercase text-blue-gray-400"
                   ></Typography>
                 </th>
-                <th className="border-b border-blue-gray-50 py-3 px-5 text-center">
+                <th className="border-b border-blue-gray-50 py-3 px-5 text-center sticky left-[68.5px] bg-white z-10">
                   <Typography
                     variant="small"
                     className="text-[11px] font-bold uppercase text-blue-gray-400"
@@ -203,7 +198,7 @@ function RolePage() {
                 ))}
               </tr>
               <tr>
-                <th className="border-b border-blue-gray-50 py-3 px-5 text-left">
+                <th className="border-b border-blue-gray-50 py-3 px-5 text-left sticky left-0 bg-white z-10">
                   <Typography
                     variant="small"
                     className="text-[11px] font-bold uppercase text-blue-gray-400"
@@ -211,7 +206,7 @@ function RolePage() {
                     STT
                   </Typography>
                 </th>
-                <th className="border-b border-blue-gray-50 py-3 px-5 text-center">
+                <th className="border-b border-blue-gray-50 py-3 px-5 text-center sticky left-[68.5px] bg-white z-10">
                   <Typography
                     variant="small"
                     className="text-[11px] font-bold uppercase text-blue-gray-400"
@@ -243,7 +238,7 @@ function RolePage() {
                   return (
                     <React.Fragment key={role.id}>
                       <tr>
-                        <td className={getTdClassName(isLast)}>
+                        <td className={`${getTdClassName(isLast)} sticky left-0 bg-white z-10`}>
                           <Typography
                             variant="small"
                             color="blue-gray"
@@ -252,7 +247,7 @@ function RolePage() {
                             {idx + 1}
                           </Typography>
                         </td>
-                        <td className={getTdClassName(isLast)}>
+                        <td className={`${getTdClassName(isLast)} sticky left-[68.5px] bg-white z-10`}>
                           <div className="flex items-center justify-between">
                             <div className="flex flex-col gap-2 min-w-[200px]">
                               {editingRole === role.id && !role.isTemp ? (

@@ -62,7 +62,7 @@ const SaleOrdersPage = () => {
   );
 
   return (
-    <div className="mt-12 mb-8 flex flex-col gap-12">
+    <div className="mt-2 mb-8 flex flex-col gap-12">
       {/* ✅ Modal Thêm đơn hàng (chỉ render khi openAddModal = true) */}
       {openAddModal && (
         <ModalAddSaleOrder
@@ -74,25 +74,14 @@ const SaleOrdersPage = () => {
         />
       )}
 
-      <Card>
-        <CardHeader
-          variant="gradient"
-          color="gray"
-          className="mb-8 p-6 flex justify-between items-center"
-        >
-          <Typography variant="h6" color="white">
-            Danh sách đơn hàng
-          </Typography>
-          <Button
-            size="sm"
-            color="white"
-            variant="text"
-            className="flex items-center gap-2"
-            onClick={handleOpenAddModal}
-          >
-            <FaPlus className="h-4 w-4" /> Thêm đơn hàng
-          </Button>
-        </CardHeader>
+      <Card className="bg-gray-100 p-7">
+        <PageHeader
+          title="Danh sách đơn hàng"
+          addButtonLabel="Thêm đơn hàng"
+          onAdd={handleOpenAddModal}
+          showImport={false}
+          showExport={false}
+        />
 
         <CardBody className="pb-2 bg-white rounded-xl">
           {/* Tìm kiếm & pageSize */}

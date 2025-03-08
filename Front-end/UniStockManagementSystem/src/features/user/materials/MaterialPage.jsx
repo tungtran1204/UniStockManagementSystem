@@ -150,8 +150,6 @@ const MaterialPage = () => {
         handlePageChange(selectedItem.selected);
     };
 
-    const [searchTerm, setSearchTerm] = useState("");
-
     const filteredMaterials = Array.isArray(materials) 
         ? materials.filter(material => 
             material.materialCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
