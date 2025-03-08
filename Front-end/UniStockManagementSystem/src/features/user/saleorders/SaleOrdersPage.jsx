@@ -13,7 +13,9 @@ import useSaleOrder from "./useSaleOrder";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
-import ModalAddSaleOrder from "./ModalAddSaleOrder"; 
+import ModalAddSaleOrder from "./ModalAddSaleOrder";
+import PageHeader from '@/components/PageHeader';
+import TableSearch from '@/components/TableSearch';
 // Nếu cần edit:
 // import ModalEditSaleOrder from "./ModalEditSaleOrder";
 
@@ -77,7 +79,7 @@ const SaleOrdersPage = () => {
   );
 
   return (
-    <div className="mt-12 mb-8 flex flex-col gap-12">
+    <div className="mt-2 mb-8 flex flex-col gap-12">
       {/* ✅ Modal Thêm đơn hàng (chỉ render khi openAddModal = true) */}
       {openAddModal && (
         <ModalAddSaleOrder
@@ -89,61 +91,55 @@ const SaleOrdersPage = () => {
         />
       )}
 
-      <Card>
-        <CardHeader
-          variant="gradient"
-          color="gray"
-          className="mb-8 p-6 flex justify-between items-center"
-        >
-          <Typography variant="h6" color="white">
-            Danh sách đơn hàng
-          </Typography>
-          <Button
-            size="sm"
-            color="white"
-            variant="text"
-            className="flex items-center gap-2"
-            onClick={handleOpenAddModal}
-          >
-            <FaPlus className="h-4 w-4" /> Thêm đơn hàng
-          </Button>
-        </CardHeader>
+      <Card className="bg-gray-100 p-7">
+        <PageHeader
+          title="Danh sách đơn hàng"
+          addButtonLabel="Thêm đơn hàng"
+          onAdd={handleOpenAddModal}
+          showImport={false}
+          showExport={false}
+        />
 
-        <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
+        <CardBody className="pb-2 bg-white rounded-xl">
           {/* Tìm kiếm & pageSize */}
-          <div className="px-4 py-2 flex items-center gap-4">
-            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-              Hiển thị
-            </Typography>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(0);
-              }}
-              className="border rounded px-2 py-1"
-            >
-              {[10, 20, 50].map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
-            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-              đơn hàng mỗi trang
-            </Typography>
+          <div className="px-4 py-2 flex items-center justify-between gap-2">
+            {/* Items per page */}
+            <div className="flex items-center gap-2">
+              <Typography variant="small" color="blue-gray" className="font-light">
+                Hiển thị
+              </Typography>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(0);
+                }}
+                className="border text-sm rounded px-2 py-1"
+              >
+                {[5, 10, 20, 50].map(size => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                bản ghi mỗi trang
+              </Typography>
+            </div>
 
-            <Input
-              label="Tìm kiếm đơn hàng"
+            {/* Search input */}
+            <TableSearch
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-64"
-              containerProps={{ className: "w-64" }}
+              onChange={setSearchTerm}
+              onSearch={() => {
+                // Thêm hàm xử lý tìm kiếm vào đây nếu có
+                console.log("Tìm kiếm đơn hàng:", searchTerm);
+              }}
+              placeholder="Tìm kiếm đơn hàng"
             />
+
           </div>
 
           {/* Bảng đơn hàng */}
-          <table className="w-full min-w-[640px] table-auto">
+          <table className="w-full min-w-[640px] table-auto border border-gray-200">
             <thead>
               <tr>
                 {["STT", "Mã đơn hàng", "Khách hàng", "Trạng thái", "Ngày đặt hàng", "Hành động"].map(
@@ -160,9 +156,8 @@ const SaleOrdersPage = () => {
             <tbody>
               {filteredOrders.length > 0 ? (
                 filteredOrders.map((order, index) => {
-                  const className = `py-3 px-5 ${
-                    index === filteredOrders.length - 1 ? "" : "border-b border-blue-gray-50"
-                  }`;
+                  const className = `py-3 px-5 ${index === filteredOrders.length - 1 ? "" : "border-b border-blue-gray-50"
+                    }`;
                   const actualIndex = currentPage * pageSize + index + 1;
 
                   return (

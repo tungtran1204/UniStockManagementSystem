@@ -10,7 +10,7 @@ import { useMaterialTailwindController, setOpenSidenav } from "@/context";
 import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 
-export function Sidenav({ brandImg, brandName, routes }) {
+export function Sidenav({routes }) {
   const [controller, dispatch] = useMaterialTailwindController();
   const { openSidenav } = controller;
   const { user } = useAuth();
@@ -20,8 +20,8 @@ export function Sidenav({ brandImg, brandName, routes }) {
   const userRoles = Array.isArray(user?.roles)
     ? user.roles
     : typeof user?.roles === "string"
-    ? user.roles.split(",").map((role) => role.trim())
-    : [];
+      ? user.roles.split(",").map((role) => role.trim())
+      : [];
 
   if (!routes) {
     return <div>No routes available</div>;
@@ -29,28 +29,32 @@ export function Sidenav({ brandImg, brandName, routes }) {
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 h-screen w-[280px] bg-white shadow-lg transition-transform duration-300 ${
-        openSidenav ? "translate-x-0" : "-translate-x-full"
-      }`}
+      className={`fixed inset-y-0 left-0 z-50 h-screen w-[290px] bg-white shadow-lg transition-transform duration-300 ${openSidenav ? "translate-x-0" : "-translate-x-full"
+        }`}
     >
       {/* Logo + Close Button */}
-      <div className="flex items-center justify-between px-6 py-5 border-b">
-        <Link to="/home">
-          <img src={brandImg} alt="Brand Logo" className="h-10" />
-        </Link>
+      <div className="flex items-center justify-around px-6 py-5 border-b">
+        <div className="flex items-center">
+          <Link to="/home" className="pr-2">
+            <img src="/img/logo.png" alt="Brand Logo" className="h-12 w-12" />
+          </Link>
+          <Link to="/home">
+            <Typography className="font-bold text-4xl pt-2 pr-2">UniStock</Typography>
+          </Link>
+        </div>
         <IconButton
           variant="text"
           size="sm"
           onClick={() => setOpenSidenav(dispatch, false)}
-          className="xl:hidden"
+          className="xl:hidden mt-2"
         >
-          <XMarkIcon strokeWidth={2} className="h-6 w-6 text-gray-600" />
+          <XMarkIcon strokeWidth={2} className="h-8 w-8 text-gray-600" />
         </IconButton>
       </div>
 
       {/* Menu */}
       <nav className="p-4">
-        {routes.map(({ layout, title, pages }, key) => {
+        {routes.map(({ pages }, key) => {
           // Lọc menu theo quyền của user
           const filteredPages = pages.filter(({ roles }) =>
             roles ? roles.some((role) => userRoles.includes(role)) : true
@@ -60,28 +64,20 @@ export function Sidenav({ brandImg, brandName, routes }) {
 
           return (
             <div key={key} className="mb-4">
-              {title && (
-                <Typography
-                  variant="small"
-                  className="text-gray-600 text-xs uppercase font-semibold"
-                >
-                  {title}
-                </Typography>
-              )}
               <ul className="space-y-2">
                 {filteredPages.map(({ icon, name, path, subPages }) => (
                   <li key={name}>
                     {subPages ? (
                       <>
                         <button
-                          className="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:text-black rounded-lg hover:bg-gray-100 transition-all"
+                          className="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:text-green-900 rounded-lg hover:bg-green-900/10 transition-all"
                           onClick={() =>
                             setOpenDropdown(openDropdown === name ? null : name)
                           }
                         >
                           <div className="flex items-center gap-3">
                             {icon}
-                            <span className="text-sm font-small">{name}</span>
+                            <span className="text-base">{name}</span>
                           </div>
                           {openDropdown === name ? (
                             <ChevronUpIcon className="h-5 w-5" />
@@ -98,15 +94,14 @@ export function Sidenav({ brandImg, brandName, routes }) {
                                 <NavLink
                                   to={path}
                                   className={({ isActive }) =>
-                                    `flex items-center gap-3 px-4 py-2 rounded-lg transition-all ${
-                                      isActive
-                                        ? "bg-[#0ab067] text-white"
-                                        : "text-gray-700 hover:bg-[#089b5b] hover:text-white"
+                                    `flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg transition-all ${isActive
+                                      ? "bg-[#0ab067] text-white"
+                                      : "hover:text-green-900 hover:bg-green-900/10"
                                     }`
                                   }
                                 >
                                   {icon}
-                                  <span className="text-sm">{name}</span>
+                                  <span className="text-base">{name}</span>
                                 </NavLink>
                               </li>
                             ))}
@@ -117,15 +112,14 @@ export function Sidenav({ brandImg, brandName, routes }) {
                       <NavLink
                         to={path}
                         className={({ isActive }) =>
-                          `flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                            isActive
-                              ? "bg-[#0ab067] text-white"
-                              : "text-gray-700 hover:bg-[#089b5b] hover:text-white"
+                          `flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${isActive
+                            ? "bg-[#0ab067] text-white"
+                            : "text-gray-700 hover:text-green-900 hover:bg-green-900/10"
                           }`
                         }
                       >
                         {icon}
-                        <span className="text-sm font-medium">{name}</span>
+                        <span className="text-base">{name}</span>
                       </NavLink>
                     )}
                   </li>
@@ -139,14 +133,7 @@ export function Sidenav({ brandImg, brandName, routes }) {
   );
 }
 
-Sidenav.defaultProps = {
-  brandImg: "/img/logo-ct.png",
-  brandName: "UniStock",
-};
-
 Sidenav.propTypes = {
-  brandImg: PropTypes.string,
-  brandName: PropTypes.string,
   routes: PropTypes.arrayOf(PropTypes.object).isRequired,
 };
 

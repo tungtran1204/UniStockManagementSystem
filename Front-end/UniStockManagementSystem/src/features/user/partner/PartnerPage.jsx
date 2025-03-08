@@ -5,7 +5,6 @@ import {
     fetchPartnerTypes
 } from "./partnerService";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
-
 import { useNavigate } from "react-router-dom";
 import {
     Card,
@@ -15,8 +14,11 @@ import {
     Tooltip,
     Button,
 } from "@material-tailwind/react";
-import { FaEdit, FaPlus, FaTimes } from "react-icons/fa";
+import { FaEdit, FaPlus, FaTimes, FaSearch } from "react-icons/fa";
+import { BiExport, BiImport, BiSearch } from "react-icons/bi";
 import ReactPaginate from "react-paginate";
+import PageHeader from '@/components/PageHeader';
+import TableSearch from '@/components/TableSearch';
 
 const PartnerPage = () => {
     const {
@@ -35,6 +37,7 @@ const PartnerPage = () => {
     const [showImportPopup, setShowImportPopup] = useState(false);
     const [showCreatePopup, setShowCreatePopup] = useState(false);
     const [file, setFile] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
     const [partnerTypes, setPartnerTypes] = useState([]);
 
     useEffect(() => {
@@ -56,14 +59,6 @@ const PartnerPage = () => {
     const handlePageChangeWrapper = (selectedItem) => {
         handlePageChange(selectedItem.selected);
     };
-    // "bg-red-100 text-red-700",
-    // "bg-blue-100 text-blue-700",
-    // "bg-green-100 text-green-700",
-    // "bg-yellow-100 text-yellow-700",
-    // "bg-purple-100 text-purple-700",
-    // "bg-pink-100 text-pink-700",
-    // "bg-indigo-100 text-indigo-700",
-    // "bg-gray-100 text-gray-700"
 
     // const handleImport = async () => {
     //     if (!file) {
@@ -85,73 +80,54 @@ const PartnerPage = () => {
     //         setLoading(false);
     //     }
     // };
-
+    // style={{ color: '#0ab067' }}
 
     return (
-        <div className="mt-12 mb-8 flex flex-col gap-12">
-            <Card>
-                <CardHeader variant="gradient" color="gray" className="mb-8 p-6">
-                    <div className="flex justify-between items-center">
-                        <Typography variant="h6" color="white">
-                            Danh sách đối tác
-                        </Typography>
-                        <div className="flex gap-2">
-                            <Button
-                                size="sm"
-                                color="white"
-                                variant="text"
-                                className="flex items-center gap-2"
-                                onClick={() => setShowCreatePopup(true)}
-                            >
-                                <FaPlus className="h-4 w-4" /> Thêm đối tác
-                            </Button>
-                            {showCreatePopup && (
-                                <CreatePartnerPopup
-                                    onClose={() => setShowCreatePopup(false)}
-                                    onSuccess={fetchPaginatedPartners} // Có thể gọi API fetch lại danh sách nếu cần
-                                />
-                            )}
-                            {/* <Button
-                                size="sm"
-                                color="white"
-                                variant="text"
-                                className="flex items-center gap-2"
-                                onClick={() => setShowImportPopup(true)}
-                            >
-                                <FaFileExcel className="h-4 w-4" /> Import Excel
-                            </Button>
-                            <Button
-                                size="sm"
-                                color="white"
-                                variant="text"
-                                className="flex items-center gap-2"
-                                onClick={exportExcel}
-                            >
-                                <FaFileExcel className="h-4 w-4" /> Export Excel
-                            </Button> */}
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
+        <div className="mt-2 mb-8 flex flex-col gap-12">
+            <Card className="bg-gray-100 p-7">
+                <PageHeader
+                    title="Danh sách đối tác"
+                    onAdd={() => setShowCreatePopup(true)}
+                    onImport={() => setShowImportPopup(true)}
+                    // onExport={exportExcel}
+                    addButtonLabel="Thêm đối tác"
+                />
+                {showCreatePopup && (
+                    <CreatePartnerPopup
+                        onClose={() => setShowCreatePopup(false)}
+                        onSuccess={fetchPaginatedPartners} // Có thể gọi API fetch lại danh sách nếu cần
+                    />
+                )}
+                <CardBody className="pb-2 bg-white rounded-xl">
                     {/* Phần chọn số items/trang */}
-                    <div className="px-4 py-2 flex items-center gap-2">
-                        <Typography variant="small" color="blue-gray" className="font-normal">
-                            Hiển thị
-                        </Typography>
-                        <select
-                            value={pageSize}
-                            onChange={(e) => {
-                                handlePageSizeChange(Number(e.target.value));
+                    <div className="px-4 py-2 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                            <Typography variant="small" color="blue-gray" className="font-light">
+                                Hiển thị
+                            </Typography>
+                            <select
+                                value={pageSize}
+                                onChange={(e) => {
+                                    handlePageSizeChange(Number(e.target.value));
+                                }}
+                                className="border text-sm rounded px-2 py-1"
+                            >
+                                {[5, 10, 20, 50].map(size => (
+                                    <option key={size} value={size}>{size}</option>
+                                ))}
+                            </select>
+                            <Typography variant="small" color="blue-gray" className="font-normal">
+                                bản ghi mỗi trang
+                            </Typography>
+                        </div>
+                        <TableSearch
+                            value={searchTerm}
+                            onChange={setSearchTerm}
+                            onSearch={() => {
+                                // Thực hiện tìm kiếm hoặc gọi API ở đây
                             }}
-                            className="border text-sm rounded px-2 py-1"
-                        >
-                            {[5, 10, 20, 50].map(size => (
-                                <option key={size} value={size}>{size}</option>
-                            ))}
-                        </select>
-                        <Typography variant="small" color="blue-gray" className="font-normal">
-                            đối tác mỗi trang
-                        </Typography>
+                            placeholder="Tìm kiếm đối tác"
+                        />
                         {selectedType && (
                             <div className="flex items-center gap-0 bg-indigo-100 text-indigo-500 px-3 py-1 rounded-full text-xs font-semibold ml-4">
                                 <span>
@@ -166,7 +142,7 @@ const PartnerPage = () => {
                             </div>
                         )}
                     </div>
-                    <table className="w-full min-w-[640px] table-auto">
+                    <table className="w-full min-w-[640px] table-auto border border-gray-200">
                         <thead>
                             <tr>
                                 {[

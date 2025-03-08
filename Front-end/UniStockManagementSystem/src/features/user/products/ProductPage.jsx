@@ -25,6 +25,8 @@ import {
   Tooltip,
   Switch,
 } from "@material-tailwind/react";
+import PageHeader from '@/components/PageHeader';
+import TableSearch from '@/components/TableSearch';
 
 const ProductPage = () => {
   // Sử dụng useProduct hook
@@ -52,6 +54,7 @@ const ProductPage = () => {
   const [localLoading, setLocalLoading] = useState(false);
   const [units, setUnits] = useState([]);
   const [productTypes, setProductTypes] = useState([]);
+  const [searchTerm, setSearchTerm] = useState(""); // State for search term
 
   const [newProduct, setNewProduct] = useState({
     productCode: "",
@@ -159,63 +162,45 @@ const ProductPage = () => {
   };
 
   return (
-    <div className="mt-12 mb-8 flex flex-col gap-12">
-      <Card>
-        <CardHeader variant="gradient" color="gray" className="mb-8 p-6">
-          <div className="flex justify-between items-center">
-            <Typography variant="h6" color="white">
-              Danh sách sản phẩm
-            </Typography>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                color="white"
-                variant="text"
-                className="flex items-center gap-2"
-                onClick={() => setShowCreatePopup(true)}
+    <div className="mt-2 mb-8 flex flex-col gap-12">
+      <Card className="bg-gray-100 p-7">
+        <PageHeader
+          title="Danh sách sản phẩm"
+          addButtonLabel="Thêm sản phẩm"
+          onAdd={() => setShowCreatePopup(true)}
+          onImport={() => setShowImportPopup(true)}
+          onExport={exportExcel}
+        />
+        <CardBody className="pb-2 bg-white rounded-xl">
+          {/* Phần chọn số items/trang */}
+          <div className="px-4 py-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Typography variant="small" color="blue-gray" className="font-light">
+                Hiển thị
+              </Typography>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  handlePageSizeChange(Number(e.target.value));
+                }}
+                className="border text-sm rounded px-2 py-1"
               >
-                <FaPlus className="h-4 w-4" /> Thêm sản phẩm
-              </Button>
-              <Button
-                size="sm"
-                color="white"
-                variant="text"
-                className="flex items-center gap-2"
-                onClick={() => setShowImportPopup(true)}
-              >
-                <FaFileExcel className="h-4 w-4" /> Import Excel
-              </Button>
-              <Button
-                size="sm"
-                color="white"
-                variant="text"
-                className="flex items-center gap-2"
-                onClick={exportExcel}
-              >
-                <FaFileExcel className="h-4 w-4" /> Export Excel
-              </Button>
+                {[5, 10, 20, 50].map(size => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                bản ghi mỗi trang
+              </Typography>
             </div>
-          </div>
-        </CardHeader>
-        <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
-          <div className="px-4 py-2 flex items-center gap-2">
-            <Typography variant="small" color="blue-gray" className="font-normal">
-              Hiển thị
-            </Typography>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                handlePageSizeChange(Number(e.target.value));
+            <TableSearch
+              value={searchTerm}
+              onChange={setSearchTerm}
+              onSearch={() => {
+                // Thực hiện tìm kiếm hoặc gọi API ở đây
               }}
-              className="border rounded px-2 py-1"
-            >
-              {[5, 10, 20, 50].map(size => (
-                <option key={size} value={size}>{size}</option>
-              ))}
-            </select>
-            <Typography variant="small" color="blue-gray" className="font-normal">
-              sản phẩm mỗi trang
-            </Typography>
+              placeholder="Tìm kiếm sản phẩm"
+            />
           </div>
 
           <table className="w-full min-w-[640px] table-auto">

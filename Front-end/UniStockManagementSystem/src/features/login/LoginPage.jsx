@@ -22,17 +22,17 @@ export function LoginPage() {
       setError("Email và mật khẩu không được để trống");
       return;
     }
-  
+
     const result = await handleLogin(email, password);
-  
+
     if (result.success) {
       const userRoles = result.user?.roles || [];
       console.log("✅ [LoginPage] User Roles:", userRoles);
-  
+
       if (userRoles.length === 0) {
         console.warn("🚨 [LoginPage] User has no roles! Possible issue with API response.");
       }
-  
+
       if (userRoles.includes("ADMIN")) {
         navigate("/admin/users");
       } else if (userRoles.includes("MANAGER")) {
@@ -44,7 +44,7 @@ export function LoginPage() {
       setError(result.message);
     }
   };
-  
+
 
   return (
     <section className="m-8 flex gap-4">
@@ -168,3 +168,118 @@ export function LoginPage() {
 }
 
 export default LoginPage;
+
+
+// import * as React from "react";
+// import {
+//   Box,
+//   Button,
+//   CssBaseline,
+//   FormControlLabel,
+//   Divider,
+//   FormLabel,
+//   FormControl,
+//   Link,
+//   Alert,
+//   Stack,
+//   Card as MuiCard,
+// } from "@mui/material";
+// import { styled } from "@mui/material/styles";
+// import { Card as TailwindCard, Typography, Input, Checkbox } from "@material-tailwind/react";
+// import { useNavigate } from "react-router-dom";
+// import useLogin from "../../features/login/useLogin";
+
+// const Card = styled(MuiCard)(({ theme }) => ({
+//   display: "flex",
+//   flexDirection: "column",
+//   alignSelf: "center",
+//   width: "100%",
+//   padding: theme.spacing(4),
+//   gap: theme.spacing(2),
+//   margin: "auto",
+//   [theme.breakpoints.up("sm")]: {
+//     maxWidth: "450px",
+//   },
+//   boxShadow:
+//     "hsla(220, 30%, 5%, 0.05) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.05) 0px 15px 35px -5px",
+// }));
+
+// export default function LoginPage() {
+//   const { handleLogin } = useLogin();
+//   const [email, setEmail] = React.useState("");
+//   const [password, setPassword] = React.useState("");
+//   const [error, setError] = React.useState("");
+//   const navigate = useNavigate();
+
+//   const handleSubmit = async (event) => {
+//     event.preventDefault();
+//     if (!email || !password) {
+//       setError("Email và mật khẩu không được để trống");
+//       return;
+//     }
+
+//     const result = await handleLogin(email, password);
+//     if (result.success) {
+//       const userRoles = result.user?.roles || [];
+//       if (userRoles.includes("ADMIN")) {
+//         navigate("/admin/users");
+//       } else if (userRoles.includes("MANAGER")) {
+//         navigate("/dashboard");
+//       } else {
+//         navigate("/user/home");
+//       }
+//     } else {
+//       setError(result.message);
+//     }
+//   };
+
+//   return (
+//     <Stack direction="column" justifyContent="center" alignItems="center" height="100vh" sx={{ backgroundColor: "#e0f2f1" }}>
+//       <CssBaseline />
+//       <Card>
+//         <div className="text-center">
+//           <Typography variant="h2" className="font-bold mb-4">Đăng nhập</Typography>
+//         </div>
+//         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+//           <FormControl>
+//             <FormLabel>
+//               <span>Email</span>
+//               <span style={{ color: 'red', marginLeft: '5px' }}>*</span>
+//             </FormLabel>
+//             <Input
+//               size="lg"
+//               placeholder="name@mail.com"
+//               className="!border !border-blue-gray-200 bg-white text-gray-900 ring-4 ring-transparent placeholder:text-gray-500 placeholder:opacity-100 focus:!border-green-900 focus:!border-t-green-900 focus:ring-green-900/10"
+//               labelProps={{
+//                 className: "hidden",
+//               }}
+//               value={email}
+//               onChange={(e) => setEmail(e.target.value)}
+//             />
+//           </FormControl>
+//           <FormControl>
+//             <FormLabel>
+//               <span>Mật khẩu</span>
+//               <span style={{ color: 'red', marginLeft: '5px' }}>*</span>
+//             </FormLabel>
+//             <Input
+//               type="password"
+//               size="lg"
+//               placeholder="********"
+//               className="!border !border-blue-gray-200 bg-white text-gray-900 ring-4 ring-transparent placeholder:text-gray-500 placeholder:opacity-100 focus:!border-green-900 focus:!border-t-green-900 focus:ring-green-900/10"
+//               labelProps={{
+//                 className: "hidden",
+//               }}
+//               value={password}
+//               onChange={(e) => setPassword(e.target.value)}
+//             />
+//           </FormControl>
+//           {error && <Alert severity="error">{error}</Alert>}
+//           <Button type="submit" fullWidth variant="contained" sx={{ backgroundColor: "#0ab067" }}>Đăng nhập</Button>
+//           <Link href="#" variant="body2" align="center">Quên mật khẩu</Link>
+//         </Box>
+//       </Card>
+//     </Stack>
+//   );
+// }
+
