@@ -18,6 +18,10 @@ public interface SaleOrdersMapper {
     @Mapping(source = "orderCode", target = "orderCode")
     @Mapping(source = "partner.partnerId", target = "partnerId")
     @Mapping(source = "partner.partnerName", target = "partnerName")
+
+    @Mapping(source = "partner.address", target = "address")
+    @Mapping(source = "partner.phone", target = "phoneNumber")
+    @Mapping(source = "partner.contactName", target = "contactName")
     @Mapping(source = "status", target = "status")
     @Mapping(source = "orderDate", target = "orderDate")
     @Mapping(source = "note", target = "note")
@@ -36,6 +40,10 @@ public interface SaleOrdersMapper {
     @Mapping(source = "orderCode", target = "orderCode")
     @Mapping(source = "partnerId", target = "partner.partnerId")
     @Mapping(source = "partnerName", target = "partner.partnerName")
+
+    @Mapping(source = "address", target = "partner.address")
+    @Mapping(source = "phoneNumber", target = "partner.phone")
+    @Mapping(source = "contactName", target = "partner.contactName")
     @Mapping(source = "status", target = "status")
     @Mapping(source = "orderDate", target = "orderDate")
     @Mapping(source = "note", target = "note")

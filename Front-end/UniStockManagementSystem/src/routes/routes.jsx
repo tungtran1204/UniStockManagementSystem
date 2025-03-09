@@ -30,6 +30,7 @@ import IssueNotePage from "../features/user/issueNote/IssueNotePage";
 import AddIssueNote from "../features/user/receiptNote/AddReceiptNote";
 import AddProductPage from "@/features/user/products/AddProductPage";
 import DetailProductPage from "@/features/user/products/DetailProductPage";
+import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -191,6 +192,15 @@ export const routes = [
         element: <AddSaleOrderPage />, // Trang quản lý đơn hàng 
         roles: ["USER"],
       },
+
+      {
+        icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
+        name: "Sửa đơn hàng",
+        path: "/user/sale-orders/:orderId",
+        element: <EditSaleOrderPage />, // Trang quản lý đơn hàng 
+        roles: ["USER"],
+      },
+
       {
         icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
         name: "Thêm phiếu nhập",

@@ -23,7 +23,9 @@ public class SaleOrdersDTO {
     private String note;
     private Set<SalesOrderDetailDTO> orderDetails = new HashSet<>();
 
-
+    private String address;
+    private String phoneNumber;
+    private String contactName;
 }
 
 

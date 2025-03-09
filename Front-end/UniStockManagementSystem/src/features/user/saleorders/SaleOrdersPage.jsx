@@ -13,7 +13,7 @@ import useSaleOrder from "./useSaleOrder";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
-import ModalAddSaleOrder from "./ModalAddSaleOrder";
+import { useNavigate } from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 // Nếu cần edit:
@@ -46,7 +46,11 @@ const SaleOrdersPage = () => {
     const code = await getNextCode();
     // setNextOrderCode(code);
     navigate("/user/sale-orders/add", { state: { nextCode: code } });
-  }; 
+  };
+
+  const handleEditOrder = async (order) => {
+    navigate(`/user/sale-orders/${order.orderId}`, { state: { order } });
+  };
 
   const handlePageChange = (selectedItem) => {
     setCurrentPage(selectedItem.selected);
@@ -63,28 +67,19 @@ const SaleOrdersPage = () => {
 
   return (
     <div className="mb-8 flex flex-col gap-12">
-      {/* ✅ Modal Thêm đơn hàng (chỉ render khi openAddModal = true) */}
-      {openAddModal && (
-        <ModalAddSaleOrder
-          open={openAddModal}
-          onClose={() => setOpenAddModal(false)}
-          // Hàm refetch để cập nhật danh sách sau khi thêm:
-          fetchOrders={() => fetchPaginatedSaleOrders(currentPage, pageSize)}
-          nextCode={nextOrderCode}
-        />
-      )}
-
       <Card className="bg-gray-100 p-7">
         <PageHeader
           title="Danh sách đơn hàng"
           addButtonLabel="Thêm đơn hàng"
-          onAdd={handleOpenAddModal}
-          showImport={false}
-          showExport={false}
+          onAdd={() => handleAddOrder(true)}
+          onImport={() => {/* Xử lý import nếu có */ }}
+          onExport={() => {/* Xử lý export file ở đây nếu có */ }}
+          showImport={false} // Ẩn nút import nếu không dùng
+          showExport={false} // Ẩn xuất file nếu không dùng
         />
 
         <CardBody className="pb-2 bg-white rounded-xl">
-          {/* Tìm kiếm & pageSize */}
+          {/* Items per page and search */}
           <div className="px-4 py-2 flex items-center justify-between gap-2">
             {/* Items per page */}
             <div className="flex items-center gap-2">
@@ -114,9 +109,9 @@ const SaleOrdersPage = () => {
               onChange={setSearchTerm}
               onSearch={() => {
                 // Thêm hàm xử lý tìm kiếm vào đây nếu có
-                console.log("Tìm kiếm đơn hàng:", searchTerm);
+                console.log("Tìm kiếm kho:", searchTerm);
               }}
-              placeholder="Tìm kiếm đơn hàng"
+              placeholder="Tìm kiếm kho"
             />
 
           </div>
@@ -174,7 +169,7 @@ const SaleOrdersPage = () => {
                         <div className="flex items-center gap-2">
                           <Tooltip content="Chỉnh sửa">
                             <button
-                              // onClick={() => handleEditOrder(order)}
+                              onClick={() => handleEditOrder(order)}
                               className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
                             >
                               <FaEdit className="h-4 w-4" />
@@ -194,32 +189,32 @@ const SaleOrdersPage = () => {
               )}
             </tbody>
           </table>
-        </CardBody>
 
-        {/* Phân trang */}
-        <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
-          <Typography variant="small" color="blue-gray" className="font-normal">
-            Trang {currentPage + 1} / {totalPages} • {totalElements} đơn hàng
-          </Typography>
-          <ReactPaginate
-            previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
-            nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
-            breakLabel="..."
-            pageCount={totalPages}
-            marginPagesDisplayed={2}
-            pageRangeDisplayed={5}
-            onPageChange={handlePageChange}
-            containerClassName="flex items-center gap-1"
-            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-            pageLinkClassName="flex items-center justify-center w-full h-full"
-            previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-            nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-            breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-            activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
-            forcePage={currentPage}
-            disabledClassName="opacity-50 cursor-not-allowed"
-          />
-        </div>
+          {/* Phân trang */}
+          <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+            <Typography variant="small" color="blue-gray" className="font-normal">
+              Trang {currentPage + 1} / {totalPages} • {totalElements} đơn hàng
+            </Typography>
+            <ReactPaginate
+              previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
+              nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
+              breakLabel="..."
+              pageCount={totalPages}
+              marginPagesDisplayed={2}
+              pageRangeDisplayed={5}
+              onPageChange={handlePageChange}
+              containerClassName="flex items-center gap-1"
+              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              pageLinkClassName="flex items-center justify-center w-full h-full"
+              previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
+              activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+              forcePage={currentPage}
+              disabledClassName="opacity-50 cursor-not-allowed"
+            />
+          </div>
+        </CardBody>
       </Card>
     </div>
   );
