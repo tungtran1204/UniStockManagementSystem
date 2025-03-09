@@ -13,9 +13,7 @@ import useSaleOrder from "./useSaleOrder";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
-import ModalAddSaleOrder from "./ModalAddSaleOrder";
-import PageHeader from '@/components/PageHeader';
-import TableSearch from '@/components/TableSearch';
+import { useNavigate  } from "react-router-dom";
 // Nếu cần edit:
 // import ModalEditSaleOrder from "./ModalEditSaleOrder";
 
@@ -48,6 +46,10 @@ const SaleOrdersPage = () => {
     navigate("/user/sale-orders/add", { state: { nextCode: code } });
   }; 
 
+  const handleEditOrder = async (order) => {
+    navigate(`/user/sale-orders/${order.orderId}`, { state: { order } });
+  }; 
+
   const handlePageChange = (selectedItem) => {
     setCurrentPage(selectedItem.selected);
   };
@@ -62,67 +64,64 @@ const SaleOrdersPage = () => {
   );
 
   return (
-    <div className="mt-2 mb-8 flex flex-col gap-12">
-      {/* ✅ Modal Thêm đơn hàng (chỉ render khi openAddModal = true) */}
-      {openAddModal && (
-        <ModalAddSaleOrder
-          open={openAddModal}
-          onClose={() => setOpenAddModal(false)}
-          // Hàm refetch để cập nhật danh sách sau khi thêm:
-          fetchOrders={() => fetchPaginatedSaleOrders(currentPage, pageSize)}
-          nextCode={nextOrderCode}
-        />
-      )}
+    <div className="mt-12 mb-8 flex flex-col gap-12">
+      
 
-      <Card className="bg-gray-100 p-7">
-        <PageHeader
-          title="Danh sách đơn hàng"
-          addButtonLabel="Thêm đơn hàng"
-          onAdd={handleOpenAddModal}
-          showImport={false}
-          showExport={false}
-        />
+      <Card>
+        <CardHeader
+          variant="gradient"
+          color="gray"
+          className="mb-8 p-6 flex justify-between items-center"
+        >
+          <Typography variant="h6" color="white">
+            Danh sách đơn hàng
+          </Typography>
+          <Button
+            size="sm"
+            color="white"
+            variant="text"
+            className="flex items-center gap-2"
+            onClick={handleAddOrder}
+          >
+            <FaPlus className="h-4 w-4" /> Thêm đơn hàng
+          </Button>
+        </CardHeader>
 
-        <CardBody className="pb-2 bg-white rounded-xl">
+        <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
           {/* Tìm kiếm & pageSize */}
-          <div className="px-4 py-2 flex items-center justify-between gap-2">
-            {/* Items per page */}
-            <div className="flex items-center gap-2">
-              <Typography variant="small" color="blue-gray" className="font-light">
-                Hiển thị
-              </Typography>
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setCurrentPage(0);
-                }}
-                className="border text-sm rounded px-2 py-1"
-              >
-                {[5, 10, 20, 50].map(size => (
-                  <option key={size} value={size}>{size}</option>
-                ))}
-              </select>
-              <Typography variant="small" color="blue-gray" className="font-normal">
-                bản ghi mỗi trang
-              </Typography>
-            </div>
-
-            {/* Search input */}
-            <TableSearch
-              value={searchTerm}
-              onChange={setSearchTerm}
-              onSearch={() => {
-                // Thêm hàm xử lý tìm kiếm vào đây nếu có
-                console.log("Tìm kiếm đơn hàng:", searchTerm);
+          <div className="px-4 py-2 flex items-center gap-4">
+            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
+              Hiển thị
+            </Typography>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(0);
               }}
-              placeholder="Tìm kiếm đơn hàng"
-            />
+              className="border rounded px-2 py-1"
+            >
+              {[10, 20, 50].map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
+              đơn hàng mỗi trang
+            </Typography>
 
+            <Input
+              label="Tìm kiếm đơn hàng"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-64"
+              containerProps={{ className: "w-64" }}
+            />
           </div>
 
           {/* Bảng đơn hàng */}
-          <table className="w-full min-w-[640px] table-auto border border-gray-200">
+          <table className="w-full min-w-[640px] table-auto">
             <thead>
               <tr>
                 {["STT", "Mã đơn hàng", "Khách hàng", "Trạng thái", "Ngày đặt hàng", "Hành động"].map(
@@ -139,8 +138,9 @@ const SaleOrdersPage = () => {
             <tbody>
               {filteredOrders.length > 0 ? (
                 filteredOrders.map((order, index) => {
-                  const className = `py-3 px-5 ${index === filteredOrders.length - 1 ? "" : "border-b border-blue-gray-50"
-                    }`;
+                  const className = `py-3 px-5 ${
+                    index === filteredOrders.length - 1 ? "" : "border-b border-blue-gray-50"
+                  }`;
                   const actualIndex = currentPage * pageSize + index + 1;
 
                   return (
@@ -174,7 +174,7 @@ const SaleOrdersPage = () => {
                         <div className="flex items-center gap-2">
                           <Tooltip content="Chỉnh sửa">
                             <button
-                              // onClick={() => handleEditOrder(order)}
+                              onClick={() => handleEditOrder(order)}
                               className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
                             >
                               <FaEdit className="h-4 w-4" />
