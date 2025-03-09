@@ -75,6 +75,7 @@ public class LoginController {
         MeDTO meDto = new MeDTO(
                 user.getUserId(),
                 user.getEmail(),
+                user.getUsername(),
                 roles,
                 permissions
         );

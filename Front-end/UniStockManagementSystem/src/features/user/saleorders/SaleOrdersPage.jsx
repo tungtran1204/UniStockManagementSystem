@@ -62,7 +62,7 @@ const SaleOrdersPage = () => {
   );
 
   return (
-    <div className="mt-2 mb-8 flex flex-col gap-12">
+    <div className="mb-8 flex flex-col gap-12">
       {/* ✅ Modal Thêm đơn hàng (chỉ render khi openAddModal = true) */}
       {openAddModal && (
         <ModalAddSaleOrder
