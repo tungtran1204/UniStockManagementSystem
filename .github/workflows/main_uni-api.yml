@@ -1,6 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy JAR app to Azure Web App - uni-api
 
 on:
@@ -25,13 +22,15 @@ jobs:
           distribution: 'microsoft'
 
       - name: Build with Maven
-        run: mvn clean install
+        # CHÚ Ý: Thêm -f <đường_dẫn_đến_pom.xml>
+        run: mvn -f ./Back-end/UniStockManagementSystem/pom.xml clean install
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: java-app
-          path: '${{ github.workspace }}/target/*.jar'
+          # CHÚ Ý: Thư mục target nằm trong Back-end/UniStockManagementSystem
+          path: '${{ github.workspace }}/Back-end/UniStockManagementSystem/target/*.jar'
 
   deploy:
     runs-on: windows-latest
@@ -40,8 +39,8 @@ jobs:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
+      contents: read
 
     steps:
       - name: Download artifact from build job
@@ -52,9 +51,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_671F842CEB2D4C6B8AE6562499E06F82 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_C78981FDF40744EFBD2C00315E042999 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_CEFAB91FE9414F249B742FD2B78F9C4C }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_... }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_... }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_... }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
@@ -63,4 +62,3 @@ jobs:
           app-name: 'uni-api'
           slot-name: 'Production'
           package: '*.jar'
-          
