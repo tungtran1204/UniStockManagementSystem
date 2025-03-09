@@ -25,8 +25,7 @@ jobs:
           distribution: 'microsoft'
 
       - name: Build with Maven
-        working-directory: ./Back-end/UniStockManagementSystem
-        run: mvn clean package
+        run: mvn -f ./Back-end/UniStockManagementSystem/pom.xml clean package
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
