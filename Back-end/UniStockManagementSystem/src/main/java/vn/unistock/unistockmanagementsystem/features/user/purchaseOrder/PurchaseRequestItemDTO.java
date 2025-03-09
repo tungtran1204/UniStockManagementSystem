@@ -7,7 +7,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PurchaseOrderRequestItemDTO {
+public class PurchaseRequestItemDTO {
     private Long materialId;
     private String materialCode;
     private String materialName;

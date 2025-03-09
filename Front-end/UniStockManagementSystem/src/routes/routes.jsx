@@ -28,6 +28,7 @@ import AddSaleOrderPage from "../features/user/saleorders/AddSaleOrderPage";
 import AddReceiptNote from "../features/user/receiptNote/AddReceiptNote";
 import IssueNotePage from "../features/user/issueNote/IssueNotePage";
 import AddIssueNote from "../features/user/receiptNote/AddReceiptNote";
+import PurchaseOrderPage from "../features/user/purchaseOrder/purchaseOrderPage";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -92,7 +93,7 @@ export const routes = [
         name: "Xuất nhập kho",
         path: "/user/receiptNote",
         roles: ["USER"],
-        element: <Navigate to="/user/partner/type" replace />,
+        element: <Navigate to="/user" replace />,
         subPages: [
           {
             icon: <Bars3BottomRightIcon {...icon} />,
@@ -106,6 +107,29 @@ export const routes = [
             name: "Quản lí xuất kho",
             path: "/user/issueNote",
             element: <IssueNotePage />,
+            roles: ["USER"],
+          },
+        ],
+      },
+      {
+        icon: <UserCircleIcon {...icon} />,
+        name: "Mua hàng",
+        path: "/user/purchaseOrder",
+        roles: ["USER"],
+        element: <Navigate to="/user/purchaseOrder" replace />,
+        subPages: [
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Yêu cầu mua",
+            path: "/user/",
+            element: <PurchaseOrderPage />,
+            roles: ["USER"],
+          },
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Đơn mua hàng",
+            path: "/user/purchaseOrder",
+            element: <PurchaseOrderPage />,
             roles: ["USER"],
           },
         ],
