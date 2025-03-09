@@ -1,7 +1,7 @@
 import React from "react";
 import Sidenav from "../components/Sidenav";
 import Footer from "../components/Footer";
-import DashboardNavbar from "../components/DashboardNavbar";
+import Navbar from "../components/Navbar";
 import { useMaterialTailwindController } from "../context";
 import routes from "../routes/routes";
 import { useLocation } from "react-router-dom";
@@ -17,7 +17,7 @@ const MainLayout = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen bg-white flex overflow-x-hidden">
+    <div className="bg-white flex max-h-[960px] overflow-y-auto">
       {/* Sidebar */}
       <Sidenav
         routes={routes.filter(
@@ -30,13 +30,18 @@ const MainLayout = ({ children }) => {
 
       {/* Nội dung chính */}
       <div
-        className={`flex flex-col transition-all pt-4 duration-300 ${
+        className={`flex flex-col transition-all duration-300 ${
         openSidenav ? "xl:ml-72 xl:w-[calc(100%-288px)]" : "ml-0 w-full"
           }`}
       >
-        <DashboardNavbar />
-        {/* <Configurator /> */}
-        <div className="flex-grow max-w-full">
+        <div
+          className={`fixed top-0 left-0 z-40 transition-all duration-300 bg-white 
+          ${openSidenav ? "xl:w-[calc(100%-288px)] xl:left-72" : "w-full left-0"}`}
+        >
+          <Navbar />
+        </div>
+
+        <div className="flex-grow max-w-full mt-[89px]">
           {children}
         </div>
         <div className="text-blue-gray-600 max-w-full">

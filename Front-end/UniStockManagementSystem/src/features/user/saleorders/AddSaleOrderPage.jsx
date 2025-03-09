@@ -17,6 +17,8 @@ import { getProducts } from "./saleOrdersService";
 import dayjs from "dayjs";
 import useSaleOrder from "./useSaleOrder";
 import ModalAddCustomer from "./ModalAddCustomer";
+import PageHeader from '@/components/PageHeader';
+import TableSearch from '@/components/TableSearch';
 
 const CUSTOMER_TYPE_ID = 1;
 
@@ -56,8 +58,8 @@ const customStyles = {
     backgroundColor: state.isFocused
       ? "#f3f4f6"
       : state.isSelected
-      ? "#e5e7eb"
-      : "transparent",
+        ? "#e5e7eb"
+        : "transparent",
     color: "#000",
     cursor: "pointer",
     "&:active": {
@@ -189,11 +191,11 @@ const AddSaleOrderPage = () => {
       prev.map((row) =>
         row.id === rowId
           ? {
-              ...row,
-              productCode: selectedOption.value,
-              productName: selectedOption.label,
-              unitName: selectedOption.unit,
-            }
+            ...row,
+            productCode: selectedOption.value,
+            productName: selectedOption.label,
+            unitName: selectedOption.unit,
+          }
           : row
       )
     );
@@ -305,17 +307,20 @@ const AddSaleOrderPage = () => {
   };
 
   return (
-    <div className="mt-12 mb-8 flex flex-col gap-12">
-      <Card>
-        <CardHeader variant="gradient" color="gray" className="mb-4 p-4">
-          <div className="flex justify-between items-center">
-            <Typography variant="h6" color="white">
-              Đơn hàng {orderCode}
-            </Typography>
-          </div>
-        </CardHeader>
+    <div className="mb-8 flex flex-col gap-12">
+      <Card className="bg-gray-100 p-7">
+        <PageHeader
+          title={"Đơn hàng " + orderCode}
+          addButtonLabel="Thêm đơn hàng"
+          onAdd={() => {}}
+          onImport={() => {/* Xử lý import nếu có */ }}
+          onExport={() => {/* Xử lý export file ở đây nếu có */ }}
+          showAdd={false}
+          showImport={false} // Ẩn nút import nếu không dùng
+          showExport={false} // Ẩn xuất file nếu không dùng
+        />
 
-        <CardBody className="px-4 py-4">
+        <CardBody className="pb-2 bg-white rounded-xl">
           {/* Thông tin chung */}
           <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-6">
             <div className="flex flex-col gap-4">
@@ -530,7 +535,7 @@ const AddSaleOrderPage = () => {
         <ModalAddCustomer
           onClose={handleCloseCreatePartnerPopup}
           onSuccess={(newPartner) => {
-            
+
             // Đóng modal và sau đó refresh danh sách khách hàng
             handleCloseCreatePartnerPopup();
             fetchCustomers();

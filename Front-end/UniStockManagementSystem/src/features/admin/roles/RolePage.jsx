@@ -150,7 +150,7 @@ function RolePage() {
   const allRoles = [...filteredRoles, ...tempRoles];
 
   return (
-    <div className="mt-2 mb-8 flex flex-col gap-12">
+    <div className="mb-8 flex flex-col gap-12">
       <Card className="bg-gray-100 p-7">
         <PageHeader
           title="Danh sách Vai Trò"

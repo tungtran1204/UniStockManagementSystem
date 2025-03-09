@@ -13,6 +13,7 @@ import java.util.List;
 public class MeDTO {
     private Long userId;
     private String email;
+    private String username;
     private List<String> roles;
     private List<String> permissions;
 }
