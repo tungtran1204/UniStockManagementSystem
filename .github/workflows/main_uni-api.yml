@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy JAR app to Azure Web App - unistock
+name: Build and deploy JAR app to Azure Web App - uni-api
 
 on:
   push:
@@ -25,13 +25,13 @@ jobs:
           distribution: 'microsoft'
 
       - name: Build with Maven
-        run: mvn -f ./Back-end/UniStockManagementSystem/pom.xml clean package
+        run: mvn -f ./Back-end/UniStockManagementSystem/pom.xml clean install
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: java-app
-          path: 'Back-end/UniStockManagementSystem/target/*.jar'
+          path: '${{ github.workspace }}/Back-end/UniStockManagementSystem/target/*.jar'
 
   deploy:
     runs-on: windows-latest
@@ -52,15 +52,14 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_6FB705CA46104A88B7CA2E7FF59B8DB6 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_E8E8F4877D834510B1B1005A0189A7EC }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_D8320147B66D4A53A7958BBE5A1B64C6 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_671F842CEB2D4C6B8AE6562499E06F82 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_C78981FDF40744EFBD2C00315E042999 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_CEFAB91FE9414F249B742FD2B78F9C4C }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'unistock'
+          app-name: 'uni-api'
           slot-name: 'Production'
           package: '*.jar'
-          
