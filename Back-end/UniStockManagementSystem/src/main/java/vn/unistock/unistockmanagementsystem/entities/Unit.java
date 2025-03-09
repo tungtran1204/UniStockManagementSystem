@@ -25,4 +25,5 @@ public class Unit {
     @OneToMany(mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     private List<Product> products;
+
 }

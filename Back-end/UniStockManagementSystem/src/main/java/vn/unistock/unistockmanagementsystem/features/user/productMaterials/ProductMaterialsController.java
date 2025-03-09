@@ -1,6 +1,9 @@
 package vn.unistock.unistockmanagementsystem.features.user.productMaterials;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -9,31 +12,33 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/unistock/user/product-materials") // ✅ API dành riêng cho User
+@RequiredArgsConstructor
 public class ProductMaterialsController {
     private final ProductMaterialsService productMaterialService;
 
-    public ProductMaterialsController(ProductMaterialsService productMaterialService) {
-        this.productMaterialService = productMaterialService;
-    }
-
-    //Show định mức
+    // Show định mức với phân trang
     @GetMapping("/{productId}")
-    public ResponseEntity<List<ProductMaterialsDTO>> getMaterialsByProduct(@PathVariable Long productId) {
-        List<ProductMaterialsDTO> materials = productMaterialService.getMaterialsByProduct(productId);
-        return ResponseEntity.ok(materials);
+    public ResponseEntity<Page<ProductMaterialsDTO>> getMaterialsByProduct(
+            @PathVariable Long productId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<ProductMaterialsDTO> materialsPage = productMaterialService.getMaterialsByProduct(productId, pageable);
+            return ResponseEntity.ok(materialsPage);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Trả về null nếu không tìm thấy
+        }
     }
 
-    //Lưu định mức
+    // Lưu định mức
     @PostMapping("/{productId}/materials")
     public ResponseEntity<String> saveProductMaterials(
             @PathVariable Long productId,
             @RequestBody List<ProductMaterialsDTO> materialsDTOList) {
-
         productMaterialService.saveProductMaterials(productId, materialsDTOList);
         return ResponseEntity.ok("Định mức nguyên vật liệu đã được cập nhật!");
     }
-
-
 
     @DeleteMapping("/{productId}/materials/{materialId}")
     public ResponseEntity<?> deleteMaterialFromProduct(@PathVariable Long productId, @PathVariable Long materialId) {

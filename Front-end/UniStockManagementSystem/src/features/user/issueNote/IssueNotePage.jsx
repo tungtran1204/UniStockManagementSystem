@@ -13,6 +13,8 @@ import { FaPlus } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import AddIssueNote from "../receiptNote/AddReceiptNote";
+import PageHeader from '@/components/PageHeader';
+import TableSearch from '@/components/TableSearch';
 
 const IssueNotePage = () => {
   const [issueNotes, setIssueNotes] = useState([]);
@@ -23,7 +25,7 @@ const IssueNotePage = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const navigate = useNavigate();
-  
+
 
   useEffect(() => {
     fetchPaginatedIssueNotes(currentPage, pageSize);
@@ -45,35 +47,22 @@ const IssueNotePage = () => {
   );
 
   return (
-    <div className="mt-12 mb-8 flex flex-col gap-12">
-      <Card>
-        <CardHeader
-          variant="gradient"
-          color="gray"
-          className="mb-8 p-6 flex justify-between items-center"
-        >
-          <Typography variant="h6" color="white">
-            Danh sách phiếu xuất
-          </Typography>
-          <Button
-            size="sm"
-            color="white"
-            variant="text"
-            className="flex items-center gap-2"
-            onClick={() => navigate("/user/issueNote/add")}
-          >
-            <FaPlus className="h-4 w-4" /> Thêm Phiếu Xuất
-          </Button>
-        </CardHeader>
+    <div className="mb-8 flex flex-col gap-12">
+      <Card className="bg-gray-100 p-7">
+        <PageHeader
+          title="Danh sách phiếu xuất kho"
+          addButtonLabel="Thêm phiếu xuất"
+          onAdd={() => setOpenAddModal(true)}
+          onImport={() => setShowImportPopup(true)}
+          onExport={() => { /* export Excel */ }}
+        />
 
-        <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
-          <div className="px-4 py-2 flex items-center gap-2">
+        <CardBody className="pb-2 bg-white rounded-xl">
+          {/* Items per page and search */}
+          <div className="px-4 py-2 flex items-center justify-between gap-2">
+            {/* Items per page */}
             <div className="flex items-center gap-2">
-              <Typography
-                variant="small"
-                color="blue-gray"
-                className="font-normal whitespace-nowrap"
-              >
+              <Typography variant="small" color="blue-gray" className="font-light">
                 Hiển thị
               </Typography>
               <select
@@ -82,33 +71,31 @@ const IssueNotePage = () => {
                   setPageSize(Number(e.target.value));
                   setCurrentPage(0);
                 }}
-                className="border rounded px-2 py-1"
+                className="border text-sm rounded px-2 py-1"
               >
-                {[5, 10, 20, 50].map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
+                {[5, 10, 20, 50].map(size => (
+                  <option key={size} value={size}>{size}</option>
                 ))}
               </select>
-              <Typography
-                variant="small"
-                color="blue-gray"
-                className="font-normal whitespace-nowrap"
-              >
-                phiếu xuất mỗi trang
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                bản ghi mỗi trang
               </Typography>
             </div>
-            <div className="flex items-center gap-2">
-              <Input
-                label="Tìm kiếm phiếu xuất"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64"
-              />
-            </div>
+
+            {/* Search input */}
+            <TableSearch
+              value={searchTerm}
+              onChange={setSearchTerm}
+              onSearch={() => {
+                // Thêm hàm xử lý tìm kiếm vào đây nếu có
+                console.log("Tìm kiếm kho:", searchTerm);
+              }}
+              placeholder="Tìm kiếm kho"
+            />
+
           </div>
 
-          <table className="w-full min-w-[640px] table-auto">
+          <table className="w-full min-w-[640px] table-auto border border-gray-200">
             <thead>
               <tr>
                 {["STT", "Tiêu đề", "Mô tả", "Ngày tạo", "Hành động"].map(
@@ -134,9 +121,8 @@ const IssueNotePage = () => {
                 filteredIssueNotes.map(
                   ({ id, title, description, createdAt }, index) => {
                     const isLast = index === filteredIssueNotes.length - 1;
-                    const className = `py-3 px-5 ${
-                      isLast ? "" : "border-b border-blue-gray-50"
-                    }`;
+                    const className = `py-3 px-5 ${isLast ? "" : "border-b border-blue-gray-50"
+                      }`;
                     const stt = currentPage * pageSize + (index + 1);
 
                     return (
@@ -199,33 +185,35 @@ const IssueNotePage = () => {
               )}
             </tbody>
           </table>
+
+          <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+            <div className="flex items-center gap-2">
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                Trang {currentPage + 1} / {totalPages} • {totalElements} phiếu xuất
+              </Typography>
+            </div>
+            <ReactPaginate
+              previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
+              nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
+              breakLabel="..."
+              pageCount={totalPages}
+              marginPagesDisplayed={2}
+              pageRangeDisplayed={5}
+              onPageChange={handlePageChange}
+              containerClassName="flex items-center gap-1"
+              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              pageLinkClassName="flex items-center justify-center w-full h-full"
+              previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
+              activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+              forcePage={currentPage}
+              disabledClassName="opacity-50 cursor-not-allowed"
+            />
+          </div>
         </CardBody>
 
-        <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
-          <div className="flex items-center gap-2">
-            <Typography variant="small" color="blue-gray" className="font-normal">
-              Trang {currentPage + 1} / {totalPages} • {totalElements} phiếu xuất
-            </Typography>
-          </div>
-          <ReactPaginate
-            previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
-            nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
-            breakLabel="..."
-            pageCount={totalPages}
-            marginPagesDisplayed={2}
-            pageRangeDisplayed={5}
-            onPageChange={handlePageChange}
-            containerClassName="flex items-center gap-1"
-            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-            pageLinkClassName="flex items-center justify-center w-full h-full"
-            previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-            nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-            breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-            activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
-            forcePage={currentPage}
-            disabledClassName="opacity-50 cursor-not-allowed"
-          />
-        </div>
+
       </Card>
 
       {/* Modal Thêm Phiếu Xuất */}
