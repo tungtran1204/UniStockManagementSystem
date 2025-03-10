@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -29,13 +30,12 @@ public class Product {
     private String description;
 
 
-    // ✅ Cho phép nullable để tránh lỗi khi dữ liệu thiếu
     @ManyToOne
-    @JoinColumn(name = "unit_id", nullable = true)
+    @JoinColumn(name = "unit_id", nullable = false)
     private Unit unit;
 
     @ManyToOne
-    @JoinColumn(name = "type_id", nullable = true)
+    @JoinColumn(name = "type_id", nullable = false)
     private ProductType productType;
 
     // ✅ Chỉ lưu tên người tạo, không dùng Foreign Key
@@ -54,8 +54,8 @@ public class Product {
     @Column(name = "image_url")
     private String imageUrl;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductMaterial> productMaterials;
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<ProductMaterial> productMaterials = new ArrayList<>();
 
 
 

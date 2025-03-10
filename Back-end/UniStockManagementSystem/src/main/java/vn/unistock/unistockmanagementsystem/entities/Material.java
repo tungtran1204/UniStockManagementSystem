@@ -2,8 +2,13 @@ package vn.unistock.unistockmanagementsystem.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
 @Data
 @Entity
 @Table(name = "materials")
@@ -21,11 +26,11 @@ public class Material {
     private String materialName;
 
     @ManyToOne
-    @JoinColumn(name = "unit_id")
+    @JoinColumn(name = "unit_id", nullable = false)
     private Unit unit;
 
     @ManyToOne
-    @JoinColumn(name = "type_id")
+    @JoinColumn(name = "type_id", nullable = false)
     private MaterialType materialType;
 
     private String description;
