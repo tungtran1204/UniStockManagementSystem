@@ -19,7 +19,7 @@ import vn.unistock.unistockmanagementsystem.entities.ProductType;
 import vn.unistock.unistockmanagementsystem.entities.Unit;
 import vn.unistock.unistockmanagementsystem.features.user.productTypes.ProductTypeRepository;
 import vn.unistock.unistockmanagementsystem.features.user.units.UnitRepository;
-import vn.unistock.unistockmanagementsystem.storage.AzureBlobService;
+import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -82,7 +82,7 @@ class ProductsServiceTest {
 
     @Test
     @DisplayName("Should create a new product")
-    void createProduct_CreatesNewProduct() {
+    void createProduct_CreatesNewProduct() throws IOException {
         // Given
         ProductsDTO productDTO = new ProductsDTO();
         productDTO.setProductCode("P001");
@@ -131,7 +131,7 @@ class ProductsServiceTest {
 
     @Test
     @DisplayName("Should create product with default production status when not provided")
-    void createProduct_WithDefaultProductionStatus() {
+    void createProduct_WithDefaultProductionStatus() throws IOException {
         // Given
         ProductsDTO productDTO = new ProductsDTO();
         productDTO.setProductCode("P001");
