@@ -23,6 +23,7 @@ import {
 } from "@material-tailwind/react";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
+import { useNavigate } from "react-router-dom";
 
 const ProductPage = () => {
   const navigate = useNavigate();
@@ -131,7 +132,7 @@ const ProductPage = () => {
         <PageHeader
           title="Danh sách sản phẩm"
           addButtonLabel="Thêm sản phẩm"
-          onAdd={() => setShowCreatePopup(true)}
+          onAdd={handleAddProduct}
           onImport={() => setShowImportPopup(true)}
           onExport={exportExcel}
         />
