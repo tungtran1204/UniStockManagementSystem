@@ -8,10 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.unistock.unistockmanagementsystem.entities.Material;
-import vn.unistock.unistockmanagementsystem.entities.Partner;
-import vn.unistock.unistockmanagementsystem.entities.PurchaseOrder;
-import vn.unistock.unistockmanagementsystem.entities.PurchaseOrderDetail;
+import vn.unistock.unistockmanagementsystem.entities.*;
 import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerRepository;
 
@@ -36,13 +33,25 @@ public class PurchaseOrderService {
     private final PartnerRepository partnerRepository;
     private final MaterialsRepository materialRepository;
 
-    @Transactional(readOnly = true)
     public Page<PurchaseOrderDTO> getAllOrders(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<PurchaseOrder> orders = purchaseOrderRepository.findAllWithBasicInfo(pageable);
+        Page<PurchaseOrder> orders = purchaseOrderRepository.findAll(pageable);
 
-        return orders.map(PurchaseOrderDTO::createForList);
+        orders.map(order -> PurchaseOrderDTO.builder()
+                .poId(order.getPoId())
+                .poCode(order.getPoCode())
+                .supplierId(order.getPartner() != null ? order.getPartner().getPartnerId() : null)
+                .supplierName(order.getPartner() != null ? order.getPartner().getPartnerName() : null)
+                .supplierContactName(order.getPartner() != null ? order.getPartner().getContactName() : null)
+                .supplierPhone(order.getPartner() != null ? order.getPartner().getPhone() : null)
+                .supplierAddress(order.getPartner() != null ? order.getPartner().getAddress() : null)
+                .orderDate(order.getOrderDate())
+                .status(order.getStatus().getLabel())
+                .build());
+
+        return orders.map(purchaseOrderMapper::toDTO);
     }
+
     @Transactional(readOnly = true)
     public PurchaseOrderDTO getOrderById(Long id) {
         // Sử dụng native query để lấy đầy đủ thông tin

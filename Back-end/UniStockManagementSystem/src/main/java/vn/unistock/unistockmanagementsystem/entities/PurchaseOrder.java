@@ -39,7 +39,7 @@ public class PurchaseOrder {
     public enum OrderStatus {
         PENDING("Chờ nhận"),
         IN_PROGRESS("Đang giao"),
-        COMPLETED("Hoàn tất"),
+        COMPLETED("Hoàn thành"),
         CANCELED("Hủy");
 
         private final String label;

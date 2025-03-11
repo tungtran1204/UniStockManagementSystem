@@ -32,6 +32,7 @@ import PurchaseOrderPage from "../features/user/purchaseOrder/purchaseOrderPage"
 import AddProductPage from "@/features/user/products/AddProductPage";
 import DetailProductPage from "@/features/user/products/DetailProductPage";
 import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
+import PurchaseOrderDetail from "../features/user/purchaseOrder/purchaseOrderDetail";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -249,6 +250,11 @@ export const routes = [
       {
         path: "/user/products/:id",
         element: <DetailProductPage />,
+        roles: ["USER"],
+      },
+      {
+        path: "/user/purchaseOrder/:orderId",
+        element: <PurchaseOrderDetail />,
         roles: ["USER"],
       },
     ],

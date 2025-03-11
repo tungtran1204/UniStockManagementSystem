@@ -13,9 +13,7 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
     @Query("SELECT p FROM PurchaseOrder p LEFT JOIN FETCH p.partner WHERE p.poId = :id")
     Optional<PurchaseOrder> findByIdWithPartner(@Param("id") Long id);
 
-    // tải tối thiểu dữ liệu cần thiết cho danh sách
-    @Query(value = "SELECT p FROM PurchaseOrder p LEFT JOIN FETCH p.partner",
-            countQuery = "SELECT COUNT(p) FROM PurchaseOrder p")
-    Page<PurchaseOrder> findAllWithBasicInfo(Pageable pageable);
-
+    // Thêm vào PurchaseOrderRepository
+    @Query("SELECT p FROM PurchaseOrder p LEFT JOIN FETCH p.partner")
+    Page<PurchaseOrder> findAllWithPartner(Pageable pageable);
 }

@@ -19,6 +19,7 @@ public class PurchaseOrderDTO {
     private String status;
 
     private String supplierName;
+    private String supplierContactName;
     private String supplierAddress;
     private String supplierPhone;
 

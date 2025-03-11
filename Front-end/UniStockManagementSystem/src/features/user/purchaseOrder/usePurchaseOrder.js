@@ -1,60 +1,73 @@
 import { useState, useEffect } from "react";
-import purchaseOrderService from "../services/purchaseOrderService";
+import { 
+  fetchPurchaseOrders, 
+  createPurchaseOrder, 
+  updatePurchaseOrderStatus, 
+  updatePurchaseOrder, 
+  deletePurchaseOrder,
+  getPurchaseOrderById
+} from "./purchaseOrderService";
 
 const usePurchaseOrder = () => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0); 
+  const [pageSize, setPageSize] = useState(10);
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
 
-  // Fetch danh sách đơn hàng
-  const fetchOrders = async () => {
-    setLoading(true);
+  // Lấy danh sách đơn hàng từ API
+  const fetchPaginatedOrders = async (page = currentPage, size = pageSize, search = searchKeyword, status = selectedStatus) => {
     try {
-      const data = await purchaseOrderService.getAllOrders();
-      setOrders(data);
+      const response = await fetchPurchaseOrders(page, size, search, status);
+      setPurchaseOrders(response.data || []);
+      setTotalPages(response.totalPages);
+      setTotalElements(response.totalElements);
+      setCurrentPage(page);
+      setPageSize(size);
     } catch (error) {
-      setError(error);
+      console.error("Lỗi khi tải danh sách đơn hàng:", error);
+    }
+  };
+
+  const fetchOrderDetail = async () => {
+    try {
+      console.log("📢 Gọi API lấy đơn hàng với ID:", orderId);
+      const response = await getPurchaseOrderById(orderId);
+      console.log("✅ Kết quả từ API:", response);
+  
+      // Cập nhật state với items luôn có giá trị (không undefined)
+      setOrder({ ...response, items: response.items || [] });
+    } catch (error) {
+      console.error("❌ Lỗi khi lấy chi tiết đơn hàng:", error);
+      setError("Không thể tải dữ liệu đơn hàng.");
     } finally {
       setLoading(false);
     }
   };
-
-  // Fetch một đơn hàng theo ID
-  const fetchOrderById = async (id) => {
-    setLoading(true);
-    try {
-      return await purchaseOrderService.getOrderById(id);
-    } catch (error) {
-      setError(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Tạo một đơn hàng mới
-  const createOrder = async (orderData) => {
-    setLoading(true);
-    try {
-      const newOrder = await purchaseOrderService.createOrder(orderData);
-      setOrders((prevOrders) => [...prevOrders, newOrder]); // Cập nhật danh sách
-    } catch (error) {
-      setError(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    fetchPaginatedOrders();
+  }, [currentPage, pageSize, searchKeyword, selectedStatus]);
 
   return {
-    orders,
-    loading,
-    error,
-    fetchOrders,
-    fetchOrderById,
-    createOrder
+    purchaseOrders,
+    fetchPaginatedOrders,
+    createPurchaseOrder,
+    updatePurchaseOrderStatus,
+    updatePurchaseOrder,
+    deletePurchaseOrder,
+    fetchOrderDetail,
+    totalPages,
+    totalElements,
+    currentPage,
+    pageSize,
+    searchKeyword,
+    setSearchKeyword,
+    selectedStatus,
+    setSelectedStatus
   };
 };
 
