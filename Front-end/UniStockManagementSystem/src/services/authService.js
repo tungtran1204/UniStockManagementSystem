@@ -1,7 +1,8 @@
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 
-const API_URL = "https://uni-api-hdc9gjgzc5g5dacp.eastasia-01.azurewebsites.net/api/unistock/auth"; // Cập nhật URL thực tế
+const API_URL = "http://localhost:8080/api/unistock/auth";
+// const API_URL = "https://uni-api-hdc9gjgzc5g5dacp.eastasia-01.azurewebsites.net/api/unistock/auth"; // Cập nhật URL thực tế
 
 // 🟢 **Cấu hình axios**
 const apiClient = axios.create({
