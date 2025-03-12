@@ -185,7 +185,7 @@ const ProductPage = () => {
               </Typography>
             </div>
 
-            <div className="w-[890px]"> {/* Changed from w-[500px] to w-[800px] */}
+            <div className="w-[890px]"> 
               <Input
                 label="Tìm kiếm sản phẩm"
                 value={searchTerm}

@@ -30,7 +30,9 @@ import IssueNotePage from "../features/user/issueNote/IssueNotePage";
 import AddIssueNote from "../features/user/receiptNote/AddReceiptNote";
 import AddProductPage from "@/features/user/products/AddProductPage";
 import DetailProductPage from "@/features/user/products/DetailProductPage";
-
+import ProductTypePage from "@/features/user/productType/ProductTypePage";
+import PurchaseRequestPage from "@/features/user/purchaseRequest/PurchaseRequestPage";
+import AddPurchaseRequestPage from "../features/user/purchaseRequest/AddPurchaseRequestPage";
 const icon = { className: "w-5 h-5 text-inherit" };
 
 export const routes = [
@@ -123,8 +125,24 @@ export const routes = [
         icon: <TableCellsIcon {...icon} />,
         name: "Sản phẩm",
         path: "/user/products",
-        element: <ProductPage />,
+        element: <Navigate to="/user/products" replace />,
         roles: ["USER"],
+        subPages: [
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Sản phẩm",
+            path: "/user/products",
+            element: <ProductPage />,
+            roles: ["USER"],
+          },
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Dòng sản phẩm",
+            path: "/user/products-types",
+            element: <ProductTypePage/>,
+            roles: ["USER"],
+          },
+        ],
       },
       {
         icon: <TableCellsIcon {...icon} />, // Sử dụng TableCellsIcon cho phần quản lý nguyên vật liệu
@@ -133,8 +151,13 @@ export const routes = [
         element: <MaterialPage />,
         roles: ["USER"],
       },
-     
-      
+      {
+        icon: <TableCellsIcon {...icon} />,
+        name: "Yêu cầu mua vật tư",
+        path: "/user/purchase-request",
+        element: <PurchaseRequestPage />,
+        roles: ["USER"],
+      },
       {
         icon: <UserCircleIcon {...icon} />,
         name: "Quản lý đối tác",
@@ -215,6 +238,13 @@ export const routes = [
       {
         path: "/user/products/:id",
         element: <DetailProductPage />,
+        roles: ["USER"],
+      },
+      {
+        icon: <TableCellsIcon {...icon} />,
+        name: "Thêm yêu cầu mua vật tư",
+        path: "/user/purchase-request/add",
+        element: <AddPurchaseRequestPage />,
         roles: ["USER"],
       },
     ],
