@@ -99,7 +99,7 @@ const AddProductPage = () => {
     const loadInitialData = async () => {
         try {
             const unitsData = await fetchUnits();
-            const productTypesData = await fetchProductTypes();
+            const productTypesData = await fetchProductTypes(); 
             setUnits(unitsData);
             setProductTypes(productTypesData);
         } catch (error) {
@@ -625,14 +625,33 @@ const AddProductPage = () => {
                             Định mức nguyên vật liệu
                         </Typography>
 
-                        {/* Thêm ô tìm kiếm trước bảng */}
-                        <div className="flex items-center gap-4 mb-4">
-                            <div className="flex-1">
+                        <div className="flex items-center justify-between gap-4 mb-4">
+                            <div className="flex items-center gap-2">
+                                <Typography variant="small" color="blue-gray" className="font-normal">
+                                    Hiển thị
+                                </Typography>
+                                <select
+                                    value={pageSize}
+                                    onChange={(e) => {
+                                        setPageSize(Number(e.target.value));
+                                        setCurrentPage(0);
+                                    }}
+                                    className="border rounded px-2 py-1"
+                                >
+                                    {[5, 10, 20, 50].map(size => (
+                                        <option key={size} value={size}>{size}</option>
+                                    ))}
+                                </select>
+                                <Typography variant="small" color="blue-gray" className="font-normal">
+                                    bản ghi mỗi trang
+                                </Typography>
+                            </div>
+
+                            <div className="w-96 md:w-[900px]">
                                 <Input
                                     label="Tìm kiếm trong danh sách"
                                     value={tableSearchQuery}
                                     onChange={(e) => setTableSearchQuery(e.target.value)}
-                                    className="w-full"
                                     icon={
                                         tableSearchQuery && (
                                             <button
@@ -652,27 +671,6 @@ const AddProductPage = () => {
                                 {billOfMaterialsError}
                             </Typography>
                         )}
-
-                        <div className="flex items-center gap-2 mb-4">
-                            <Typography variant="small" color="blue-gray" className="font-normal">
-                                Hiển thị
-                            </Typography>
-                            <select
-                                value={pageSize}
-                                onChange={(e) => {
-                                    setPageSize(Number(e.target.value));
-                                    setCurrentPage(0);
-                                }}
-                                className="border rounded px-2 py-1"
-                            >
-                                {[5, 10, 20, 50].map(size => (
-                                    <option key={size} value={size}>{size}</option>
-                                ))}
-                            </select>
-                            <Typography variant="small" color="blue-gray" className="font-normal">
-                                dòng mỗi trang
-                            </Typography>
-                        </div>
 
                         <div className="border border-gray-200 rounded mb-4">
                             <table className="w-full text-left min-w-max border-collapse">
@@ -790,7 +788,7 @@ const AddProductPage = () => {
                                 <div className="flex items-center gap-2">
                                     <Typography variant="small" color="blue-gray" className="font-normal">
                                         Trang {currentPage + 1} / {Math.ceil(filteredTableMaterials.length / pageSize)} •{" "}
-                                        {filteredTableMaterials.length} dòng
+                                        {filteredTableMaterials.length} bản ghi
                                     </Typography>
                                 </div>
                                 <ReactPaginate

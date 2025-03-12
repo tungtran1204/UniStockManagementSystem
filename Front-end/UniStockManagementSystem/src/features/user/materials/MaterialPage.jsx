@@ -211,7 +211,6 @@ const MaterialPage = () => {
                                     "STT",
                                     "Mã NVL",
                                     "Tên nguyên vật liệu",
-                                    "Mô tả",
                                     "Đơn vị",
                                     "Danh mục",
                                     "Hình ảnh",
@@ -247,11 +246,6 @@ const MaterialPage = () => {
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
                                                     {material.materialName}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-normal text-blue-gray-600">
-                                                    {material.description || "N/A"}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
