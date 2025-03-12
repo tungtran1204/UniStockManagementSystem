@@ -14,6 +14,7 @@ import {
 import { FaEdit, FaPlus } from "react-icons/fa";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
+import PageHeader from '@/components/PageHeader';
 
 const ProductTypePage = () => {
     const { productTypes, fetchProductTypes, toggleStatus, createProductType, totalPages, totalElements, loading } = useProductType();
@@ -47,28 +48,16 @@ const ProductTypePage = () => {
     };
 
     return (
-        <div className="mt-12 mb-8 flex flex-col gap-12">
-            <Card>
-                <CardHeader variant="gradient" color="gray" className="mb-8 p-6">
-                    <div className="flex justify-between items-center">
-                        <Typography variant="h6" color="white">
-                            Danh sách dòng sản phẩm
-                        </Typography>
-                        <div className="flex gap-2">
-                            <Button
-                                size="sm"
-                                color="white"
-                                variant="text"
-                                className="flex items-center gap-2"
-                                onClick={() => setShowCreateModal(true)}
-                                disabled={loading}
-                            >
-                                <FaPlus className="h-4 w-4" /> Thêm dòng sản phẩm
-                            </Button>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
+        <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+            <Card className="bg-gray-50 p-7 rounded-none shadow-none">
+                <CardBody className="pb-2 bg-white rounded-xl">
+                    <PageHeader
+                        title="Danh sách dòng sản phẩm"
+                        onAdd={() => setShowCreateModal(true)}
+                        addButtonLabel="Thêm dòng sản phẩm"
+                        showImport={false} // Ẩn nút import nếu không dùng
+                        showExport={false} // Ẩn xuất file nếu không dùng
+                    />
                     <div className="px-4 py-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
@@ -84,7 +73,7 @@ const ProductTypePage = () => {
                                 ))}
                             </select>
                             <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-                                dòng sản phẩm mỗi trang
+                                bản ghi mỗi trang
                             </Typography>
                         </div>
                     </div>
@@ -177,7 +166,7 @@ const ProductTypePage = () => {
 
                     <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
                         <Typography variant="small" color="blue-gray" className="font-normal">
-                            Trang {currentPage + 1} / {totalPages} • {totalElements} dòng sản phẩm
+                            Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
                         </Typography>
                         <ReactPaginate
                             previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}

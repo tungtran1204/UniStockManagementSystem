@@ -53,22 +53,23 @@ const ReceiptNotePage = () => {
     setShowCreatePopup(false);
   };
 
-  const handlePageChange = (selectedItem) => {
-    setCurrentPage(selectedItem.selected);
+  const handlePageChangeWrapper = (selectedItem) => {
+    handlePageChange(selectedItem.selected);
   };
 
   return (
-    <div className="mb-8 flex flex-col gap-12">
-      <Card className="bg-gray-100 p-7">
-        <PageHeader
-          title="Danh sách phiếu nhập kho"
-          addButtonLabel="Thêm phiếu nhập"
-          onAdd={() => navigate("/user/receiptNote/add")}
-          onImport={() => setShowImportPopup(true)}
-          onExport={() => { /* export Excel */ }}
-        />
+    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+      <Card className="bg-gray-50 p-7 rounded-none shadow-none">
+
         <CardBody className="pb-2 bg-white rounded-xl">
-          <div className="px-4 py-2 flex items-center justify-between gap-2">
+          <PageHeader
+            title="Danh sách phiếu nhập kho"
+            addButtonLabel="Thêm phiếu nhập"
+            onAdd={() => navigate("/user/receiptNote/add")}
+            onImport={() => setShowImportPopup(true)}
+            onExport={() => { /* export Excel */ }}
+          />
+          <div className="py-2 flex items-center justify-between gap-2">
             {/* Items per page */}
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-light">
@@ -141,17 +142,30 @@ const ReceiptNotePage = () => {
             </tbody>
           </table>
 
-          <div className="flex justify-between p-4">
-            <Typography variant="small" color="blue-gray">
-              Trang {currentPage + 1} / {totalPages} - {totalElements} phiếu nhập
-            </Typography>
+          {/* Phần phân trang mới sử dụng ReactPaginate */}
+          <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+            <div className="flex items-center gap-2">
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
+              </Typography>
+            </div>
             <ReactPaginate
-              previousLabel={<ArrowLeftIcon className="h-4 w-4" />}
-              nextLabel={<ArrowRightIcon className="h-4 w-4" />}
+              previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
+              nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
+              breakLabel="..."
               pageCount={totalPages}
-              onPageChange={handlePageChange}
+              marginPagesDisplayed={2}
+              pageRangeDisplayed={5}
+              onPageChange={handlePageChangeWrapper}
               containerClassName="flex items-center gap-1"
-              activeClassName="bg-blue-500 text-white"
+              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              pageLinkClassName="flex items-center justify-center w-full h-full"
+              previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
+              activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+              forcePage={currentPage}
+              disabledClassName="opacity-50 cursor-not-allowed"
             />
           </div>
         </CardBody>

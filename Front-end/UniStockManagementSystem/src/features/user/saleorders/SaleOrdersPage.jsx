@@ -65,21 +65,20 @@ const SaleOrdersPage = () => {
   );
 
   return (
-    <div className="bg-gray-50 mb-8 flex flex-col gap-12 " style={{ height: "calc(100vh - 180px)" }}>
-      <Card className="bg-gray-50 p-7 h-screen overflow-auto">
-        
-
+    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+      <Card className="bg-gray-50 p-7 rounded-none shadow-none">
         <CardBody className="pb-2 bg-white rounded-xl">
-        <PageHeader
-          title="Danh sách đơn hàng"
-          addButtonLabel="Thêm đơn hàng"
-          onAdd={() => handleAddOrder(true)}
-          onImport={() => {/* Xử lý import nếu có */ }}
-          onExport={() => {/* Xử lý export file ở đây nếu có */ }}
-          showImport={false} // Ẩn nút import nếu không dùng
-          showExport={false} // Ẩn xuất file nếu không dùng
-        />
-          <div className="px-4 py-2 flex items-center justify-between gap-2">
+          <PageHeader
+            title="Danh sách đơn đặt hàng bán"
+            addButtonLabel="Thêm đơn hàng"
+            onAdd={() => handleAddOrder(true)}
+            onImport={() => {/* Xử lý import nếu có */ }}
+            onExport={() => {/* Xử lý export file ở đây nếu có */ }}
+            showImport={false} // Ẩn nút import nếu không dùng
+            showExport={false} // Ẩn xuất file nếu không dùng
+          />
+          {/* Items per page and search */}
+          <div className="py-2 flex items-center justify-between gap-2">
             {/* Items per page */}
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-light">
@@ -108,9 +107,9 @@ const SaleOrdersPage = () => {
               onChange={setSearchTerm}
               onSearch={() => {
                 // Thêm hàm xử lý tìm kiếm vào đây nếu có
-                console.log("Tìm kiếm kho:", searchTerm);
+                console.log("Tìm kiếm đơn hàng:", searchTerm);
               }}
-              placeholder="Tìm kiếm kho"
+              placeholder="Tìm kiếm đơn hàng"
             />
 
           </div>
@@ -192,7 +191,7 @@ const SaleOrdersPage = () => {
           {/* Phân trang */}
           <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
             <Typography variant="small" color="blue-gray" className="font-normal">
-              Trang {currentPage + 1} / {totalPages} • {totalElements} đơn hàng
+              Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
             </Typography>
             <ReactPaginate
               previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
