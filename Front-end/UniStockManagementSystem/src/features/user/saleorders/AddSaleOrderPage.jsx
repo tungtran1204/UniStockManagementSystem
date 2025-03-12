@@ -11,6 +11,8 @@ import {
   Typography,
 } from "@material-tailwind/react";
 import Select, { components } from "react-select";
+import ReactPaginate from "react-paginate";
+import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 import { getPartnersByType } from "@/features/user/partner/partnerService";
 import { getProducts } from "./saleOrdersService";
@@ -95,6 +97,10 @@ const AddSaleOrderPage = () => {
   const [isCreatePartnerPopupOpen, setIsCreatePartnerPopupOpen] = useState(false);
 
   const selectRef = useRef(null);
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(5);
+  const [tableSearchQuery, setTableSearchQuery] = useState("");
 
   // Hàm fetch danh sách khách hàng
   const fetchCustomers = async () => {
@@ -306,6 +312,25 @@ const AddSaleOrderPage = () => {
     setIsCreatePartnerPopupOpen(false);
   };
 
+  const getFilteredItems = () => {
+    return items.filter(item => {
+      const searchLower = tableSearchQuery.toLowerCase().trim();
+      return item.productCode?.toLowerCase().includes(searchLower) ||
+             item.productName?.toLowerCase().includes(searchLower);
+    });
+  };
+
+  const getPaginatedData = () => {
+    const filteredData = getFilteredItems();
+    const startIndex = currentPage * pageSize;
+    const endIndex = startIndex + pageSize;
+    return filteredData.slice(startIndex, endIndex);
+  };
+
+  const handlePageChange = (selectedItem) => {
+    setCurrentPage(selectedItem.selected);
+  };
+
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
@@ -407,12 +432,55 @@ const AddSaleOrderPage = () => {
             </div>
           </div>
 
+          {/* Thêm ô tìm kiếm và hiển thị số dòng mỗi trang */}
+          <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-2">
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                Hiển thị
+              </Typography>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(0);
+                }}
+                className="border rounded px-2 py-1"
+              >
+                {[5, 10, 20, 50].map(size => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                dòng mỗi trang
+              </Typography>
+            </div>
+            <div className="flex-1">
+              <Input
+                label="Tìm kiếm trong danh sách"
+                value={tableSearchQuery}
+                onChange={(e) => setTableSearchQuery(e.target.value)}
+                className="w-full"
+                icon={
+                  tableSearchQuery && (
+                    <button
+                      className="absolute right-3 top-1/2 -translate-y-1/2"
+                      onClick={() => setTableSearchQuery("")}
+                    >
+                      <FaTimes className="h-4 w-4 text-gray-500 hover:text-gray-700" />
+                    </button>
+                  )
+                }
+              />
+            </div>
+            
+          </div>
+
           {/* Bảng chi tiết hàng */}
           <div className="border border-gray-200 rounded mb-4">
             <table className="w-full text-left min-w-max border-collapse">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  {["STT", "Mã hàng", "Tên hàng", "Đơn vị", "Số lượng"].map((head) => (
+                  {["STT", "Mã hàng", "Tên hàng", "Đơn vị", "Số lượng", "Thao tác"].map((head) => (
                     <th
                       key={head}
                       className="px-4 py-2 text-sm font-semibold text-gray-600 border-r last:border-r-0"
@@ -423,10 +491,10 @@ const AddSaleOrderPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {items.length > 0 ? (
-                  items.map((item, index) => (
+                {getPaginatedData().length > 0 ? (
+                  getPaginatedData().map((item, index) => (
                     <tr key={item.id} className="border-b last:border-b-0 hover:bg-gray-50">
-                      <td className="px-4 py-2 text-sm text-gray-700 border-r">{index + 1}</td>
+                      <td className="px-4 py-2 text-sm text-gray-700 border-r">{currentPage * pageSize + index + 1}</td>
                       <td className="px-4 py-2 text-sm border-r">
                         <Select
                           placeholder="Chọn sản phẩm"
@@ -484,18 +552,62 @@ const AddSaleOrderPage = () => {
                           </Typography>
                         )}
                       </td>
+                      <td className="px-4 py-2 text-sm text-center">
+                        <Button
+                          color="red"
+                          variant="text"
+                          size="sm"
+                          onClick={() => {
+                            setItems((prev) => prev.filter((_, i) => i !== (currentPage * pageSize + index)));
+                            if (getPaginatedData().length === 1 && currentPage > 0) {
+                              setCurrentPage(currentPage - 1);
+                            }
+                          }}
+                        >
+                          Xóa
+                        </Button>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-4 py-2 text-center text-gray-500">
-                      Chưa có dòng sản phẩm nào
+                    <td colSpan={6} className="px-4 py-2 text-center text-gray-500">
+                      {items.length === 0 ? "Chưa có dòng sản phẩm nào" : "Không tìm thấy kết quả phù hợp"}
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
+
+          {getFilteredItems().length > 0 && (
+            <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+              <div className="flex items-center gap-2">
+                <Typography variant="small" color="blue-gray" className="font-normal">
+                  Trang {currentPage + 1} / {Math.ceil(getFilteredItems().length / pageSize)} •{" "}
+                  {getFilteredItems().length} dòng
+                </Typography>
+              </div>
+              <ReactPaginate
+                previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
+                nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
+                breakLabel="..."
+                pageCount={Math.ceil(getFilteredItems().length / pageSize)}
+                marginPagesDisplayed={2}
+                pageRangeDisplayed={5}
+                onPageChange={handlePageChange}
+                containerClassName="flex items-center gap-1"
+                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                pageLinkClassName="flex items-center justify-center w-full h-full"
+                previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
+                activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+                forcePage={currentPage}
+                disabledClassName="opacity-50 cursor-not-allowed"
+              />
+            </div>
+          )}
 
           {/* Nút thêm / xóa dòng */}
           <div className="flex gap-2 mb-4">

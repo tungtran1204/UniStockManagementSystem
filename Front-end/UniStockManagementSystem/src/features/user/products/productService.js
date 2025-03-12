@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/unistock/user/products";
+const API_URL = "http://localhost:8080/api/unistock/user";
 
 // Hàm để lấy Token từ LocalStorage
 const authHeader = () => {
@@ -11,7 +11,7 @@ const authHeader = () => {
 // Lấy danh sách tất cả sản phẩm
 export const getAllProducts = async (page = 0, size = 10) => {
   try {
-    const response = await axios.get(API_URL, {
+    const response = await axios.get(`${API_URL}/products`, {
       headers: authHeader(),
       params: {
         page: page,
@@ -44,7 +44,7 @@ export const getAllProducts = async (page = 0, size = 10) => {
 // Lấy sản phẩm theo ID
 export const getProductById = async (productId) => {
   try {
-    const response = await axios.get(`${API_URL}/${productId}`, {
+    const response = await axios.get(`${API_URL}/products/${productId}`, {
       headers: authHeader(),
     });
     console.log("📌 [getProductById] API Response:", response.data);
@@ -74,7 +74,7 @@ export const createProduct = async (productData) => {
     formData.append("materials", JSON.stringify(productData.materials || []));
 
     const response = await axios.post(
-      `${API_URL}/create`,
+      `${API_URL}/products/create`,
       formData,
       {
         headers: {
@@ -118,7 +118,7 @@ export const updateProduct = async (productId, productData) => {
     formData.append("materials", JSON.stringify(filteredMaterials));
 
     const response = await axios.put(
-      `${API_URL}/${productId}`,
+      `${API_URL}/products/${productId}`,
       formData,
       {
         headers: {
@@ -140,7 +140,7 @@ export const updateProduct = async (productId, productData) => {
 export const toggleProductStatus = async (productId) => {
   try {
     const response = await axios.patch(
-      `${API_URL}/${productId}/toggle-production`,
+      `${API_URL}/products/${productId}/toggle-production`,
       {},
       { headers: authHeader() }
     );
@@ -155,7 +155,7 @@ export const toggleProductStatus = async (productId) => {
 // Lấy danh sách đơn vị
 export const fetchUnits = async () => {
   try {
-    const response = await axios.get("http://localhost:8080/api/unistock/user/units", {
+    const response = await axios.get(`${API_URL}/units`, {
       headers: authHeader(),
     });
     console.log("📌 [fetchUnits] API Response:", response.data);
@@ -169,13 +169,24 @@ export const fetchUnits = async () => {
 // Lấy danh sách dòng sản phẩm
 export const fetchProductTypes = async () => {
   try {
-    const response = await axios.get("http://localhost:8080/api/unistock/user/product-types", {
-      headers: authHeader(),
+    const response = await axios.get(`${API_URL}/product-types`, {
+      headers: authHeader()
     });
-    console.log("📌 [fetchProductTypes] API Response:", response.data);
-    return response.data;
+    
+    // Check if response.data has content property (paginated response)
+    if (response.data && response.data.content) {
+      return response.data.content.filter(type => type.status === true);
+    }
+    
+    // If response.data is direct array
+    if (Array.isArray(response.data)) {
+      return response.data.filter(type => type.status === true);
+    }
+
+    console.warn("Unexpected response format:", response.data);
+    return [];
   } catch (error) {
-    console.error("❌ Lỗi khi lấy danh sách dòng sản phẩm:", error.response?.data || error.message);
+    console.error("Error fetching product types:", error);
     throw error;
   }
 };
@@ -184,7 +195,7 @@ export const fetchProductTypes = async () => {
 export const checkProductCodeExists = async (productCode, excludeId = null) => {
   try {
     const response = await axios.get(
-      `${API_URL}/check-product-code/${productCode}`,
+      `${API_URL}/products/check-product-code/${productCode}`,
       { headers: authHeader(), params: { excludeId } }
     );
     console.log("📌 [checkProductCodeExists] API Response:", response.data);
@@ -202,7 +213,7 @@ export const importExcel = async (file) => {
     formData.append("file", file);
 
     const response = await axios.post(
-      `${API_URL}/import`,
+      `${API_URL}/products/import`,
       formData,
       {
         headers: {
@@ -223,7 +234,7 @@ export const importExcel = async (file) => {
 // Export sản phẩm ra Excel
 export const exportExcel = async () => {
   try {
-    const response = await axios.get(API_URL, { headers: authHeader() });
+    const response = await axios.get(`${API_URL}/products`, { headers: authHeader() });
     const products = response.data.content;
 
     const workbook = new ExcelJS.Workbook();

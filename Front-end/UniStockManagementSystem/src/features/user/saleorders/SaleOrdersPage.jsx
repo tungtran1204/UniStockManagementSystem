@@ -44,7 +44,6 @@ const SaleOrdersPage = () => {
 
   const handleAddOrder = async () => {
     const code = await getNextCode();
-    // setNextOrderCode(code);
     navigate("/user/sale-orders/add", { state: { nextCode: code } });
   };
 

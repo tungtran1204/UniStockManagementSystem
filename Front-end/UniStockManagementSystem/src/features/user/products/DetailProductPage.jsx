@@ -116,31 +116,35 @@ const DetailProductPage = () => {
             try {
                 const productData = await getProductById(id);
                 console.log("📌 Product Data:", productData);
-                const matchingType = (await fetchProductTypes()).find(
+                
+                // Lấy danh sách dòng sản phẩm đang hoạt động
+                const activeProductTypes = await fetchProductTypes();
+                
+                // Tìm kiếm trong danh sách đã được lọc
+                const matchingType = activeProductTypes.find(
                     (type) => type.typeName === productData.typeName
                 );
+
                 const updatedProductData = {
                     ...productData,
                     typeId: matchingType ? matchingType.typeId : "",
                     typeName: productData.typeName,
                 };
+
                 setProduct(updatedProductData);
                 setEditedProduct(updatedProductData);
                 setInitialValues(updatedProductData);
 
-                const [unitsData, typesData, materialsData] = await Promise.all([
+                const [unitsData, materialsData] = await Promise.all([
                     fetchUnits(),
-                    fetchProductTypes(),
                     axios.get("http://localhost:8080/api/unistock/user/materials", {
                         headers: authHeader(),
                         withCredentials: true,
                     }).then(res => res.data.content || [])
                 ]);
 
-                console.log("📌 Materials Data:", materialsData);
-
                 setUnits(unitsData);
-                setProductTypes(typesData);
+                setProductTypes(activeProductTypes); // Sử dụng danh sách đã lọc
                 setMaterials(materialsData);
             } catch (error) {
                 console.error("❌ Error:", error);
@@ -613,13 +617,33 @@ const DetailProductPage = () => {
                             </Typography>
                         )}
 
-                        <div className="flex items-center gap-4 mb-4">
-                            <div className="flex-1">
+                        <div className="flex items-center justify-between gap-4 mb-4">
+                            <div className="flex items-center gap-2">
+                                <Typography variant="small" color="blue-gray" className="font-normal">
+                                    Hiển thị
+                                </Typography>
+                                <select
+                                    value={pageSize}
+                                    onChange={(e) => {
+                                        setPageSize(Number(e.target.value));
+                                        setCurrentPage(0);
+                                    }}
+                                    className="border rounded px-2 py-1"
+                                >
+                                    {[5, 10, 20, 50].map(size => (
+                                        <option key={size} value={size}>{size}</option>
+                                    ))}
+                                </select>
+                                <Typography variant="small" color="blue-gray" className="font-normal">
+                                    bản ghi mỗi trang
+                                </Typography>
+                            </div>
+
+                            <div className="w-96 md:w-[900px]">
                                 <Input
                                     label="Tìm kiếm trong danh sách"
                                     value={tableSearchQuery}
                                     onChange={(e) => setTableSearchQuery(e.target.value)}
-                                    className="w-full"
                                     icon={
                                         tableSearchQuery && (
                                             <button
@@ -632,27 +656,6 @@ const DetailProductPage = () => {
                                     }
                                 />
                             </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 mb-4">
-                            <Typography variant="small" color="blue-gray" className="font-normal">
-                                Hiển thị
-                            </Typography>
-                            <select
-                                value={pageSize}
-                                onChange={(e) => {
-                                    setPageSize(Number(e.target.value));
-                                    setCurrentPage(0);
-                                }}
-                                className="border rounded px-2 py-1"
-                            >
-                                {[5, 10, 20, 50].map(size => (
-                                    <option key={size} value={size}>{size}</option>
-                                ))}
-                            </select>
-                            <Typography variant="small" color="blue-gray" className="font-normal">
-                                dòng mỗi trang
-                            </Typography>
                         </div>
 
                         <div className="border border-gray-200 rounded mb-4">

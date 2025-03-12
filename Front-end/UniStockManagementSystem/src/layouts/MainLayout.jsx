@@ -23,7 +23,7 @@ const MainLayout = ({ children }) => {
       >
         <Navbar />
       </div>
-      
+
       {/* Sidebar */}
       <Sidenav
         routes={routes.filter(
@@ -54,7 +54,11 @@ const MainLayout = ({ children }) => {
 
         {/* Footer cố định */}
         <div className="text-blue-gray-600 max-w-full flex-shrink-0 bg-gray-50">
-          <Footer />
+
+          {/* Footer cố định */}
+          <div className="text-blue-gray-600 max-w-full flex-shrink-0 bg-gray-50">
+            <Footer />
+          </div>
         </div>
       </div>
     </div>

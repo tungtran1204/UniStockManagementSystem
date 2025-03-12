@@ -1,9 +1,8 @@
-import { FaSave, FaTimes, FaPlus, FaTrash, FaEdit } from "react-icons/fa";
+import { FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa";
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import {
   Card,
-  CardHeader,
   CardBody,
   Button,
   Input,
@@ -11,12 +10,13 @@ import {
   Typography,
 } from "@material-tailwind/react";
 import Select, { components } from "react-select";
+import dayjs from "dayjs";
 
 import { getPartnersByType } from "@/features/user/partner/partnerService";
 import { getProducts, getSaleOrderById } from "./saleOrdersService";
-import dayjs from "dayjs";
 import useSaleOrder from "./useSaleOrder";
 import ModalAddCustomer from "./ModalAddCustomer";
+import PageHeader from '@/components/PageHeader';
 
 const CUSTOMER_TYPE_ID = 1;
 
@@ -66,12 +66,12 @@ const customStyles = {
 };
 
 const EditSaleOrderPage = () => {
-  const { orderId } = useParams(); // Lấy orderId từ URL
+  const { orderId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const { addOrder } = useSaleOrder();
 
-  // Các state lưu thông tin đơn hàng
+  // State của đơn hàng
   const [orderCode, setOrderCode] = useState("");
   const [orderDate, setOrderDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [customerCode, setCustomerCode] = useState("");
@@ -81,27 +81,27 @@ const EditSaleOrderPage = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [description, setDescription] = useState("");
   const [items, setItems] = useState([]);
-  
+
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [nextId, setNextId] = useState(1);
   const [isCreatePartnerPopupOpen, setIsCreatePartnerPopupOpen] = useState(false);
 
-  // State kiểm soát chế độ chỉnh sửa và các lỗi validate
-  const [isEditing, setIsEditing] = useState(false);
+  // Các lỗi validate
   const [customerError, setCustomerError] = useState("");
   const [globalError, setGlobalError] = useState("");
   const [itemsErrors, setItemsErrors] = useState({});
 
   const selectRef = useRef(null);
 
-  // Log orderId và lấy dữ liệu đơn hàng từ API
+  // Tab state: "info" cho thông tin chung, "products" cho danh sách sản phẩm
+  const [activeTab, setActiveTab] = useState("info");
+
+  // Lấy dữ liệu đơn hàng theo orderId
   useEffect(() => {
-    console.log("orderId từ URL:", orderId);
     const fetchOrderDetail = async () => {
       try {
         const orderData = await getSaleOrderById(orderId);
-        console.log("Dữ liệu đơn hàng trả về từ API:", orderData);
         setOrderCode(orderData.orderCode || "");
         setOrderDate(
           orderData.orderDate
@@ -317,12 +317,7 @@ const EditSaleOrderPage = () => {
   };
 
   const handleCancel = () => {
-    if (isEditing) {
-      setIsEditing(false);
-      // Nếu cần, reset lại state về giá trị ban đầu từ API
-    } else {
-      navigate("/user/sale-orders");
-    }
+    navigate("/user/sale-orders");
   };
 
   const handleOpenCreatePartnerPopup = () => {
@@ -333,40 +328,60 @@ const EditSaleOrderPage = () => {
     setIsCreatePartnerPopupOpen(false);
   };
 
-  return (
-    <div className="mt-12 mb-8 flex flex-col gap-12">
-      <Card>
-        <CardHeader variant="gradient" color="gray" className="mb-4 p-4 flex justify-between items-center">
-          <Typography variant="h6" color="white">
-            Đơn hàng {orderCode}
-          </Typography>
-          {!isEditing && (
-            <Button
-              variant="outlined"
-              color="blue"
-              onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2"
-            >
-              <FaEdit /> Chỉnh sửa
-            </Button>
-          )}
-        </CardHeader>
+  const handleDeleteRow = (rowId) => {
+    setItems((prev) => prev.filter((row) => row.id !== rowId));
+  };
 
-        <CardBody className="px-4 py-4">
-          {/* Thông tin chung */}
-          <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-6">
-            <div className="flex flex-col gap-4">
-              <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                  Mã phiếu
-                </Typography>
-                <Input label="Mã phiếu" value={orderCode} disabled className="text-sm" />
-              </div>
-              <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                  Khách hàng
-                </Typography>
-                {isEditing ? (
+  return (
+    <div className="mb-8 flex flex-col gap-12" style={{ height: "calc(100vh - 180px)" }}>
+      <Card className="bg-gray-50 p-7 h-screen">
+        <CardBody className="pb-2 bg-white rounded-xl">
+          <PageHeader
+            title={`Đơn hàng ${orderCode}`}
+            addButtonLabel=""
+            showAdd={false}
+            showImport={false}
+            showExport={false}
+          />
+
+          {/* Tab header */}
+          <div className="mb-4 flex border-b">
+            <button
+              onClick={() => setActiveTab("info")}
+              className={`py-2 px-4 ${
+                activeTab === "info"
+                  ? "border-b-2 border-blue-500 text-blue-500"
+                  : "text-gray-500"
+              }`}
+            >
+              Thông tin chung
+            </button>
+            <button
+              onClick={() => setActiveTab("products")}
+              className={`py-2 px-4 ${
+                activeTab === "products"
+                  ? "border-b-2 border-blue-500 text-blue-500"
+                  : "text-gray-500"
+              }`}
+            >
+              Danh sách sản phẩm
+            </button>
+          </div>
+
+          {/* Nội dung từng tab */}
+          {activeTab === "info" && (
+            <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-6">
+              <div className="flex flex-col gap-4">
+                <div>
+                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                    Mã phiếu
+                  </Typography>
+                  <Input label="Mã phiếu" value={orderCode} disabled className="text-sm" />
+                </div>
+                <div>
+                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                    Mã khách hàng
+                  </Typography>
                   <Select
                     ref={selectRef}
                     options={customers}
@@ -378,195 +393,171 @@ const EditSaleOrderPage = () => {
                     components={{ DropdownIndicator: AddCustomerDropdownIndicator }}
                     onAddCustomer={handleOpenCreatePartnerPopup}
                   />
-                ) : (
+                  {customerError && (
+                    <Typography color="red" className="text-xs mt-1">
+                      {customerError}
+                    </Typography>
+                  )}
+                </div>
+                <div>
+                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                    Địa chỉ
+                  </Typography>
+                  <Input label="Địa chỉ" value={address} disabled className="text-sm" />
+                </div>
+                <div>
+                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                    Người liên hệ
+                  </Typography>
                   <Input
-                    value={`${customerCode ? customerCode + " - " : ""}${customerName}`}
-                    disabled
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
                     className="text-sm"
                   />
-                )}
-                {customerError && (
-                  <Typography color="red" className="text-xs mt-1">
-                    {customerError}
+                </div>
+              </div>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                    Ngày lập phiếu
                   </Typography>
-                )}
+                  <Input
+                    type="date"
+                    value={orderDate}
+                    onChange={(e) => setOrderDate(e.target.value)}
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                    Tên khách hàng
+                  </Typography>
+                  <Input label="Tên khách hàng" value={customerName} disabled className="text-sm" />
+                </div>
+                <div>
+                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                    Số điện thoại
+                  </Typography>
+                  <Input label="Số điện thoại" value={phoneNumber} disabled className="text-sm" />
+                </div>
+                <div>
+                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                    Diễn giải
+                  </Typography>
+                  <Textarea
+                    placeholder="Diễn giải"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="text-sm"
+                  />
+                </div>
               </div>
-              <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                  Địa chỉ
-                </Typography>
-                <Input label="Địa chỉ" value={address} disabled className="text-sm" />
-              </div>
-              <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                  Người liên hệ
-                </Typography>
-                <Input
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                  className="text-sm"
-                  disabled={!isEditing}
-                />
-              </div>
-            </div>
-            <div className="flex flex-col gap-4">
-              <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                  Ngày lập phiếu
-                </Typography>
-                <Input
-                  type="date"
-                  value={orderDate}
-                  onChange={(e) => setOrderDate(e.target.value)}
-                  className="text-sm"
-                  disabled={!isEditing}
-                />
-              </div>
-              <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                  Tên khách hàng
-                </Typography>
-                <Input label="Tên khách hàng" value={customerName} disabled className="text-sm" />
-              </div>
-              <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                  Số điện thoại
-                </Typography>
-                <Input label="Số điện thoại" value={phoneNumber} disabled className="text-sm" />
-              </div>
-              <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                  Diễn giải
-                </Typography>
-                <Textarea
-                  placeholder="Diễn giải"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="text-sm"
-                  disabled={!isEditing}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Bảng chi tiết hàng */}
-          <div className="border border-gray-200 rounded mb-4">
-            <table className="w-full text-left min-w-max border-collapse">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  {["STT", "Mã hàng", "Tên hàng", "Đơn vị", "Số lượng"].map((head) => (
-                    <th key={head} className="px-4 py-2 text-sm font-semibold text-gray-600 border-r last:border-r-0">
-                      {head}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {items.length > 0 ? (
-                  items.map((item, index) => (
-                    <tr key={item.id} className="border-b last:border-b-0 hover:bg-gray-50">
-                      <td className="px-4 py-2 text-sm text-gray-700 border-r">{index + 1}</td>
-                      <td className="px-4 py-2 text-sm border-r">
-                        {isEditing ? (
-                          <Select
-                            placeholder="Chọn sản phẩm"
-                            isSearchable
-                            options={products}
-                            styles={customStyles}
-                            className="w-68"
-                            value={products.find((p) => p.value === item.productCode) || null}
-                            onChange={(selectedOption) => handleSelectProduct(item.id, selectedOption)}
-                          />
-                        ) : (
-                          <Input
-                            value={
-                              products.find((p) => p.value === item.productCode)?.value ||
-                              item.productName ||
-                              ""
-                            }
-                            disabled
-                            className="w-68 text-sm"
-                          />
-                        )}
-                        {itemsErrors[item.id] && itemsErrors[item.id].productError && (
-                          <Typography color="red" className="text-xs mt-1">
-                            {itemsErrors[item.id].productError}
-                          </Typography>
-                        )}
-                      </td>
-                      <td className="px-4 py-2 text-sm border-r">
-                        <Input
-                          className="w-32 text-sm"
-                          value={item.productName}
-                          onChange={(e) =>
-                            setItems((prev) =>
-                              prev.map((row) =>
-                                row.id === item.id ? { ...row, productName: e.target.value } : row
-                              )
-                            )
-                          }
-                          disabled
-                        />
-                      </td>
-                      <td className="px-4 py-2 text-sm border-r">
-                        <Input
-                          className="w-16 text-sm"
-                          value={item.unitName}
-                          onChange={(e) =>
-                            setItems((prev) =>
-                              prev.map((row) =>
-                                row.id === item.id ? { ...row, unitName: e.target.value } : row
-                              )
-                            )
-                          }
-                          disabled
-                        />
-                      </td>
-                      <td className="px-4 py-2 text-sm">
-                        <Input
-                          type="number"
-                          className="w-16 text-sm"
-                          value={item.quantity}
-                          onChange={(e) => handleQuantityChange(item.id, e.target.value)}
-                          disabled={!isEditing}
-                        />
-                        {itemsErrors[item.id] && itemsErrors[item.id].quantityError && (
-                          <Typography color="red" className="text-xs mt-1">
-                            {itemsErrors[item.id].quantityError}
-                          </Typography>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-2 text-center text-gray-500">
-                      Chưa có dòng sản phẩm nào
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Nút thêm / xóa dòng chỉ hiển thị khi đang ở chế độ chỉnh sửa */}
-          {isEditing && (
-            <div className="flex gap-2 mb-4">
-              <Button variant="outlined" onClick={handleAddRow} className="flex items-center gap-2">
-                <FaPlus /> Thêm dòng
-              </Button>
-              <Button
-                variant="outlined"
-                color="red"
-                onClick={handleRemoveAllRows}
-                className="flex items-center gap-2"
-              >
-                <FaTrash /> Xóa hết dòng
-              </Button>
             </div>
           )}
 
-          {/* Nút Lưu / Hủy hoặc nút quay lại */}
+          {activeTab === "products" && (
+            <div>
+              {/* Bảng chi tiết hàng */}
+              <div className="border border-gray-200 rounded mb-4">
+                <table className="w-full text-left min-w-max border-collapse">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      {["STT", "Mã hàng", "Tên hàng", "Đơn vị", "Số lượng", "Thao tác"].map((head) => (
+                        <th key={head} className="px-4 py-2 text-sm font-semibold text-gray-600 border-r last:border-r-0">
+                          {head}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.length > 0 ? (
+                      items.map((item, index) => (
+                        <tr key={item.id} className="border-b last:border-b-0 hover:bg-gray-50">
+                          <td className="px-4 py-2 text-sm text-gray-700 border-r">{index + 1}</td>
+                          <td className="px-4 py-2 text-sm border-r">
+                            <Select
+                              placeholder="Chọn sản phẩm"
+                              isSearchable
+                              options={products}
+                              styles={customStyles}
+                              className="w-68"
+                              value={products.find((p) => p.value === item.productCode) || null}
+                              onChange={(selectedOption) => handleSelectProduct(item.id, selectedOption)}
+                            />
+                            {itemsErrors[item.id] && itemsErrors[item.id].productError && (
+                              <Typography color="red" className="text-xs mt-1">
+                                {itemsErrors[item.id].productError}
+                              </Typography>
+                            )}
+                          </td>
+                          <td className="px-4 py-2 text-sm border-r">
+                            <Input
+                              className="w-32 text-sm"
+                              value={item.productName}
+                              disabled
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-sm border-r">
+                            <Input
+                              className="w-16 text-sm"
+                              value={item.unitName}
+                              disabled
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-sm">
+                            <Input
+                              type="number"
+                              className="w-16 text-sm"
+                              value={item.quantity}
+                              onChange={(e) => handleQuantityChange(item.id, e.target.value)}
+                            />
+                            {itemsErrors[item.id] && itemsErrors[item.id].quantityError && (
+                              <Typography color="red" className="text-xs mt-1">
+                                {itemsErrors[item.id].quantityError}
+                              </Typography>
+                            )}
+                          </td>
+                          <td className="px-4 py-2 text-sm text-center">
+                            <Button
+                              color="red"
+                              variant="text"
+                              size="sm"
+                              onClick={() => handleDeleteRow(item.id)}
+                            >
+                              Xóa
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-2 text-center text-gray-500">
+                          Chưa có dòng sản phẩm nào
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Nút thêm / xóa dòng */}
+              <div className="flex gap-2 mb-4">
+                <Button variant="outlined" onClick={handleAddRow} className="flex items-center gap-2">
+                  <FaPlus /> Thêm dòng
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="red"
+                  onClick={handleRemoveAllRows}
+                  className="flex items-center gap-2"
+                >
+                  <FaTrash /> Xóa hết dòng
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Thông báo lỗi và nút Lưu / Hủy */}
           <div className="flex flex-col gap-2">
             {globalError && (
               <Typography color="red" className="text-sm text-right">
@@ -574,25 +565,12 @@ const EditSaleOrderPage = () => {
               </Typography>
             )}
             <div className="flex justify-end gap-2">
-              {isEditing ? (
-                <>
-                  <Button variant="text" color="gray" onClick={handleCancel} className="flex items-center gap-2">
-                    <FaTimes /> Hủy
-                  </Button>
-                  <Button variant="gradient" color="green" onClick={handleSaveOrder} className="flex items-center gap-2">
-                    <FaSave /> Lưu
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  variant="outlined"
-                  color="blue"
-                  onClick={() => navigate("/user/sale-orders")}
-                  className="flex items-center gap-2"
-                >
-                  Quay lại
-                </Button>
-              )}
+              <Button variant="text" color="gray" onClick={handleCancel} className="flex items-center gap-2">
+                <FaTimes /> Hủy
+              </Button>
+              <Button variant="gradient" color="green" onClick={handleSaveOrder} className="flex items-center gap-2">
+                <FaSave /> Lưu
+              </Button>
             </div>
           </div>
         </CardBody>
