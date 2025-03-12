@@ -28,11 +28,11 @@ import AddSaleOrderPage from "../features/user/saleorders/AddSaleOrderPage";
 import AddReceiptNote from "../features/user/receiptNote/AddReceiptNote";
 import IssueNotePage from "../features/user/issueNote/IssueNotePage";
 import AddIssueNote from "../features/user/receiptNote/AddReceiptNote";
-import PurchaseOrderPage from "../features/user/purchaseOrder/purchaseOrderPage";
+import PurchaseOrderPage from "../features/user/purchaseOrder/PurchaseOrderPage";
 import AddProductPage from "@/features/user/products/AddProductPage";
 import DetailProductPage from "@/features/user/products/DetailProductPage";
 import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
-import PurchaseOrderDetail from "../features/user/purchaseOrder/purchaseOrderDetail";
+import PurchaseOrderDetail from "../features/user/purchaseOrder/PurchaseOrderDetail";
 
 import ProductTypePage from "@/features/user/productType/ProductTypePage";
 import PurchaseRequestPage from "@/features/user/purchaseRequest/PurchaseRequestPage";
@@ -128,8 +128,8 @@ export const routes = [
           {
             icon: <Bars3BottomRightIcon {...icon} />,
             name: "Yêu cầu mua",
-            path: "/user/",
-            element: <PurchaseOrderPage />,
+            path: "/user/purchase-request",
+            element: <PurchaseRequestPage />,
             roles: ["USER"],
           },
           {
@@ -176,13 +176,6 @@ export const routes = [
         name: "Vật tư",
         path: "/user/materials",
         element: <MaterialPage />,
-        roles: ["USER"],
-      },
-      {
-        icon: <TableCellsIcon {...icon} />,
-        name: "Yêu cầu mua vật tư",
-        path: "/user/purchase-request",
-        element: <PurchaseRequestPage />,
         roles: ["USER"],
       },
       {
