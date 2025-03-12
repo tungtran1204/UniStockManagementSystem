@@ -6,7 +6,7 @@ export function Footer({ brandName, brandLink, routes }) {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="py-2 bg-dark text-black text-center p-3 mt-5">
+    <footer className="py-2 bg-dark text-black text-center p-3 mt-5 bg-gray-50">
       <div className="container flex flex-wrap items-center justify-center gap-6 px-2 md:justify-between">
         {/* Thông tin bản quyền */}
         <Typography variant="small" className="font-normal text-inherit">

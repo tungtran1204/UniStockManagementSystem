@@ -12,13 +12,7 @@ const TableSearch = ({ value, onChange, onSearch, placeholder = "Search" }) => {
                     className="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-gray-500 rounded-md pl-10 pr-3 py-2 duration-300 ease focus:outline-[#089456] focus:border-slate-400 hover:border-slate-300 transition-colors"
                     placeholder={placeholder}
                 />
-                <button
-                    className="rounded-md bg-green-800 py-2 px-4 text-center text-sm text-white transition-all shadow-md hover:shadow-lg hover:bg-green-700 ml-2"
-                    type="button"
-                    onClick={onSearch}
-                >
-                    Search
-                </button>
+                
             </div>
         </div>
     );
