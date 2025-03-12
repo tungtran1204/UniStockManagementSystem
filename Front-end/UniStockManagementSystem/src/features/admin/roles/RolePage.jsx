@@ -150,16 +150,17 @@ function RolePage() {
   const allRoles = [...filteredRoles, ...tempRoles];
 
   return (
-    <div className="mb-8 flex flex-col gap-12">
-      <Card className="bg-gray-100 p-7">
-        <PageHeader
-          title="Danh sách Vai Trò"
-          addButtonLabel="Thêm vai trò"
-          onAdd={onAddTempRole}
-          showImport={false}
-          showExport={false}
-        />
+    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+      <Card className="bg-gray-50 p-7 rounded-none shadow-none">
+
         <CardBody className="pb-2 bg-white rounded-xl overflow-x-auto">
+          <PageHeader
+            title="Danh sách Vai Trò"
+            addButtonLabel="Thêm vai trò"
+            onAdd={onAddTempRole}
+            showImport={false}
+            showExport={false}
+          />
           {saveError && (
             <Typography color="red" className="mb-4 text-center">
               {saveError}

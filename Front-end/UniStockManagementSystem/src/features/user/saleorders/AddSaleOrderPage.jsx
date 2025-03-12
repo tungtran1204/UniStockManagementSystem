@@ -332,21 +332,21 @@ const AddSaleOrderPage = () => {
   };
 
   return (
-    <div className="mb-8 flex flex-col gap-12">
-      <Card className="bg-gray-50 p-7">
-        
-        <CardBody className="pb-2 bg-white rounded-xl">
-        <PageHeader
-          title={"Đơn hàng " + orderCode}
-          addButtonLabel="Thêm đơn hàng"
-          onAdd={() => {}}
-          onImport={() => {/* Xử lý import nếu có */ }}
-          onExport={() => {/* Xử lý export file ở đây nếu có */ }}
-          showAdd={false}
-          showImport={false} // Ẩn nút import nếu không dùng
-          showExport={false} // Ẩn xuất file nếu không dùng
-        />
+    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+      <Card className="bg-gray-50 p-7 rounded-none shadow-none">
 
+        <CardBody className="pb-2 bg-white rounded-xl">
+          <PageHeader
+            title={"Đơn hàng " + orderCode}
+            addButtonLabel="Thêm đơn hàng"
+            onAdd={() => { }}
+            onImport={() => {/* Xử lý import nếu có */ }}
+            onExport={() => {/* Xử lý export file ở đây nếu có */ }}
+            showAdd={false}
+            showImport={false} // Ẩn nút import nếu không dùng
+            showExport={false} // Ẩn xuất file nếu không dùng
+          />
+          {/* Thông tin chung */}
           <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-6">
             <div className="flex flex-col gap-4">
               <div>

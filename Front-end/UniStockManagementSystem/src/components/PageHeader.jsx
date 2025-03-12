@@ -14,7 +14,7 @@ const PageHeader = ({
     addButtonLabel = "Thêm",
 }) => {
     return (
-        <div className="flex justify-between items-center mb-7 pb-2 border-b border-gray-300">
+        <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-300">
             <Typography variant="h4" color="black">
                 {title}
             </Typography>

@@ -17,6 +17,7 @@ import { getPartnersByType } from "@/features/user/partner/partnerService";
 import dayjs from "dayjs";
 import usePurchaseRequest from "./usePurchaseRequest";
 import axios from "axios";
+import PageHeader from '@/components/PageHeader';
 
 const SUPPLIER_TYPE_ID = 2;
 
@@ -294,18 +295,18 @@ const AddPurchaseRequestPage = () => {
   const handleSelectMaterial = (index, material) => {
     const isValid = validateMaterial(material.materialCode, index);
     if (!isValid) return;
-    
+
     setItems((prev) =>
       prev.map((item, idx) =>
         idx === index
           ? {
-              ...item,
-              materialId: material.materialId,
-              materialCode: material.materialCode,
-              materialName: material.materialName,
-              unitName: material.unitName,
-              quantity: item.quantity || 1,
-            }
+            ...item,
+            materialId: material.materialId,
+            materialCode: material.materialCode,
+            materialName: material.materialName,
+            unitName: material.unitName,
+            quantity: item.quantity || 1,
+          }
           : item
       )
     );
@@ -346,14 +347,15 @@ const AddPurchaseRequestPage = () => {
   };
 
   return (
-    <div className="mt-12 mb-8 flex flex-col gap-12">
-      <Card>
-        <CardHeader variant="gradient" color="gray" className="mb-4 p-4">
-          <Typography variant="h6" color="white">
-            Yêu cầu mua vật tư {requestCode}
-          </Typography>
-        </CardHeader>
-        <CardBody className="px-4 py-4">
+    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+      <Card className="bg-gray-50 p-7 rounded-none shadow-none">
+        <CardBody className="pb-2 bg-white rounded-xl">
+          <PageHeader
+            title="Thêm yêu cầu mua vật tư"
+            showAdd={false}
+            showImport={false} // Ẩn nút import nếu không dùng
+            showExport={false} // Ẩn xuất file nếu không dùng
+          />
           {errors.message && (
             <Typography className="text-xs text-red-500 mb-4">{errors.message}</Typography>
           )}
@@ -530,9 +532,9 @@ const AddPurchaseRequestPage = () => {
                           value={
                             item.materialId
                               ? {
-                                  value: item.materialId,
-                                  label: `${item.materialCode} - ${item.materialName}`,
-                                }
+                                value: item.materialId,
+                                label: `${item.materialCode} - ${item.materialName}`,
+                              }
                               : null
                           }
                           onChange={(selected) =>
@@ -571,9 +573,8 @@ const AddPurchaseRequestPage = () => {
                               handleQuantityChange(currentPage * pageSize + index, e.target.value)
                             }
                             min={1}
-                            className={`w-16 text-sm ${
-                              quantityErrors[currentPage * pageSize + index] ? "border-red-500" : ""
-                            }`}
+                            className={`w-16 text-sm ${quantityErrors[currentPage * pageSize + index] ? "border-red-500" : ""
+                              }`}
                           />
                           {quantityErrors[currentPage * pageSize + index] && (
                             <Typography className="text-xs text-red-500 mt-1">

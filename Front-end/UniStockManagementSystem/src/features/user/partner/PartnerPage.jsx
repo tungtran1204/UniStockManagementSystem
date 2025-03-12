@@ -83,24 +83,24 @@ const PartnerPage = () => {
     // style={{ color: '#0ab067' }}
 
     return (
-        <div className="mb-8 flex flex-col gap-12">
-            <Card className="bg-gray-100 p-7">
-                <PageHeader
-                    title="Danh sách đối tác"
-                    onAdd={() => setShowCreatePopup(true)}
-                    onImport={() => setShowImportPopup(true)}
-                    // onExport={exportExcel}
-                    addButtonLabel="Thêm đối tác"
-                />
-                {showCreatePopup && (
-                    <CreatePartnerPopup
-                        onClose={() => setShowCreatePopup(false)}
-                        onSuccess={fetchPaginatedPartners} // Có thể gọi API fetch lại danh sách nếu cần
-                    />
-                )}
+        <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+            <Card className="bg-gray-50 p-7 rounded-none shadow-none">
                 <CardBody className="pb-2 bg-white rounded-xl">
+                    <PageHeader
+                        title="Danh sách đối tác"
+                        onAdd={() => setShowCreatePopup(true)}
+                        onImport={() => setShowImportPopup(true)}
+                        // onExport={exportExcel}
+                        addButtonLabel="Thêm đối tác"
+                    />
+                    {showCreatePopup && (
+                        <CreatePartnerPopup
+                            onClose={() => setShowCreatePopup(false)}
+                            onSuccess={fetchPaginatedPartners} // Có thể gọi API fetch lại danh sách nếu cần
+                        />
+                    )}
                     {/* Phần chọn số items/trang */}
-                    <div className="px-4 py-2 flex items-center justify-between gap-2">
+                    <div className="py-2 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                             <Typography variant="small" color="blue-gray" className="font-light">
                                 Hiển thị

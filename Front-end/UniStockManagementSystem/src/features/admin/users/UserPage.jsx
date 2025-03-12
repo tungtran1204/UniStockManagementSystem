@@ -69,17 +69,17 @@ const UserPage = () => {
   );
 
   return (
-    <div className="mb-8 flex flex-col gap-12">
-      <Card className="bg-gray-100 p-7">
-        <PageHeader
-          title="Danh sách Người Dùng"
-          addButtonLabel="Thêm người dùng"
-          onAdd={() => setOpenAddModal(true)}
-          showImport={false}
-          showExport={false}
-        />
+    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+      <Card className="bg-gray-50 p-7 rounded-none shadow-none">
 
         <CardBody className="pb-2 bg-white rounded-xl overflow-x-auto">
+          <PageHeader
+            title="Danh sách Người Dùng"
+            addButtonLabel="Thêm người dùng"
+            onAdd={() => setOpenAddModal(true)}
+            showImport={false}
+            showExport={false}
+          />
           {/* Chọn số items/trang + Tìm kiếm */}
           <div className="px-4 py-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
