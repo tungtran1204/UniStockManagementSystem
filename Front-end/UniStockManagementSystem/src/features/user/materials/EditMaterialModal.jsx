@@ -59,7 +59,7 @@ const EditMaterialModal = ({ show, onClose, material, onUpdate, units = [], mate
         if (newCode.trim()) {
             try {
                 const response = await axios.get(
-                    `http://localhost:8080/api/unistock/user/materials/check-material-code/${newCode}?excludeId=${editedMaterial.materialId}`,
+                    `${import.meta.env.VITE_API_URL}/user/materials/check-material-code/${newCode}?excludeId=${editedMaterial.materialId}`,
                     {
                         headers: {
                             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -128,7 +128,7 @@ const EditMaterialModal = ({ show, onClose, material, onUpdate, units = [], mate
                 }
 
                 await axios.put(
-                    `http://localhost:8080/api/unistock/user/materials/${editedMaterial.materialId}`,
+                    `${import.meta.env.VITE_API_URL}/user/materials/${editedMaterial.materialId}`,
                     formData,
                     {
                         headers: {

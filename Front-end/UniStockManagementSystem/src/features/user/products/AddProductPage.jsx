@@ -117,7 +117,7 @@ const AddProductPage = () => {
             }
 
             const response = await axios.get(
-                "http://localhost:8080/api/unistock/user/materials",
+                `${import.meta.env.VITE_API_URL}/user/materials`,
                 {
                     headers,
                     withCredentials: true,
@@ -314,7 +314,7 @@ const AddProductPage = () => {
                 formData.append("materials", JSON.stringify(materialsData));
 
                 const response = await axios.post(
-                    "http://localhost:8080/api/unistock/user/products/create",
+                    `${import.meta.env.VITE_API_URL}/user/products/create`,
                     formData,
                     {
                         headers: {
