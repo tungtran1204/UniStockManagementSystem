@@ -16,15 +16,22 @@ import vn.unistock.unistockmanagementsystem.features.user.warehouse.WarehouseRep
 @Service
 @RequiredArgsConstructor
 public class ReceiptNoteService {
-    @PersistenceContext
-    private final ReceiptNoteRepository goodReceiptNoteRepository;
-    private final ReceiptNoteDetailRepository goodReceiptDetailRepository;
-    private final InventoryRepository inventoryRepository;
-    private final InventoryTransactionRepository inventoryTransactionRepository;
-    private final WarehouseRepository warehouseRepository;
-    private final MaterialsRepository materialRepository;
-    private final ProductsRepository productRepository;
-    private final UserRepository userRepository;
+    @Autowired
+    private ReceiptNoteRepository goodReceiptNoteRepository;
+    @Autowired
+    private ReceiptNoteDetailRepository goodReceiptDetailRepository;
+    @Autowired
+    private InventoryRepository inventoryRepository;
+    @Autowired
+    private InventoryTransactionRepository inventoryTransactionRepository;
+    @Autowired
+    private WarehouseRepository warehouseRepository;
+    @Autowired
+    private MaterialsRepository materialRepository;
+    @Autowired
+    private ProductsRepository productRepository;
+    @Autowired
+    private UserRepository userRepository;
 
     @Transactional
     public GoodReceiptNote createGoodReceipt(ReceiptNoteDTO grnDto) {
