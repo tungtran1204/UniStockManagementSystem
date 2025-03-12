@@ -85,8 +85,8 @@ const PurchaseOrderPage = () => {
       }
     });
 
-  const handlePageChange = ({ selected }) => {
-    setCurrentPage(selected);
+  const handlePageChange = (selectedItem) => {
+    setCurrentPage(selectedItem.selected);
   };
 
   const handlePageSizeChange = (size) => {
@@ -115,36 +115,38 @@ const PurchaseOrderPage = () => {
   };
 
   return (
-    <div className="mb-8 flex flex-col gap-12">
-      <Card className="bg-gray-100 p-7">
-        <PageHeader
-          title="Danh sách đơn mua hàng"
-          onExport={printOrders}
-          showAdd={false}
-          showImport={false}
-        />
-        <CardBody className="px-6 text-sm">
+    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+      <Card className="bg-gray-50 p-7 rounded-none shadow-none">
+        <CardBody className="pb-2 bg-white rounded-xl">
+          <PageHeader
+            title="Danh sách đơn mua hàng"
+            onExport={printOrders}
+            showAdd={false}
+            showImport={false}
+          />
           {error && <Typography className="text-center text-red-500 py-4">{error}</Typography>}
 
           {/* Pagination controls */}
-          <div className="px-4 py-2 flex items-center gap-4 mb-4">
-            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-              Hiển thị
-            </Typography>
-            <select
-              value={pageSize}
-              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-              className="border rounded px-2 py-1"
-            >
-              {[5, 10, 20, 50].map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
-            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-              bản ghi mỗi trang
-            </Typography>
+          <div className="py-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
+                Hiển thị
+              </Typography>
+              <select
+                value={pageSize}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                className="border rounded px-2 py-1"
+              >
+                {[5, 10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+              <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
+                bản ghi mỗi trang
+              </Typography>
+            </div>
 
             {/* Search bar */}
             <TableSearch
@@ -154,8 +156,17 @@ const PurchaseOrderPage = () => {
                 console.log("Tìm kiếm đơn mua:", searchKeyword);
                 // Could call an API search here if server-side search is preferred
               }}
-              placeholder="Tìm kiếm đơn"
+              placeholder="Tìm kiếm đơn mua"
             />
+            {/* <TableSearch
+              value={searchKeyword}
+              onChange={setSearchKeyword}
+              onSearch={() => {
+                console.log("Tìm kiếm đơn mua:", searchKeyword);
+                // Could call an API search here if server-side search is preferred
+              }}
+              placeholder="Tìm kiếm đơn"
+            /> */}
           </div>
 
           {/* Data table */}
@@ -254,27 +265,29 @@ const PurchaseOrderPage = () => {
             </table>
           </div>
 
-          {/* Pagination */}
-          {totalElements > 0 && (
-            <div className="flex justify-between p-4 border-t">
-              <Typography variant="small">
-                Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
-              </Typography>
-              <ReactPaginate
-                previousLabel={<ArrowLeftIcon className="h-4 w-4" />}
-                nextLabel={<ArrowRightIcon className="h-4 w-4" />}
-                pageCount={totalPages}
-                marginPagesDisplayed={2}
-                pageRangeDisplayed={5}
-                onPageChange={handlePageChange}
-                forcePage={currentPage}
-                containerClassName="flex items-center gap-2"
-                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-                activeClassName="bg-blue-500 text-white"
-                disabledClassName="opacity-50 cursor-not-allowed"
-              />
-            </div>
-          )}
+          <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+            <Typography variant="small" color="blue-gray" className="font-normal">
+              Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
+            </Typography>
+            <ReactPaginate
+              previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
+              nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
+              breakLabel="..."
+              pageCount={totalPages}
+              marginPagesDisplayed={2}
+              pageRangeDisplayed={5}
+              onPageChange={handlePageChange}
+              containerClassName="flex items-center gap-1"
+              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              pageLinkClassName="flex items-center justify-center w-full h-full"
+              previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
+              activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+              forcePage={currentPage}
+              disabledClassName="opacity-50 cursor-not-allowed"
+            />
+          </div>
         </CardBody>
       </Card>
     </div>
