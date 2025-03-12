@@ -2,7 +2,7 @@ import { FaSave, FaTimes, FaEdit, FaFileExport } from "react-icons/fa";
 import { getPurchaseOrderById } from "./purchaseOrderService";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import PurchaseOrderPage from "./purchaseOrderPage";
+import PurchaseOrderPage from "./PurchaseOrderPage";
 import {
   Card,
   CardHeader,
