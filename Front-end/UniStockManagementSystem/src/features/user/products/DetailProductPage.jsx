@@ -38,8 +38,8 @@ const customStyles = {
         backgroundColor: state.isFocused
             ? "#f3f4f6"
             : state.isSelected
-            ? "#e5e7eb"
-            : "transparent",
+                ? "#e5e7eb"
+                : "transparent",
         color: "#000",
         cursor: "pointer",
         "&:active": {
@@ -65,7 +65,7 @@ const DetailProductPage = () => {
     const [pageSize, setPageSize] = useState(5);
     const [previewImage, setPreviewImage] = useState(null);
     const [tableSearchQuery, setTableSearchQuery] = useState("");
-    const [currentRow, setCurrentRow] = useState(-1); 
+    const [currentRow, setCurrentRow] = useState(-1);
     const [quantityErrors, setQuantityErrors] = useState({}); // Thêm state cho lỗi số lượng
 
     const fetchProductMaterials = async (productId) => {
@@ -292,7 +292,7 @@ const DetailProductPage = () => {
         return editedProduct.materials.filter(item => {
             const searchLower = tableSearchQuery.toLowerCase().trim();
             return item.materialCode?.toLowerCase().includes(searchLower) ||
-                   item.materialName?.toLowerCase().includes(searchLower);
+                item.materialName?.toLowerCase().includes(searchLower);
         });
     };
 
@@ -310,12 +310,12 @@ const DetailProductPage = () => {
     // Sửa lại hàm getAvailableMaterials 
     const getAvailableMaterials = (currentIndex) => {
         if (!editedProduct?.materials) return materials;
-        
+
         // Lấy danh sách ID vật tư đã chọn trừ vật tư của dòng hiện tại
         const selectedMaterialIds = editedProduct.materials
             .filter((_, idx) => idx !== currentIndex)
             .map(m => m.materialId);
-        
+
         // Trả về tất cả vật tư chưa được chọn
         return materials.filter(m => !selectedMaterialIds.includes(m.materialId));
     };
@@ -323,7 +323,7 @@ const DetailProductPage = () => {
     // Sửa lại hàm handleMaterialChange
     const handleMaterialChange = (index, selected) => {
         if (!selected) return; // Thêm check này để tránh lỗi khi selected là null
-        
+
         const updatedMaterials = [...editedProduct.materials];
         updatedMaterials[index] = {
             ...updatedMaterials[index],
@@ -364,9 +364,9 @@ const DetailProductPage = () => {
     if (!product) return <div>Loading...</div>;
 
     return (
-        <div className="mt-12 mb-8 flex flex-col gap-12">
-            <Card>
-                <CardHeader variant="gradient" color="gray" className="mb-4 p-4">
+        <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+            <Card className="bg-gray-50 p-7 rounded-none shadow-none">
+                {/* <CardHeader variant="gradient" color="gray" className="mb-4 p-4">
                     <div className="flex justify-between items-center">
                         <Typography variant="h6" color="white">
                             Chi tiết sản phẩm
@@ -414,9 +414,19 @@ const DetailProductPage = () => {
                             )}
                         </div>
                     </div>
-                </CardHeader>
+                </CardHeader> */}
 
-                <CardBody className="p-4">
+                <CardBody className="pb-2 bg-white rounded-xl">
+                    <PageHeader
+                        title={"Chi tiết sản phẩm"}
+                        addButtonLabel=""
+                        onAdd={() => { }}
+                        onImport={() => {/* Xử lý import nếu có */ }}
+                        onExport={() => {/* Xử lý export file ở đây nếu có */ }}
+                        showAdd={false}
+                        showImport={false} // Ẩn nút import nếu không dùng
+                        showExport={false} // Ẩn xuất file nếu không dùng
+                    />
                     <div className="grid grid-cols-2 gap-x-12 gap-y-4">
                         <div className="flex flex-col gap-4">
                             <div>
@@ -687,9 +697,9 @@ const DetailProductPage = () => {
                                                                 value={
                                                                     item.materialId
                                                                         ? {
-                                                                              value: item.materialId,
-                                                                              label: `${item.materialCode} - ${item.materialName}`,
-                                                                          }
+                                                                            value: item.materialId,
+                                                                            label: `${item.materialCode} - ${item.materialName}`,
+                                                                        }
                                                                         : null
                                                                 }
                                                                 onFocus={() => setCurrentRow(globalIndex)} // Thêm handler này
@@ -728,9 +738,8 @@ const DetailProductPage = () => {
                                                                 value={item.quantity || ""}
                                                                 onChange={(e) => handleQuantityChange(globalIndex, e.target.value)}
                                                                 min={1}
-                                                                className={`w-16 text-sm ${
-                                                                    quantityErrors[globalIndex] ? "border-red-500" : ""
-                                                                }`}
+                                                                className={`w-16 text-sm ${quantityErrors[globalIndex] ? "border-red-500" : ""
+                                                                    }`}
                                                                 disabled={!isEditing}
                                                             />
                                                             {isEditing && quantityErrors[globalIndex] && (

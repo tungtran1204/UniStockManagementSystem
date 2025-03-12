@@ -58,14 +58,14 @@ export const routes = [
       },
       {
         icon: <TableCellsIcon {...icon} />,
-        name: "Quản Lý Người Dùng",
+        name: "Người Dùng",
         path: "/admin/users",
         element: <UserPage />,
         roles: ["ADMIN"],
       },
       {
         icon: <InformationCircleIcon {...icon} />,
-        name: "Quản Lý Vai Trò",
+        name: "Vai Trò",
         path: "/admin/roles",
         element: <RolePage />,
         roles: ["ADMIN"],
@@ -85,7 +85,7 @@ export const routes = [
       },
       {
         icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
-        name: "Quản lý đơn hàng",
+        name: "Đơn bán hàng",
         path: "/user/sale-orders",
         element: <SaleOrdersPage />, // Trang quản lý đơn hàng 
         roles: ["USER"],
@@ -99,14 +99,14 @@ export const routes = [
         subPages: [
           {
             icon: <Bars3BottomRightIcon {...icon} />,
-            name: "Quản lí nhập kho",
+            name: "Nhập kho",
             path: "/user/receiptNote",
             element: <ReceiptNotePage />,
             roles: ["USER"],
           },
           {
             icon: <Bars3BottomRightIcon {...icon} />,
-            name: "Quản lí xuất kho",
+            name: "Xuất kho",
             path: "/user/issueNote",
             element: <IssueNotePage />,
             roles: ["USER"],
@@ -138,7 +138,7 @@ export const routes = [
       
       {
         icon: <UserCircleIcon {...icon} />,
-        name: "Quản lý đối tác",
+        name: "Đối tác",
         path: "/user/partner",
         roles: ["USER"],
         element: <Navigate to="/user/partner/type" replace />,

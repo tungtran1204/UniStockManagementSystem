@@ -15,6 +15,7 @@ import Select from "react-select";
 import axios from "axios";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
+import PageHeader from '@/components/PageHeader';
 
 const customStyles = {
     control: (provided, state) => ({
@@ -34,8 +35,8 @@ const customStyles = {
         backgroundColor: state.isFocused
             ? "#f3f4f6"
             : state.isSelected
-            ? "#e5e7eb"
-            : "transparent",
+                ? "#e5e7eb"
+                : "transparent",
         color: "#000",
         cursor: "pointer",
         "&:active": {
@@ -142,9 +143,9 @@ const AddProductPage = () => {
         }));
 
         // Cập nhật giá trị
-        setNewProduct((prev) => ({ 
-            ...prev, 
-            productCode: newCode || "" 
+        setNewProduct((prev) => ({
+            ...prev,
+            productCode: newCode || ""
         }));
 
         if (newCode.trim()) {
@@ -234,7 +235,7 @@ const AddProductPage = () => {
     useEffect(() => {
         // Chỉ kiểm tra các dòng đã được chọn vật tư
         const materialsToValidate = productMaterials.filter(item => item.materialId);
-        
+
         if (materialsToValidate.length === 0) {
             setBillOfMaterialsError(""); // Không hiện lỗi nếu chưa có dòng nào được chọn
             return;
@@ -350,7 +351,7 @@ const AddProductPage = () => {
         return productMaterials.filter(item => {
             const searchLower = tableSearchQuery.toLowerCase().trim();
             return item.materialCode?.toLowerCase().includes(searchLower) ||
-                   item.materialName?.toLowerCase().includes(searchLower);
+                item.materialName?.toLowerCase().includes(searchLower);
         });
     };
 
@@ -448,15 +449,19 @@ const AddProductPage = () => {
     };
 
     return (
-        <div className="mt-12 mb-8 flex flex-col gap-12">
-            <Card>
-                <CardHeader variant="gradient" color="gray" className="mb-4 p-4">
-                    <Typography variant="h6" color="white">
-                        Tạo sản phẩm mới
-                    </Typography>
-                </CardHeader>
-
-                <CardBody className="px-4 py-4">
+        <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+            <Card className="bg-gray-50 p-7 rounded-none shadow-none">
+                <CardBody className="pb-2 bg-white rounded-xl">
+                    <PageHeader
+                        title={"Tạo sản phẩm mới"}
+                        addButtonLabel=""
+                        onAdd={() => { }}
+                        onImport={() => {/* Xử lý import nếu có */ }}
+                        onExport={() => {/* Xử lý export file ở đây nếu có */ }}
+                        showAdd={false}
+                        showImport={false} // Ẩn nút import nếu không dùng
+                        showExport={false} // Ẩn xuất file nếu không dùng
+                    />
                     {errors.message && (
                         <Typography className="text-red-500 mb-4">{errors.message}</Typography>
                     )}
@@ -471,13 +476,12 @@ const AddProductPage = () => {
                                     type="text"
                                     value={newProduct.productCode || ""}
                                     onChange={(e) => handleCheckProductCode(e.target.value)}
-                                    className={`w-full ${
-                                        errors.productCode ||
+                                    className={`w-full ${errors.productCode ||
                                         productCodeError ||
                                         (validationErrors.productCode && !isFieldValid(newProduct.productCode))
-                                            ? "border-red-500"
-                                            : ""
-                                    }`}
+                                        ? "border-red-500"
+                                        : ""
+                                        }`}
                                 />
                                 {(productCodeError || validationErrors.productCode || errors.productCode) && (
                                     <Typography className="text-xs text-red-500 mt-1">
@@ -535,12 +539,11 @@ const AddProductPage = () => {
                                     type="text"
                                     value={newProduct.productName || ""}
                                     onChange={(e) => handleInputChange("productName", e.target.value)}
-                                    className={`w-full ${
-                                        errors.productName ||
+                                    className={`w-full ${errors.productName ||
                                         (validationErrors.productName && !isFieldValid(newProduct.productName))
-                                            ? "border-red-500"
-                                            : ""
-                                    }`}
+                                        ? "border-red-500"
+                                        : ""
+                                        }`}
                                 />
                                 {(validationErrors.productName || errors.productName) && (
                                     <Typography className="text-xs text-red-500 mt-1">
@@ -709,9 +712,9 @@ const AddProductPage = () => {
                                                         value={
                                                             item.materialId
                                                                 ? {
-                                                                      value: item.materialId,
-                                                                      label: `${item.materialCode} - ${item.materialName}`,
-                                                                  }
+                                                                    value: item.materialId,
+                                                                    label: `${item.materialCode} - ${item.materialName}`,
+                                                                }
                                                                 : null
                                                         }
                                                         onChange={(selected) => {
@@ -744,9 +747,8 @@ const AddProductPage = () => {
                                                             value={item.quantity}
                                                             onChange={(e) => handleQuantityChange(currentPage * pageSize + index, e.target.value)}
                                                             min={1}
-                                                            className={`w-16 text-sm ${
-                                                                quantityErrors[currentPage * pageSize + index] ? "border-red-500" : ""
-                                                            }`}
+                                                            className={`w-16 text-sm ${quantityErrors[currentPage * pageSize + index] ? "border-red-500" : ""
+                                                                }`}
                                                         />
                                                         {quantityErrors[currentPage * pageSize + index] && (
                                                             <div className="text-xs text-red-500 mt-1">
