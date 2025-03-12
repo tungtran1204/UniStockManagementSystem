@@ -12,6 +12,8 @@ import {
     Switch,
 } from "@material-tailwind/react";
 import { FaEdit, FaPlus } from "react-icons/fa";
+import PageHeader from '@/components/PageHeader';
+import TableSearch from '@/components/TableSearch';
 
 const PartnerTypePage = () => {
     const { partnerTypes, fetchPartnerTypes, toggleStatus } = usePartnerType();
@@ -26,29 +28,16 @@ const PartnerTypePage = () => {
     }, []);
 
     return (
-        <div className="mt-12 mb-8 flex flex-col gap-12">
-            <Card>
-                <CardHeader variant="gradient" color="gray" className="mb-8 p-6">
-                    <div className="flex justify-between items-center">
-                        <Typography variant="h6" color="white">
-                            Danh sách nhóm đối tác
-                        </Typography>
-                        <div className="flex gap-2">
-                            <Button
-                                size="sm"
-                                color="white"
-                                variant="text"
-                                className="flex items-center gap-2"
-                                onClick={() => {
-                                    setShowCreatePopup(true);
-                                }}
-                            >
-                                <FaPlus className="h-4 w-4" /> Thêm nhóm đối tác
-                            </Button>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
+        <div className="mb-8 flex flex-col gap-12">
+            <Card className="bg-gray-100 p-7">
+                <PageHeader
+                    title="Danh sách nhóm đối tác"
+                    addButtonLabel="Thêm nhóm đối tác"
+                    onAdd={() => setShowCreatePopup(true)}
+                    showImport={false}
+                    showExport={false}
+                />
+                <CardBody className="pb-2 bg-white rounded-xl">
                     <table className="w-full min-w-[640px] table-auto">
                         <thead>
                             <tr>
@@ -155,7 +144,7 @@ const PartnerTypePage = () => {
             )}
 
             {/* Popup chỉnh sửa nhóm đối tác */}
-            {showEditPopup && editPartnerType &&(
+            {showEditPopup && editPartnerType && (
                 <EditPartnerTypePopUp
                     partnerType={editPartnerType}
                     onClose={() => setShowEditPopup(false)}

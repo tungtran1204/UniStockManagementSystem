@@ -1,109 +1,247 @@
-import React from "react";
-import PropTypes from "prop-types";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Navbar as MTNavbar,
-  Collapse,
+  Breadcrumbs,
   Typography,
   Button,
   IconButton,
+  Avatar,
+  Menu,
+  MenuHandler,
+  MenuList,
+  MenuItem,
 } from "@material-tailwind/react";
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { Menu as MenuIcon, MenuOpen, AccountCircle, KeyboardArrowDown } from "@mui/icons-material"
+import { BellIcon, ClockIcon, CreditCardIcon, Cog6ToothIcon, UserCircleIcon } from "@heroicons/react/24/outline";
+import { useAuth } from "@/context/AuthContext";
+import {
+  useMaterialTailwindController,
+  setOpenSidenav,
+} from "@/context";
+import routes from "@/routes/routes"; // Import routes từ file routes.jsx
 
-export function Navbar({ brandName, routes, action }) {
-  const [openNav, setOpenNav] = React.useState(false);
+// Hàm tìm kiếm layoutName và pageName từ routes.jsx
+const getPageInfo = (pathname) => {
+  for (const route of routes) {
+    for (const page of route.pages) {
+      // Nếu khớp đường dẫn, trả về tên
+      if (page.path === pathname) {
+        return {
+          layoutName: route.title || route.layout, // Lấy title nếu có, nếu không lấy layout
+          pageName: page.name || pathname, // Lấy name nếu có, nếu không dùng pathname
+        };
+      }
+      // Kiểm tra subPages nếu có
+      if (page.subPages) {
+        for (const subPage of page.subPages) {
+          if (subPage.path === pathname) {
+            return {
+              layoutName: route.title || route.layout,
+              pageName: subPage.name || pathname,
+            };
+          }
+        }
+      }
+    }
+  }
+  return { layoutName: "Trang", pageName: "Không xác định" }; // Mặc định nếu không tìm thấy
+};
+export function Navbar({ brandName, routes }) {
+  const [controller, dispatch] = useMaterialTailwindController();
+  const { openSidenav } = controller;
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const { layoutName, pageName } = getPageInfo(pathname);
 
-  React.useEffect(() => {
-    window.addEventListener(
-      "resize",
-      () => window.innerWidth >= 960 && setOpenNav(false)
-    );
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  useEffect(() => {
+    window.addEventListener("resize", () => window.innerWidth >= 960 && setOpenSidenav(false));
   }, []);
 
-  console.log("Navbar routes:", routes);
-
-  const navList = (
-    <ul className="mb-4 mt-2 flex flex-col gap-2 lg:mb-0 lg:mt-0 lg:flex-row lg:items-center lg:gap-6">
-      {(Array.isArray(routes) ? routes : []).map(({ name, path, icon }) => (
-        <Typography
-          key={name}
-          as="li"
-          variant="small"
-          color="blue-gray"
-          className="capitalize"
-        >
-          <Link to={path} className="flex items-center gap-1 p-1 font-normal">
-            {icon &&
-              React.createElement(icon, {
-                className: "w-[18px] h-[18px] opacity-50 mr-1",
-              })}
-            {name}
-          </Link>
-        </Typography>
-      ))}
-    </ul>
-  );
-
   return (
-    <MTNavbar className="p-3">
-      <div className="container mx-auto flex items-center justify-between text-blue-gray-900">
-        <Link to="/">
-          <Typography
-            variant="small"
-            className="mr-4 ml-2 cursor-pointer py-1.5 font-bold"
+    <MTNavbar fullWidth className="py-3 shadow-none">
+      <div className="flex flex-col-reverse justify-between mt-2 mb-2 gap-6 md:flex-row md:items-center">
+        <div className="capitalize flex items-center gap-3">
+          <IconButton
+            variant="text"
+            color="blue-gray"
+            onClick={() => setOpenSidenav(dispatch, !openSidenav)}
           >
-            {brandName}
-          </Typography>
-        </Link>
-        <div className="hidden lg:block">{navList}</div>
-        {React.cloneElement(action, {
-          className: "hidden lg:inline-block",
-        })}
-        <IconButton
-          variant="text"
-          size="sm"
-          className="ml-auto text-inherit hover:bg-transparent focus:bg-transparent active:bg-transparent lg:hidden"
-          onClick={() => setOpenNav(!openNav)}
-        >
-          {openNav ? (
-            <XMarkIcon strokeWidth={2} className="h-6 w-6" />
-          ) : (
-            <Bars3Icon strokeWidth={2} className="h-6 w-6" />
-          )}
-        </IconButton>
-      </div>
-      <Collapse open={openNav}>
-        <div className="container mx-auto">
-          {navList}
-          {React.cloneElement(action, {
-            className: "w-full block lg:hidden",
-          })}
+            <MenuIcon strokeWidth={3} className="h-6 w-6 text-blue-gray-500" />
+          </IconButton>
+          <div>
+            <Breadcrumbs
+              className="bg-transparent p-0 transition-all"
+            >
+              <Link to={`/${layoutName.toUpperCase()}`}>
+                <Typography
+                  variant="small"
+                  color="blue-gray"
+                  className="font-normal opacity-50 transition-all hover:text-blue-500 hover:opacity-100"
+                >
+                  {layoutName}
+                </Typography>
+              </Link>
+              <Typography
+                variant="small"
+                color="blue-gray"
+                className="font-normal"
+              >
+                {pageName}
+              </Typography>
+            </Breadcrumbs>
+
+            <Typography variant="h6" color="blue-gray">
+              {pageName}
+            </Typography>
+          </div>
         </div>
-      </Collapse>
+        <div className="flex items-center">
+          <Menu>
+            <MenuHandler>
+              <IconButton variant="text" color="blue-gray">
+                <BellIcon className="h-5 w-5 text-blue-gray-500" />
+              </IconButton>
+            </MenuHandler>
+            <MenuList className="w-max border-0">
+              <MenuItem className="flex items-center gap-3">
+                <Avatar
+                  src="https://demos.creative-tim.com/material-dashboard/assets/img/team-2.jpg"
+                  alt="item-1"
+                  size="sm"
+                  variant="circular"
+                />
+                <div>
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="mb-1 font-normal"
+                  >
+                    <strong>New message</strong> from Laur
+                  </Typography>
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="flex items-center gap-1 text-xs font-normal opacity-60"
+                  >
+                    <ClockIcon className="h-3.5 w-3.5" /> 13 minutes ago
+                  </Typography>
+                </div>
+              </MenuItem>
+              <MenuItem className="flex items-center gap-4">
+                <Avatar
+                  src="https://demos.creative-tim.com/material-dashboard/assets/img/small-logos/logo-spotify.svg"
+                  alt="item-1"
+                  size="sm"
+                  variant="circular"
+                />
+                <div>
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="mb-1 font-normal"
+                  >
+                    <strong>New album</strong> by Travis Scott
+                  </Typography>
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="flex items-center gap-1 text-xs font-normal opacity-60"
+                  >
+                    <ClockIcon className="h-3.5 w-3.5" /> 1 day ago
+                  </Typography>
+                </div>
+              </MenuItem>
+              <MenuItem className="flex items-center gap-4">
+                <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-tr from-blue-gray-800 to-blue-gray-900">
+                  <CreditCardIcon className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="mb-1 font-normal"
+                  >
+                    Payment successfully completed
+                  </Typography>
+                  <Typography
+                    variant="small"
+                    color="blue-gray"
+                    className="flex items-center gap-1 text-xs font-normal opacity-60"
+                  >
+                    <ClockIcon className="h-3.5 w-3.5" /> 2 days ago
+                  </Typography>
+                </div>
+              </MenuItem>
+            </MenuList>
+          </Menu>
+          <IconButton
+            variant="text"
+            color="blue-gray"
+            onClick={() => setOpenConfigurator(dispatch, true)}
+          >
+            <Cog6ToothIcon className="h-5 w-5 text-blue-gray-500" />
+          </IconButton>
+          <div className="h-10 w-px bg-gray-300 mx-4"></div>
+          {user ? (
+            <Menu>
+              <MenuHandler>
+                <div className="flex items-center gap-2 cursor-pointer mr-2">
+                  <AccountCircle sx={{ fontSize: 40 }} className="text-blue-gray-500" />
+                  <div className="flex flex-col text-start">
+                    <Typography variant="h5" className="font-bold text-blue-gray-700">
+                      {user.username}
+                    </Typography>
+                    <Typography variant="small" className="text-blue-gray-700 text-[11px]">
+                      {user.roles?.join(', ')}
+                    </Typography>
+                  </div>
+                  <KeyboardArrowDown className="h-6 w-6 text-blue-gray-500" />
+                </div>
+              </MenuHandler>
+              <MenuList>
+                <MenuItem onClick={() => navigate("/profile")}>
+                  <Typography variant="small" className="text-blue-gray-700 text-[16px]">Profile</Typography>
+                </MenuItem>
+                <MenuItem onClick={handleLogout}>
+                  <Typography variant="small" className="text-red-500 text-[16px]">Logout</Typography>
+                </MenuItem>
+              </MenuList>
+            </Menu>
+          ) : (
+            <Link to="/login">
+              <Button
+                variant="text"
+                color="blue-gray"
+                className="hidden items-center gap-1 px-4 xl:flex normal-case"
+              >
+                <UserCircleIcon className="h-5 w-5 text-blue-gray-500" />
+                Log In
+              </Button>
+              <IconButton
+                variant="text"
+                color="blue-gray"
+                className="grid xl:hidden"
+              >
+                <UserCircleIcon className="h-5 w-5 text-blue-gray-500" />
+              </IconButton>
+            </Link>
+          )}
+
+        </div>
+      </div>
     </MTNavbar>
   );
 }
 
 Navbar.defaultProps = {
   brandName: "Material Tailwind React",
-  action: (
-    <a
-      href="https://www.creative-tim.com/product/material-tailwind-dashboard-react"
-      target="_blank"
-    >
-      <Button variant="gradient" size="sm" fullWidth>
-        free download
-      </Button>
-    </a>
-  ),
 };
-
-Navbar.propTypes = {
-  brandName: PropTypes.string,
-  routes: PropTypes.arrayOf(PropTypes.object), // ✅ Đổi từ isRequired thành optional
-  action: PropTypes.node,
-};
-
-Navbar.displayName = "/src/components/Navbar.jsx";
 
 export default Navbar;

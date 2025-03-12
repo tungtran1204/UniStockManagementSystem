@@ -30,6 +30,8 @@ import IssueNotePage from "../features/user/issueNote/IssueNotePage";
 import AddIssueNote from "../features/user/receiptNote/AddReceiptNote";
 import AddProductPage from "@/features/user/products/AddProductPage";
 import DetailProductPage from "@/features/user/products/DetailProductPage";
+import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
+
 import ProductTypePage from "@/features/user/productType/ProductTypePage";
 import PurchaseRequestPage from "@/features/user/purchaseRequest/PurchaseRequestPage";
 import AddPurchaseRequestPage from "../features/user/purchaseRequest/AddPurchaseRequestPage";
@@ -214,6 +216,15 @@ export const routes = [
         element: <AddSaleOrderPage />, // Trang quản lý đơn hàng 
         roles: ["USER"],
       },
+
+      {
+        icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
+        name: "Sửa đơn hàng",
+        path: "/user/sale-orders/:orderId",
+        element: <EditSaleOrderPage />, // Trang quản lý đơn hàng 
+        roles: ["USER"],
+      },
+
       {
         icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
         name: "Thêm phiếu nhập",

@@ -1,15 +1,14 @@
 import React from "react";
 import Sidenav from "../components/Sidenav";
 import Footer from "../components/Footer";
-import DashboardNavbar from "../components/DashboardNavbar";
+import Navbar from "../components/Navbar";
 import { useMaterialTailwindController } from "../context";
 import routes from "../routes/routes";
 import { useLocation } from "react-router-dom";
-import Configurator from "../components/Configurator";
 
 const MainLayout = ({ children }) => {
   const [controller] = useMaterialTailwindController();
-  const { sidenavType, openSidenav } = controller; // Lấy openSidenav
+  const { openSidenav } = controller; // Lấy openSidenav
   const location = useLocation();
   const specialRoutes = ["/login", "/unauthorized", "/not-found"];
 
@@ -18,7 +17,7 @@ const MainLayout = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen bg-blue-gray-50/50 flex overflow-x-hidden">
+    <div className="bg-white flex h-screen">
       {/* Sidebar */}
       <Sidenav
         routes={routes.filter(
@@ -27,26 +26,30 @@ const MainLayout = ({ children }) => {
             route.layout !== "auth" &&
             route.layout !== "other"
         )}
-        brandImg={
-          sidenavType === "dark" ? "/img/logo-ct.png" : "/img/logo-ct-dark.png"
-        }
       />
 
       {/* Nội dung chính */}
       <div
-        className={`flex flex-col w-full p-4 transition-all duration-300 ${
-          openSidenav ? "xl:ml-72" : "ml-0"
+        className={`flex flex-col transition-all duration-300 ${
+          openSidenav ? "xl:ml-72 xl:w-[calc(100%-288px)]" : "ml-0 w-full"
         }`}
-        style={{
-          maxWidth: openSidenav ? "calc(100vw - 320px)" : "100vw",
-        }}
       >
-        <DashboardNavbar />
-        <Configurator />
-        <div className="flex-grow max-w-full">
+        {/* Navbar */}
+        <div
+          className={`fixed top-0 left-0 z-40 transition-all duration-300 bg-white ${
+            openSidenav ? "xl:w-[calc(100%-288px)] xl:left-72" : "w-full left-0"
+          }`}
+        >
+          <Navbar />
+        </div>
+
+        {/* Phần nội dung cuộn */}
+        <div className="flex-grow max-w-full mt-[89px] overflow-y-auto bg-gray-50">
           {children}
         </div>
-        <div className="text-blue-gray-600 max-w-full">
+
+        {/* Footer cố định */}
+        <div className="text-blue-gray-600 max-w-full flex-shrink-0 bg-gray-50">
           <Footer />
         </div>
       </div>
