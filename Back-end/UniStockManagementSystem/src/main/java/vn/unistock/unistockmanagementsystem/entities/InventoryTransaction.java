@@ -54,5 +54,6 @@ public class InventoryTransaction {
         GOOD_RECEIPT_NOTE,
         GOOD_ISSUE_NOTE
     }
+
 }
 

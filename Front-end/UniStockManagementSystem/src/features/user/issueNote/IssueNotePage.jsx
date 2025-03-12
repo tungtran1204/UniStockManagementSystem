@@ -216,14 +216,6 @@ const IssueNotePage = () => {
 
       </Card>
 
-      {/* Modal Thêm Phiếu Xuất */}
-      {openAddModal && (
-        <ModalAddIssueNote
-          open={openAddModal}
-          onClose={() => setOpenAddModal(false)}
-          fetchIssueNotes={fetchPaginatedIssueNotes}
-        />
-      )}
     </div>
   );
 };

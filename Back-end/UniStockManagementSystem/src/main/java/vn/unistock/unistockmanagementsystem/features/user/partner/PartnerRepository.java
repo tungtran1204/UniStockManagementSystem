@@ -17,4 +17,6 @@ public interface PartnerRepository extends JpaRepository<Partner, Long> {
 
     @Query("SELECT p FROM Partner p JOIN p.partnerTypes pt WHERE pt.partnerCode = :partnerCode")
     Optional<Partner> findByPartnerCode(String partnerCode);
+
+
 }
