@@ -1,40 +1,46 @@
 package vn.unistock.unistockmanagementsystem.features.user.products;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
+import vn.unistock.unistockmanagementsystem.entities.Material;
 import vn.unistock.unistockmanagementsystem.entities.Product;
+import vn.unistock.unistockmanagementsystem.entities.ProductMaterial;
 import vn.unistock.unistockmanagementsystem.entities.ProductType;
 import vn.unistock.unistockmanagementsystem.entities.Unit;
+import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
+import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsDTO;
+import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.productTypes.ProductTypeRepository;
 import vn.unistock.unistockmanagementsystem.features.user.units.UnitRepository;
 import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class ProductsServiceTest {
+public class ProductsServiceTest {
 
     @Mock
     private ProductsRepository productsRepository;
@@ -46,322 +52,545 @@ class ProductsServiceTest {
     private ProductTypeRepository productTypeRepository;
 
     @Mock
+    private MaterialsRepository materialsRepository;
+
+    @Mock
+    private ProductMaterialsRepository productMaterialsRepository;
+
+    @Mock
     private AzureBlobService azureBlobService;
+
+    @Spy
+    private ProductsMapper productsMapper = ProductsMapper.INSTANCE;
 
     @InjectMocks
     private ProductsService productsService;
 
-    @Captor
-    private ArgumentCaptor<Product> productCaptor;
+    private ProductsDTO productDTO;
+    private Product product;
+    private Unit unit;
+    private ProductType productType;
+    private Material material1, material2;
+    private ProductMaterial productMaterial1, productMaterial2;
+    private List<ProductMaterialsDTO> materialDTOs;
+    private ArrayList<ProductMaterial> productMaterials;
+    private MockMultipartFile imageFile;
 
-    @Test
-    @DisplayName("Should return paginated products")
-    void getAllProducts_ReturnsPaginatedProducts() {
-        // Given
-        int page = 0;
-        int size = 10;
-        Pageable pageable = PageRequest.of(page, size);
+    @BeforeEach
+    void setUp() {
+        // Thiết lập dữ liệu test chung
+        unit = new Unit();
+        unit.setUnitId(1L);
+        unit.setUnitName("Cái");
 
-        Product product1 = createSampleProduct(1L, "P001", "Product 1");
-        Product product2 = createSampleProduct(2L, "P002", "Product 2");
-        List<Product> productList = Arrays.asList(product1, product2);
-        Page<Product> productPage = new PageImpl<>(productList, pageable, productList.size());
+        productType = new ProductType();
+        productType.setTypeId(1L);
+        productType.setTypeName("Thành phẩm");
 
-        when(productsRepository.findAll(pageable)).thenReturn(productPage);
+        material1 = new Material();
+        material1.setMaterialId(1L);
+        material1.setMaterialCode("M001");
+        material1.setMaterialName("Vật liệu 1");
 
-        // When
-        Page<ProductsDTO> result = productsService.getAllProducts(page, size);
+        material2 = new Material();
+        material2.setMaterialId(2L);
+        material2.setMaterialCode("M002");
+        material2.setMaterialName("Vật liệu 2");
 
-        // Then
-        assertNotNull(result);
-        assertEquals(2, result.getTotalElements());
-        assertEquals(2, result.getContent().size());
-        assertEquals("Product 1", result.getContent().get(0).getProductName());
-        assertEquals("Product 2", result.getContent().get(1).getProductName());
-    }
-
-    @Test
-    @DisplayName("Should create a new product")
-    void createProduct_CreatesNewProduct() throws IOException {
-        // Given
-        ProductsDTO productDTO = new ProductsDTO();
+        productDTO = new ProductsDTO();
         productDTO.setProductCode("P001");
-        productDTO.setProductName("New Product");
-        productDTO.setDescription("Description");
+        productDTO.setProductName("Sản phẩm Test");
+        productDTO.setDescription("Mô tả sản phẩm test");
         productDTO.setUnitId(1L);
         productDTO.setTypeId(1L);
-        productDTO.setImageUrl("image-url.jpg");
         productDTO.setIsProductionActive(true);
 
-        Unit unit = new Unit();
-        unit.setUnitId(1L);
-        unit.setUnitName("Piece");
+        // Tạo định mức
+        ProductMaterialsDTO materialDTO1 = new ProductMaterialsDTO();
+        materialDTO1.setMaterialId(1L);
+        materialDTO1.setMaterialCode("M001");
+        materialDTO1.setMaterialName("Vật liệu 1");
+        materialDTO1.setQuantity(10);
 
-        ProductType productType = new ProductType();
-        productType.setTypeId(1L);
-        productType.setTypeName("Electronic");
+        ProductMaterialsDTO materialDTO2 = new ProductMaterialsDTO();
+        materialDTO2.setMaterialId(2L);
+        materialDTO2.setMaterialCode("M002");
+        materialDTO2.setMaterialName("Vật liệu 2");
+        materialDTO2.setQuantity(5);
 
-        when(unitRepository.findById(1L)).thenReturn(Optional.of(unit));
-        when(productTypeRepository.findById(1L)).thenReturn(Optional.of(productType));
-        when(productsRepository.save(any(Product.class))).thenAnswer(invocation -> {
-            Product savedProduct = invocation.getArgument(0);
-            savedProduct.setProductId(1L);
-            return savedProduct;
-        });
+        materialDTOs = Arrays.asList(materialDTO1, materialDTO2);
 
-        // When
-        Product result = productsService.createProduct(productDTO, "Admin");
-
-        // Then
-        verify(productsRepository).save(productCaptor.capture());
-        Product capturedProduct = productCaptor.getValue();
-
-        assertNotNull(result);
-        assertEquals(1L, result.getProductId());
-        assertEquals("P001", capturedProduct.getProductCode());
-        assertEquals("New Product", capturedProduct.getProductName());
-        assertEquals("Description", capturedProduct.getDescription());
-        assertEquals(unit, capturedProduct.getUnit());
-        assertEquals(productType, capturedProduct.getProductType());
-        assertEquals("image-url.jpg", capturedProduct.getImageUrl());
-        assertEquals(true, capturedProduct.getIsProductionActive());
-        assertEquals("Admin", capturedProduct.getCreatedBy());
-        assertNotNull(capturedProduct.getCreatedAt());
-    }
-
-    @Test
-    @DisplayName("Should create product with default production status when not provided")
-    void createProduct_WithDefaultProductionStatus() throws IOException {
-        // Given
-        ProductsDTO productDTO = new ProductsDTO();
-        productDTO.setProductCode("P001");
-        productDTO.setProductName("New Product");
-        productDTO.setIsProductionActive(null); // Not provided
-
-        when(productsRepository.save(any(Product.class))).thenAnswer(invocation -> {
-            Product savedProduct = invocation.getArgument(0);
-            savedProduct.setProductId(1L);
-            return savedProduct;
-        });
-
-        // When
-        Product result = productsService.createProduct(productDTO, "Admin");
-
-        // Then
-        verify(productsRepository).save(productCaptor.capture());
-        Product capturedProduct = productCaptor.getValue();
-
-        assertTrue(capturedProduct.getIsProductionActive()); // Default value should be true
-    }
-
-    @Test
-    @DisplayName("Should get product by ID")
-    void getProductById_ReturnsProduct() {
-        // Given
-        Long productId = 1L;
-        Product product = createSampleProduct(productId, "P001", "Product 1");
-
-        when(productsRepository.findById(productId)).thenReturn(Optional.of(product));
-
-        // When
-        ProductsDTO result = productsService.getProductById(productId);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(productId, result.getProductId());
-        assertEquals("P001", result.getProductCode());
-        assertEquals("Product 1", result.getProductName());
-        assertEquals("Test Unit", result.getUnitName());
-        assertEquals("Test Type", result.getTypeName());
-    }
-
-    @Test
-    @DisplayName("Should throw exception when product not found by ID")
-    void getProductById_ProductNotFound_ThrowsException() {
-        // Given
-        Long productId = 1L;
-        when(productsRepository.findById(productId)).thenReturn(Optional.empty());
-
-        // When, Then
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            productsService.getProductById(productId);
-        });
-
-        assertEquals("Không tìm thấy sản phẩm với ID: " + productId, exception.getMessage());
-    }
-
-    @Test
-    @DisplayName("Should toggle production status")
-    void toggleProductionStatus_Success() {
-        // Given
-        Long productId = 1L;
-        Product product = createSampleProduct(productId, "P001", "Product 1");
-        product.setIsProductionActive(true); // Initially active
-
-        when(productsRepository.findById(productId)).thenReturn(Optional.of(product));
-        when(productsRepository.save(any(Product.class))).thenReturn(product);
-
-        // When
-        ProductsDTO result = productsService.toggleProductionStatus(productId);
-
-        // Then
-        verify(productsRepository).save(productCaptor.capture());
-        Product capturedProduct = productCaptor.getValue();
-
-        assertFalse(capturedProduct.getIsProductionActive()); // Should be toggled to false
-        assertNotNull(result);
-    }
-
-    @Test
-    @DisplayName("Should throw exception when toggling non-existent product")
-    void toggleProductionStatus_ProductNotFound_ThrowsException() {
-        // Given
-        Long productId = 1L;
-        when(productsRepository.findById(productId)).thenReturn(Optional.empty());
-
-        // When, Then
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            productsService.toggleProductionStatus(productId);
-        });
-
-        assertEquals("Không tìm thấy sản phẩm", exception.getMessage());
-        verify(productsRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("Should check if product code exists")
-    void isProductCodeExists_ReturnsCorrectly() {
-        // Given
-        String productCode = "P001";
-        Long excludeId = 2L;
-
-        when(productsRepository.existsByProductCode(productCode)).thenReturn(true);
-        when(productsRepository.existsByProductCodeAndProductIdNot(productCode, excludeId)).thenReturn(false);
-
-        // When
-        boolean existsWithoutExclude = productsService.isProductCodeExists(productCode, null);
-        boolean existsWithExclude = productsService.isProductCodeExists(productCode, excludeId);
-
-        // Then
-        assertTrue(existsWithoutExclude);
-        assertFalse(existsWithExclude);
-    }
-
-    @Test
-    @DisplayName("Should update product without new image")
-    void updateProduct_WithoutNewImage_Success() throws IOException {
-        // Given
-        Long productId = 1L;
-        Product existingProduct = createSampleProduct(productId, "P001", "Old Product");
-        existingProduct.setImageUrl("old-image.jpg");
-
-        ProductsDTO updatedDTO = new ProductsDTO();
-        updatedDTO.setProductCode("P001-Updated");
-        updatedDTO.setProductName("Updated Product");
-        updatedDTO.setDescription("Updated Description");
-        updatedDTO.setUnitId(2L);
-        updatedDTO.setTypeId(2L);
-
-        Unit newUnit = new Unit();
-        newUnit.setUnitId(2L);
-        newUnit.setUnitName("New Unit");
-
-        ProductType newType = new ProductType();
-        newType.setTypeId(2L);
-        newType.setTypeName("New Type");
-
-        when(productsRepository.findById(productId)).thenReturn(Optional.of(existingProduct));
-        when(unitRepository.findById(2L)).thenReturn(Optional.of(newUnit));
-        when(productTypeRepository.findById(2L)).thenReturn(Optional.of(newType));
-        when(productsRepository.save(any(Product.class))).thenReturn(existingProduct);
-
-        // When
-        ProductsDTO result = productsService.updateProduct(productId, updatedDTO, null);
-
-        // Then
-        verify(productsRepository).save(productCaptor.capture());
-        Product capturedProduct = productCaptor.getValue();
-
-        assertEquals("P001-Updated", capturedProduct.getProductCode());
-        assertEquals("Updated Product", capturedProduct.getProductName());
-        assertEquals("Updated Description", capturedProduct.getDescription());
-        assertEquals(newUnit, capturedProduct.getUnit());
-        assertEquals(newType, capturedProduct.getProductType());
-        assertEquals("old-image.jpg", capturedProduct.getImageUrl()); // Image URL should remain the same
-
-        verify(azureBlobService, never()).deleteFile(anyString());
-        verify(azureBlobService, never()).uploadFile(any(MultipartFile.class));
-    }
-
-    @Test
-    @DisplayName("Should update product with new image")
-    void updateProduct_WithNewImage_Success() throws IOException {
-        // Given
-        Long productId = 1L;
-        Product existingProduct = createSampleProduct(productId, "P001", "Old Product");
-        existingProduct.setImageUrl("old-image.jpg");
-
-        ProductsDTO updatedDTO = new ProductsDTO();
-        updatedDTO.setProductCode("P001-Updated");
-        updatedDTO.setProductName("Updated Product");
-
-        MockMultipartFile newImage = new MockMultipartFile(
-                "image", "new-image.jpg", "image/jpeg", "test image content".getBytes());
-
-        when(productsRepository.findById(productId)).thenReturn(Optional.of(existingProduct));
-        when(azureBlobService.uploadFile(newImage)).thenReturn("new-image.jpg");
-        when(productsRepository.save(any(Product.class))).thenReturn(existingProduct);
-
-        // When
-        ProductsDTO result = productsService.updateProduct(productId, updatedDTO, newImage);
-
-        // Then
-        verify(azureBlobService).deleteFile("old-image.jpg");
-        verify(azureBlobService).uploadFile(newImage);
-        verify(productsRepository).save(productCaptor.capture());
-
-        Product capturedProduct = productCaptor.getValue();
-        assertEquals("new-image.jpg", capturedProduct.getImageUrl());
-    }
-
-    @Test
-    @DisplayName("Should throw exception when updating non-existent product")
-    void updateProduct_ProductNotFound_ThrowsException() throws IOException {
-        // Given
-        Long productId = 1L;
-        ProductsDTO updatedDTO = new ProductsDTO();
-
-        when(productsRepository.findById(productId)).thenReturn(Optional.empty());
-
-        // When, Then
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            productsService.updateProduct(productId, updatedDTO, null);
-        });
-
-        assertEquals("Không tìm thấy sản phẩm", exception.getMessage());
-        verify(productsRepository, never()).save(any());
-    }
-
-    private Product createSampleProduct(Long id, String code, String name) {
-        Product product = new Product();
-        product.setProductId(id);
-        product.setProductCode(code);
-        product.setProductName(name);
-        product.setDescription("Sample Description");
+        // Thiết lập sản phẩm
+        product = new Product();
+        product.setProductId(1L);
+        product.setProductCode("P001");
+        product.setProductName("Sản phẩm Test");
+        product.setDescription("Mô tả sản phẩm test");
+        product.setUnit(unit);
+        product.setProductType(productType);
         product.setIsProductionActive(true);
         product.setCreatedAt(LocalDateTime.now());
         product.setCreatedBy("Admin");
 
-        Unit unit = new Unit();
-        unit.setUnitId(1L);
-        unit.setUnitName("Test Unit");
-        product.setUnit(unit);
+        // Thiết lập product materials
+        productMaterial1 = new ProductMaterial();
+        productMaterial1.setProduct(product);
+        productMaterial1.setMaterial(material1);
+        productMaterial1.setQuantity(10);
 
-        ProductType type = new ProductType();
-        type.setTypeId(1L);
-        type.setTypeName("Test Type");
-        product.setProductType(type);
+        productMaterial2 = new ProductMaterial();
+        productMaterial2.setProduct(product);
+        productMaterial2.setMaterial(material2);
+        productMaterial2.setQuantity(5);
 
-        return product;
+        productMaterials = new ArrayList<>();
+        productMaterials.add(productMaterial1);
+        productMaterials.add(productMaterial2);
+        product.setProductMaterials(productMaterials);
+
+        // Thiết lập mock file
+        imageFile = new MockMultipartFile(
+                "image",
+                "test-image.jpg",
+                "image/jpeg",
+                "test image content".getBytes()
+        );
+    }
+
+    @Nested
+    @DisplayName("Test tạo sản phẩm với định mức")
+    class CreateProductWithMaterials {
+
+        @Test
+        @DisplayName("Tạo sản phẩm thành công với định mức hợp lệ")
+        void createProductWithValidMaterials() throws IOException {
+            // Arrange
+            productDTO.setMaterials(materialDTOs);
+            productDTO.setImage(imageFile);
+
+            when(productsRepository.existsByProductCode(anyString())).thenReturn(false);
+            when(unitRepository.findById(anyLong())).thenReturn(Optional.of(unit));
+            when(productTypeRepository.findById(anyLong())).thenReturn(Optional.of(productType));
+            when(materialsRepository.findById(1L)).thenReturn(Optional.of(material1));
+            when(materialsRepository.findById(2L)).thenReturn(Optional.of(material2));
+            when(azureBlobService.uploadFile(any(MultipartFile.class))).thenReturn("image-url");
+            when(productsRepository.save(any(Product.class))).thenReturn(product);
+
+            // Act
+            Product result = productsService.createProduct(productDTO, "Admin");
+
+            // Assert
+            assertNotNull(result);
+            assertEquals("P001", result.getProductCode());
+            verify(productsRepository).save(any(Product.class));
+            verify(productMaterialsRepository).saveAll(anyList());
+        }
+
+        @Test
+        @DisplayName("Tạo sản phẩm thành công không có định mức")
+        void createProductWithoutMaterials() throws IOException {
+            // Arrange
+            productDTO.setMaterials(null);
+
+            when(productsRepository.existsByProductCode(anyString())).thenReturn(false);
+            when(unitRepository.findById(anyLong())).thenReturn(Optional.of(unit));
+            when(productTypeRepository.findById(anyLong())).thenReturn(Optional.of(productType));
+            when(productsRepository.save(any(Product.class))).thenReturn(product);
+
+            // Act
+            Product result = productsService.createProduct(productDTO, "Admin");
+
+            // Assert
+            assertNotNull(result);
+            verify(productsRepository).save(any(Product.class));
+            verify(productMaterialsRepository, never()).saveAll(anyList());
+        }
+
+        @Test
+        @DisplayName("Tạo sản phẩm thất bại khi mã sản phẩm đã tồn tại")
+        void createProductWithDuplicateCode() {
+            // Arrange
+            when(productsRepository.existsByProductCode(anyString())).thenReturn(true);
+
+            // Act & Assert
+            Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+                productsService.createProduct(productDTO, "Admin");
+            });
+            assertEquals("Mã sản phẩm đã tồn tại!", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Tạo sản phẩm thất bại khi nguyên liệu không tồn tại")
+        void createProductWithNonExistentMaterial() {
+            // Arrange
+            productDTO.setMaterials(materialDTOs);
+
+            when(productsRepository.existsByProductCode(anyString())).thenReturn(false);
+            when(unitRepository.findById(anyLong())).thenReturn(Optional.of(unit));
+            when(productTypeRepository.findById(anyLong())).thenReturn(Optional.of(productType));
+            when(materialsRepository.findById(1L)).thenReturn(Optional.of(material1));
+            when(materialsRepository.findById(2L)).thenReturn(Optional.empty()); // Material 2 không tồn tại
+            when(productsRepository.save(any(Product.class))).thenReturn(product);
+
+            // Act & Assert
+            Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+                productsService.createProduct(productDTO, "Admin");
+            });
+            assertEquals("Nguyên vật liệu không tồn tại!", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Tạo sản phẩm thất bại khi đơn vị không tồn tại")
+        void createProductWithNonExistentUnit() {
+            // Arrange
+            when(productsRepository.existsByProductCode(anyString())).thenReturn(false);
+            when(unitRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+            // Act & Assert
+            Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+                productsService.createProduct(productDTO, "Admin");
+            });
+            assertEquals("Đơn vị không tồn tại!", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Tạo sản phẩm với danh sách định mức rỗng")
+        void createProductWithEmptyMaterialsList() throws IOException {
+            // Arrange
+            productDTO.setMaterials(Collections.emptyList());
+
+            when(productsRepository.existsByProductCode(anyString())).thenReturn(false);
+            when(unitRepository.findById(anyLong())).thenReturn(Optional.of(unit));
+            when(productTypeRepository.findById(anyLong())).thenReturn(Optional.of(productType));
+            when(productsRepository.save(any(Product.class))).thenReturn(product);
+
+            // Act
+            Product result = productsService.createProduct(productDTO, "Admin");
+
+            // Assert
+            assertNotNull(result);
+            verify(productsRepository).save(any(Product.class));
+            verify(productMaterialsRepository, never()).saveAll(anyList());
+        }
+    }
+
+    @Nested
+    @DisplayName("Test cập nhật sản phẩm với định mức")
+    class UpdateProductWithMaterials {
+
+        @Test
+        @DisplayName("Cập nhật sản phẩm thành công với định mức mới")
+        void updateProductWithNewMaterials() throws IOException {
+            // Arrange
+            Product existingProduct = new Product();
+            existingProduct.setProductId(1L);
+            existingProduct.setProductCode("P001");
+            existingProduct.setProductName("Sản phẩm Test");
+            existingProduct.setDescription("Mô tả sản phẩm test");
+            existingProduct.setUnit(unit);
+            existingProduct.setProductType(productType);
+            existingProduct.setIsProductionActive(true);
+            existingProduct.setCreatedAt(LocalDateTime.now());
+            existingProduct.setCreatedBy("Admin");
+            existingProduct.setProductMaterials(new ArrayList<>());
+
+            productDTO.setMaterials(materialDTOs);
+
+            when(productsRepository.findById(anyLong())).thenReturn(Optional.of(existingProduct));
+            when(unitRepository.findById(anyLong())).thenReturn(Optional.of(unit));
+            when(productTypeRepository.findById(anyLong())).thenReturn(Optional.of(productType));
+            when(materialsRepository.findById(1L)).thenReturn(Optional.of(material1));
+            when(materialsRepository.findById(2L)).thenReturn(Optional.of(material2));
+            when(productsRepository.save(any(Product.class))).thenReturn(existingProduct);
+
+            // Act
+            ProductsDTO result = productsService.updateProduct(1L, productDTO, null);
+
+            // Assert
+            assertNotNull(result);
+            verify(productsRepository).save(any(Product.class));
+        }
+
+        @Test
+        @DisplayName("Cập nhật sản phẩm thành công với cập nhật định mức hiện có")
+        void updateProductWithExistingMaterials() throws IOException {
+            // Arrange
+            Product existingProduct = new Product();
+            existingProduct.setProductId(1L);
+            existingProduct.setProductCode("P001");
+            existingProduct.setProductName("Sản phẩm Test");
+            existingProduct.setIsProductionActive(true);
+            existingProduct.setUnit(unit);
+            existingProduct.setProductType(productType);
+            existingProduct.setProductMaterials(new ArrayList<>(productMaterials));
+
+            // Thay đổi quantity của materialDTO1
+            ProductMaterialsDTO updatedMaterialDTO1 = new ProductMaterialsDTO();
+            updatedMaterialDTO1.setMaterialId(1L);
+            updatedMaterialDTO1.setQuantity(15); // Tăng từ 10 lên 15
+
+            List<ProductMaterialsDTO> updatedMaterialDTOs = new ArrayList<>();
+            updatedMaterialDTOs.add(updatedMaterialDTO1);
+            updatedMaterialDTOs.add(materialDTOs.get(1));
+            productDTO.setMaterials(updatedMaterialDTOs);
+
+            when(productsRepository.findById(anyLong())).thenReturn(Optional.of(existingProduct));
+            when(unitRepository.findById(anyLong())).thenReturn(Optional.of(unit));
+            when(productTypeRepository.findById(anyLong())).thenReturn(Optional.of(productType));
+            when(productsRepository.save(any(Product.class))).thenReturn(existingProduct);
+
+            // Act
+            ProductsDTO result = productsService.updateProduct(1L, productDTO, null);
+
+            // Assert
+            assertNotNull(result);
+            verify(productsRepository).save(any(Product.class));
+        }
+
+        @Test
+        @DisplayName("Cập nhật sản phẩm thành công với xóa định mức hiện có")
+        void updateProductRemovingExistingMaterials() throws IOException {
+            // Arrange
+            Product existingProduct = new Product();
+            existingProduct.setProductId(1L);
+            existingProduct.setProductCode("P001");
+            existingProduct.setProductName("Sản phẩm Test");
+            existingProduct.setIsProductionActive(true);
+            existingProduct.setUnit(unit);
+            existingProduct.setProductType(productType);
+            existingProduct.setProductMaterials(new ArrayList<>(productMaterials));
+
+            // Tạo danh sách định mức rỗng
+            productDTO.setMaterials(Collections.emptyList());
+
+            when(productsRepository.findById(anyLong())).thenReturn(Optional.of(existingProduct));
+            when(unitRepository.findById(anyLong())).thenReturn(Optional.of(unit));
+            when(productTypeRepository.findById(anyLong())).thenReturn(Optional.of(productType));
+            when(productsRepository.save(any(Product.class))).thenReturn(existingProduct);
+
+            // Act
+            ProductsDTO result = productsService.updateProduct(1L, productDTO, null);
+
+            // Assert
+            assertNotNull(result);
+            verify(productMaterialsRepository).deleteAll(anyList());
+            verify(productsRepository).save(any(Product.class));
+        }
+
+        @Test
+        @DisplayName("Cập nhật sản phẩm với xóa một phần định mức và thêm định mức mới")
+        void updateProductWithPartialMaterialsUpdateAndAdd() throws IOException {
+            // Arrange
+            // Chỉ giữ lại material1 và thêm material3
+            ProductMaterialsDTO materialDTO1 = new ProductMaterialsDTO();
+            materialDTO1.setMaterialId(1L);
+            materialDTO1.setQuantity(12); // Cập nhật số lượng
+
+            ProductMaterialsDTO materialDTO3 = new ProductMaterialsDTO();
+            materialDTO3.setMaterialId(3L);
+            materialDTO3.setQuantity(8);
+
+            List<ProductMaterialsDTO> updatedMaterials = Arrays.asList(materialDTO1, materialDTO3);
+            productDTO.setMaterials(updatedMaterials);
+
+            Material material3 = new Material();
+            material3.setMaterialId(3L);
+            material3.setMaterialCode("M003");
+            material3.setMaterialName("Vật liệu 3");
+
+            when(productsRepository.findById(anyLong())).thenReturn(Optional.of(product));
+            when(unitRepository.findById(anyLong())).thenReturn(Optional.of(unit));
+            when(productTypeRepository.findById(anyLong())).thenReturn(Optional.of(productType));
+            when(materialsRepository.findById(1L)).thenReturn(Optional.of(material1));
+            when(materialsRepository.findById(3L)).thenReturn(Optional.of(material3));
+            when(productsRepository.save(any(Product.class))).thenReturn(product);
+
+            // Act
+            ProductsDTO result = productsService.updateProduct(1L, productDTO, null);
+
+            // Assert
+            assertNotNull(result);
+            verify(productsRepository).save(any(Product.class));
+        }
+
+        @Test
+        @DisplayName("Cập nhật sản phẩm thất bại khi sản phẩm không tồn tại")
+        void updateNonExistentProduct() {
+            // Arrange
+            when(productsRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+            // Act & Assert
+            Exception exception = assertThrows(RuntimeException.class, () -> {
+                productsService.updateProduct(1L, productDTO, null);
+            });
+            assertEquals("Không tìm thấy sản phẩm", exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Cập nhật sản phẩm thất bại khi nguyên liệu không tồn tại")
+        void updateProductWithNonExistentMaterial() {
+            // Arrange
+            ProductMaterialsDTO invalidMaterialDTO = new ProductMaterialsDTO();
+            invalidMaterialDTO.setMaterialId(999L); // ID không tồn tại
+            invalidMaterialDTO.setQuantity(5);
+
+            productDTO.setMaterials(Collections.singletonList(invalidMaterialDTO));
+
+            when(productsRepository.findById(anyLong())).thenReturn(Optional.of(product));
+            when(unitRepository.findById(anyLong())).thenReturn(Optional.of(unit));
+            when(productTypeRepository.findById(anyLong())).thenReturn(Optional.of(productType));
+            when(materialsRepository.findById(999L)).thenReturn(Optional.empty());
+
+            // Act & Assert
+            Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+                productsService.updateProduct(1L, productDTO, null);
+            });
+            assertEquals("Nguyên vật liệu không tồn tại!", exception.getMessage());
+        }
+    }
+
+    @Nested
+    @DisplayName("Test trường hợp biên với định mức")
+    class BoundaryCasesWithMaterials {
+
+        @Test
+        @DisplayName("Tạo sản phẩm với định mức số lượng 0")
+        void createProductWithZeroQuantityMaterial() throws IOException {
+            // Arrange
+            ProductMaterialsDTO zeroQuantityDTO = new ProductMaterialsDTO();
+            zeroQuantityDTO.setMaterialId(1L);
+            zeroQuantityDTO.setQuantity(0);
+
+            productDTO.setMaterials(Collections.singletonList(zeroQuantityDTO));
+
+            when(productsRepository.existsByProductCode(anyString())).thenReturn(false);
+            when(unitRepository.findById(anyLong())).thenReturn(Optional.of(unit));
+            when(productTypeRepository.findById(anyLong())).thenReturn(Optional.of(productType));
+            when(materialsRepository.findById(1L)).thenReturn(Optional.of(material1));
+            when(productsRepository.save(any(Product.class))).thenReturn(product);
+
+            // Act
+            Product result = productsService.createProduct(productDTO, "Admin");
+
+            // Assert
+            assertNotNull(result);
+            verify(productMaterialsRepository).saveAll(anyList());
+        }
+
+        @Test
+        @DisplayName("Tạo sản phẩm với định mức số lượng rất lớn")
+        void createProductWithVeryLargeQuantityMaterial() throws IOException {
+            // Arrange
+            ProductMaterialsDTO largeQuantityDTO = new ProductMaterialsDTO();
+            largeQuantityDTO.setMaterialId(1L);
+            largeQuantityDTO.setQuantity(Integer.MAX_VALUE);
+
+            productDTO.setMaterials(Collections.singletonList(largeQuantityDTO));
+
+            when(productsRepository.existsByProductCode(anyString())).thenReturn(false);
+            when(unitRepository.findById(anyLong())).thenReturn(Optional.of(unit));
+            when(productTypeRepository.findById(anyLong())).thenReturn(Optional.of(productType));
+            when(materialsRepository.findById(1L)).thenReturn(Optional.of(material1));
+            when(productsRepository.save(any(Product.class))).thenReturn(product);
+
+            // Act
+            Product result = productsService.createProduct(productDTO, "Admin");
+
+            // Assert
+            assertNotNull(result);
+            verify(productMaterialsRepository).saveAll(anyList());
+        }
+
+        @Test
+        @DisplayName("Tạo sản phẩm với nhiều định mức (50 định mức)")
+        void createProductWithManyMaterials() throws IOException {
+            // Arrange
+            List<ProductMaterialsDTO> manyMaterials = new ArrayList<>();
+            List<Material> materials = new ArrayList<>();
+
+            for (int i = 1; i <= 50; i++) {
+                ProductMaterialsDTO dto = new ProductMaterialsDTO();
+                dto.setMaterialId((long) i);
+                dto.setQuantity(i);
+                manyMaterials.add(dto);
+
+                Material material = new Material();
+                material.setMaterialId((long) i);
+                material.setMaterialCode("M" + String.format("%03d", i));
+                material.setMaterialName("Vật liệu " + i);
+                materials.add(material);
+
+                when(materialsRepository.findById((long) i)).thenReturn(Optional.of(material));
+            }
+
+            productDTO.setMaterials(manyMaterials);
+
+            when(productsRepository.existsByProductCode(anyString())).thenReturn(false);
+            when(unitRepository.findById(anyLong())).thenReturn(Optional.of(unit));
+            when(productTypeRepository.findById(anyLong())).thenReturn(Optional.of(productType));
+            when(productsRepository.save(any(Product.class))).thenReturn(product);
+
+            // Act
+            Product result = productsService.createProduct(productDTO, "Admin");
+
+            // Assert
+            assertNotNull(result);
+            verify(productMaterialsRepository).saveAll(anyList());
+        }
+    }
+
+    @Nested
+    @DisplayName("Test nhận ProductsDTO từ entity với định mức")
+    class MapEntityToDTO {
+
+        @Test
+        @DisplayName("Map entity với định mức sang DTO")
+        void mapProductWithMaterialsToDTO() {
+            // Arrange
+            // Dùng product đã thiết lập ở setUp() với định mức
+
+            // Act
+            ProductsDTO result = productsMapper.toDTO(product);
+
+            // Assert
+            assertNotNull(result);
+            assertNotNull(result.getMaterials());
+            assertEquals(2, result.getMaterials().size());
+
+            // Kiểm tra thông tin định mức
+            ProductMaterialsDTO firstMaterial = result.getMaterials().get(0);
+            assertEquals(1L, firstMaterial.getMaterialId());
+            assertEquals("M001", firstMaterial.getMaterialCode());
+            assertEquals("Vật liệu 1", firstMaterial.getMaterialName());
+            assertEquals(10, firstMaterial.getQuantity());
+        }
+
+        @Test
+        @DisplayName("Map entity không có định mức sang DTO")
+        void mapProductWithoutMaterialsToDTO() {
+            // Arrange
+            product.setProductMaterials(Collections.emptyList());
+
+            // Act
+            ProductsDTO result = productsMapper.toDTO(product);
+
+            // Assert
+            assertNotNull(result);
+            assertTrue(result.getMaterials().isEmpty());
+        }
+
+        @Test
+        @DisplayName("Map entity với định mức null sang DTO")
+        void mapProductWithNullMaterialsToDTO() {
+            // Arrange
+            product.setProductMaterials(null);
+
+            // Act
+            ProductsDTO result = productsMapper.toDTO(product);
+
+            // Assert
+            assertNotNull(result);
+            assertNull(result.getMaterials());
+        }
     }
 }
