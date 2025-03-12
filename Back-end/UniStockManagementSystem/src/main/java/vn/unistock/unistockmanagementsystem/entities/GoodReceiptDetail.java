@@ -25,8 +25,12 @@ public class GoodReceiptDetail {
     private Warehouse warehouse;
 
     @ManyToOne
-    @JoinColumn(name = "material_id", nullable = false)
+    @JoinColumn(name = "material_id", nullable = true)
     private Material material;
+
+    @ManyToOne
+    @JoinColumn(name = "product)_id", nullable = true)
+    private Product product;
 
     @Column(nullable = false)
     private Double quantity;
@@ -43,5 +47,6 @@ public class GoodReceiptDetail {
     public enum ReferenceType {
         PURCHASE_ORDER_DETAIL, SALE_ORDER_DETAIL
     }
+
 
 }

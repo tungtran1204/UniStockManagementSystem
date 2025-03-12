@@ -48,4 +48,5 @@ public class GoodReceiptNote {
 
     @OneToMany(mappedBy = "goodReceiptNote", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GoodReceiptDetail> details;
+
 }

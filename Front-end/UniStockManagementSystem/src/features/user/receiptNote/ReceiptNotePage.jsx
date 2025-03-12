@@ -63,7 +63,7 @@ const ReceiptNotePage = () => {
         <PageHeader
           title="Danh sách phiếu nhập kho"
           addButtonLabel="Thêm phiếu nhập"
-          onAdd={() => setShowCreatePopup(true)}
+          onAdd={() => navigate("/user/receiptNote/add")}
           onImport={() => setShowImportPopup(true)}
           onExport={() => { /* export Excel */ }}
         />
