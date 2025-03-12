@@ -109,9 +109,9 @@ const SaleOrdersPage = () => {
               onChange={setSearchTerm}
               onSearch={() => {
                 // Thêm hàm xử lý tìm kiếm vào đây nếu có
-                console.log("Tìm kiếm kho:", searchTerm);
+                console.log("Tìm kiếm đơn hàng:", searchTerm);
               }}
-              placeholder="Tìm kiếm kho"
+              placeholder="Tìm kiếm đơn hàng"
             />
 
           </div>

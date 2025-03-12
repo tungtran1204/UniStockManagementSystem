@@ -158,7 +158,7 @@ const AddSaleOrderPage = () => {
         const response = await getProducts();
         const productOptions = response.content.map((product) => ({
           value: product.productCode,
-          label: product.productName,
+          label: `${product.productCode} - ${product.productName}`,
           unit: product.unitName,
         }));
         setProducts(productOptions);
