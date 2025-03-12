@@ -2,24 +2,23 @@ package vn.unistock.unistockmanagementsystem.features.user.purchaseRequests;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
+
 import vn.unistock.unistockmanagementsystem.entities.PurchaseRequest;
-import vn.unistock.unistockmanagementsystem.entities.PurchaseRequestDetail;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {PurchaseRequestDetailMapper.class})
 public interface PurchaseRequestMapper {
-    PurchaseRequestMapper INSTANCE = Mappers.getMapper(PurchaseRequestMapper.class);
 
-    @Mapping(source = "salesOrder.orderCode", target = "orderCode", defaultExpression = "java(null)")
-    @Mapping(target = "productName", expression = "java(purchaseRequest.getSalesOrder() != null && purchaseRequest.getSalesOrder().getDetails().size() == 1 ? purchaseRequest.getSalesOrder().getDetails().get(0).getProduct().getProductName() : \"Multiple Products\")")
-    PurchaseRequestDTO toDTO(PurchaseRequest purchaseRequest);
+    @Mapping(source = "partner.partnerId", target = "partnerId")
+    @Mapping(source = "partner.partnerName", target = "partnerName")
+    @Mapping(source = "partner.address", target = "address")
+    @Mapping(source = "partner.phone", target = "phoneNumber")
+    @Mapping(source = "partner.contactName", target = "contactPerson")
+    @Mapping(source = "notes", target = "notes")
+    @Mapping(source = "purchaseRequestDetails", target = "purchaseRequestDetails")
+    PurchaseRequestDTO toDTO(PurchaseRequest entity);
 
-    @Mapping(source = "salesOrder.orderCode", target = "orderCode", defaultExpression = "java(null)")
-    PurchaseRequestDetailDTO toDetailDTO(PurchaseRequest purchaseRequest);
-
-    @Mapping(source = "material.materialId", target = "materialId")
-    @Mapping(source = "material.materialCode", target = "materialCode")
-    @Mapping(source = "material.materialName", target = "materialName")
-    @Mapping(source = "unit.unitName", target = "unitName")
-    MaterialItemDTO toMaterialItemDTO(PurchaseRequestDetail detail);
+    @Mapping(source = "partnerId", target = "partner.partnerId")
+    @Mapping(source = "notes", target = "notes")
+    @Mapping(source = "purchaseRequestDetails", target = "purchaseRequestDetails")
+    PurchaseRequest toEntity(PurchaseRequestDTO dto);
 }

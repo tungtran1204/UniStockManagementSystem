@@ -2,6 +2,8 @@ package vn.unistock.unistockmanagementsystem.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
@@ -19,7 +21,8 @@ public class ProductType {
     private String typeName;
 
 
-    private Boolean status;
+    @Column(nullable = false)
+    private Boolean status = true;
     private String description;
 
     // Audit

@@ -10,4 +10,6 @@ import lombok.*;
 public class ProductTypeDTO {
     private Long typeId;
     private String typeName;
+    private String description;
+    private Boolean status;
 }
