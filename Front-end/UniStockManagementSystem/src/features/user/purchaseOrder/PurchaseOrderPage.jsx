@@ -245,9 +245,9 @@ const PurchaseOrderPage = () => {
                       />
                     </td>
                     <td className="p-2 border">{order.poCode}</td>
-                    <td className="p-2 border">{order.supplierName || 'N/A'}</td>
-                    <td className="p-2 border">{order.supplierContactName || 'N/A'}</td>
-                    <td className="p-2 border">{order.supplierPhone || 'N/A'}</td>
+                    <td className="p-2 border">{order.supplierName || "không có thông tin"}</td>
+                    <td className="p-2 border">{order.supplierContactName || "không có thông tin"}</td>
+                    <td className="p-2 border">{order.supplierPhone || "không có thông tin"}</td>
                     <td className="p-2 border">
                       {new Date(order.orderDate).toLocaleDateString('vi-VN')}
                     </td>
