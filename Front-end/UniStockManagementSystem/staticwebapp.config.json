@@ -1,8 +1,11 @@
 {
-    "routes": [
-        {
-            "route": "/*",
-            "rewrite": "/index.html"
-        }
-    ]
+    "navigationFallback": {
+        "rewrite": "index.html",
+        "exclude": [
+            "/assets/*",
+            "/favicon.ico",
+            "/*.css",
+            "/*.js"
+        ]
+    }
 }
