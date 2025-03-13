@@ -48,7 +48,7 @@ const BillOfMaterialsModal = ({ show, onClose, product, onUpdate }) => {
   // Lấy danh sách nguyên vật liệu
   const fetchMaterials = async () => {
     try {
-      const response = await axios.get("http://localhost:8080/api/unistock/user/materials", {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/user/materials`, {
         headers: authHeader(),
       });
 
@@ -71,7 +71,7 @@ const BillOfMaterialsModal = ({ show, onClose, product, onUpdate }) => {
 
     try {
       const response = await axios.get(
-        `http://localhost:8080/api/unistock/user/product-materials/${product.productId}`,
+        `${import.meta.env.VITE_API_URL}/user/product-materials/${product.productId}`,
         { headers: authHeader() }
       );
 
@@ -186,7 +186,7 @@ const BillOfMaterialsModal = ({ show, onClose, product, onUpdate }) => {
 
     try {
       await axios.delete(
-        `http://localhost:8080/api/unistock/user/product-materials/${product.productId}/materials/${materialId}`,
+        `${import.meta.env.VITE_API_URL}/user/product-materials/${product.productId}/materials/${materialId}`,
         { headers: authHeader() }
       );
       fetchProductMaterials();
@@ -204,7 +204,7 @@ const BillOfMaterialsModal = ({ show, onClose, product, onUpdate }) => {
     setLoading(true);
     try {
       await axios.post(
-        `http://localhost:8080/api/unistock/user/product-materials/${product.productId}/materials`,
+        `${import.meta.env.VITE_API_URL}/user/product-materials/${product.productId}/materials`,
         productMaterials.map((pm) => ({
           materialId: pm.material?.materialId,
           quantity: pm.quantity,

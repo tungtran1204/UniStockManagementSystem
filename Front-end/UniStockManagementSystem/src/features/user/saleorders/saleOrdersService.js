@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/unistock/user/sale-orders"; // ✅ API Sale Orders
+const API_URL = `${import.meta.env.VITE_API_URL}/user/sale-orders`; // ✅ API Sale Orders
 
 // ✅ Hàm để lấy Token từ LocalStorage
 const authHeader = () => {
@@ -81,7 +81,7 @@ export const toggleSaleOrderStatus = async (orderId, newStatus) => {
 export const getProducts = async () => {
   try {
     const response = await axios.get(
-      `http://localhost:8080/api/unistock/user/products`, {headers: authHeader(),}
+      `${import.meta.env.VITE_API_URL}/user/products`, {headers: authHeader(),}
     );
     return response.data;
   } catch (error) {

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/unistock/admin/users"; // ✅ API cho User Management
+const API_URL = `${import.meta.env.VITE_API_URL}/admin/users`; // ✅ API cho User Management
 
 // ✅ Hàm để lấy Token từ LocalStorage
 const authHeader = () => {

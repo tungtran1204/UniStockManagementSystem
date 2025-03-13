@@ -71,7 +71,7 @@ const DetailProductPage = () => {
     const fetchProductMaterials = async (productId) => {
         try {
             const response = await axios.get(
-                `http://localhost:8080/api/unistock/user/product-materials/${productId}`,
+                `${import.meta.env.VITE_API_URL}/user/product-materials/${productId}`,
                 { headers: authHeader(), params: { page: 0, size: 1000 } }
             );
 
@@ -137,7 +137,7 @@ const DetailProductPage = () => {
 
                 const [unitsData, materialsData] = await Promise.all([
                     fetchUnits(),
-                    axios.get("http://localhost:8080/api/unistock/user/materials", {
+                    axios.get(`${import.meta.env.VITE_API_URL}/user/materials`, {
                         headers: authHeader(),
                         withCredentials: true,
                     }).then(res => res.data.content || [])

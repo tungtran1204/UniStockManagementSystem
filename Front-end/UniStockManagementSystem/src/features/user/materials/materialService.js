@@ -2,7 +2,7 @@ import axios from "axios";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 
-const API_URL = "http://localhost:8080/api/unistock/user/materials";
+const API_URL = `${import.meta.env.VITE_API_URL}/user/materials`;
 
 // Hàm để lấy Token từ LocalStorage
 const authHeader = () => {
@@ -85,7 +85,7 @@ export const createMaterial = async (materialData) => {
     }
 
     const response = await axios.post(
-      "http://localhost:8080/api/unistock/user/materials/create",
+      `${import.meta.env.VITE_API_URL}/user/materials/create`,
       formData,
       {
         headers: {
@@ -125,7 +125,7 @@ const handleUpdateMaterial = async () => {
     }
 
     await axios.put(
-      `http://localhost:8080/api/unistock/user/materials/${editedMaterial.materialId}`,
+      `${import.meta.env.VITE_API_URL}/user/materials/${editedMaterial.materialId}`,
       formData,
       { headers: authHeader() }
     );
@@ -163,7 +163,7 @@ export const toggleMaterialStatus = async (materialId) => {
 // Lấy danh sách đơn vị
 export const fetchUnits = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/api/unistock/user/units', {
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}/user/units`, {
       headers: authHeader()
     });
     return response.data;
@@ -176,7 +176,7 @@ export const fetchUnits = async () => {
 // Lấy danh sách danh mục nguyên vật liệu
 export const fetchMaterialCategories = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/api/unistock/user/material-types', {
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}/user/material-types`, {
       headers: authHeader()
     });
     console.log("Fetched material categories:", response.data);
@@ -191,7 +191,7 @@ export const fetchMaterialCategories = async () => {
 export const checkMaterialCodeExists = async (materialCode) => {
   try {
     const response = await axios.get(
-      `http://localhost:8080/api/unistock/user/materials/check-material-code/${materialCode}`,
+      `${import.meta.env.VITE_API_URL}/user/materials/check-material-code/${materialCode}`,
       { headers: authHeader() }
     );
     return response.data.exists;
@@ -208,7 +208,7 @@ export const importExcel = async (file) => {
     formData.append("file", file);
 
     const response = await axios.post(
-      "http://localhost:8080/api/unistock/user/materials/import",
+      `${import.meta.env.VITE_API_URL}/user/materials/import`,
       formData,
       {
         headers: {

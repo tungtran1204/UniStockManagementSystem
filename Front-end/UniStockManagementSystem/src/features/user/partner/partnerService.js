@@ -3,9 +3,9 @@ import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 
 
-const API_URL = "http://localhost:8080/api/unistock/user/partner";
-const TYPE_API = "http://localhost:8080/api/unistock/user/partner/type";
-const CODE_API = "http://localhost:8080/api/unistock/user/partner/code";
+const API_URL = `${import.meta.env.VITE_API_URL}/user/partner`;
+const TYPE_API = `${import.meta.env.VITE_API_URL}/user/partner/type`;
+const CODE_API = `${import.meta.env.VITE_API_URL}/user/partner/code`;
 
 const authHeader = () => {
     const token = localStorage.getItem("token");
