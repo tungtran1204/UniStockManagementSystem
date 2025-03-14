@@ -16,9 +16,10 @@ import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
 
 
-const AddIssueNote = () => {
+const AddReceiptNote = () => {
   const navigate = useNavigate();
-
+  const [orderCode, setOrderCode] = useState("");
+  
   const [orderType, setOrderType] = useState("Mua hàng vật tư");
   const [supplierCode, setSupplierCode] = useState("NC001");
   const [supplierName, setSupplierName] = useState("Công ty A");
@@ -105,7 +106,7 @@ const AddIssueNote = () => {
             </Select> */}
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
-            title="Phiếu nhập kho NK00009"
+            title={"Phiếu nhập kho " + receiptCode}
 
             showAdd={false} // Ẩn nút thêm kho
             onAdd={() => setOpenAddModal(true)}
@@ -339,4 +340,4 @@ const AddIssueNote = () => {
   );
 };
 
-export default AddIssueNote;
+export default AddReceiptNote;

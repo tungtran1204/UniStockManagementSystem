@@ -2,7 +2,6 @@ import { FaSave, FaTimes, FaEdit, FaFileExport } from "react-icons/fa";
 import { getPurchaseOrderById } from "./purchaseOrderService";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import PurchaseOrderPage from "./PurchaseOrderPage";
 import {
   Card,
   CardHeader,
@@ -117,7 +116,7 @@ const PurchaseOrderDetail = () => {
                             { value: "Chờ nhận", label: "Chờ nhận hàng" },
                             { value: "Đang giao", label: "Đang giao" },
                             { value: "Hoàn thành", label: "Hoàn thành" },
-                            { value: "Hủy", label: "Hủy" }
+                            { value: "Hủy", label: "Hủy"}
                           ]}
                           isDisabled
                           className="bg-gray-100 rounded-md"

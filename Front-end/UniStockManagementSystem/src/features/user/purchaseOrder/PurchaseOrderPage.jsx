@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import usePurchaseOrder from "./usePurchaseOrder";
+import { InboxArrowDownIcon } from "@heroicons/react/24/solid";
 import {
   Menu,
   MenuHandler,
@@ -253,10 +254,18 @@ const PurchaseOrderPage = () => {
                     </td>
                     <td className="p-2 border font-semibold text-sm">{order.status.label || 'Chờ nhận'}</td>
                     <td className="p-2 border">
+                    <div className="flex justify-center items-center space-x-4 w-full">
                       <EyeIcon
                         className="h-5 w-5 text-blue-500 cursor-pointer"
+                        title="Xem chi tiết"
                         onClick={() => viewOrderDetail(order.poId)}
                       />
+                      <InboxArrowDownIcon
+                        className="h-5 w-5 text-green-500 cursor-pointer ml-2"
+                        title="Nhập kho"
+                        onClick={() => navigate(`/user/receiptNote/add`, { state: { order } })}
+                      />
+                      </div>
                     </td>
 
                   </tr>
