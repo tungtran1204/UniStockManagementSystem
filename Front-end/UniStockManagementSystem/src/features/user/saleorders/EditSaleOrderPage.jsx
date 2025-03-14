@@ -1,6 +1,6 @@
-import { FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa";
+import { FaSave, FaTimes, FaEdit, FaPlus, FaTrash } from "react-icons/fa";
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
   CardBody,
@@ -16,7 +16,7 @@ import { getPartnersByType } from "@/features/user/partner/partnerService";
 import { getProducts, getSaleOrderById } from "./saleOrdersService";
 import useSaleOrder from "./useSaleOrder";
 import ModalAddCustomer from "./ModalAddCustomer";
-import PageHeader from '@/components/PageHeader';
+import PageHeader from "@/components/PageHeader";
 
 const CUSTOMER_TYPE_ID = 1;
 
@@ -67,7 +67,6 @@ const customStyles = {
 
 const EditSaleOrderPage = () => {
   const { orderId } = useParams();
-  const location = useLocation();
   const navigate = useNavigate();
   const { addOrder } = useSaleOrder();
 
@@ -92,12 +91,18 @@ const EditSaleOrderPage = () => {
   const [globalError, setGlobalError] = useState("");
   const [itemsErrors, setItemsErrors] = useState({});
 
-  const selectRef = useRef(null);
-
-  // Tab state: "info" cho thông tin chung, "products" cho danh sách sản phẩm
+  // Tab state
   const [activeTab, setActiveTab] = useState("info");
 
-  // Lấy dữ liệu đơn hàng theo orderId
+  // Trạng thái "đang chỉnh sửa" hay chỉ xem
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Lưu tạm dữ liệu ban đầu (để khôi phục nếu người dùng ấn "Hủy")
+  const [originalData, setOriginalData] = useState(null);
+
+  const selectRef = useRef(null);
+
+  // ====================== Lấy dữ liệu đơn hàng ======================
   useEffect(() => {
     const fetchOrderDetail = async () => {
       try {
@@ -115,6 +120,21 @@ const EditSaleOrderPage = () => {
         setContactName(orderData.contactName || "");
         setPhoneNumber(orderData.phoneNumber || "");
         setItems(orderData.orderDetails || []);
+
+        // Lưu dữ liệu ban đầu để revert khi Hủy
+        setOriginalData({
+          orderCode: orderData.orderCode || "",
+          orderDate: orderData.orderDate
+            ? dayjs(orderData.orderDate).format("YYYY-MM-DD")
+            : dayjs().format("YYYY-MM-DD"),
+          partnerCode: orderData.partnerCode || "",
+          partnerName: orderData.partnerName || "",
+          note: orderData.note || "",
+          address: orderData.address || "",
+          contactName: orderData.contactName || "",
+          phoneNumber: orderData.phoneNumber || "",
+          items: JSON.parse(JSON.stringify(orderData.orderDetails || [])),
+        });
       } catch (error) {
         console.error("Lỗi khi lấy thông tin đơn hàng:", error);
         alert("Lỗi khi tải thông tin đơn hàng. Vui lòng thử lại sau!");
@@ -126,7 +146,7 @@ const EditSaleOrderPage = () => {
     }
   }, [orderId]);
 
-  // Hàm fetch danh sách khách hàng
+  // ====================== Fetch Khách hàng ======================
   const fetchCustomers = async () => {
     try {
       const response = await getPartnersByType(CUSTOMER_TYPE_ID);
@@ -160,23 +180,14 @@ const EditSaleOrderPage = () => {
     fetchCustomers();
   }, []);
 
-  const handleCustomerChange = (selectedOption) => {
-    setCustomerCode(selectedOption.code);
-    setCustomerName(selectedOption.name);
-    setAddress(selectedOption.address);
-    setPhoneNumber(selectedOption.phone);
-    if (selectedOption.code) {
-      setCustomerError("");
-    }
-  };
-
+  // ====================== Fetch Sản phẩm ======================
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const response = await getProducts();
         const productOptions = response.content.map((product) => ({
           value: product.productCode,
-          label: product.productName,
+          label: `${product.productCode} - ${product.productName}`,
           unit: product.unitName,
         }));
         setProducts(productOptions);
@@ -187,6 +198,120 @@ const EditSaleOrderPage = () => {
     fetchProducts();
   }, []);
 
+  // ====================== Hàm xử lý nút Chỉnh sửa / Hủy / Lưu ======================
+  const handleEdit = () => {
+    if (!originalData) return; // Nếu chưa load xong, chặn
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    if (originalData) {
+      setOrderCode(originalData.orderCode);
+      setOrderDate(originalData.orderDate);
+      setCustomerCode(originalData.partnerCode);
+      setCustomerName(originalData.partnerName);
+      setDescription(originalData.note);
+      setAddress(originalData.address);
+      setContactName(originalData.contactName);
+      setPhoneNumber(originalData.phoneNumber);
+      setItems(JSON.parse(JSON.stringify(originalData.items)));
+    }
+    setIsEditing(false);
+    setGlobalError("");
+    setItemsErrors({});
+    setCustomerError("");
+  };
+
+  const handleCancel = () => {
+    if (isEditing) {
+      // Nếu đang chỉnh sửa => revert
+      handleCancelEdit();
+    } else {
+      // Nếu chỉ xem => quay lại trang danh sách
+      navigate("/user/sale-orders");
+    }
+  };
+
+  // ====================== Hàm xử lý thay đổi Khách hàng ======================
+  const handleCustomerChange = (selectedOption) => {
+    setCustomerCode(selectedOption.code);
+    setCustomerName(selectedOption.name);
+    setAddress(selectedOption.address);
+    setPhoneNumber(selectedOption.phone);
+    if (selectedOption.code) {
+      setCustomerError("");
+    }
+  };
+
+  // ====================== Hàm Lưu đơn hàng ======================
+  const handleSaveOrder = async () => {
+    let hasError = false;
+    if (!customerCode) {
+      setCustomerError("Vui lòng chọn khách hàng!");
+      hasError = true;
+    } else {
+      setCustomerError("");
+    }
+
+    if (items.length === 0) {
+      setGlobalError("Vui lòng thêm ít nhất một dòng sản phẩm!");
+      return;
+    } else {
+      setGlobalError("");
+    }
+
+    const newItemsErrors = {};
+    items.forEach((item) => {
+      newItemsErrors[item.id] = {};
+      if (!item.productCode) {
+        newItemsErrors[item.id].productError =
+          "Vui lòng chọn sản phẩm cho dòng này!";
+        hasError = true;
+      }
+      if (Number(item.quantity) <= 0) {
+        newItemsErrors[item.id].quantityError =
+          "Số lượng sản phẩm phải lớn hơn 0!";
+        hasError = true;
+      }
+    });
+    setItemsErrors(newItemsErrors);
+    if (hasError) return;
+
+    // Gom dòng trùng productCode
+    const aggregatedItems = items.reduce((acc, curr) => {
+      const existingItem = acc.find((x) => x.productCode === curr.productCode);
+      if (existingItem) {
+        existingItem.quantity += Number(curr.quantity);
+      } else {
+        acc.push({ ...curr });
+      }
+      return acc;
+    }, []);
+
+    const payload = {
+      orderCode,
+      orderDate,
+      partnerCode: customerCode,
+      partnerName: customerName,
+      status: "Đang chuẩn bị",
+      note: description,
+      orderDetails: aggregatedItems,
+    };
+
+    console.log("Dữ liệu gửi lên BE:", payload);
+
+    try {
+      await addOrder(payload);
+      alert("Đã lưu đơn hàng thành công!");
+      setIsEditing(false); // Trở về chế độ xem sau khi lưu
+      navigate("/user/sale-orders");
+    } catch (error) {
+      console.error("Lỗi khi lưu đơn hàng:", error);
+      alert("Lỗi khi lưu đơn hàng. Vui lòng thử lại!");
+    }
+  };
+
+  // ====================== Thêm / Xóa dòng sản phẩm ======================
   const handleAddRow = () => {
     setItems((prev) => [
       ...prev,
@@ -208,6 +333,10 @@ const EditSaleOrderPage = () => {
     setNextId(1);
     setItemsErrors({});
     setGlobalError("");
+  };
+
+  const handleDeleteRow = (rowId) => {
+    setItems((prev) => prev.filter((row) => row.id !== rowId));
   };
 
   const handleSelectProduct = (rowId, selectedOption) => {
@@ -245,81 +374,7 @@ const EditSaleOrderPage = () => {
     }
   };
 
-  const aggregateItems = (itemsArray) => {
-    const aggregated = itemsArray.reduce((acc, curr) => {
-      const existingItem = acc.find(
-        (item) => item.productCode === curr.productCode
-      );
-      if (existingItem) {
-        existingItem.quantity += Number(curr.quantity);
-      } else {
-        acc.push({ ...curr });
-      }
-      return acc;
-    }, []);
-    return aggregated;
-  };
-
-  const handleSaveOrder = async () => {
-    let hasError = false;
-    if (!customerCode) {
-      setCustomerError("Vui lòng chọn khách hàng!");
-      hasError = true;
-    } else {
-      setCustomerError("");
-    }
-
-    if (items.length === 0) {
-      setGlobalError("Vui lòng thêm ít nhất một dòng sản phẩm!");
-      return;
-    } else {
-      setGlobalError("");
-    }
-
-    const newItemsErrors = {};
-    items.forEach((item) => {
-      newItemsErrors[item.id] = {};
-      if (!item.productCode) {
-        newItemsErrors[item.id].productError =
-          "Vui lòng chọn sản phẩm cho dòng này!";
-        hasError = true;
-      }
-      if (Number(item.quantity) <= 0) {
-        newItemsErrors[item.id].quantityError =
-          "Số lượng sản phẩm phải lớn hơn 0!";
-        hasError = true;
-      }
-    });
-    setItemsErrors(newItemsErrors);
-    if (hasError) return;
-
-    const aggregatedItems = aggregateItems(items);
-    const payload = {
-      orderCode,
-      orderDate,
-      partnerCode: customerCode,
-      partnerName: customerName,
-      status: "Đang chuẩn bị",
-      note: description,
-      orderDetails: aggregatedItems,
-    };
-
-    console.log("Dữ liệu gửi lên BE:", payload);
-
-    try {
-      await addOrder(payload);
-      alert("Đã lưu đơn hàng thành công!");
-      navigate("/user/sale-orders");
-    } catch (error) {
-      console.error("Lỗi khi lưu đơn hàng:", error);
-      alert("Lỗi khi lưu đơn hàng. Vui lòng thử lại!");
-    }
-  };
-
-  const handleCancel = () => {
-    navigate("/user/sale-orders");
-  };
-
+  // ====================== Popup tạo khách hàng ======================
   const handleOpenCreatePartnerPopup = () => {
     setIsCreatePartnerPopupOpen(true);
   };
@@ -328,13 +383,9 @@ const EditSaleOrderPage = () => {
     setIsCreatePartnerPopupOpen(false);
   };
 
-  const handleDeleteRow = (rowId) => {
-    setItems((prev) => prev.filter((row) => row.id !== rowId));
-  };
-
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: "calc(100vh - 180px)" }}>
-      <Card className="bg-gray-50 p-7 h-screen">
+      <Card className="bg-gray-50 p-7">
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
             title={`Đơn hàng ${orderCode}`}
@@ -354,7 +405,7 @@ const EditSaleOrderPage = () => {
                   : "text-gray-500"
               }`}
             >
-              Thông tin chung
+              Thông tin đơn hàng
             </button>
             <button
               onClick={() => setActiveTab("products")}
@@ -370,14 +421,86 @@ const EditSaleOrderPage = () => {
 
           {/* Nội dung từng tab */}
           {activeTab === "info" && (
-            <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-6">
-              <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-6 mb-6">
+              {/* --- Thông tin chung --- */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Mã đơn (bên trái) */}
                 <div>
                   <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                    Mã phiếu
+                    Mã đơn
                   </Typography>
-                  <Input label="Mã phiếu" value={orderCode} disabled className="text-sm" />
+                  <Input
+                    label="Mã đơn"
+                    value={orderCode}
+                    disabled
+                    className="text-sm"
+                  />
                 </div>
+
+                {/* Ngày tạo đơn (bên phải) */}
+                <div>
+                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                    Ngày tạo đơn
+                  </Typography>
+                  <Input
+                    type="date"
+                    value={orderDate}
+                    onChange={(e) => setOrderDate(e.target.value)}
+                    className="text-sm"
+                    disabled={!isEditing}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Người bán hàng (bên trái) */}
+                {/* <div>
+                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                    Người liên hệ
+                  </Typography>
+                  <Input
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    className="text-sm"
+                    disabled={!isEditing}
+                  />
+                </div> */}
+
+                {/* Trạng thái đơn hàng (bên phải) */}
+                <div>
+                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                    Trạng thái đơn hàng
+                  </Typography>
+                  <Input
+                    label="Trạng thái"
+                    value="Đang chuẩn bị"
+                    disabled
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Diễn giải (full width) */}
+              <div>
+                <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                  Diễn giải
+                </Typography>
+                <Textarea
+                  placeholder="Diễn giải"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="text-sm"
+                  disabled={!isEditing}
+                />
+              </div>
+
+              {/* --- Thông tin khách hàng --- */}
+              <Typography variant="h6" className="mt-4 mb-2 pb-2 font-bold text-gray-900 border-b">
+                Thông tin khách hàng
+              </Typography>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Mã khách hàng (bên trái) */}
                 <div>
                   <Typography variant="small" className="mb-2 font-bold text-gray-900">
                     Mã khách hàng
@@ -392,6 +515,7 @@ const EditSaleOrderPage = () => {
                     placeholder="Chọn khách hàng"
                     components={{ DropdownIndicator: AddCustomerDropdownIndicator }}
                     onAddCustomer={handleOpenCreatePartnerPopup}
+                    isDisabled={!isEditing}
                   />
                   {customerError && (
                     <Typography color="red" className="text-xs mt-1">
@@ -399,12 +523,51 @@ const EditSaleOrderPage = () => {
                     </Typography>
                   )}
                 </div>
+
+                {/* Tên khách hàng (bên phải) */}
+                <div>
+                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                    Tên khách hàng
+                  </Typography>
+                  <Input
+                    label="Tên khách hàng"
+                    value={customerName}
+                    disabled
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Địa chỉ (bên trái) */}
                 <div>
                   <Typography variant="small" className="mb-2 font-bold text-gray-900">
                     Địa chỉ
                   </Typography>
-                  <Input label="Địa chỉ" value={address} disabled className="text-sm" />
+                  <Input
+                    label="Địa chỉ"
+                    value={address}
+                    disabled
+                    className="text-sm"
+                  />
                 </div>
+
+                {/* Số điện thoại (bên phải) */}
+                <div>
+                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                    Số điện thoại
+                  </Typography>
+                  <Input
+                    label="Số điện thoại"
+                    value={phoneNumber}
+                    disabled
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Người liên hệ (bên trái) */}
                 <div>
                   <Typography variant="small" className="mb-2 font-bold text-gray-900">
                     Người liên hệ
@@ -413,42 +576,7 @@ const EditSaleOrderPage = () => {
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     className="text-sm"
-                  />
-                </div>
-              </div>
-              <div className="flex flex-col gap-4">
-                <div>
-                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                    Ngày lập phiếu
-                  </Typography>
-                  <Input
-                    type="date"
-                    value={orderDate}
-                    onChange={(e) => setOrderDate(e.target.value)}
-                    className="text-sm"
-                  />
-                </div>
-                <div>
-                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                    Tên khách hàng
-                  </Typography>
-                  <Input label="Tên khách hàng" value={customerName} disabled className="text-sm" />
-                </div>
-                <div>
-                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                    Số điện thoại
-                  </Typography>
-                  <Input label="Số điện thoại" value={phoneNumber} disabled className="text-sm" />
-                </div>
-                <div>
-                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                    Diễn giải
-                  </Typography>
-                  <Textarea
-                    placeholder="Diễn giải"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="text-sm"
+                    disabled
                   />
                 </div>
               </div>
@@ -463,7 +591,10 @@ const EditSaleOrderPage = () => {
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
                       {["STT", "Mã hàng", "Tên hàng", "Đơn vị", "Số lượng", "Thao tác"].map((head) => (
-                        <th key={head} className="px-4 py-2 text-sm font-semibold text-gray-600 border-r last:border-r-0">
+                        <th
+                          key={head}
+                          className="px-4 py-2 text-sm font-semibold text-gray-600 border-r last:border-r-0"
+                        >
                           {head}
                         </th>
                       ))}
@@ -473,7 +604,9 @@ const EditSaleOrderPage = () => {
                     {items.length > 0 ? (
                       items.map((item, index) => (
                         <tr key={item.id} className="border-b last:border-b-0 hover:bg-gray-50">
-                          <td className="px-4 py-2 text-sm text-gray-700 border-r">{index + 1}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700 border-r">
+                            {index + 1}
+                          </td>
                           <td className="px-4 py-2 text-sm border-r">
                             <Select
                               placeholder="Chọn sản phẩm"
@@ -482,9 +615,12 @@ const EditSaleOrderPage = () => {
                               styles={customStyles}
                               className="w-68"
                               value={products.find((p) => p.value === item.productCode) || null}
-                              onChange={(selectedOption) => handleSelectProduct(item.id, selectedOption)}
+                              onChange={(selectedOption) =>
+                                handleSelectProduct(item.id, selectedOption)
+                              }
+                              isDisabled={!isEditing}
                             />
-                            {itemsErrors[item.id] && itemsErrors[item.id].productError && (
+                            {itemsErrors[item.id]?.productError && (
                               <Typography color="red" className="text-xs mt-1">
                                 {itemsErrors[item.id].productError}
                               </Typography>
@@ -510,22 +646,25 @@ const EditSaleOrderPage = () => {
                               className="w-16 text-sm"
                               value={item.quantity}
                               onChange={(e) => handleQuantityChange(item.id, e.target.value)}
+                              disabled={!isEditing}
                             />
-                            {itemsErrors[item.id] && itemsErrors[item.id].quantityError && (
+                            {itemsErrors[item.id]?.quantityError && (
                               <Typography color="red" className="text-xs mt-1">
                                 {itemsErrors[item.id].quantityError}
                               </Typography>
                             )}
                           </td>
                           <td className="px-4 py-2 text-sm text-center">
-                            <Button
-                              color="red"
-                              variant="text"
-                              size="sm"
-                              onClick={() => handleDeleteRow(item.id)}
-                            >
-                              Xóa
-                            </Button>
+                            {isEditing && (
+                              <Button
+                                color="red"
+                                variant="text"
+                                size="sm"
+                                onClick={() => handleDeleteRow(item.id)}
+                              >
+                                Xóa
+                              </Button>
+                            )}
                           </td>
                         </tr>
                       ))
@@ -540,37 +679,71 @@ const EditSaleOrderPage = () => {
                 </table>
               </div>
 
-              {/* Nút thêm / xóa dòng */}
-              <div className="flex gap-2 mb-4">
-                <Button variant="outlined" onClick={handleAddRow} className="flex items-center gap-2">
-                  <FaPlus /> Thêm dòng
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="red"
-                  onClick={handleRemoveAllRows}
-                  className="flex items-center gap-2"
-                >
-                  <FaTrash /> Xóa hết dòng
-                </Button>
-              </div>
+              {/* Nút thêm / xóa dòng (chỉ hiển thị khi đang chỉnh sửa) */}
+              {isEditing && (
+                <div className="flex gap-2 mb-4">
+                  <Button
+                    variant="outlined"
+                    onClick={handleAddRow}
+                    className="flex items-center gap-2"
+                  >
+                    <FaPlus /> Thêm dòng
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="red"
+                    onClick={handleRemoveAllRows}
+                    className="flex items-center gap-2"
+                  >
+                    <FaTrash /> Xóa hết dòng
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
-          {/* Thông báo lỗi và nút Lưu / Hủy */}
+          {/* Thông báo lỗi và nút Lưu / Hủy / Chỉnh sửa */}
           <div className="flex flex-col gap-2">
             {globalError && (
               <Typography color="red" className="text-sm text-right">
                 {globalError}
               </Typography>
             )}
+
             <div className="flex justify-end gap-2">
-              <Button variant="text" color="gray" onClick={handleCancel} className="flex items-center gap-2">
-                <FaTimes /> Hủy
+              {/* Nếu đang chỉnh sửa => nút Hủy, nếu không => nút Quay lại */}
+              <Button
+                variant="text"
+                color="gray"
+                onClick={handleCancel}
+                className="flex items-center gap-2"
+              >
+                <FaTimes />
+                {isEditing ? "Hủy" : "Quay lại"}
               </Button>
-              <Button variant="gradient" color="green" onClick={handleSaveOrder} className="flex items-center gap-2">
-                <FaSave /> Lưu
-              </Button>
+
+              {/* Nút Chỉnh sửa / Lưu */}
+              {!isEditing ? (
+                // Chưa chỉnh sửa => hiển thị nút "Chỉnh sửa"
+                <Button
+                  variant="gradient"
+                  color="blue"
+                  onClick={handleEdit}
+                  className="flex items-center gap-2"
+                >
+                  <FaEdit /> Chỉnh sửa
+                </Button>
+              ) : (
+                // Đang chỉnh sửa => hiển thị nút "Lưu"
+                <Button
+                  variant="gradient"
+                  color="green"
+                  onClick={handleSaveOrder}
+                  className="flex items-center gap-2"
+                >
+                  <FaSave /> Lưu
+                </Button>
+              )}
             </div>
           </div>
         </CardBody>

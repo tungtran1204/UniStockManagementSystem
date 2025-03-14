@@ -65,9 +65,18 @@ export function Navbar({ brandName, routes }) {
   }, []);
 
   return (
-    <MTNavbar fullWidth className="py-3 shadow-none">
-      <div className="flex flex-col-reverse justify-between mt-2 mb-2 gap-6 md:flex-row md:items-center">
+    <MTNavbar fullWidth className="py-2 shadow-none bg-white border-b border-l-0 border-gray-200">
+
+      <div className="flex flex-col-reverse justify-between gap-6 md:flex-row md:items-center">
         <div className="capitalize flex items-center gap-3">
+          <div className="flex items-center justify-center w-[210px]">
+            <Link to="/home" className="pr-2">
+              <img src="/img/logo.png" alt="Brand Logo" className="h-11 w-11" />
+            </Link>
+            <Link to="/home">
+              <Typography className="font-bold text-black text-2xl pt-1">UniStock</Typography>
+            </Link>
+          </div>
           <IconButton
             variant="text"
             color="blue-gray"

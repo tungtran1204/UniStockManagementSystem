@@ -67,21 +67,20 @@ const WarehousePage = () => {
   );
 
   return (
-    <div className="mb-8 flex flex-col gap-12">
-      <Card className="bg-gray-100 p-7">
-        <PageHeader
-          title="Danh sách kho"
-          addButtonLabel="Thêm kho"
-          onAdd={() => setOpenAddModal(true)}
-          onImport={() => {/* Xử lý import nếu có */ }}
-          onExport={() => {/* Xử lý export file ở đây nếu có */ }}
-          showImport={false} // Ẩn nút import nếu không dùng
-          showExport={false} // Ẩn xuất file nếu không dùng
-        />
-
+    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+      <Card className="bg-gray-50 p-7 rounded-none shadow-none">
         <CardBody className="pb-2 bg-white rounded-xl">
+          <PageHeader
+            title="Danh sách kho"
+            addButtonLabel="Thêm kho"
+            onAdd={() => setOpenAddModal(true)}
+            onImport={() => {/* Xử lý import nếu có */ }}
+            onExport={() => {/* Xử lý export file ở đây nếu có */ }}
+            showImport={false} // Ẩn nút import nếu không dùng
+            showExport={false} // Ẩn xuất file nếu không dùng
+          />
           {/* Items per page and search */}
-          <div className="px-4 py-2 flex items-center justify-between gap-2">
+          <div className="py-2 flex items-center justify-between gap-2">
             {/* Items per page */}
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-light">
@@ -206,34 +205,34 @@ const WarehousePage = () => {
               )}
             </tbody>
           </table>
-        </CardBody>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
-          <div className="flex items-center gap-2">
-            <Typography variant="small" color="blue-gray" className="font-normal">
-              Trang {currentPage + 1} / {totalPages} • {totalElements} kho hàng
-            </Typography>
+          {/* Pagination */}
+          <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+            <div className="flex items-center gap-2">
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
+              </Typography>
+            </div>
+            <ReactPaginate
+              previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
+              nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
+              breakLabel="..."
+              pageCount={totalPages}
+              marginPagesDisplayed={2}
+              pageRangeDisplayed={5}
+              onPageChange={handlePageChange}
+              containerClassName="flex items-center gap-1"
+              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              pageLinkClassName="flex items-center justify-center w-full h-full"
+              previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
+              activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+              forcePage={currentPage}
+              disabledClassName="opacity-50 cursor-not-allowed"
+            />
           </div>
-          <ReactPaginate
-            previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
-            nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
-            breakLabel="..."
-            pageCount={totalPages}
-            marginPagesDisplayed={2}
-            pageRangeDisplayed={5}
-            onPageChange={handlePageChange}
-            containerClassName="flex items-center gap-1"
-            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-            pageLinkClassName="flex items-center justify-center w-full h-full"
-            previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-            nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-            breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-            activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
-            forcePage={currentPage}
-            disabledClassName="opacity-50 cursor-not-allowed"
-          />
-        </div>
+        </CardBody>
       </Card>
 
       {/* Modal Add Warehouse */}

@@ -18,6 +18,12 @@ const MainLayout = ({ children }) => {
 
   return (
     <div className="bg-white flex h-screen">
+      <div
+        className="fixed top-0 left-0 z-40 transition-all duration-300 bg-white w-full"
+      >
+        <Navbar />
+      </div>
+
       {/* Sidebar */}
       <Sidenav
         routes={routes.filter(
@@ -30,27 +36,29 @@ const MainLayout = ({ children }) => {
 
       {/* Nội dung chính */}
       <div
-        className={`flex flex-col transition-all duration-300 ${
-          openSidenav ? "xl:ml-72 xl:w-[calc(100%-288px)]" : "ml-0 w-full"
-        }`}
-      >
-        {/* Navbar */}
-        <div
-          className={`fixed top-0 left-0 z-40 transition-all duration-300 bg-white ${
-            openSidenav ? "xl:w-[calc(100%-288px)] xl:left-72" : "w-full left-0"
+        className={`flex flex-col transition-all duration-300 ${openSidenav ? "xl:ml-60 xl:w-[calc(100%-240px)]" : "ml-0 w-full"
           }`}
+      >
+        {/* Navbar
+        <div
+          className={`fixed top-0 left-0 z-40 transition-all duration-300 bg-white ${openSidenav ? "xl:w-[calc(100%-240px)] xl:left-60" : "w-full left-0"
+            }`}
         >
           <Navbar />
-        </div>
+        </div> */}
 
         {/* Phần nội dung cuộn */}
-        <div className="flex-grow max-w-full mt-[89px] overflow-y-auto bg-gray-50">
+        <div className="flex-grow max-w-full mt-[65px] overflow-y-auto bg-gray-50">
           {children}
         </div>
 
         {/* Footer cố định */}
-        <div className="text-blue-gray-600 max-w-full flex-shrink-0 bg-gray-50">
-          <Footer />
+        <div className="text-blue-gray-600 max-w-full bg-gray-50">
+
+          {/* Footer cố định */}
+          <div className="text-blue-gray-600 max-w-full   bg-gray-50">
+            <Footer />
+          </div>
         </div>
       </div>
     </div>

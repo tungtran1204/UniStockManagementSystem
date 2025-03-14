@@ -27,5 +27,6 @@ public class PaperEvidence {
     public enum NoteType {
         GOOD_RECEIPT_NOTE, GOOD_ISSUE_NOTE
     }
+
 }
 

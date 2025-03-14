@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import useProduct from "./useProduct";
 import { Button, IconButton } from "@material-tailwind/react";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
@@ -23,7 +24,6 @@ import {
 } from "@material-tailwind/react";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
-import { useNavigate } from "react-router-dom";
 
 const ProductPage = () => {
   const navigate = useNavigate();
@@ -119,26 +119,27 @@ const ProductPage = () => {
   };
 
   // Add this function
-  const filteredProducts = Array.isArray(products) 
-    ? products.filter(product => 
-        product.productCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.productName?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+  const filteredProducts = Array.isArray(products)
+    ? products.filter(product =>
+      product.productCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.productName?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
     : [];
 
   return (
-    <div className="mb-8 flex flex-col gap-12">
-      <Card className="bg-gray-100 p-7">
-        <PageHeader
-          title="Danh sách sản phẩm"
-          addButtonLabel="Thêm sản phẩm"
-          onAdd={handleAddProduct}
-          onImport={() => setShowImportPopup(true)}
-          onExport={exportExcel}
-        />
+    <div className="mb-8 flex flex-col gap-12" tyle={{ height: 'calc(100vh-100px)' }}>
+      <Card className="bg-gray-50 p-7 rounded-none shadow-none">
+
         <CardBody className="pb-2 bg-white rounded-xl">
+          <PageHeader
+            title="Danh sách sản phẩm"
+            addButtonLabel="Thêm sản phẩm"
+            onAdd={handleAddProduct}
+            onImport={() => setShowImportPopup(true)}
+            onExport={exportExcel}
+          />
           {/* Phần chọn số items/trang */}
-          <div className="px-4 py-2 flex items-center justify-between gap-2">
+          <div className="py-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-light">
                 Hiển thị
@@ -176,7 +177,7 @@ const ProductPage = () => {
                   "Mã sản phẩm",
                   "Tên sản phẩm",
                   "Đơn vị",
-                  "Dòng sản phẩm", 
+                  "Dòng sản phẩm",
                   "Hình ảnh",
                   "Trạng thái",
                   "Thao tác",

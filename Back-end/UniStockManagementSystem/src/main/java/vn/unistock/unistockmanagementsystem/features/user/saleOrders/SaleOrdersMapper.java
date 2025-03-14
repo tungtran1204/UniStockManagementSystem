@@ -21,11 +21,30 @@ public interface SaleOrdersMapper {
 
     @Mapping(source = "partner.address", target = "address")
     @Mapping(source = "partner.phone", target = "phoneNumber")
-    @Mapping(source = "partner.contactName", target = "contactName")
+
     @Mapping(source = "status", target = "status")
     @Mapping(source = "orderDate", target = "orderDate")
     @Mapping(source = "note", target = "note")
     @Mapping(source = "details", target = "orderDetails")
+    @Mapping(
+            target = "partnerCode",
+            expression = """
+            java(
+                salesOrder.getPartner() != null 
+                && salesOrder.getPartner().getPartnerTypes() != null 
+                ? salesOrder.getPartner()
+                          .getPartnerTypes()
+                          .stream()
+                          .filter(pbt -> pbt.getPartnerType() != null 
+                                         && pbt.getPartnerType().getTypeId() == 1)
+                          .map(pbt -> pbt.getPartnerCode())
+                          .findFirst()
+                          .orElse(null)
+                : null
+            )
+        """
+    )
+    @Mapping(source = "partner.contactName", target = "contactName")
     SaleOrdersDTO toDTO(SalesOrder salesOrder);
 
     default List<SaleOrdersDTO> toDTOList(List<SalesOrder> salesOrders) {

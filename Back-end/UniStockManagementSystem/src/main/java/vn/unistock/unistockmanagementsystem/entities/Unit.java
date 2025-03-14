@@ -3,9 +3,7 @@ package vn.unistock.unistockmanagementsystem.entities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.List;
 
@@ -13,6 +11,8 @@ import java.util.List;
 @Setter
 @Entity
 @Table(name = "units")
+@AllArgsConstructor
+@NoArgsConstructor
 public class Unit {
 
     @Id

@@ -1,39 +1,65 @@
 package vn.unistock.unistockmanagementsystem.features.user.purchaseRequests;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import vn.unistock.unistockmanagementsystem.entities.PurchaseRequest;
 
-import java.util.List;
+import java.util.Map;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/unistock/user/purchase-requests")
 @RequiredArgsConstructor
 public class PurchaseRequestController {
+
+    private static final Logger logger = LoggerFactory.getLogger(PurchaseRequestController.class);
+
     private final PurchaseRequestService purchaseRequestService;
 
-    // Lấy danh sách yêu cầu mua vật tư
     @GetMapping
     public ResponseEntity<Page<PurchaseRequestDTO>> getAllPurchaseRequests(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(purchaseRequestService.getAllPurchaseRequests(page, size));
+        logger.info("Fetching purchase requests - Page: {}, Size: {}", page, size);
+        PageRequest pageable = PageRequest.of(page, size);
+        Page<PurchaseRequestDTO> requests = purchaseRequestService.getAllPurchaseRequests(pageable);
+        return ResponseEntity.ok(requests);
     }
 
-    // Lấy chi tiết yêu cầu mua vật tư
-    @GetMapping("/{id}")
-    public ResponseEntity<PurchaseRequestDetailDTO> getPurchaseRequestDetail(@PathVariable Long id) {
-        return ResponseEntity.ok(purchaseRequestService.getPurchaseRequestDetail(id));
+    @GetMapping("/next-code")
+    public ResponseEntity<String> getNextRequestCode() {
+        logger.info("Fetching next request code");
+        String nextCode = purchaseRequestService.getNextRequestCode();
+        logger.info("Next request code generated: {}", nextCode);
+        return ResponseEntity.ok(nextCode);
     }
 
-    // Tạo yêu cầu mua vật tư thủ công
-    @PostMapping("/create-manual")
-    public ResponseEntity<PurchaseRequestDTO> createPurchaseRequestManual(
-            @RequestParam("purchaseRequestCode") String purchaseRequestCode,
-            @RequestBody List<MaterialInputDTO> materials) {
-        return ResponseEntity.ok(purchaseRequestService.createPurchaseRequestManual(purchaseRequestCode, materials));
+    @GetMapping("/{purchaseRequestId}")
+    public ResponseEntity<PurchaseRequestDTO> getPurchaseRequestById(@PathVariable Long purchaseRequestId) {
+        logger.info("Fetching purchase request by ID: {}", purchaseRequestId);
+        PurchaseRequestDTO request = purchaseRequestService.getPurchaseRequestById(purchaseRequestId);
+        return ResponseEntity.ok(request);
+    }
+
+    @PostMapping("/manual")
+    public ResponseEntity<PurchaseRequestDTO> createManualPurchaseRequest(@RequestBody PurchaseRequestDTO dto) {
+        PurchaseRequestDTO response = purchaseRequestService.createManualPurchaseRequest(dto);
+        return ResponseEntity.ok(response);
+    }
+
+
+    @PatchMapping("/{purchaseRequestId}/status")
+    public ResponseEntity<PurchaseRequestDTO> updatePurchaseRequestStatus(
+            @PathVariable Long purchaseRequestId,
+            @RequestBody Map<String, String> statusRequest) {
+        logger.info("Updating status of purchase request ID: {}", purchaseRequestId);
+        String newStatus = statusRequest.get("status");
+        PurchaseRequestDTO updatedRequest = purchaseRequestService.updatePurchaseRequestStatus(purchaseRequestId, newStatus);
+        return ResponseEntity.ok(updatedRequest);
     }
 }

@@ -15,6 +15,7 @@ import Select from "react-select";
 import axios from "axios";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
+import PageHeader from '@/components/PageHeader';
 
 const customStyles = {
     control: (provided, state) => ({
@@ -34,8 +35,8 @@ const customStyles = {
         backgroundColor: state.isFocused
             ? "#f3f4f6"
             : state.isSelected
-            ? "#e5e7eb"
-            : "transparent",
+                ? "#e5e7eb"
+                : "transparent",
         color: "#000",
         cursor: "pointer",
         "&:active": {
@@ -99,7 +100,7 @@ const AddProductPage = () => {
     const loadInitialData = async () => {
         try {
             const unitsData = await fetchUnits();
-            const productTypesData = await fetchProductTypes();
+            const productTypesData = await fetchProductTypes(); 
             setUnits(unitsData);
             setProductTypes(productTypesData);
         } catch (error) {
@@ -116,7 +117,7 @@ const AddProductPage = () => {
             }
 
             const response = await axios.get(
-                "http://localhost:8080/api/unistock/user/materials",
+                `${import.meta.env.VITE_API_URL}/user/materials`,
                 {
                     headers,
                     withCredentials: true,
@@ -142,9 +143,9 @@ const AddProductPage = () => {
         }));
 
         // Cập nhật giá trị
-        setNewProduct((prev) => ({ 
-            ...prev, 
-            productCode: newCode || "" 
+        setNewProduct((prev) => ({
+            ...prev,
+            productCode: newCode || ""
         }));
 
         if (newCode.trim()) {
@@ -234,7 +235,7 @@ const AddProductPage = () => {
     useEffect(() => {
         // Chỉ kiểm tra các dòng đã được chọn vật tư
         const materialsToValidate = productMaterials.filter(item => item.materialId);
-        
+
         if (materialsToValidate.length === 0) {
             setBillOfMaterialsError(""); // Không hiện lỗi nếu chưa có dòng nào được chọn
             return;
@@ -313,7 +314,7 @@ const AddProductPage = () => {
                 formData.append("materials", JSON.stringify(materialsData));
 
                 const response = await axios.post(
-                    "http://localhost:8080/api/unistock/user/products/create",
+                    `${import.meta.env.VITE_API_URL}/user/products/create`,
                     formData,
                     {
                         headers: {
@@ -350,7 +351,7 @@ const AddProductPage = () => {
         return productMaterials.filter(item => {
             const searchLower = tableSearchQuery.toLowerCase().trim();
             return item.materialCode?.toLowerCase().includes(searchLower) ||
-                   item.materialName?.toLowerCase().includes(searchLower);
+                item.materialName?.toLowerCase().includes(searchLower);
         });
     };
 
@@ -448,15 +449,19 @@ const AddProductPage = () => {
     };
 
     return (
-        <div className="mt-12 mb-8 flex flex-col gap-12">
-            <Card>
-                <CardHeader variant="gradient" color="gray" className="mb-4 p-4">
-                    <Typography variant="h6" color="white">
-                        Tạo sản phẩm mới
-                    </Typography>
-                </CardHeader>
-
-                <CardBody className="px-4 py-4">
+        <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+            <Card className="bg-gray-50 p-7 rounded-none shadow-none">
+                <CardBody className="pb-2 bg-white rounded-xl">
+                    <PageHeader
+                        title={"Tạo sản phẩm mới"}
+                        addButtonLabel=""
+                        onAdd={() => { }}
+                        onImport={() => {/* Xử lý import nếu có */ }}
+                        onExport={() => {/* Xử lý export file ở đây nếu có */ }}
+                        showAdd={false}
+                        showImport={false} // Ẩn nút import nếu không dùng
+                        showExport={false} // Ẩn xuất file nếu không dùng
+                    />
                     {errors.message && (
                         <Typography className="text-red-500 mb-4">{errors.message}</Typography>
                     )}
@@ -471,13 +476,12 @@ const AddProductPage = () => {
                                     type="text"
                                     value={newProduct.productCode || ""}
                                     onChange={(e) => handleCheckProductCode(e.target.value)}
-                                    className={`w-full ${
-                                        errors.productCode ||
+                                    className={`w-full ${errors.productCode ||
                                         productCodeError ||
                                         (validationErrors.productCode && !isFieldValid(newProduct.productCode))
-                                            ? "border-red-500"
-                                            : ""
-                                    }`}
+                                        ? "border-red-500"
+                                        : ""
+                                        }`}
                                 />
                                 {(productCodeError || validationErrors.productCode || errors.productCode) && (
                                     <Typography className="text-xs text-red-500 mt-1">
@@ -535,12 +539,11 @@ const AddProductPage = () => {
                                     type="text"
                                     value={newProduct.productName || ""}
                                     onChange={(e) => handleInputChange("productName", e.target.value)}
-                                    className={`w-full ${
-                                        errors.productName ||
+                                    className={`w-full ${errors.productName ||
                                         (validationErrors.productName && !isFieldValid(newProduct.productName))
-                                            ? "border-red-500"
-                                            : ""
-                                    }`}
+                                        ? "border-red-500"
+                                        : ""
+                                        }`}
                                 />
                                 {(validationErrors.productName || errors.productName) && (
                                     <Typography className="text-xs text-red-500 mt-1">
@@ -625,14 +628,33 @@ const AddProductPage = () => {
                             Định mức nguyên vật liệu
                         </Typography>
 
-                        {/* Thêm ô tìm kiếm trước bảng */}
-                        <div className="flex items-center gap-4 mb-4">
-                            <div className="flex-1">
+                        <div className="flex items-center justify-between gap-4 mb-4">
+                            <div className="flex items-center gap-2">
+                                <Typography variant="small" color="blue-gray" className="font-normal">
+                                    Hiển thị
+                                </Typography>
+                                <select
+                                    value={pageSize}
+                                    onChange={(e) => {
+                                        setPageSize(Number(e.target.value));
+                                        setCurrentPage(0);
+                                    }}
+                                    className="border rounded px-2 py-1"
+                                >
+                                    {[5, 10, 20, 50].map(size => (
+                                        <option key={size} value={size}>{size}</option>
+                                    ))}
+                                </select>
+                                <Typography variant="small" color="blue-gray" className="font-normal">
+                                    bản ghi mỗi trang
+                                </Typography>
+                            </div>
+
+                            <div className="w-96 md:w-[900px]">
                                 <Input
                                     label="Tìm kiếm trong danh sách"
                                     value={tableSearchQuery}
                                     onChange={(e) => setTableSearchQuery(e.target.value)}
-                                    className="w-full"
                                     icon={
                                         tableSearchQuery && (
                                             <button
@@ -652,27 +674,6 @@ const AddProductPage = () => {
                                 {billOfMaterialsError}
                             </Typography>
                         )}
-
-                        <div className="flex items-center gap-2 mb-4">
-                            <Typography variant="small" color="blue-gray" className="font-normal">
-                                Hiển thị
-                            </Typography>
-                            <select
-                                value={pageSize}
-                                onChange={(e) => {
-                                    setPageSize(Number(e.target.value));
-                                    setCurrentPage(0);
-                                }}
-                                className="border rounded px-2 py-1"
-                            >
-                                {[5, 10, 20, 50].map(size => (
-                                    <option key={size} value={size}>{size}</option>
-                                ))}
-                            </select>
-                            <Typography variant="small" color="blue-gray" className="font-normal">
-                                dòng mỗi trang
-                            </Typography>
-                        </div>
 
                         <div className="border border-gray-200 rounded mb-4">
                             <table className="w-full text-left min-w-max border-collapse">
@@ -709,9 +710,9 @@ const AddProductPage = () => {
                                                         value={
                                                             item.materialId
                                                                 ? {
-                                                                      value: item.materialId,
-                                                                      label: `${item.materialCode} - ${item.materialName}`,
-                                                                  }
+                                                                    value: item.materialId,
+                                                                    label: `${item.materialCode} - ${item.materialName}`,
+                                                                }
                                                                 : null
                                                         }
                                                         onChange={(selected) => {
@@ -744,9 +745,8 @@ const AddProductPage = () => {
                                                             value={item.quantity}
                                                             onChange={(e) => handleQuantityChange(currentPage * pageSize + index, e.target.value)}
                                                             min={1}
-                                                            className={`w-16 text-sm ${
-                                                                quantityErrors[currentPage * pageSize + index] ? "border-red-500" : ""
-                                                            }`}
+                                                            className={`w-16 text-sm ${quantityErrors[currentPage * pageSize + index] ? "border-red-500" : ""
+                                                                }`}
                                                         />
                                                         {quantityErrors[currentPage * pageSize + index] && (
                                                             <div className="text-xs text-red-500 mt-1">
@@ -790,7 +790,7 @@ const AddProductPage = () => {
                                 <div className="flex items-center gap-2">
                                     <Typography variant="small" color="blue-gray" className="font-normal">
                                         Trang {currentPage + 1} / {Math.ceil(filteredTableMaterials.length / pageSize)} •{" "}
-                                        {filteredTableMaterials.length} dòng
+                                        {filteredTableMaterials.length} bản ghi
                                     </Typography>
                                 </div>
                                 <ReactPaginate

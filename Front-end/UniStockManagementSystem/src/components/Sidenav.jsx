@@ -29,29 +29,9 @@ export function Sidenav({routes }) {
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 h-screen w-[290px] bg-white shadow-lg transition-transform duration-300 ${openSidenav ? "translate-x-0" : "-translate-x-full"
+      className={`fixed mt-[65px] inset-y-0 overflow-y-auto left-0 z-50 h-screen w-[240px] bg-white shadow-none border-r border-gray-200 transition-transform duration-300 ${openSidenav ? "translate-x-0" : "-translate-x-full"
         }`}
     >
-      {/* Logo + Close Button */}
-      <div className="flex items-center justify-around px-6 py-5 border-b">
-        <div className="flex items-center">
-          <Link to="/home" className="pr-2">
-            <img src="/img/logo.png" alt="Brand Logo" className="h-12 w-12" />
-          </Link>
-          <Link to="/home">
-            <Typography className="font-bold text-4xl pt-2 pr-2">UniStock</Typography>
-          </Link>
-        </div>
-        <IconButton
-          variant="text"
-          size="sm"
-          onClick={() => setOpenSidenav(dispatch, false)}
-          className="xl:hidden mt-2"
-        >
-          <XMarkIcon strokeWidth={2} className="h-8 w-8 text-gray-600" />
-        </IconButton>
-      </div>
-
       {/* Menu */}
       <nav className="p-4">
         {routes.map(({ pages }, key) => {

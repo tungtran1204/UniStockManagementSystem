@@ -13,6 +13,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
+import PageHeader from '@/components/PageHeader';
+
 
 const AddIssueNote = () => {
   const navigate = useNavigate();
@@ -94,22 +96,25 @@ const AddIssueNote = () => {
   const displayedProducts = products.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
 
   return (
-    <div className="mt-6 mb-8 flex flex-col gap-6">
-      <Card>
-        {/* Header */}
-        <CardHeader variant="gradient" color="gray" className="mb-6 p-4 flex justify-between items-center">
-          <Typography variant="h6" color="white">
-            Phiếu nhập kho NK00009
-          </Typography>
-          <div className="w-56">
-            <Select value={orderType} onChange={(value) => setOrderType(value)}>
+    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+      <Card className="bg-gray-50 p-7 rounded-none shadow-none">
+
+        {/* <Select value={orderType} onChange={(value) => setOrderType(value)}>
               <Option value="Nhập kho thành phẩm">Nhập kho thành phẩm</Option>
               <Option value="Nhập vật tư">Nhập vật tư</Option>
-            </Select>
-          </div>
-        </CardHeader>
+            </Select> */}
+        <CardBody className="pb-2 bg-white rounded-xl">
+          <PageHeader
+            title="Phiếu nhập kho NK00009"
 
-        <CardBody className="px-6 text-sm">
+            showAdd={false} // Ẩn nút thêm kho
+            onAdd={() => setOpenAddModal(true)}
+            onImport={() => {/* Xử lý import nếu có */ }}
+            onExport={() => {/* Xử lý export file ở đây nếu có */ }}
+            showImport={false} // Ẩn nút import nếu không dùng
+            showExport={false} // Ẩn xuất file nếu không dùng
+
+          />
           {/* Thông tin chung */}
           <Typography variant="h6" className="mb-2 text-gray-700 text-sm font-semibold">
             Thông tin chung

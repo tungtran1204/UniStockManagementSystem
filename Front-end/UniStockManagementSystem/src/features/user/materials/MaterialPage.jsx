@@ -150,26 +150,27 @@ const MaterialPage = () => {
         handlePageChange(selectedItem.selected);
     };
 
-    const filteredMaterials = Array.isArray(materials) 
-        ? materials.filter(material => 
+    const filteredMaterials = Array.isArray(materials)
+        ? materials.filter(material =>
             material.materialCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             material.materialName?.toLowerCase().includes(searchTerm.toLowerCase())
         )
         : [];
 
     return (
-        <div className="mb-8 flex flex-col gap-12">
-            <Card className="bg-gray-100 p-7">
-                <PageHeader
-                    title="Danh sách nguyên vật liệu"
-                    addButtonLabel="Thêm nguyên vật liệu"
-                    onAdd={() => setShowCreatePopup(true)}
-                    onImport={() => setShowImportPopup(true)}
-                    onExport={exportExcel}
-                />
+        <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+            <Card className="bg-gray-50 p-7 rounded-none shadow-none">
+
                 <CardBody className="pb-2 bg-white rounded-xl">
+                    <PageHeader
+                        title="Danh sách nguyên vật liệu"
+                        addButtonLabel="Thêm nguyên vật liệu"
+                        onAdd={() => setShowCreatePopup(true)}
+                        onImport={() => setShowImportPopup(true)}
+                        onExport={exportExcel}
+                    />
                     {/* Items per page and search */}
-                    <div className="px-4 py-2 flex items-center justify-between gap-2">
+                    <div className="py-2 flex items-center justify-between gap-2">
                         {/* Items per page */}
                         <div className="flex items-center gap-2">
                             <Typography variant="small" color="blue-gray" className="font-light">
@@ -211,7 +212,6 @@ const MaterialPage = () => {
                                     "STT",
                                     "Mã NVL",
                                     "Tên nguyên vật liệu",
-                                    "Mô tả",
                                     "Đơn vị",
                                     "Danh mục",
                                     "Hình ảnh",
@@ -247,11 +247,6 @@ const MaterialPage = () => {
                                             <td className={className}>
                                                 <Typography className="text-xs font-semibold text-blue-gray-600">
                                                     {material.materialName}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-normal text-blue-gray-600">
-                                                    {material.description || "N/A"}
                                                 </Typography>
                                             </td>
                                             <td className={className}>
@@ -336,7 +331,7 @@ const MaterialPage = () => {
                     <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
                         <div className="flex items-center gap-2">
                             <Typography variant="small" color="blue-gray" className="font-normal">
-                                Trang {currentPage + 1} / {totalPages} • {totalElements} nguyên vật liệu
+                                Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
                             </Typography>
                         </div>
                         <ReactPaginate

@@ -28,10 +28,15 @@ import AddSaleOrderPage from "../features/user/saleorders/AddSaleOrderPage";
 import AddReceiptNote from "../features/user/receiptNote/AddReceiptNote";
 import IssueNotePage from "../features/user/issueNote/IssueNotePage";
 import AddIssueNote from "../features/user/receiptNote/AddReceiptNote";
+import PurchaseOrderPage from "../features/user/purchaseOrder/PurchaseOrderPage";
 import AddProductPage from "@/features/user/products/AddProductPage";
 import DetailProductPage from "@/features/user/products/DetailProductPage";
 import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
+import PurchaseOrderDetail from "../features/user/purchaseOrder/PurchaseOrderDetail";
 
+import ProductTypePage from "@/features/user/productType/ProductTypePage";
+import PurchaseRequestPage from "@/features/user/purchaseRequest/PurchaseRequestPage";
+import AddPurchaseRequestPage from "../features/user/purchaseRequest/AddPurchaseRequestPage";
 const icon = { className: "w-5 h-5 text-inherit" };
 
 export const routes = [
@@ -58,14 +63,14 @@ export const routes = [
       },
       {
         icon: <TableCellsIcon {...icon} />,
-        name: "Quản Lý Người Dùng",
+        name: "Người Dùng",
         path: "/admin/users",
         element: <UserPage />,
         roles: ["ADMIN"],
       },
       {
         icon: <InformationCircleIcon {...icon} />,
-        name: "Quản Lý Vai Trò",
+        name: "Vai Trò",
         path: "/admin/roles",
         element: <RolePage />,
         roles: ["ADMIN"],
@@ -85,7 +90,7 @@ export const routes = [
       },
       {
         icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
-        name: "Quản lý đơn hàng",
+        name: "Đơn bán hàng",
         path: "/user/sale-orders",
         element: <SaleOrdersPage />, // Trang quản lý đơn hàng 
         roles: ["USER"],
@@ -95,20 +100,43 @@ export const routes = [
         name: "Xuất nhập kho",
         path: "/user/receiptNote",
         roles: ["USER"],
-        element: <Navigate to="/user/partner/type" replace />,
+        element: <Navigate to="/user" replace />,
         subPages: [
           {
             icon: <Bars3BottomRightIcon {...icon} />,
-            name: "Quản lí nhập kho",
+            name: "Nhập kho",
             path: "/user/receiptNote",
             element: <ReceiptNotePage />,
             roles: ["USER"],
           },
           {
             icon: <Bars3BottomRightIcon {...icon} />,
-            name: "Quản lí xuất kho",
+            name: "Xuất kho",
             path: "/user/issueNote",
             element: <IssueNotePage />,
+            roles: ["USER"],
+          },
+        ],
+      },
+      {
+        icon: <UserCircleIcon {...icon} />,
+        name: "Mua hàng",
+        path: "/user/purchaseOrder",
+        roles: ["USER"],
+        element: <Navigate to="/user/purchaseOrder" replace />,
+        subPages: [
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Yêu cầu mua",
+            path: "/user/purchase-request",
+            element: <PurchaseRequestPage />,
+            roles: ["USER"],
+          },
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Đơn mua hàng",
+            path: "/user/purchaseOrder",
+            element: <PurchaseOrderPage />,
             roles: ["USER"],
           },
         ],
@@ -124,8 +152,24 @@ export const routes = [
         icon: <TableCellsIcon {...icon} />,
         name: "Sản phẩm",
         path: "/user/products",
-        element: <ProductPage />,
+        element: <Navigate to="/user/products" replace />,
         roles: ["USER"],
+        subPages: [
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Sản phẩm",
+            path: "/user/products",
+            element: <ProductPage />,
+            roles: ["USER"],
+          },
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Dòng sản phẩm",
+            path: "/user/products-types",
+            element: <ProductTypePage/>,
+            roles: ["USER"],
+          },
+        ],
       },
       {
         icon: <TableCellsIcon {...icon} />, // Sử dụng TableCellsIcon cho phần quản lý nguyên vật liệu
@@ -134,11 +178,9 @@ export const routes = [
         element: <MaterialPage />,
         roles: ["USER"],
       },
-     
-      
       {
         icon: <UserCircleIcon {...icon} />,
-        name: "Quản lý đối tác",
+        name: "Đối tác",
         path: "/user/partner",
         roles: ["USER"],
         element: <Navigate to="/user/partner/type" replace />,
@@ -225,6 +267,18 @@ export const routes = [
       {
         path: "/user/products/:id",
         element: <DetailProductPage />,
+        roles: ["USER"],
+      },
+      {
+        path: "/user/purchaseOrder/:orderId",
+        element: <PurchaseOrderDetail />,
+        roles: ["USER"],
+      },
+      {
+        icon: <TableCellsIcon {...icon} />,
+        name: "Thêm yêu cầu mua vật tư",
+        path: "/user/purchase-request/add",
+        element: <AddPurchaseRequestPage />,
         roles: ["USER"],
       },
     ],
