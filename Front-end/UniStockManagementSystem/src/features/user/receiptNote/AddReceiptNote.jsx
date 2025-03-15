@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Card,
-  CardHeader,
+  Tooltip,
   CardBody,
   Typography,
   Button,
@@ -11,9 +11,11 @@ import {
   Textarea,
 } from "@material-tailwind/react";
 import { useNavigate } from "react-router-dom";
+import { FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
+import Table from "@/components/Table";
 
 
 const AddIssueNote = () => {
@@ -92,8 +94,65 @@ const AddIssueNote = () => {
     setCurrentPage(0);
   };
 
+  const columnsConfig = [
+    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
+    { field: 'code', headerName: 'Mã hàng', flex: 1.5, minWidth: 150, editable: false, filterable: false },
+    { field: 'name', headerName: 'Tên hàng', flex: 2, minWidth: 350, editable: false, filterable: false },
+    { field: 'unit', headerName: 'Đơn vị', flex: 1, minWidth: 100, editable: false, filterable: false },
+    { field: 'warehouse', headerName: 'Kho nhập', flex: 1.5, minWidth: 100, editable: false, filterable: false },
+    {
+      field: 'quantity',
+      headerName: 'Số lượng',
+      flex: 1,
+      minWidth: 100,
+      editable: false,
+      filterable: false,
+      renderCell: (params) => (
+        <Input
+          type="number"
+          value={params.value}
+          onChange={(e) => handleQuantityChange(params.row.index - 1, e.target.value)}
+          min={1}
+          className="w-16 text-sm"
+        />
+      ),
+    },
+    {
+      field: 'actions',
+      headerName: 'Hành động',
+      flex: 0.5,
+      minWidth: 100,
+      editable: false,
+      filterable: false,
+      renderCell: (params) => (
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <Tooltip content="Xoá">
+            <button
+              onClick={() => {
+                handleRemoveRow(params.row.index - 1);
+              }}
+              className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white"
+            >
+              <FaTrash className="h-3 w-3" />
+            </button>
+          </Tooltip>
+        </div>
+      ),
+    },
+  ];
+
   // Lấy danh sách sản phẩm hiển thị theo trang hiện tại
   const displayedProducts = products.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+
+  const data = displayedProducts.map((item, index) => ({
+    id: item.id,
+    index: currentPage * pageSize + index + 1,
+    code: item.code,
+    name: item.name,
+    unit: item.unit,
+    warehouse: item.warehouse,
+    quantity: item.quantity,
+  }));
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -216,106 +275,83 @@ const AddIssueNote = () => {
             </div>
           </div>
 
-          {/* Danh sách sản phẩm */}
-          <Typography variant="h6" className="mb-2 text-gray-700 text-sm font-semibold">
-            Danh sách sản phẩm
-          </Typography>
-
-          {/* Thanh điều khiển phân trang */}
-          <div className="px-4 py-2 flex items-center gap-4 mb-4">
-            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-              Hiển thị
+          <div className="mt-8">
+            <Typography variant="h6" color="blue-gray" className="mb-4">
+              Danh sách sản phẩm
             </Typography>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(0);
-              }}
-              className="border rounded px-2 py-1"
-            >
-              {[5, 10, 20, 50].map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
-            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-              kết quả mỗi trang
-            </Typography>
-          </div>
 
-          {/* Bảng sản phẩm */}
-          <div className="overflow-auto border rounded">
-            <table className="w-full table-auto text-sm">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 border">STT</th>
-                  <th className="p-2 border">Mã hàng</th>
-                  <th className="p-2 border">Tên hàng</th>
-                  <th className="p-2 border">Đơn vị</th>
-                  <th className="p-2 border">Kho nhập</th>
-                  <th className="p-2 border">Số lượng</th>
-                  <th className="p-2 border">Hành động</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayedProducts.map((item, index) => (
-                  <tr key={item.id}>
-                    <td className="p-2 border text-center">{currentPage * pageSize + index + 1}</td>
-                    <td className="p-2 border">{item.code}</td>
-                    <td className="p-2 border">{item.name}</td>
-                    <td className="p-2 border text-center">{item.unit}</td>
-                    <td className="p-2 border">{item.warehouse}</td>
-                    <td className="p-2 border">{item.quantity}</td>
-                    <td className="p-2 border text-center">
-                      <Button size="sm" color="red" variant="text" onClick={() => handleRemoveRow(item.id)}>
-                        ✖
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {/* Tổng số lượng */}
-          <div className="flex justify-end mt-2 pr-4 text-gray-800 text-sm font-semibold">
-            <span>TỔNG</span>
-            <span className="ml-6">{products.reduce((sum, item) => sum + item.quantity, 0)}</span>
-          </div>
-
-          {/* Phân trang */}
-          <div className="flex justify-between items-center mt-4">
-            <div className="flex gap-2">
-              <Button size="sm" variant="outlined" onClick={handleAddRow}>
-                + Thêm dòng
-              </Button>
-              <Button size="sm" variant="outlined" color="red" onClick={handleRemoveAllRows}>
-                ✖ Xóa hết dòng
-              </Button>
-            </div>
-          </div>
-          {totalElements > 0 && (
-            <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+            <div className="flex items-center justify-between gap-4 mb-4">
               <div className="flex items-center gap-2">
                 <Typography variant="small" color="blue-gray" className="font-normal">
-                  Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
+                  Hiển thị
+                </Typography>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(0);
+                  }}
+                  className="border rounded px-2 py-1"
+                >
+                  {[5, 10, 20, 50].map(size => (
+                    <option key={size} value={size}>{size}</option>
+                  ))}
+                </select>
+                <Typography variant="small" color="blue-gray" className="font-normal">
+                  bản ghi mỗi trang
                 </Typography>
               </div>
-              <ReactPaginate
-                previousLabel={<ArrowLeftIcon className="h-4 w-4" />}
-                nextLabel={<ArrowRightIcon className="h-4 w-4" />}
-                pageCount={totalPages}
-                marginPagesDisplayed={2}
-                pageRangeDisplayed={5}
-                onPageChange={handlePageChange}
-                containerClassName="flex items-center gap-2"
-                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-                activeClassName="bg-blue-500 text-white"
-                disabledClassName="opacity-50 cursor-not-allowed"
-              />
             </div>
-          )}
+
+            {/* Bảng sản phẩm */}
+            <Table
+              data={data}
+              columnsConfig={columnsConfig}
+              enableSelection={false}
+            />
+
+            <div className="flex justify-end mt-2 pr-4 text-gray-800 text-sm font-semibold">
+              <span>TỔNG</span>
+              <span className="ml-6">{products.reduce((sum, item) => sum + item.quantity, 0)}</span>
+            </div>
+
+            {totalElements > 0 && (
+              <div className="flex items-center justify-between py-4">
+                <div className="flex items-center gap-2">
+                  <Typography variant="small" color="blue-gray" className="font-normal">
+                    Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
+                  </Typography>
+                </div>
+                <ReactPaginate
+                  previousLabel={<ArrowLeftIcon className="h-4 w-4" />}
+                  nextLabel={<ArrowRightIcon className="h-4 w-4" />}
+                  pageCount={totalPages}
+                  marginPagesDisplayed={2}
+                  pageRangeDisplayed={5}
+                  onPageChange={handlePageChange}
+                  containerClassName="flex items-center gap-2"
+                  pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                  activeClassName="bg-blue-500 text-white"
+                  disabledClassName="opacity-50 cursor-not-allowed"
+                />
+              </div>
+            )}
+
+            <div className="flex gap-2 mb-4">
+              <Button variant="outlined" onClick={handleAddRow} className="flex items-center gap-2">
+                <FaPlus /> Thêm dòng
+              </Button>
+              <Button
+                variant="outlined"
+                color="red"
+                onClick={handleRemoveAllRows}
+                className="flex items-center gap-2"
+              >
+                <FaTrash /> Xóa hết dòng
+              </Button>
+            </div>
+          </div>
+
           <div className="mt-6 border-t pt-4 flex justify-between">
             <Button
               size="sm"

@@ -280,7 +280,7 @@ const UserPage = () => {
           </table>
 
           {/* PHÂN TRANG */}
-          <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+          <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-normal">
                 Trang {currentPage + 1} / {totalPages} • {totalElements} người dùng
@@ -300,7 +300,7 @@ const UserPage = () => {
               previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-              activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+              activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
               forcePage={currentPage}
               disabledClassName="opacity-50 cursor-not-allowed"
             />

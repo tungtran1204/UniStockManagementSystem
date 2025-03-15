@@ -115,4 +115,24 @@ export const getPartnersByType = async (typeId, page , size ) => {
     }
 };
 
+export const updatePartner = async (partner) => {
+    try {
+        const response = await axios.put(`${API_URL}/update/${partner.partnerId}`, partner, {
+            headers: authHeader(),
+        });
+
+        console.log("✅ [updatePartner] Kết quả từ Server:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ Lỗi khi cập nhật đối tác:", error);
+        if (error.response) {
+            console.error("🔴 [updatePartner] Response Data:", error.response.data);
+            console.error("🔴 [updatePartner] Status Code:", error.response.status);
+            console.error("🔴 [updatePartner] Headers:", error.response.headers);
+        }
+        throw error;
+    }
+};
+
+
 

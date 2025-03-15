@@ -4,6 +4,7 @@ import useProduct from "./useProduct";
 import { Button, IconButton } from "@material-tailwind/react";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { FaEdit, FaFileExcel, FaPlus } from "react-icons/fa";
+import { BiSolidEdit } from "react-icons/bi";
 import ReactPaginate from "react-paginate";
 import axios from "axios";
 import {
@@ -24,6 +25,7 @@ import {
 } from "@material-tailwind/react";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
+import Table from "@/components/Table";
 
 const ProductPage = () => {
   const navigate = useNavigate();
@@ -118,6 +120,102 @@ const ProductPage = () => {
     navigate("/user/products/add");
   };
 
+  const columnsConfig = [
+    { field: 'productCode', headerName: 'Mã sản phẩm', flex: 1, minWidth: 50, editable: false, filterable: false },
+    { field: 'productName', headerName: 'Tên sản phẩm', flex: 2, minWidth: 300, editable: false, filterable: false },
+    {
+      field: 'unitName',
+      headerName: 'Đơn vị',
+      flex: 1,
+      minWidth: 50,
+      editable: false,
+      filterable: false,
+    },
+    {
+      field: 'productTypeName',
+      headerName: 'Dòng sản phẩm',
+      flex: 1.5,
+      minWidth: 120,
+      editable: false,
+      filterable: false,
+    },
+    {
+      field: 'imageUrl',
+      headerName: 'Hình ảnh',
+      flex: 1,
+      minWidth: 150,
+      editable: false,
+      filterable: false,
+      renderCell: (params) => {
+        return params.value ? (
+          <img
+            src={params.value}
+            alt="Hình ảnh sản phẩm"
+            className="w-12 h-12 object-cover rounded-lg"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.parentElement.innerHTML = 'N/A';
+            }}
+          />
+        ) : (
+          <Typography className="text-xs text-gray-600">Không có ảnh</Typography>
+        );
+      },
+    },
+    {
+      field: 'isProductionActive',
+      headerName: 'Trạng thái',
+      flex: 1,
+      minWidth: 200,
+      editable: false,
+      filterable: false,
+      renderCell: (params) => {
+        return (
+          <div className="flex items-center gap-2">
+            <Switch
+              color="green"
+              checked={params.value}
+              onChange={() => handleToggleStatus(params.row.id)}
+            />
+            <Typography className="text-xs font-semibold text-blue-gray-600">
+              {params.value ? "Đang sản xuất" : "Ngừng sản xuất"}
+            </Typography>
+          </div>
+        );
+      },
+    },
+    {
+      field: 'actions',
+      headerName: 'Hành động',
+      flex: 0.5,
+      minWidth: 50,
+      renderCell: (params) => (
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <Tooltip content="Chỉnh sửa">
+            <button
+              onClick={() => navigate(`/user/products/${params.row.id}`)}
+              className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              <BiSolidEdit className="h-5 w-5" />
+            </button>
+          </Tooltip>
+        </div>  
+      ),
+    },
+  ];
+
+  const data = products.map((product) => ({
+    id: product.productId,
+    productCode: product.productCode || "N/A",
+    productName: product.productName,
+    unitName: product.unitName || "N/A",
+    productTypeName: productTypes.find(type => type.typeId === product.typeId)?.typeName || product.typeName || "N/A",
+    imageUrl: product.imageUrl || "N/A",
+    isProductionActive: !!product.isProductionActive,
+  }));
+
+
+
   // Add this function
   const filteredProducts = Array.isArray(products)
     ? products.filter(product =>
@@ -169,123 +267,13 @@ const ProductPage = () => {
             />
           </div>
 
-          <table className="w-full min-w-[640px] table-auto">
-            <thead>
-              <tr>
-                {[
-                  "STT",
-                  "Mã sản phẩm",
-                  "Tên sản phẩm",
-                  "Đơn vị",
-                  "Dòng sản phẩm",
-                  "Hình ảnh",
-                  "Trạng thái",
-                  "Thao tác",
-                ].map((el) => (
-                  <th key={el} className="border-b border-blue-gray-50 py-3 px-5 text-left">
-                    <Typography variant="small" className="text-[11px] font-bold uppercase text-blue-gray-400">
-                      {el}
-                    </Typography>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.length > 0 ? (
-                filteredProducts.map((product, index) => {
-                  const className = `py-3 px-5 ${index === products.length - 1 ? "" : "border-b border-blue-gray-50"}`;
-                  const actualIndex = currentPage * pageSize + index + 1;
+          <Table
+            data={data}
+            columnsConfig={columnsConfig}
+            enableSelection={false}
+          />
 
-                  return (
-                    <tr key={product.productId}>
-                      <td className={className}>
-                        <Typography variant="small" color="blue-gray" className="font-semibold">
-                          {actualIndex}
-                        </Typography>
-                      </td>
-                      <td className={className}>
-                        <Typography className="text-xs font-semibold text-blue-gray-600">
-                          {product.productCode || "N/A"}
-                        </Typography>
-                      </td>
-                      <td className={className}>
-                        <Typography className="text-xs font-semibold text-blue-gray-600">
-                          {product.productName}
-                        </Typography>
-                      </td>
-                      <td className={className}>
-                        <Typography className="text-xs font-normal text-blue-gray-600">
-                          {product.unitName || "N/A"}
-                        </Typography>
-                      </td>
-                      <td className={className}>
-                        <Typography className="text-xs font-normal text-blue-gray-600">
-                          {product.typeName || "N/A"}
-                        </Typography>
-                      </td>
-                      <td className={className}>
-                        {product.imageUrl ? (
-                          <img
-                            src={product.imageUrl}
-                            alt={product.productName}
-                            className="w-16 h-16 object-cover rounded-lg"
-                            onError={(e) => {
-                              const imgElement = e.target;
-                              imgElement.style.display = 'none';
-                              imgElement.parentElement.innerHTML = 'Không có ảnh';
-                            }}
-                          />
-                        ) : (
-                          <Typography className="text-xs font-normal text-gray-600">
-                            Không có ảnh
-                          </Typography>
-                        )}
-                      </td>
-                      <td className={className}>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            color="green"
-                            checked={!!product.isProductionActive}
-                            onChange={() => {
-                              if (!product.productId) {
-                                console.error("❌ Lỗi: Sản phẩm không có ID!", product);
-                                alert("Lỗi: Sản phẩm không có ID!");
-                                return;
-                              }
-                              handleToggleStatus(product.productId);
-                            }}
-                          />
-                          <Typography className="text-xs font-semibold text-blue-gray-600">
-                            {product.isProductionActive ? "Đang sản xuất" : "Ngừng sản xuất"}
-                          </Typography>
-                        </div>
-                      </td>
-                      <td className={className}>
-                        <div className="flex items-center gap-2">
-                          <Tooltip content="Chỉnh sửa">
-                            <button
-                              onClick={() => navigate(`/user/products/${product.productId}`)}
-                              className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-                            >
-                              <FaEdit className="h-4 w-4" />
-                            </button>
-                          </Tooltip>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan="8" className="border-b border-gray-200 px-3 py-4 text-center text-gray-500">
-                    Không có dữ liệu
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-
-          <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+          <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-normal">
                 Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
@@ -305,7 +293,7 @@ const ProductPage = () => {
               previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-              activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+              activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
               forcePage={currentPage}
               disabledClassName="opacity-50 cursor-not-allowed"
             />
