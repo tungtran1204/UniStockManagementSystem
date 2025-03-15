@@ -43,7 +43,7 @@ const useProduct = () => {
   
     try {
       const response = await axios.patch(
-        `http://localhost:8080/api/unistock/user/products/${productId}/toggle-production`,
+        `${import.meta.env.VITE_API_URL}/user/products/${productId}/toggle-production`,
         {},
         { headers: authHeader() } // ⚠️ Đảm bảo token được gửi trong request
       );

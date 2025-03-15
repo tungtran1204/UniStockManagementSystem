@@ -53,10 +53,10 @@ const MainLayout = ({ children }) => {
         </div>
 
         {/* Footer cố định */}
-        <div className="text-blue-gray-600 max-w-full flex-shrink-0 bg-gray-50">
+        <div className="text-blue-gray-600 max-w-full bg-gray-50">
 
           {/* Footer cố định */}
-          <div className="text-blue-gray-600 max-w-full flex-shrink-0 bg-gray-50">
+          <div className="text-blue-gray-600 max-w-full   bg-gray-50">
             <Footer />
           </div>
         </div>

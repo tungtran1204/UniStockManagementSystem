@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/unistock/user/partner/type";
+const API_URL = `${import.meta.env.VITE_API_URL}/user/partner/type`;
 
 const authHeader = () => {
     const token = localStorage.getItem("token");

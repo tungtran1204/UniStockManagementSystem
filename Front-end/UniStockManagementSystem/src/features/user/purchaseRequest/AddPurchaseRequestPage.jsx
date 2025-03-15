@@ -129,7 +129,7 @@ const AddPurchaseRequestPage = () => {
         const headers = authHeader();
         if (!headers) throw new Error("No authentication token");
 
-        const response = await axios.get("http://localhost:8080/api/unistock/user/materials", {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/user/materials`, {
           headers,
           withCredentials: true,
         });

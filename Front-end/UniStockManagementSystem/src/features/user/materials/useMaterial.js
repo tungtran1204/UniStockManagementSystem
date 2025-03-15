@@ -46,7 +46,7 @@ const useMaterial = () => {
 
     try {
       const response = await axios.patch(
-        `http://localhost:8080/api/unistock/user/materials/${materialId}/toggle-using`,
+        `${import.meta.env.VITE_API_URL}/user/materials/${materialId}/toggle-using`,
         {}, // PATCH request cần body rỗng
         { headers: authHeader() } // ✅ Thêm Bearer Token vào headers
       );

@@ -25,9 +25,5 @@ public class MaterialRequestDetail {
 
     private Double requestedQty;
 
-    // Audit
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private Long createdBy;
-    private Long updatedBy;
+
 }
