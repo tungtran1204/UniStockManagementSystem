@@ -15,13 +15,14 @@ import {
   Switch,
   Avatar,
 } from "@material-tailwind/react";
-import { FaEdit, FaPlus, FaAngleLeft, FaAngleRight } from "react-icons/fa";
+import { BiSolidEdit } from "react-icons/bi";
 import ModalAddWarehouse from "./ModalAddWarehouse"; // Import ModalAddWarehouse component
 import ModalEditWarehouse from "./ModalEditWarehouse"; // Import ModalEditWarehouse component
 import ReactPaginate from "react-paginate"; // Import ReactPaginate for pagination
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
+import Table from "@/components/Table";
 
 // Define the WarehousePage component
 const WarehousePage = () => {
@@ -58,6 +59,63 @@ const WarehousePage = () => {
   const handlePageChange = (selectedItem) => {
     setCurrentPage(selectedItem.selected);
   };
+
+  const columnsConfig = [
+    { field: 'warehouseCode', headerName: 'Mã kho', flex: 1, minWidth: 50, editable: false },
+    { field: 'warehouseName', headerName: 'Tên kho', flex: 2, minWidth: 600, editable: false },
+    {
+      field: 'isActive',
+      headerName: 'Trạng thái',
+      flex: 1,
+      minWidth: 250,
+      renderCell: (params) => (
+        <div className="flex items-center gap-2">
+          <Switch
+            color="green"
+            checked={params.value}
+            onChange={() => {
+              const confirmMessage = params.value
+                ? "Bạn có chắc muốn vô hiệu hóa kho này không?"
+                : "Bạn có chắc muốn kích hoạt kho này không?";
+
+              if (window.confirm(confirmMessage)) {
+                toggleStatus(params.row.id, params.value);
+              }
+            }}
+          />
+          <Typography className="text-xs font-semibold text-blue-gray-600">
+            {params.value ? "Đang hoạt động" : "Không hoạt động"}
+          </Typography>
+        </div>
+      ),
+    },
+    {
+      field: 'actions',
+      headerName: 'Hành động',
+      flex: 0.5,
+      minWidth: 100,
+      renderCell: (params) => (
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <Tooltip content="Chỉnh sửa">
+            <button
+              onClick={() => handleEditWarehouse(params.row)}
+              className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              <BiSolidEdit className="h-5 w-5" />
+            </button>
+          </Tooltip>
+        </div>
+      ),
+    },
+  ];
+
+  const data = warehouses.map((warehouse) => ({
+    id: warehouse.warehouseId,
+    warehouseCode: warehouse.warehouseCode,
+    warehouseName: warehouse.warehouseName,
+    isActive: warehouse.isActive,
+  }));
+
 
   // Filter warehouses based on search term
   const filteredWarehouses = warehouses.filter(
@@ -116,98 +174,15 @@ const WarehousePage = () => {
 
           </div>
 
-          <table className="w-full min-w-[640px] table-auto border border-gray-200">
-            <thead>
-              <tr>
-                {["Mã kho", "Tên kho", "Trạng thái", "Hành động"].map((el) => (
-                  <th
-                    key={el}
-                    className="border-b border-blue-gray-50 py-3 px-5 text-left"
-                  >
-                    <Typography
-                      variant="small"
-                      className="text-[11px] font-bold uppercase text-blue-gray-400"
-                    >
-                      {el}
-                    </Typography>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredWarehouses.length > 0 ? (
-                filteredWarehouses.map(({ warehouseId, warehouseCode, warehouseName, warehouseDescription, isActive }, key) => {
-                  const className = `py-3 px-5 ${key === filteredWarehouses.length - 1 ? "" : "border-b border-blue-gray-50"
-                    }`;
+          <Table
+            data={data}
+            columnsConfig={columnsConfig}
+            enableSelection={false}
+          />
 
-                  return (
-                    <tr key={warehouseId}>
-                      <td className={className}>
-                        <Typography
-                          variant="small"
-                          color="blue-gray"
-                          className="font-semibold"
-                        >
-                          {warehouseCode}
-                        </Typography>
-                      </td>
-                      <td className={className}>
-                        <Typography variant="small" color="blue-gray" className="text-xs">
-                          {warehouseName}
-                        </Typography>
-
-
-                      </td>
-
-                      <td className={className}>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            color="green"
-                            checked={isActive}
-                            onChange={() => {
-                              const confirmMessage = isActive
-                                ? "Bạn có chắc muốn vô hiệu hóa kho này không?"
-                                : "Bạn có chắc muốn kích hoạt kho này không?";
-
-                              if (window.confirm(confirmMessage)) {
-                                console.log("Toggling warehouse:", warehouseId, "Current status:", isActive);
-                                toggleStatus(warehouseId, isActive);
-                              }
-                            }
-                            }
-                          />
-                          <Typography className="text-xs font-semibold text-blue-gray-600">
-                            {isActive ? "Đang hoạt động" : "Không hoạt động"}
-                          </Typography>
-                        </div>
-                      </td>
-                      <td className={className}>
-                        <div className="flex items-center gap-2">
-                          <Tooltip content="Edit">
-                            <button
-                              onClick={() => handleEditWarehouse({ warehouseId, warehouseCode, warehouseName, warehouseDescription, isActive })}
-                              className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-                            >
-                              <FaEdit />
-                            </button>
-                          </Tooltip>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan="4" className="border-b border-gray-200 px-3 py-4 text-center text-gray-500">
-                    Không có dữ liệu
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+          <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-normal">
                 Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
@@ -227,7 +202,7 @@ const WarehousePage = () => {
               previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-              activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+              activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
               forcePage={currentPage}
               disabledClassName="opacity-50 cursor-not-allowed"
             />
