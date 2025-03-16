@@ -22,7 +22,7 @@ import ModalAddCustomer from "./ModalAddCustomer";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 
-const CUSTOMER_TYPE_ID = 1;
+const CUSTOMER_TYPE_ID = 2;
 
 const AddCustomerDropdownIndicator = (props) => {
   return (
