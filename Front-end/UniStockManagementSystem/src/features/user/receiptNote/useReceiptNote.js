@@ -4,7 +4,7 @@ import {
   createReceiptNote,
   updateReceiptNote,
   deleteReceiptNote,
-  getNextOrderCode
+  getNextCode
 } from "./receiptNoteService";
 
 const useReceiptNote = () => {
@@ -26,8 +26,9 @@ const useReceiptNote = () => {
 
   const getNextCode = async () => {
       try {
-        const code = await getNextOrderCode();
-        return code; // ví dụ "ĐH00003"
+        const code = await getNextCode();
+        console.log(" Mã phiếu nhập:", code);
+        return code; 
       } catch (error) {
         console.error("❌ Lỗi khi lấy mã đơn hàng tiếp theo:", error);
         throw error;

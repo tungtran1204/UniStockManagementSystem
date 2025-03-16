@@ -134,23 +134,18 @@ const PurchaseOrderDetail = () => {
                     </Typography>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div>
-                        <Typography variant="small" className="text-gray-600 mb-2">Mã nhà cung cấp</Typography>
-                        <div className="flex">
-                          <Input value="NCC01" disabled className="bg-gray-100 rounded-md" />
-                        </div>
-                      </div>
-                      <div>
                         <Typography variant="small" className="text-gray-600 mb-2">Tên nhà cung cấp</Typography>
                         <Input value={order.supplierName || "không có thông tin"} disabled className="bg-gray-100 rounded-md" />
-                      </div>
-                      <div>
-                        <Typography variant="small" className="text-gray-600 mb-2">Địa chỉ</Typography>
-                        <Input value={order.supplierAddress || "không có thông tin"} disabled className="bg-gray-100 rounded-md" />
                       </div>
                       <div>
                         <Typography variant="small" className="text-gray-600 mb-2">Người liên hệ</Typography>
                         <Input value={order.supplierContactName || "không có thông tin"} disabled className="bg-gray-100 rounded-md" />
                       </div>
+                      <div>
+                        <Typography variant="small" className="text-gray-600 mb-2">Địa chỉ</Typography>
+                        <Input value={order.supplierAddress || "không có thông tin"} disabled className="bg-gray-100 rounded-md" />
+                      </div>
+                      
                       <div>
                         <Typography variant="small" className="text-gray-600 mb-2">Số điện thoại</Typography>
                         <Input value={order.supplierPhone || "không có thông tin"} disabled className="bg-gray-100 rounded-md" />

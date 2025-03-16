@@ -19,8 +19,8 @@ public class ReceiptNoteController {
     }
 
     @GetMapping("/nextcode")
-    public ResponseEntity<String> getNextOrderCode() {
-        String nextCode = goodReceiptService.getNextRequestCode();
+    public ResponseEntity<String> getNextNoteCode() {
+        String nextCode = goodReceiptService.getNextReceiptCode();
         return ResponseEntity.ok(nextCode);
     }
 }

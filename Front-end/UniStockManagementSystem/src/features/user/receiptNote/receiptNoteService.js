@@ -38,12 +38,13 @@ export const createReceiptNote = async (receiptNote) => {
   }
 };
 
-export const getNextOrderCode = async () => {
+export const getNextCode = async () => {
   try {
-    const response = await axios.get(`${API_URL}/next-code`, {
+    const response = await axios.get(`${API_URL}/nextcode`, {
       headers: authHeader(),
     });
-    return response.data; // Mã đơn hàng, ví dụ "ĐH00003"
+    console.log(" Mã phiếu nhập:", response.data);
+    return response.data; 
   } catch (error) {
     console.error("❌ [getNextOrderCode] Lỗi:", error);
     throw error;

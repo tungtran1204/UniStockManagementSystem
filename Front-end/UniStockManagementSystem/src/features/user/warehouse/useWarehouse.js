@@ -25,6 +25,16 @@ const useWarehouse = () => {
       console.error("Error fetching warehouses:", error);
     }
   };
+
+  const fetchListWarehouses = async () => {
+    try {
+      const response = await getWarehouseList();
+      console.log("Fetched warehouses:", response.data); // Log fetched warehouses
+      setWarehouses(response.data || []); // Ensure warehouses is always an array
+    } catch (error) {
+      console.error("Error fetching warehouses:", error);
+    }
+  };
   
   const toggleStatus = async (warehouseId, isActive) => {
     try {
@@ -68,6 +78,7 @@ const useWarehouse = () => {
     totalElements,
     addWarehouse,
     editWarehouse,
+    fetchListWarehouses,
   };
 };
 

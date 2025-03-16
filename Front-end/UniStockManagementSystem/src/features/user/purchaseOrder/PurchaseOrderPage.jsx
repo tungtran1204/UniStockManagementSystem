@@ -20,11 +20,12 @@ import ReactPaginate from "react-paginate";
 import { ArrowLeftIcon, ArrowRightIcon, EyeIcon, ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
+import useReceiptNote from "../receiptNote/useReceiptNote";
+import { getNextCode } from "../receiptNote/receiptNoteService";
 
 const PurchaseOrderPage = () => {
   const navigate = useNavigate();
 
-  // Use the hook to get data and methods, similar to WarehousePage
   const {
     purchaseOrders,
     fetchPaginatedOrders,
@@ -33,6 +34,17 @@ const PurchaseOrderPage = () => {
     loading,
     error
   } = usePurchaseOrder();
+
+
+  const handleCreateReceipt = async (order) => { // order là object đầy đủ
+    try {
+      const nextCode = await getNextCode(); // Gọi API lấy mã phiếu nhập tiếp theo
+      navigate(`/user/receiptNote/add`, { state: { orderId: order.poId, nextCode } }); // Truyền đúng orderId
+    } catch (error) {
+      console.error("Lỗi khi lấy mã phiếu nhập:", error);
+    }
+  };
+
 
   const statuses = ["Chờ nhận", "Đang giao", "Hoàn thành", "Hủy"];
 
@@ -114,6 +126,17 @@ const PurchaseOrderPage = () => {
     console.log(`🔍 Điều hướng đến chi tiết đơn hàng: /user/purchaseOrder/${orderId}`);
     navigate(`/user/purchaseOrder/${orderId}`);
   };
+
+  const [receiptCode, setReceiptCode] = useState("");
+
+  useEffect(() => {
+    if (!location.state?.nextCode) {
+      getNextCode().then(setReceiptCode).catch(console.error);
+    } else {
+      setReceiptCode(location.state.nextCode);
+    }
+  }, []);
+
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -254,17 +277,17 @@ const PurchaseOrderPage = () => {
                     </td>
                     <td className="p-2 border font-semibold text-sm">{order.status.label || 'Chờ nhận'}</td>
                     <td className="p-2 border">
-                    <div className="flex justify-center items-center space-x-4 w-full">
-                      <EyeIcon
-                        className="h-5 w-5 text-blue-500 cursor-pointer"
-                        title="Xem chi tiết"
-                        onClick={() => viewOrderDetail(order.poId)}
-                      />
-                      <InboxArrowDownIcon
-                        className="h-5 w-5 text-green-500 cursor-pointer ml-2"
-                        title="Nhập kho"
-                        onClick={() => navigate(`/user/receiptNote/add`, { state: { order } })}
-                      />
+                      <div className="flex justify-center items-center space-x-4 w-full">
+                        <EyeIcon
+                          className="h-5 w-5 text-blue-500 cursor-pointer"
+                          title="Xem chi tiết"
+                          onClick={() => viewOrderDetail(order.poId)}
+                        />
+                        <InboxArrowDownIcon
+                          className="h-5 w-5 text-green-500 cursor-pointer"
+                          title="Nhập kho"
+                          onClick={() => handleCreateReceipt(order)} // Truyền cả đối tượng order
+                        />
                       </div>
                     </td>
 

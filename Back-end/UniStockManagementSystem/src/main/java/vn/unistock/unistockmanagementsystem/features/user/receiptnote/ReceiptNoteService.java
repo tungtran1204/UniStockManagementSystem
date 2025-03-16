@@ -140,11 +140,11 @@ public class ReceiptNoteService {
     }
 
     @Transactional
-    public String getNextRequestCode() {
+    public String getNextReceiptCode() {
         try {
             Long maxId = receiptNoteRepository.findMaxGoodReceiptNoteId();
             Long nextId = (maxId != null) ? (maxId + 1) : 1;
-            return String.format("PN%05d", nextId);
+            return String.format("NK%05d", nextId);
         } catch (Exception e) {
             logger.error("Error generating next receipt note code", e);
             throw new RuntimeException("Không thể tạo mã phiếu nhập mới: " + e.getMessage(), e);
