@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import usePartner from "./usePartner";
-import CreatePartnerPopup from "./CreatePartnerPopUp";
+import CreatePartnerModal from "./CreatePartnerModal";
+import EditPartnerModal from "./EditPartnerModal";
 import {
     fetchPartnerTypes
 } from "./partnerService";
@@ -15,10 +16,12 @@ import {
     Button,
 } from "@material-tailwind/react";
 import { FaEdit, FaPlus, FaTimes, FaSearch } from "react-icons/fa";
-import { BiExport, BiImport, BiSearch } from "react-icons/bi";
+import { BiExport, BiImport, BiSearch, BiSolidEdit } from "react-icons/bi";
 import ReactPaginate from "react-paginate";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
+import Table from "@/components/Table";
+import { Chip, Stack } from '@mui/material';
 
 const PartnerPage = () => {
     const {
@@ -36,8 +39,10 @@ const PartnerPage = () => {
     const navigate = useNavigate();
     const [showImportPopup, setShowImportPopup] = useState(false);
     const [showCreatePopup, setShowCreatePopup] = useState(false);
+    const [showEditPopup, setShowEditPopup] = useState(false);
     const [file, setFile] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedPartner, setSelectedPartner] = useState(null);
     const [partnerTypes, setPartnerTypes] = useState([]);
 
     useEffect(() => {
@@ -60,6 +65,89 @@ const PartnerPage = () => {
         handlePageChange(selectedItem.selected);
     };
 
+    const columnsConfig = [
+        {
+            field: 'partnerCode',
+            headerName: 'Mã đối tác',
+            minWidth: 90,
+            flex: 1,
+            editable: false,
+            filterable: false,
+            renderCell: (params) => {
+                return (
+                    <Stack direction="column">
+                        {params.value.map((code, index) => (
+                            <Typography key={index} className="text-xs font-semibold block">
+                                {code}
+                            </Typography>
+                        ))}
+                    </Stack>
+                );
+            },
+        },
+        { field: 'partnerName', headerName: 'Tên đối tác', flex: 2, minWidth: 200, editable: false, filterable: false },
+        {
+            field: 'partnerType',
+            headerName: 'Nhóm đối tác',
+            minWidth: 200,
+            flex: 2,
+            editable: false,
+            filterable: false,
+            renderCell: (params) => {
+                return (
+                    <Stack
+                        direction="row"
+                        useFlexGap
+                        sx={{ flexWrap: 'wrap', gap: 0.5, marginTop: '5px', marginBottom: '5px' }}>
+                        {params.value.map((type, index) => (
+                            <Chip key={index} label={type} size="small" sx={{ backgroundColor: '#0ab067', color: 'white', fontFamily: 'Roboto, sans-serif' }} />
+                        ))}
+                    </Stack>
+                );
+            },
+        },
+        { field: 'address', headerName: 'Địa chỉ', flex: 2, minWidth: 200, editable: false, filterable: false },
+        { field: 'email', headerName: 'Email', flex: 1.5, minWidth: 180, editable: false, filterable: false },
+        { field: 'phone', headerName: 'Số điện thoại', flex: 1, minWidth: 120, editable: false, filterable: false },
+        {
+            field: 'actions',
+            headerName: 'Hành động',
+            minWidth: 30,
+            flex: 0.5,
+            renderCell: (params) => (
+                <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                    <Tooltip content="Chỉnh sửa">
+                        <button
+                            onClick={() => {
+                                setSelectedPartner(params.row); // ✅ Gán đối tác được chọn
+                                setShowEditPopup(true);
+                            }}
+                            className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+                        >
+                            <BiSolidEdit className="h-5 w-5" />
+                        </button>
+                    </Tooltip>
+                </div>
+            ),
+        }
+    ];
+
+    const data = partners.map((partner) => {
+        return {
+            id: partner.partnerId,  // DataGrid cần trường 'id'
+            partnerName: partner.partnerName,
+            partnerType: Array.isArray(partner.partnerTypes) && partner.partnerTypes.length > 0
+                ? partner.partnerTypes.map(item => item.partnerType?.typeName || 'Không xác định')
+                : [], // Đảm bảo dữ liệu là mảng
+
+            partnerCode: Array.isArray(partner.partnerTypes) && partner.partnerTypes.length > 0
+                ? partner.partnerTypes.map(item => item.partnerCode || 'Không có mã')
+                : [], // Đảm bảo dữ liệu là mảng
+            address: partner.address,
+            email: partner.email,
+            phone: partner.phone,
+        };
+    });
     // const handleImport = async () => {
     //     if (!file) {
     //         alert("Vui lòng chọn file Excel!");
@@ -80,7 +168,6 @@ const PartnerPage = () => {
     //         setLoading(false);
     //     }
     // };
-    // style={{ color: '#0ab067' }}
 
     return (
         <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -94,7 +181,7 @@ const PartnerPage = () => {
                         addButtonLabel="Thêm đối tác"
                     />
                     {showCreatePopup && (
-                        <CreatePartnerPopup
+                        <CreatePartnerModal
                             onClose={() => setShowCreatePopup(false)}
                             onSuccess={fetchPaginatedPartners} // Có thể gọi API fetch lại danh sách nếu cần
                         />
@@ -142,125 +229,16 @@ const PartnerPage = () => {
                             </div>
                         )}
                     </div>
-                    <table className="w-full min-w-[640px] table-auto border border-gray-200">
-                        <thead>
-                            <tr>
-                                {[
-                                    "Mã đối tác",
-                                    "Tên đối tác",
-                                    "Nhóm đối tác",
-                                    "Địa chỉ",
-                                    "Email",
-                                    "Số điện thoại",
-                                    "Hành động",
-                                ].map((el) => (
-                                    <th
-                                        key={el}
-                                        className="border-b border-blue-gray-50 py-3 px-5 text-left"
-                                    >
-                                        <Typography
-                                            variant="small"
-                                            className="text-[11px] font-bold uppercase text-blue-gray-400"
-                                        >
-                                            {el}
-                                        </Typography>
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {partners.length > 0 ? (
-                                partners.map((partner, index) => {
-                                    const className = `py-3 px-5 ${index === partners.length - 1
-                                        ? ""
-                                        : "border-b border-blue-gray-50"
-                                        }`;
-                                    return (
-                                        <tr key={partner.partnerId}>
-                                            <td className={className}>
-                                                {partner.partnerTypes && partner.partnerTypes.length > 0 ? (
-                                                    <div>
-                                                        {partner.partnerTypes.map((type) => (
-                                                            <Typography key={type.partnerCode} className="text-xs font-semibold text-blue-gray-600 block">
-                                                                {type.partnerCode}
-                                                            </Typography>
-                                                        ))}
-                                                    </div>
-                                                ) : (
-                                                    <Typography className="text-xs text-gray-500">Không có mã</Typography>
-                                                )}
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {partner.partnerName}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                {partner.partnerTypes && partner.partnerTypes.length > 0 ? (
-                                                    <div className="flex flex-col gap-1">
-                                                        {partner.partnerTypes.map((type) => (
-                                                            <button
-                                                                key={type.partnerType.typeId}
-                                                                className={`px-2 py-1 w-fit text-xs hover:text-white hover:bg-indigo-500 transition-all duration-200 font-semibold rounded-full bg-indigo-100 text-indigo-500
-                                                                        ${selectedType === type.partnerType.typeId}`}
-                                                                onClick={() => handleSelectType(type.partnerType.typeId)}
-                                                            >
-                                                                {type.partnerType.typeName}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                ) : (
-                                                    <Typography className="text-xs text-gray-500">Không có nhóm</Typography>
-                                                )}
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-normal text-blue-gray-600">
-                                                    {partner.address}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-normal text-blue-gray-600">
-                                                    {partner.email}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-normal text-blue-gray-600">
-                                                    {partner.phone}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <div className="flex items-center gap-2 pl-4">
-                                                    <Tooltip content="Chỉnh sửa">
-                                                        <button
-                                                            // onClick={() =>
-                                                            //     navigate(`/products/edit/${product.productId}`)
-                                                            // }
-                                                            className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-                                                            style={{ paddingLeft: "10px" }}
-                                                        >
-                                                            <FaEdit className="h-4 w-4" />
-                                                        </button>
-                                                    </Tooltip>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            ) : (
-                                <tr>
-                                    <td
-                                        colSpan="8"
-                                        className="border-b border-gray-200 px-3 py-4 text-center text-gray-500"
-                                    >
-                                        Không có dữ liệu
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-
+                    <Table data={data} columnsConfig={columnsConfig} enableSelection={false} />
+                    {showEditPopup && selectedPartner && (
+                        <EditPartnerModal
+                            partner={selectedPartner} // ✅ Truyền đối tác vào modal
+                            onClose={() => setShowEditPopup(false)}
+                            onSuccess={fetchPaginatedPartners}
+                        />
+                    )}
                     {/* Phần phân trang mới sử dụng ReactPaginate */}
-                    <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+                    <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
                         <div className="flex items-center gap-2">
                             <Typography variant="small" color="blue-gray" className="font-normal">
                                 Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
@@ -280,7 +258,7 @@ const PartnerPage = () => {
                             previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                             nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                             breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-                            activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+                            activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
                             forcePage={currentPage}
                             disabledClassName="opacity-50 cursor-not-allowed"
                         />

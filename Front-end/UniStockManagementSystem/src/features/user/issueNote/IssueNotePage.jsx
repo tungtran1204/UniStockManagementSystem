@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import {
   Card,
-  CardHeader,
+  Tooltip,
   CardBody,
   Typography,
   Button,
@@ -15,6 +15,7 @@ import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import AddIssueNote from "../receiptNote/AddReceiptNote";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
+import Table from "@/components/Table";
 
 const IssueNotePage = () => {
   const [issueNotes, setIssueNotes] = useState([]);
@@ -45,6 +46,48 @@ const IssueNotePage = () => {
       note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       note.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const columnsConfig = [
+    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
+    { field: 'title', headerName: 'Tiêu đề', flex: 2, minWidth: 200, editable: false },
+    { field: 'description', headerName: 'Mô tả', flex: 2, minWidth: 200, editable: false },
+    {
+      field: 'createdAt',
+      headerName: 'Ngày tạo',
+      flex: 1.5,
+      minWidth: 150,
+      editable: false,
+      renderCell: (params) => new Date(params.value).toLocaleDateString("vi-VN"),
+    },
+    {
+      field: 'actions',
+      headerName: 'Hành động',
+      flex: 0.5,
+      minWidth: 100,
+      renderCell: (params) => (
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <Tooltip content="Chỉnh sửa">
+            <button
+              onClick={() => {
+                handleEdit(params.row);
+              }}
+              className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              <BiSolidEdit className="h-5 w-5" />
+            </button>
+          </Tooltip>
+        </div>
+      ),
+    },
+  ];
+
+  const data = filteredIssueNotes.map((note, index) => ({
+    id: note.id,
+    index: currentPage * pageSize + index + 1,
+    title: note.title,
+    description: note.description,
+    createdAt: note.createdAt,
+  }));
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -95,98 +138,13 @@ const IssueNotePage = () => {
 
           </div>
 
-          <table className="w-full min-w-[640px] table-auto border border-gray-200">
-            <thead>
-              <tr>
-                {["STT", "Tiêu đề", "Mô tả", "Ngày tạo", "Hành động"].map(
-                  (el) => (
-                    <th
-                      key={el}
-                      className="border-b border-blue-gray-50 py-3 px-5 text-left"
-                    >
-                      <Typography
-                        variant="small"
-                        className="text-[11px] font-bold uppercase text-blue-gray-400"
-                      >
-                        {el}
-                      </Typography>
-                    </th>
-                  )
-                )}
-              </tr>
-            </thead>
+          <Table
+            data={data}
+            columnsConfig={columnsConfig}
+            enableSelection={false}
+          />
 
-            <tbody>
-              {filteredIssueNotes.length > 0 ? (
-                filteredIssueNotes.map(
-                  ({ id, title, description, createdAt }, index) => {
-                    const isLast = index === filteredIssueNotes.length - 1;
-                    const className = `py-3 px-5 ${isLast ? "" : "border-b border-blue-gray-50"
-                      }`;
-                    const stt = currentPage * pageSize + (index + 1);
-
-                    return (
-                      <tr key={id}>
-                        <td className={className}>
-                          <Typography
-                            variant="small"
-                            color="blue-gray"
-                            className="font-semibold"
-                          >
-                            {stt}
-                          </Typography>
-                        </td>
-                        <td className={className}>
-                          <Typography
-                            variant="small"
-                            color="blue-gray"
-                            className="font-semibold"
-                          >
-                            {title}
-                          </Typography>
-                        </td>
-                        <td className={className}>
-                          <Typography className="text-xs font-semibold text-blue-gray-600">
-                            {description}
-                          </Typography>
-                        </td>
-                        <td className={className}>
-                          <Typography className="text-xs font-semibold text-blue-gray-600">
-                            {new Date(createdAt).toLocaleDateString()}
-                          </Typography>
-                        </td>
-                        <td className={className}>
-                          <div className="flex items-center gap-2">
-                            <Tooltip content="Chỉnh sửa">
-                              <span
-                                onClick={() => {
-                                  // Handle edit issue note
-                                }}
-                                className="cursor-pointer text-xs text-blue-500 hover:text-blue-600"
-                              >
-                                Sửa
-                              </span>
-                            </Tooltip>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  }
-                )
-              ) : (
-                <tr>
-                  <td
-                    colSpan="5"
-                    className="border-b border-gray-200 px-3 py-4 text-center text-gray-500"
-                  >
-                    Không có dữ liệu
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-
-          <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+          <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-normal">
                 Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
@@ -206,7 +164,7 @@ const IssueNotePage = () => {
               previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-              activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+              activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
               forcePage={currentPage}
               disabledClassName="opacity-50 cursor-not-allowed"
             />

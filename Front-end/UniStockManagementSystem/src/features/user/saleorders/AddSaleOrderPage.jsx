@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Card,
-  CardHeader,
+  Tooltip,
   CardBody,
   Button,
   Input,
@@ -20,7 +20,8 @@ import dayjs from "dayjs";
 import useSaleOrder from "./useSaleOrder";
 import ModalAddCustomer from "./ModalAddCustomer";
 import PageHeader from '@/components/PageHeader';
-import TableSearch from '@/components/TableSearch';
+import TableSearch from "@/components/TableSearch";
+import Table from "@/components/Table";
 
 const CUSTOMER_TYPE_ID = 2;
 
@@ -316,7 +317,7 @@ const AddSaleOrderPage = () => {
     return items.filter(item => {
       const searchLower = tableSearchQuery.toLowerCase().trim();
       return item.productCode?.toLowerCase().includes(searchLower) ||
-             item.productName?.toLowerCase().includes(searchLower);
+        item.productName?.toLowerCase().includes(searchLower);
     });
   };
 
@@ -330,6 +331,73 @@ const AddSaleOrderPage = () => {
   const handlePageChange = (selectedItem) => {
     setCurrentPage(selectedItem.selected);
   };
+
+  const columnsConfig = [
+    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
+    {
+      field: 'productCode',
+      headerName: 'Mã hàng',
+      flex: 2,
+      minWidth: 200,
+      renderCell: (params) => (
+        <Select
+          placeholder="Chọn sản phẩm"
+          isSearchable
+          options={products}
+          styles={customStyles}
+          className="w-68"
+          value={products.find((p) => p.value === params.row.productCode) || null}
+          onChange={(selectedOption) => handleSelectProduct(params.row.id, selectedOption)}
+        />
+      ),
+    },
+    { field: 'productName', headerName: 'Tên hàng', flex: 2, minWidth: 200, editable: false },
+    { field: 'unitName', headerName: 'Đơn vị', flex: 1, minWidth: 100, editable: false },
+    {
+      field: 'quantity',
+      headerName: 'Số lượng',
+      flex: 1,
+      minWidth: 100,
+      renderCell: (params) => (
+        <Input
+          type="number"
+          value={params.value}
+          onChange={(e) => handleQuantityChange(params.row.id, e.target.value)}
+          min={1}
+          className="w-16 text-sm"
+        />
+      ),
+    },
+    {
+      field: 'actions',
+      headerName: 'Hành động',
+      flex: 0.5,
+      minWidth: 100,
+      renderCell: (params) => (
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <Tooltip content="Xoá">
+            <button
+              onClick={() => {
+                handleRemoveRow(params.row.index - 1);
+              }}
+              className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white"
+            >
+              <FaTrash className="h-3 w-3" />
+            </button>
+          </Tooltip>
+        </div>
+      ),
+    },
+  ];
+
+  const data = getPaginatedData().map((item, index) => ({
+    id: item.id,
+    index: currentPage * pageSize + index + 1,
+    productCode: item.productCode,
+    productName: item.productName,
+    unitName: item.unitName,
+    quantity: item.quantity,
+  }));
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -433,159 +501,56 @@ const AddSaleOrderPage = () => {
           </div>
 
           {/* Thêm ô tìm kiếm và hiển thị số dòng mỗi trang */}
-          <div className="flex items-center gap-4 mb-4">
-          <div className="flex items-center gap-2">
-              <Typography variant="small" color="blue-gray" className="font-normal">
-                Hiển thị
-              </Typography>
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setCurrentPage(0);
-                }}
-                className="border rounded px-2 py-1"
-              >
-                {[5, 10, 20, 50].map(size => (
-                  <option key={size} value={size}>{size}</option>
-                ))}
-              </select>
-              <Typography variant="small" color="blue-gray" className="font-normal">
-                dòng mỗi trang
-              </Typography>
-            </div>
-            <div className="flex-1">
-              <Input
-                label="Tìm kiếm trong danh sách"
+          <div className="mt-8">
+            <Typography variant="h6" color="blue-gray" className="mb-4">
+              Danh sách sản phẩm
+            </Typography>
+
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div className="flex items-center gap-2">
+                <Typography variant="small" color="blue-gray" className="font-normal">
+                  Hiển thị
+                </Typography>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(0);
+                  }}
+                  className="border rounded px-2 py-1"
+                >
+                  {[5, 10, 20, 50].map(size => (
+                    <option key={size} value={size}>{size}</option>
+                  ))}
+                </select>
+                <Typography variant="small" color="blue-gray" className="font-normal">
+                  bản ghi mỗi trang
+                </Typography>
+              </div>
+
+              <TableSearch
                 value={tableSearchQuery}
-                onChange={(e) => setTableSearchQuery(e.target.value)}
-                className="w-full"
-                icon={
-                  tableSearchQuery && (
-                    <button
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
-                      onClick={() => setTableSearchQuery("")}
-                    >
-                      <FaTimes className="h-4 w-4 text-gray-500 hover:text-gray-700" />
-                    </button>
-                  )
-                }
+                onChange={setTableSearchQuery}
+                onSearch={() => { }}
+                placeholder="Tìm kiếm trong danh sách"
               />
+
             </div>
-            
           </div>
 
           {/* Bảng chi tiết hàng */}
-          <div className="border border-gray-200 rounded mb-4">
-            <table className="w-full text-left min-w-max border-collapse">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  {["STT", "Mã hàng", "Tên hàng", "Đơn vị", "Số lượng", "Thao tác"].map((head) => (
-                    <th
-                      key={head}
-                      className="px-4 py-2 text-sm font-semibold text-gray-600 border-r last:border-r-0"
-                    >
-                      {head}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {getPaginatedData().length > 0 ? (
-                  getPaginatedData().map((item, index) => (
-                    <tr key={item.id} className="border-b last:border-b-0 hover:bg-gray-50">
-                      <td className="px-4 py-2 text-sm text-gray-700 border-r">{currentPage * pageSize + index + 1}</td>
-                      <td className="px-4 py-2 text-sm border-r">
-                        <Select
-                          placeholder="Chọn sản phẩm"
-                          isSearchable
-                          options={products}
-                          styles={customStyles}
-                          className="w-68"
-                          value={products.find((p) => p.value === item.productCode) || null}
-                          onChange={(selectedOption) => handleSelectProduct(item.id, selectedOption)}
-                        />
-                        {itemsErrors[item.id] && itemsErrors[item.id].productError && (
-                          <Typography color="red" className="text-xs mt-1">
-                            {itemsErrors[item.id].productError}
-                          </Typography>
-                        )}
-                      </td>
-                      <td className="px-4 py-2 text-sm border-r">
-                        <Input
-                          className="w-32 text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
-                          disabled
-                          value={item.productName}
-                          onChange={(e) =>
-                            setItems((prev) =>
-                              prev.map((row) =>
-                                row.id === item.id ? { ...row, productName: e.target.value } : row
-                              )
-                            )
-                          }
-                        />
-                      </td>
-                      <td className="px-4 py-2 text-sm border-r">
-                        <Input
-                          className="w-16 text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
-                          disabled
-                          value={item.unitName}
-                          onChange={(e) =>
-                            setItems((prev) =>
-                              prev.map((row) =>
-                                row.id === item.id ? { ...row, unitName: e.target.value } : row
-                              )
-                            )
-                          }
-                        />
-                      </td>
-                      <td className="px-4 py-2 text-sm">
-                        <Input
-                          type="number"
-                          className="w-16 text-sm"
-                          value={item.quantity}
-                          onChange={(e) => handleQuantityChange(item.id, e.target.value)}
-                        />
-                        {itemsErrors[item.id] && itemsErrors[item.id].quantityError && (
-                          <Typography color="red" className="text-xs mt-1">
-                            {itemsErrors[item.id].quantityError}
-                          </Typography>
-                        )}
-                      </td>
-                      <td className="px-4 py-2 text-sm text-center">
-                        <Button
-                          color="red"
-                          variant="text"
-                          size="sm"
-                          onClick={() => {
-                            setItems((prev) => prev.filter((_, i) => i !== (currentPage * pageSize + index)));
-                            if (getPaginatedData().length === 1 && currentPage > 0) {
-                              setCurrentPage(currentPage - 1);
-                            }
-                          }}
-                        >
-                          Xóa
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-2 text-center text-gray-500">
-                      {items.length === 0 ? "Chưa có dòng sản phẩm nào" : "Không tìm thấy kết quả phù hợp"}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <Table
+            data={data}
+            columnsConfig={columnsConfig}
+            enableSelection={false}
+          />
 
           {getFilteredItems().length > 0 && (
-            <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+            <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
               <div className="flex items-center gap-2">
                 <Typography variant="small" color="blue-gray" className="font-normal">
                   Trang {currentPage + 1} / {Math.ceil(getFilteredItems().length / pageSize)} •{" "}
-                  {getFilteredItems().length} dòng
+                  {getFilteredItems().length} bản ghi
                 </Typography>
               </div>
               <ReactPaginate
@@ -602,7 +567,7 @@ const AddSaleOrderPage = () => {
                 previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                 nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                 breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-                activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+                activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
                 forcePage={currentPage}
                 disabledClassName="opacity-50 cursor-not-allowed"
               />
