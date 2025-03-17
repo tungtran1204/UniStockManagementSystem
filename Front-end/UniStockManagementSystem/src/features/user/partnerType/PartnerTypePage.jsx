@@ -11,9 +11,9 @@ import {
     Tooltip,
     Switch,
 } from "@material-tailwind/react";
-import { FaEdit, FaPlus } from "react-icons/fa";
+import { BiSolidEdit } from "react-icons/bi";
 import PageHeader from '@/components/PageHeader';
-import TableSearch from '@/components/TableSearch';
+import Table from "@/components/Table";
 
 const PartnerTypePage = () => {
     const { partnerTypes, fetchPartnerTypes, toggleStatus } = usePartnerType();
@@ -27,11 +27,67 @@ const PartnerTypePage = () => {
         });
     }, []);
 
+    // Cấu hình cột cho bảng
+    const columnsConfig = [
+        { field: 'typeCode', headerName: 'Mã nhóm đối tác', minWidth: 150, flex: 1, editable: false },
+        { field: 'typeName', headerName: 'Tên nhóm đối tác', minWidth: 250, flex: 2, editable: false },
+        { field: 'description', headerName: 'Mô tả', minWidth: 400, flex: 2, editable: false },
+        {
+            field: 'status',
+            headerName: 'Trạng thái',
+            minWidth: 200,
+            flex: 1,
+            editable: false,
+            renderCell: (params) => (
+                <div className="flex items-center gap-2">
+                    <Switch
+                        color="green"
+                        checked={params.value}
+                        onChange={() => toggleStatus(params.row.id, params.value)}
+                    />
+                    <Typography className="text-xs font-semibold text-blue-gray-600">
+                        {params.value ? "Hoạt động" : "Vô hiệu hóa"}
+                    </Typography>
+                </div>
+            ),
+        },
+        {
+            field: 'actions',
+            headerName: 'Hành động',
+            minWidth: 30,
+            flex: 0.5,
+            renderCell: (params) => (
+                <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                    <Tooltip content="Chỉnh sửa">
+                        <button
+                            onClick={() => {
+                                setEditPartnerType(params.row);
+                                setShowEditPopup(true);
+                            }}
+                            className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+                        >
+                            <BiSolidEdit className="h-5 w-5" />
+                        </button>
+                    </Tooltip>
+                </div>
+            ),
+        }
+    ];
+
+    // Xử lý dữ liệu cho bảng
+    const data = partnerTypes.map(({ typeId, typeCode, typeName, description, status }) => ({
+        id: typeId, // DataGrid cần trường 'id'
+        typeCode,
+        typeName,
+        description,
+        status
+    }));
+
     return (
         <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
 
-                <CardBody className="pb-2 bg-white rounded-xl">
+                <CardBody className="pb-4 bg-white rounded-xl">
                     <PageHeader
                         title="Danh sách nhóm đối tác"
                         addButtonLabel="Thêm nhóm đối tác"
@@ -39,100 +95,12 @@ const PartnerTypePage = () => {
                         showImport={false}
                         showExport={false}
                     />
-                    <table className="w-full min-w-[640px] table-auto">
-                        <thead>
-                            <tr>
-                                {["Mã nhóm đối tác", "Tên nhóm đối tác", "Mô tả", "Trạng thái", "Hành động"].map((el) => (
-                                    <th
-                                        key={el}
-                                        className="border-b border-blue-gray-50 py-3 px-5 text-left"
-                                    >
-                                        <Typography
-                                            variant="small"
-                                            className="text-[11px] font-bold uppercase text-blue-gray-400"
-                                        >
-                                            {el}
-                                        </Typography>
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {partnerTypes && partnerTypes.length > 0 ? (
-                                partnerTypes.map(({ typeId, typeCode, typeName, description, status }, key) => {
-                                    const className = `py-3 px-5 ${key === partnerTypes.length - 1 ? "" : "border-b border-blue-gray-50"
-                                        }`;
 
-                                    return (
-                                        <tr key={typeId}>
-                                            <td className={className}>
-                                                <Typography
-                                                    variant="small"
-                                                    color="blue-gray"
-                                                    className="font-semibold"
-                                                >
-                                                    {typeCode}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography
-                                                    variant="small"
-                                                    color="blue-gray"
-                                                    className="font-semibold"
-                                                >
-                                                    {typeName}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {description}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <div className="flex items-center gap-2">
-                                                    <Switch
-                                                        color="green"
-                                                        checked={status}
-                                                        onChange={() => {
-                                                            toggleStatus(typeId, status);
-                                                        }}
-                                                    />
-                                                    <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                        {status ? "Hoạt động" : "Vô hiệu hóa"}
-                                                    </Typography>
-                                                </div>
-                                            </td>
-                                            <td className={className}>
-                                                <div className="flex items-center gap-2 pl-4">
-                                                    <Tooltip content="Chỉnh sửa">
-                                                        <button
-                                                            onClick={() => {
-                                                                setEditPartnerType({ typeId, typeCode, typeName, description, status });
-                                                                setShowEditPopup(true);
-                                                            }}
-                                                            className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-                                                            style={{ paddingLeft: "10px" }}
-                                                        >
-                                                            <FaEdit />
-                                                        </button>
-                                                    </Tooltip>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            ) : (
-                                <tr>
-                                    <td
-                                        colSpan="4"
-                                        className="border-b border-gray-200 px-3 py-4 text-center text-gray-500"
-                                    >
-                                        Không có dữ liệu
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                    <Table
+                        data={data}
+                        columnsConfig={columnsConfig}
+                        enableSelection={false}
+                    />
                 </CardBody>
             </Card>
 
