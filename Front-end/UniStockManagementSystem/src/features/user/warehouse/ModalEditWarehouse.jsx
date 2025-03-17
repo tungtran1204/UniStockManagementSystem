@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from "react";
 import {
-  Typography,
-  Button,
-  Input,
-  Textarea,
+    Dialog,
+    DialogHeader,
+    DialogBody,
+    DialogFooter,
+    Typography,
+    Button,
+    IconButton,
 } from "@material-tailwind/react";
+import { TextField, Divider, Button as MuiButton } from "@mui/material";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import useWarehouse from "./useWarehouse";
 
 const ModalEditWarehouse = ({ open, onClose, warehouse, fetchWarehouses }) => {

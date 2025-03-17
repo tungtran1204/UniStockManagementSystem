@@ -46,7 +46,7 @@ const WarehousePage = () => {
   // Handle edit warehouse action
   const handleEditWarehouse = async (warehouse) => {
     try {
-      const warehouseData = await getWarehouseById(warehouse.warehouseId);
+      const warehouseData = await getWarehouseById(warehouse.id);
       setSelectedWarehouse(warehouseData);
       setOpenEditModal(true);
     } catch (error) {
