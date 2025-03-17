@@ -68,6 +68,7 @@ const customStyles = {
 
 const EditSaleOrderPage = () => {
   const { orderId } = useParams();
+  console.log("orderId = ", orderId);
   const navigate = useNavigate();
 
   // Gọi custom hook để dùng hàm update
@@ -84,6 +85,8 @@ const EditSaleOrderPage = () => {
   const [contactName, setContactName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [description, setDescription] = useState("");
+
+  // Dữ liệu dòng sản phẩm (đã thêm inStock, usedQuantity, produceQuantity)
   const [items, setItems] = useState([]);
 
   //================= Danh sách khách hàng, sản phẩm =================
@@ -109,6 +112,12 @@ const EditSaleOrderPage = () => {
 
   const selectRef = useRef(null);
 
+  const [showStockColumns, setShowStockColumns] = useState(false);
+
+  const toggleStockColumns = () => {
+    setShowStockColumns((prev) => !prev);
+  };
+
   //================= Lấy dữ liệu đơn hàng =================
   useEffect(() => {
     const fetchOrderDetail = async () => {
@@ -128,7 +137,16 @@ const EditSaleOrderPage = () => {
         setAddress(orderData.address || "");
         setContactName(orderData.contactName || "");
         setPhoneNumber(orderData.phoneNumber || "");
-        setItems(orderData.orderDetails || []);
+
+        // Thêm 3 trường inStock, usedQuantity, produceQuantity vào từng dòng
+        const loadedItems = (orderData.orderDetails || []).map((detail) => ({
+          ...detail,
+          // Dựa vào dữ liệu BE nếu có, hoặc mặc định 0
+          inStock: detail.inStock ?? 0,
+          usedQuantity: detail.usedQuantity ?? 0,
+          produceQuantity: detail.produceQuantity ?? 0,
+        }));
+        setItems(loadedItems);
 
         // Lưu dữ liệu ban đầu
         setOriginalData({
@@ -143,7 +161,7 @@ const EditSaleOrderPage = () => {
           address: orderData.address || "",
           contactName: orderData.contactName || "",
           phoneNumber: orderData.phoneNumber || "",
-          items: JSON.parse(JSON.stringify(orderData.orderDetails || [])),
+          items: JSON.parse(JSON.stringify(loadedItems)),
         });
       } catch (error) {
         console.error("Lỗi khi lấy thông tin đơn hàng:", error);
@@ -268,12 +286,15 @@ const EditSaleOrderPage = () => {
       ...prev,
       {
         id: `new-${nextId}`, // Tạo ID tạm để FE quản lý
-        // Thêm productId
         productId: null,
         productCode: "",
         productName: "",
         unitName: "",
         quantity: 0,
+        // Thêm 3 trường
+        inStock: 0,
+        usedQuantity: 0,
+        produceQuantity: 0,
       },
     ]);
     setNextId((id) => id + 1);
@@ -291,6 +312,7 @@ const EditSaleOrderPage = () => {
     setItems((prev) => prev.filter((row) => row.id !== rowId));
   };
 
+  //================= Hàm xử lý chọn sản phẩm, nhập số lượng, v.v... =================
   const handleSelectProduct = (rowId, selectedOption) => {
     // Lưu productId + productCode + ...
     setItems((prev) =>
@@ -313,6 +335,34 @@ const EditSaleOrderPage = () => {
     setItems((prev) =>
       prev.map((row) =>
         row.id === rowId ? { ...row, quantity: Number(newQuantity) } : row
+      )
+    );
+    setGlobalError("");
+  };
+
+  // Thêm các hàm xử lý 3 trường mới
+  const handleInStockChange = (rowId, newValue) => {
+    setItems((prev) =>
+      prev.map((row) =>
+        row.id === rowId ? { ...row, inStock: Number(newValue) } : row
+      )
+    );
+    setGlobalError("");
+  };
+
+  const handleUsedQuantityChange = (rowId, newValue) => {
+    setItems((prev) =>
+      prev.map((row) =>
+        row.id === rowId ? { ...row, usedQuantity: Number(newValue) } : row
+      )
+    );
+    setGlobalError("");
+  };
+
+  const handleProduceQuantityChange = (rowId, newValue) => {
+    setItems((prev) =>
+      prev.map((row) =>
+        row.id === rowId ? { ...row, produceQuantity: Number(newValue) } : row
       )
     );
     setGlobalError("");
@@ -349,6 +399,7 @@ const EditSaleOrderPage = () => {
           "Số lượng sản phẩm phải lớn hơn 0!";
         hasError = true;
       }
+      // Bạn có thể thêm rule kiểm tra inStock, usedQuantity, produceQuantity ở đây nếu cần
     });
     setItemsErrors(newItemsErrors);
     if (hasError) return;
@@ -358,18 +409,21 @@ const EditSaleOrderPage = () => {
       const existing = acc.find((x) => x.productCode === curr.productCode);
       if (existing) {
         existing.quantity += curr.quantity;
+        // Gom luôn 3 trường mới nếu cần
+        existing.inStock += curr.inStock;
+        existing.usedQuantity += curr.usedQuantity;
+        existing.produceQuantity += curr.produceQuantity;
       } else {
         acc.push({ ...curr });
       }
       return acc;
     }, []);
 
-    // Tạo payload
-    // LƯU Ý: Thêm partnerId + productId
+    // Tạo payload (thêm 3 trường mới nếu BE có dùng)
     const payload = {
       orderId: Number(orderId),
       orderCode,
-      partnerId: partnerId, // <-- Gửi partnerId
+      partnerId: partnerId,
       partnerCode: customerCode,
       partnerName: customerName,
       address,
@@ -381,11 +435,15 @@ const EditSaleOrderPage = () => {
       orderDetails: aggregatedItems.map((item) => ({
         // Nếu dòng cũ => item.orderDetailId. Dòng mới => null
         orderDetailId: item.orderDetailId || null,
-        productId: item.productId || null, // <-- Gửi productId
+        productId: item.productId || null,
         productCode: item.productCode,
         productName: item.productName,
         quantity: item.quantity,
         unitName: item.unitName,
+        // Gửi thêm 3 trường mới lên nếu BE có
+        inStock: item.inStock,
+        usedQuantity: item.usedQuantity,
+        produceQuantity: item.produceQuantity,
       })),
     };
 
@@ -480,7 +538,6 @@ const EditSaleOrderPage = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                
                 {/* Trạng thái đơn hàng (bên phải) */}
                 <div>
                   <Typography variant="small" className="mb-2 font-bold text-gray-900">
@@ -600,35 +657,77 @@ const EditSaleOrderPage = () => {
 
           {activeTab === "products" && (
             <div>
+              {/* Nút "Xem tồn kho" */}
+              <div className="flex justify-end mb-4">
+                <Button
+                  variant="outlined"
+                  onClick={toggleStockColumns}
+                  className="flex items-center gap-2"
+                >
+                  {showStockColumns ? "Ẩn tồn kho" : "Xem tồn kho"}
+                </Button>
+              </div>
+
               {/* Bảng chi tiết hàng */}
               <div className="border border-gray-200 rounded mb-4">
-                <table className="w-full text-left min-w-max border-collapse">
+                {/* Bật table-fixed để cố định chiều rộng */}
+                <table className="table-fixed w-full text-left border-collapse">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      {["STT", "Mã hàng", "Tên hàng", "Đơn vị", "Số lượng", "Thao tác"].map((head) => (
-                        <th
-                          key={head}
-                          className="px-4 py-2 text-sm font-semibold text-gray-600 border-r last:border-r-0"
-                        >
-                          {head}
-                        </th>
-                      ))}
+                      {/* Cố định width cho từng <th> */}
+                      <th className=" w-5 px-2 py-2 text-sm font-semibold text-gray-600 border-r">
+                        STT
+                      </th>
+                      <th className="w-28 px-2 py-2 text-sm font-semibold text-gray-600 border-r">
+                        Mã hàng
+                      </th>
+                      <th className="w-32 px-2 py-2 text-sm font-semibold text-gray-600 border-r">
+                        Tên hàng
+                      </th>
+                      <th className="w-8 px-2 py-2 text-sm font-semibold text-gray-600 border-r">
+                        Đơn vị
+                      </th>
+                      <th className="w-10 px-2 py-2 text-sm font-semibold text-gray-600 border-r">
+                        Số lượng
+                      </th>
+                      {showStockColumns && (
+                        <>
+                          <th className="w-12 px-2 py-2 text-sm font-semibold text-gray-600 border-r">
+                            Số lượng<br/>tồn kho
+                          </th>
+                          <th className="w-12 px-2 py-2 text-sm font-semibold text-gray-600 border-r">
+                            Số lượng<br/>muốn sử dụng
+                          </th>
+                        </>
+                      )}
+                      <th className="w-12 px-2 py-2 text-sm font-semibold text-gray-600 border-r">
+                        Số lượng<br/>cần sản xuất
+                      </th>
+                      
+                      <th className="w-16 px-2 py-2 text-sm font-semibold text-gray-600">
+                        Thao tác
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {items.length > 0 ? (
                       items.map((item, index) => (
-                        <tr key={item.id} className="border-b last:border-b-0 hover:bg-gray-50">
-                          <td className="px-4 py-2 text-sm text-gray-700 border-r">
+                        <tr
+                          key={item.id}
+                          className="border-b last:border-b-0 hover:bg-gray-50"
+                        >
+                          <td className="px-2 py-2 text-sm text-gray-700 border-r text-left">
                             {index + 1}
                           </td>
-                          <td className="px-4 py-2 text-sm border-r">
+                          {/* Mã hàng (chọn từ dropdown) */}
+                          <td className="px-2 py-2 text-sm border-r">
                             <Select
                               placeholder="Chọn sản phẩm"
                               isSearchable
                               options={products}
                               styles={customStyles}
-                              className="w-68"
+                              // Giảm bớt chiều rộng dropdown
+                              className="w-28 text-sm"
                               value={
                                 products.find((p) => p.value === item.productCode) ||
                                 null
@@ -644,24 +743,27 @@ const EditSaleOrderPage = () => {
                               </Typography>
                             )}
                           </td>
-                          <td className="px-4 py-2 text-sm border-r">
+                          {/* Tên hàng */}
+                          <td className="px-2 py-2 text-sm border-r">
                             <Input
-                              className="w-32 text-sm"
+                              className=" text-sm"
                               value={item.productName}
                               disabled
                             />
                           </td>
-                          <td className="px-4 py-2 text-sm border-r">
+                          {/* Đơn vị */}
+                          <td className="px-2 py-2 text-sm border-r">
                             <Input
-                              className="w-16 text-sm"
+                              className="w-14 text-sm"
                               value={item.unitName}
                               disabled
                             />
                           </td>
-                          <td className="px-4 py-2 text-sm">
+                          {/* Số lượng */}
+                          <td className="px-2 py-2 text-sm border-r">
                             <Input
                               type="number"
-                              className="w-16 text-sm"
+                              className="w-14 text-sm"
                               value={item.quantity}
                               onChange={(e) => handleQuantityChange(item.id, e.target.value)}
                               disabled={!isEditing}
@@ -672,7 +774,43 @@ const EditSaleOrderPage = () => {
                               </Typography>
                             )}
                           </td>
-                          <td className="px-4 py-2 text-sm text-center">
+                          {showStockColumns && (
+                            <>
+                              <td className="px-2 py-2 text-sm border-r">
+                                <Input
+                                  type="number"
+                                  className="w-14 text-sm"
+                                  value={item.inStock}
+                                  onChange={(e) => handleInStockChange(item.id, e.target.value)}
+                                  disabled={!isEditing}
+                                />
+                              </td>
+                              <td className="px-2 py-2 text-sm border-r">
+                                <Input
+                                  type="number"
+                                  className="w-14 text-sm"
+                                  value={item.usedQuantity}
+                                  onChange={(e) => handleUsedQuantityChange(item.id, e.target.value)}
+                                  disabled={!isEditing}
+                                />
+                              </td>
+                            </>
+                          )}
+                          {/* Số lượng cần sản xuất */}
+                          <td className="px-2 py-2 text-sm border-r">
+                            <Input
+                              type="number"
+                              className="w-14 text-sm"
+                              value={item.produceQuantity}
+                              onChange={(e) =>
+                                handleProduceQuantityChange(item.id, e.target.value)
+                              }
+                              disabled={!isEditing}
+                            />
+                          </td>
+                          
+                          {/* Thao tác */}
+                          <td className="px-2 py-2 text-sm text-center">
                             {isEditing && (
                               <Button
                                 color="red"
@@ -688,7 +826,7 @@ const EditSaleOrderPage = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={6} className="px-4 py-2 text-center text-gray-500">
+                        <td colSpan={9} className="px-4 py-2 text-center text-gray-500">
                           Chưa có dòng sản phẩm nào
                         </td>
                       </tr>

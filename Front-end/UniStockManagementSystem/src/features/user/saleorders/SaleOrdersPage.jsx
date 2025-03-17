@@ -49,6 +49,7 @@ const SaleOrdersPage = () => {
   };
 
   const handleEditOrder = async (order) => {
+    console.log("Order to edit:", order);
     navigate(`/user/sale-orders/${order.orderId}`, { state: { order } });
   };
 
@@ -98,7 +99,7 @@ const SaleOrdersPage = () => {
   ];
 
   const data = filteredOrders.map((order, index) => ({
-    id: order.orderId,
+    orderId: order.orderId,
     index: currentPage * pageSize + index + 1,
     orderCode: order.orderCode || "N/A",
     partnerName: order.partnerName || "N/A",

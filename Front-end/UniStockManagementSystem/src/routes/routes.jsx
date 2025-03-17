@@ -31,12 +31,12 @@ import AddIssueNote from "../features/user/receiptNote/AddReceiptNote";
 import PurchaseOrderPage from "../features/user/purchaseOrder/PurchaseOrderPage";
 import AddProductPage from "@/features/user/products/AddProductPage";
 import DetailProductPage from "@/features/user/products/DetailProductPage";
-import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
 import PurchaseOrderDetail from "../features/user/purchaseOrder/PurchaseOrderDetail";
 
 import ProductTypePage from "@/features/user/productType/ProductTypePage";
 import PurchaseRequestPage from "@/features/user/purchaseRequest/PurchaseRequestPage";
 import AddPurchaseRequestPage from "../features/user/purchaseRequest/AddPurchaseRequestPage";
+import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
 const icon = { className: "w-5 h-5 text-inherit" };
 
 export const routes = [
