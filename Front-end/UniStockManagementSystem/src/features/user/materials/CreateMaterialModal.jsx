@@ -1,11 +1,15 @@
 import React, { useState } from "react";
 import {
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
   Typography,
   Button,
-  Input,
-  Select,
-  Option,
+  IconButton,
 } from "@material-tailwind/react";
+import { TextField, MenuItem, Divider, Select, FormControl, Button as MuiButton } from "@mui/material";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import { checkMaterialCodeExists } from "../materials/materialService";
 
 const CreateMaterialModal = ({
@@ -26,11 +30,10 @@ const CreateMaterialModal = ({
   units = [],
   materialCategories = [],
 }) => {
-  const [productCodeError, setProductCodeError] = useState(""); // State để lưu lỗi mã nguyên vật liệu tồn tại
+  const [materialCodeError, setMaterialCodeError] = useState(""); // State để lưu lỗi mã nguyên vật liệu tồn tại
   const [validationErrors, setValidationErrors] = useState({}); // State để lưu lỗi validation (khoảng trắng/trống)
 
   if (!show) return null;
-
   // Hàm kiểm tra chuỗi có chứa toàn khoảng trắng hoặc trống không
   const isEmptyOrWhitespace = (str) => !str || /^\s*$/.test(str);
 
@@ -39,16 +42,16 @@ const CreateMaterialModal = ({
     setNewMaterial(prev => ({
       ...prev,
       materialCode: newCode || ''
-    })); setProductCodeError(""); // Reset lỗi mỗi khi nhập
+    })); setMaterialCodeError(""); // Reset lỗi mỗi khi nhập
     if (newCode.trim()) {
       try {
         const exists = await checkMaterialCodeExists(newCode); // Gọi API kiểm tra
         if (exists) {
-          setProductCodeError("Mã nguyên vật liệu này đã tồn tại!");
+          setMaterialCodeError("Mã nguyên vật liệu này đã tồn tại!");
         }
       } catch (error) {
         console.error("❌ Lỗi kiểm tra mã nguyên vật liệu:", error);
-        setProductCodeError("Lỗi khi kiểm tra mã nguyên vật liệu!");
+        setMaterialCodeError("Lỗi khi kiểm tra mã nguyên vật liệu!");
       }
     }
 
@@ -90,60 +93,72 @@ const CreateMaterialModal = ({
     console.log("📌 Dữ liệu newMaterial trước khi tạo:", newMaterial);
 
     // Chỉ gọi hàm gốc nếu không có lỗi validation và không có productCodeError
-    if (Object.keys(newErrors).length === 0 && !productCodeError) {
+    if (Object.keys(newErrors).length === 0 && !materialCodeError) {
       handleCreateMaterial();
     }
   };
 
   // Kiểm tra điều kiện để vô hiệu hóa nút "Tạo nguyên vật liệu"
   const isCreateDisabled = () => {
-    return loading || !!productCodeError;
+    return loading || !!materialCodeError;
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-[500px]">
-        <div className="flex justify-between items-center mb-4">
-          <Typography variant="h6">Tạo nguyên vật liệu mới</Typography>
-          <button className="text-gray-500 hover:text-gray-700" onClick={onClose}>
-            ✕
-          </button>
-        </div>
+    <Dialog open={true} handler={onClose} size="md" className="px-4 py-2">
+      {/* Header của Dialog */}
+      <DialogHeader className="flex justify-between items-center pb-2">
+        <Typography variant="h4" color="blue-gray">
+          Thêm nguyên vật liệu
+        </Typography>
+        <IconButton
+          size="sm"
+          variant="text"
+          onClick={onClose}
+        >
+          <XMarkIcon className="h-5 w-5 stroke-2" />
+        </IconButton>
+      </DialogHeader>
+      <Divider variant="middle" />
+
+      {/* Body của Dialog */}
+      <DialogBody className="space-y-4 pb-6 pt-6">
         <div className="grid grid-cols-2 gap-4 mb-4">
-          {/* Mã nguyên vật liệu */}
           <div>
-            <Typography variant="small" className="mb-2">Mã nguyên vật liệu *</Typography>
-            <Input
-              type="text"
-              value={newMaterial.materialCode || ""}
+            <Typography variant="medium" className="text-black">
+              Mã nguyên vật liệu
+              <span className="text-red-500"> *</span>
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              hiddenLabel
+              placeholder="Mã nguyên vật liệu"
+              color="success"
+              value={newMaterial.materialCode}
               onChange={(e) => handleCheckMaterialCode(e.target.value)}
-              className={`w-full ${errors.materialCode || productCodeError || validationErrors.materialCode ? "border-red-500" : ""}`}
             />
-            {productCodeError && (
-              <Typography className="text-xs text-red-500 mt-1">
-                {productCodeError}
-              </Typography>
-            )}
-            {validationErrors.materialCode && (
-              <Typography className="text-xs text-red-500 mt-1">
-                {validationErrors.materialCode}
-              </Typography>
-            )}
-            {errors.materialCode && !productCodeError && !validationErrors.materialCode && (
-              <Typography className="text-xs text-red-500 mt-1">
-                {errors.materialCode}
-              </Typography>
-            )}
+            {materialCodeError && (<Typography className="text-xs text-red-500 mt-1">{materialCodeError}</Typography>)}
+            {validationErrors.materialCode && (<Typography className="text-xs text-red-500 mt-1">{validationErrors.materialCode}</Typography>)}
+            {errors.materialCode &&
+              !materialCodeError &&
+              !validationErrors.materialCode && (
+                <Typography className="text-xs text-red-500 mt-1">{errors.materialCode}</Typography>)}
           </div>
 
-          {/* Tên nguyên vật liệu */}
           <div>
-            <Typography variant="small" className="mb-2">Tên nguyên vật liệu *</Typography>
-            <Input
-              type="text"
-              value={newMaterial.materialName || ""}
+            <Typography variant="medium" className="text-black">
+              Tên nguyên vật liệu
+              <span className="text-red-500"> *</span>
+            </Typography>
+            <TextField
+              fullWidth
+              id="outlined-select"
+              size="small"
+              hiddenLabel
+              placeholder="Tên nguyên vật liệu"
+              color="success"
+              value={newMaterial.materialName}
               onChange={(e) => handleMaterialNameChange(e.target.value)}
-              className={`w-full ${errors.materialName || validationErrors.materialName ? "border-red-500" : ""}`}
             />
             {validationErrors.materialName && (
               <Typography className="text-xs text-red-500 mt-1">
@@ -157,25 +172,40 @@ const CreateMaterialModal = ({
             )}
           </div>
 
-          {/* Đơn vị */}
           <div>
-            <Typography variant="small" className="mb-2">Đơn vị *</Typography>
-            <Select
-              value={newMaterial.unitId || ""}
-              onChange={(value) => setNewMaterial({ ...newMaterial, unitId: value })}
-              className={`w-full ${errors.unitId || (validationErrors.unitId && !newMaterial.unitId) ? "border-red-500" : ""}`}
-              label={newMaterial.unitId ? "" : "Chọn đơn vị"}
-            >
-              {units.length > 0 ? (
-                units.map((unit) => (
-                  <Option key={unit.unitId} value={String(unit.unitId)}>
-                    {unit.unitName}
-                  </Option>
-                ))
-              ) : (
-                <Option disabled>Không có đơn vị nào</Option>
-              )}
-            </Select>
+            <Typography variant="medium" className="text-black">
+              Đơn vị
+              <span className="text-red-500"> *</span>
+            </Typography>
+            <FormControl fullWidth size="small" hiddenLabel>
+              <Select
+                value={newMaterial.unitId}
+                onChange={(e) => setNewMaterial({ ...newMaterial, unitId: e.target.value })}
+                color="success"
+                MenuProps={{
+                  disablePortal: true,
+                }}
+                displayEmpty
+                renderValue={newMaterial.unitId !== "" ? undefined : () => <Typography className="text-[16px] text-gray-500">Đơn vị</Typography>}
+              >
+                {units.length > 0 ? (
+                  units.map((unit) => (
+                    <MenuItem
+                      key={unit.unitId}
+                      value={String(unit.unitId)}
+                      sx={{
+                        "&.Mui-selected": {
+                          backgroundColor: "rgba(8, 148, 86, 0.1) !important",
+                        },
+                      }}>
+                      {unit.unitName}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem disabled>Không có đơn vị nào</MenuItem>
+                )}
+              </Select>
+            </FormControl>
             {validationErrors.unitId && (
               <Typography className="text-xs text-red-500 mt-1">
                 {validationErrors.unitId}
@@ -188,25 +218,46 @@ const CreateMaterialModal = ({
             )}
           </div>
 
-          {/* Danh mục */}
           <div>
-            <Typography variant="small" className="mb-2">Danh mục *</Typography>
-            <Select
-              value={newMaterial.typeId || ""}
-              onChange={(value) => setNewMaterial({ ...newMaterial, typeId: value })}
-              className={`w-full ${errors.typeId || (validationErrors.typeId && !newMaterial.typeId) ? "border-red-500" : ""}`}
-              label={newMaterial.typeId ? "" : "Chọn danh mục"}
-            >
-              {materialCategories.length > 0 ? (
-                materialCategories.map((category) => (
-                  <Option key={category.materialTypeId} value={String(category.materialTypeId)}>
-                    {category.name}
-                  </Option>
-                ))
-              ) : (
-                <Option disabled>Không có danh mục nào</Option>
-              )}
-            </Select>
+            <Typography variant="medium" className="text-black">
+              Danh mục
+              <span className="text-red-500"> *</span>
+            </Typography>
+            <FormControl fullWidth size="small" hiddenLabel>
+              <Select
+                value={newMaterial.typeId}
+                onChange={(e) => setNewMaterial({ ...newMaterial, typeId: e.target.value })}
+                color="success"
+                MenuProps={{
+                  disablePortal: true,
+                  PaperProps: {
+                    sx: {
+                      maxHeight: 200, // Giới hạn chiều cao menu
+                      overflowY: "auto",
+                    },
+                  },
+                }}
+                displayEmpty
+                renderValue={newMaterial.typeId !== "" ? undefined : () => <Typography className="text-[16px] text-gray-500">Danh mục</Typography>}
+              >
+                {materialCategories.length > 0 ? (
+                  materialCategories.map((category) => (
+                    <MenuItem
+                      key={category.materialTypeId}
+                      value={String(category.materialTypeId)}
+                      sx={{
+                        "&.Mui-selected": {
+                          backgroundColor: "rgba(8, 148, 86, 0.1) !important",
+                        },
+                      }}>
+                      {category.name}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem disabled>Không có danh mục nào</MenuItem>
+                )}
+              </Select>
+            </FormControl>
             {validationErrors.typeId && (
               <Typography className="text-xs text-red-500 mt-1">
                 {validationErrors.typeId}
@@ -219,26 +270,39 @@ const CreateMaterialModal = ({
             )}
           </div>
 
-          {/* Mô tả */}
           <div className="col-span-2">
-            <Typography variant="small" className="mb-2">Mô tả</Typography>
-            <Input
-              type="text"
-              value={newMaterial.description || ""}
+            <Typography variant="medium" className="text-black">
+              Mô tả
+              <span className="text-red-500"> *</span>
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              hiddenLabel
+              placeholder="Mô tả"
+              color="success"
+              multiline
+              rows={4}
+              value={newMaterial.description}
               onChange={(e) => setNewMaterial({ ...newMaterial, description: e.target.value })}
-              className={`w-full ${errors.description ? "border-red-500" : ""}`}
             />
             {errors.description && (
               <Typography className="text-xs text-red-500 mt-1">{errors.description}</Typography>
             )}
           </div>
 
-          {/* Hình ảnh nguyên vật liệu */}
           <div className="col-span-2">
-            <Typography variant="small" className="mb-2">Hình ảnh nguyên vật liệu</Typography>
-            <Input
+            <Typography variant="medium" className="text-black">
+              Hình ảnh nguyên vật liệu
+              <span className="text-red-500"> *</span>
+            </Typography>
+            <TextField
+              fullWidth
               type="file"
               accept="image/*"
+              size="small"
+              hiddenLabel
+              color="success"
               onChange={(e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -255,9 +319,7 @@ const CreateMaterialModal = ({
                   }));
                 }
               }}
-              className="w-full"
             />
-
             {newMaterial.imageUrl && (
               <div className="mt-2 relative">
                 <img
@@ -269,17 +331,30 @@ const CreateMaterialModal = ({
             )}
           </div>
         </div>
+      </DialogBody>
 
-        <div className="flex justify-end gap-2">
-          <Button color="gray" onClick={onClose} disabled={loading}>
-            Hủy
-          </Button>
-          <Button color="blue" onClick={handleCreateMaterialWrapper} disabled={isCreateDisabled()}>
-            {loading ? "Đang xử lý..." : "Tạo nguyên vật liệu"}
-          </Button>
-        </div>
-      </div>
-    </div>
+      {/* Footer của Dialog */}
+      <DialogFooter className="pt-0">
+        <MuiButton
+          size="medium"
+          color="error"
+          variant="outlined"
+          onClick={onClose}
+        >
+          Hủy
+        </MuiButton>
+        <Button
+          size="lg"
+          color="white"
+          variant="text"
+          className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-3 rounded-[4px] transition-all duration-200 ease-in-out"
+          ripple={true}
+          onClick={handleCreateMaterialWrapper}
+        >
+          Lưu
+        </Button>
+      </DialogFooter>
+    </Dialog>
   );
 };
 
