@@ -54,6 +54,7 @@ const SingleClickEditing = ({ data, columnsConfig, enableSelection }) => {
             <DataGrid
                 rows={rows}
                 columns={columns}
+                getRowId={(row) => row.id || row.index}
                 cellModesModel={cellModesModel}
                 onCellModesModelChange={handleCellModesModelChange}
                 onCellClick={handleCellClick}
