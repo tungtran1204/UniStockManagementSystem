@@ -45,7 +45,8 @@ const PageHeader = ({
                         size="sm"
                         color="white"
                         variant="text"
-                        className="flex items-center gap-2 bg-[#0ab067] hover:bg-[#089456]/90 transition-colors duration-200"
+                        className="flex items-center gap-2 bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 ease-in-out"
+                        ripple={true}
                         onClick={onAdd}
                     >
                         <FaPlus className="h-4 w-4" /> {addButtonLabel}
