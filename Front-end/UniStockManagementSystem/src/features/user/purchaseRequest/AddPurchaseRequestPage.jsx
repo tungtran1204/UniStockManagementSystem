@@ -7,6 +7,7 @@ import {
   Button,
   Input,
   Textarea,
+  Tooltip,
   Typography,
 } from "@material-tailwind/react";
 import Select from "react-select";
@@ -18,6 +19,8 @@ import dayjs from "dayjs";
 import usePurchaseRequest from "./usePurchaseRequest";
 import axios from "axios";
 import PageHeader from '@/components/PageHeader';
+import TableSearch from "@/components/TableSearch";
+import Table from "@/components/Table";
 
 const SUPPLIER_TYPE_ID = 2;
 
@@ -346,6 +349,89 @@ const AddPurchaseRequestPage = () => {
     return !loading && partnerId && items.length > 0 && !Object.keys(errors).length && !billOfMaterialsError;
   };
 
+  const columnsConfig = [
+    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
+    {
+      field: 'materialCode',
+      headerName: 'Mã vật tư',
+      flex: 2,
+      minWidth: 250,
+      renderCell: (params) => (
+        <Select
+          placeholder="Chọn vật tư"
+          isSearchable
+          options={getAvailableMaterials().map((m) => ({
+            value: m.materialId,
+            label: `${m.materialCode} - ${m.materialName}`,
+            material: m,
+          }))}
+          styles={customStyles}
+          className="w-68"
+          value={
+            params.row.materialId
+              ? {
+                value: params.row.materialId,
+                label: `${params.row.materialCode} - ${params.row.materialName}`,
+              }
+              : null
+          }
+          onChange={(selected) => {
+            handleSelectMaterial(params.row.index - 1, selected.material);
+          }}
+        />
+      ),
+    },
+    { field: 'materialName', headerName: 'Tên vật tư', flex: 2, minWidth: 400, editable: false },
+    { field: 'unitName', headerName: 'Đơn vị', flex: 1, minWidth: 50, editable: false },
+    {
+      field: 'quantity',
+      headerName: 'Số lượng *',
+      flex: 1,
+      minWidth: 50,
+      renderCell: (params) => (
+        <Input
+          type="number"
+          variant="standard"
+          value={params.value}
+          onChange={(e) => handleQuantityChange(params.row.index - 1, e.target.value)}
+          min={1}
+          className={`w-16 text-sm ${quantityErrors[params.row.index - 1] ? "border-red-500" : ""}`}
+        />
+      ),
+    },
+    {
+      field: 'actions',
+      headerName: 'Hành động',
+      flex: 0.5,
+      minWidth: 100,
+      renderCell: (params) => (
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <Tooltip content="Xoá">
+            <button
+              onClick={() => {
+                handleRemoveRow(params.row.index - 1);
+              }}
+              className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white"
+            >
+              <FaTrash className="h-3 w-3" />
+            </button>
+          </Tooltip>
+        </div>
+      ),
+    },
+  ];
+
+  const data = items.map((item, index) => ({
+    id: index + 1,
+    index: index + 1,
+    materialId: item.materialId,
+    materialCode: item.materialCode,
+    materialName: item.materialName,
+    unitName: item.unitName,
+    quantity: item.quantity,
+  }));
+
+
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
@@ -447,49 +533,39 @@ const AddPurchaseRequestPage = () => {
             </div>
           </div>
 
-          <div className="border border-gray-200 rounded mb-4">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="flex-1">
-                <Input
-                  label="Tìm kiếm trong danh sách"
-                  value={tableSearchQuery}
-                  onChange={(e) => setTableSearchQuery(e.target.value)}
-                  className="w-full"
-                  icon={
-                    tableSearchQuery && (
-                      <button
-                        className="absolute right-3 top-1/2 -translate-y-1/2"
-                        onClick={() => setTableSearchQuery("")}
-                      >
-                        <FaTimes className="h-4 w-4 text-gray-500 hover:text-gray-700" />
-                      </button>
-                    )
-                  }
-                />
-              </div>
-            </div>
+          <div className="mt-8">
+            <Typography variant="h6" color="blue-gray" className="mb-4">
+              Danh sách vật tư
+            </Typography>
 
-            <div className="flex items-center gap-2 mb-4">
-              <Typography variant="small" color="blue-gray" className="font-normal">
-                Hiển thị
-              </Typography>
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setCurrentPage(0);
-                }}
-                className="border rounded px-2 py-1"
-              >
-                {[5, 10, 20, 50].map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-              <Typography variant="small" color="blue-gray" className="font-normal">
-                dòng mỗi trang
-              </Typography>
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div className="flex items-center gap-2">
+                <Typography variant="small" color="blue-gray" className="font-normal">
+                  Hiển thị
+                </Typography>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(0);
+                  }}
+                  className="border rounded px-2 py-1"
+                >
+                  {[5, 10, 20, 50].map(size => (
+                    <option key={size} value={size}>{size}</option>
+                  ))}
+                </select>
+                <Typography variant="small" color="blue-gray" className="font-normal">
+                  bản ghi mỗi trang
+                </Typography>
+              </div>
+
+              <TableSearch
+                value={tableSearchQuery}
+                onChange={setTableSearchQuery}
+                onSearch={() => { }}
+                placeholder="Tìm kiếm trong danh sách"
+              />
             </div>
 
             {billOfMaterialsError && (
@@ -498,122 +574,14 @@ const AddPurchaseRequestPage = () => {
               </Typography>
             )}
 
-            <table className="w-full text-left min-w-max border-collapse">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  {["STT", "Mã vật tư", "Tên vật tư", "Đơn vị", "Số lượng *", "Thao tác"].map((head) => (
-                    <th
-                      key={head}
-                      className="px-4 py-2 text-sm font-semibold text-gray-600 border-r last:border-r-0"
-                    >
-                      {head}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {getPaginatedData().length > 0 ? (
-                  getPaginatedData().map((item, index) => (
-                    <tr key={item.id} className="border-b last:border-b-0 hover:bg-gray-50">
-                      <td className="px-4 py-2 text-sm text-gray-700 border-r">
-                        {currentPage * pageSize + index + 1}
-                      </td>
-                      <td className="px-4 py-2 text-sm border-r">
-                        <Select
-                          placeholder="Chọn vật tư"
-                          isSearchable
-                          options={getAvailableMaterials().map((m) => ({
-                            value: m.materialId,
-                            label: `${m.materialCode} - ${m.materialName}`,
-                            material: m,
-                          }))}
-                          styles={customStyles}
-                          className="w-68"
-                          value={
-                            item.materialId
-                              ? {
-                                value: item.materialId,
-                                label: `${item.materialCode} - ${item.materialName}`,
-                              }
-                              : null
-                          }
-                          onChange={(selected) =>
-                            handleSelectMaterial(currentPage * pageSize + index, selected.material)
-                          }
-                        />
-                        {materialErrors[currentPage * pageSize + index] && (
-                          <Typography className="text-xs text-red-500 mt-1">
-                            {materialErrors[currentPage * pageSize + index]}
-                          </Typography>
-                        )}
-                      </td>
-                      <td className="px-4 py-2 text-sm border-r">
-                        <Input
-                          variant="standard"
-                          value={item.materialName || ""}
-                          disabled
-                          className="w-full text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
-                        />
-                      </td>
-                      <td className="px-4 py-2 text-sm border-r">
-                        <Input
-                          variant="standard"
-                          value={item.unitName}
-                          disabled
-                          className="w-16 text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
-                        />
-                      </td>
-                      <td className="px-4 py-2 text-sm border-r">
-                        <div>
-                          <Input
-                            type="number"
-                            variant="standard"
-                            value={item.quantity}
-                            onChange={(e) =>
-                              handleQuantityChange(currentPage * pageSize + index, e.target.value)
-                            }
-                            min={1}
-                            className={`w-16 text-sm ${quantityErrors[currentPage * pageSize + index] ? "border-red-500" : ""
-                              }`}
-                          />
-                          {quantityErrors[currentPage * pageSize + index] && (
-                            <Typography className="text-xs text-red-500 mt-1">
-                              {quantityErrors[currentPage * pageSize + index]}
-                            </Typography>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-2 text-sm text-center">
-                        <Button
-                          color="red"
-                          variant="text"
-                          size="sm"
-                          onClick={() => {
-                            setItems((prev) =>
-                              prev.filter((_, i) => i !== currentPage * pageSize + index)
-                            );
-                            if (getPaginatedData().length === 1 && currentPage > 0) {
-                              setCurrentPage(currentPage - 1);
-                            }
-                          }}
-                        >
-                          Xóa
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-2 text-center text-gray-500">
-                      {items.length === 0 ? "Chưa có dòng nào được thêm" : "Không tìm thấy kết quả phù hợp"}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+            <Table
+              data={data}
+              columnsConfig={columnsConfig}
+              enableSelection={false}
+            />
 
             {getFilteredMaterials().length > 0 && (
-              <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+              <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
                 <div className="flex items-center gap-2">
                   <Typography variant="small" color="blue-gray" className="font-normal">
                     Trang {currentPage + 1} / {Math.ceil(getFilteredMaterials().length / pageSize)} •{" "}
@@ -634,7 +602,7 @@ const AddPurchaseRequestPage = () => {
                   previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                   nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                   breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-                  activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+                  activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
                   forcePage={currentPage}
                   disabledClassName="opacity-50 cursor-not-allowed"
                 />

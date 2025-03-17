@@ -8,7 +8,7 @@ import {
   Tooltip,
   Input,
 } from "@material-tailwind/react";
-import { FaPlus, FaEdit } from "react-icons/fa";
+import { BiSolidEdit } from "react-icons/bi";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
@@ -16,6 +16,7 @@ import usePurchaseRequest from "./usePurchaseRequest";
 import { useNavigate } from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
+import Table from "@/components/Table";
 
 const PurchaseRequestPage = () => {
   const {
@@ -45,6 +46,63 @@ const PurchaseRequestPage = () => {
       alert("Có lỗi xảy ra khi tạo mã yêu cầu mới");
     }
   };
+
+  const columnsConfig = [
+    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
+    { field: 'purchaseRequestCode', headerName: 'Mã yêu cầu', flex: 1.5, minWidth: 150, editable: false },
+    { field: 'purchaseOrderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false, renderCell: (params) => params.value || "Chưa có" },
+    { field: 'partnerName', headerName: 'Nhà cung cấp', flex: 2, minWidth: 200, editable: false },
+    {
+      field: 'createdDate',
+      headerName: 'Ngày tạo yêu cầu',
+      flex: 1.5,
+      minWidth: 150,
+      editable: false,
+      renderCell: (params) => dayjs(params.value).format("DD/MM/YYYY"),
+    },
+    {
+      field: 'status',
+      headerName: 'Trạng thái',
+      flex: 1.5,
+      minWidth: 200,
+      renderCell: (params) => (
+        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                ${params.value === 'Đã duyệt'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-yellow-100 text-yellow-800'
+          }`
+        }>
+          {params.value}
+        </div>
+      ),
+    },
+    {
+      field: 'actions',
+      headerName: 'Hành động',
+      flex: 0.5,
+      minWidth: 50,
+      renderCell: (params) => (
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <Tooltip content="Chỉnh sửa">
+            <button className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white">
+              <BiSolidEdit className="h-5 w-5" />
+            </button>
+          </Tooltip>
+        </div>
+
+      ),
+    },
+  ];
+
+  const data = purchaseRequests.map((request, index) => ({
+    id: request.id,
+    index: (currentPage * pageSize) + index + 1,
+    purchaseRequestCode: request.purchaseRequestCode,
+    purchaseOrderCode: request.purchaseOrderCode || "Chưa có",
+    partnerName: request.partnerName,
+    createdDate: request.createdDate,
+    status: request.status,
+  }));
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -90,86 +148,13 @@ const PurchaseRequestPage = () => {
             />
           </div>
 
-          <table className="w-full min-w-[640px] table-auto">
-            <thead>
-              <tr>
-                {["STT", "Mã yêu cầu", "Mã đơn hàng", "Nhà cung cấp", "Ngày tạo yêu cầu", "Trạng thái", "Hành động"].map(
-                  (el) => (
-                    <th key={el} className="border-b border-blue-gray-50 py-3 px-5 text-left">
-                      <Typography variant="small" className="text-[11px] font-bold uppercase text-blue-gray-400">
-                        {el}
-                      </Typography>
-                    </th>
-                  )
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {purchaseRequests.map((request, index) => {
-                const className = `py-3 px-5 ${index === purchaseRequests.length - 1 ? "" : "border-b border-blue-gray-50"
-                  }`;
-                const actualIndex = currentPage * pageSize + index + 1;
-
-                return (
-                  <tr key={request.id}>
-                    <td className={className}>
-                      <Typography variant="small" color="blue-gray" className="font-semibold">
-                        {actualIndex}
-                      </Typography>
-                    </td>
-                    <td className={className}>
-                      <Typography className="text-xs font-semibold text-blue-gray-600">
-                        {request.purchaseRequestCode}
-                      </Typography>
-                    </td>
-                    <td className={className}>
-                      <Typography className="text-xs font-semibold text-blue-gray-600">
-                        {request.purchaseOrderCode || "Chưa có"}
-                      </Typography>
-                    </td>
-                    <td className={className}>
-                      <Typography className="text-xs font-semibold text-blue-gray-600">
-                        {request.partnerName}
-                      </Typography>
-                    </td>
-                    <td className={className}>
-                      <Typography className="text-xs font-normal text-blue-gray-600">
-                        {dayjs(request.createdDate).format("DD/MM/YYYY")} {/* Changed from createDate to createdDate */}
-                      </Typography>
-                    </td>
-                    <td className={className}>
-                      <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                        ${request.status === 'Đã duyệt'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                        }`
-                      }>
-                        {request.status}
-                      </div>
-                    </td>
-                    <td className={className}>
-                      <div className="flex items-center gap-2">
-                        <Tooltip content="Chỉnh sửa">
-                          <button
-                            className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-                          >
-                            <FaEdit className="h-4 w-4" />
-                          </button>
-                        </Tooltip>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          {purchaseRequests.length === 0 && (
-            <div className="text-center py-4 text-gray-500">
-              Không có dữ liệu
-            </div>
-          )}
-          <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+          <Table
+            data={data}
+            columnsConfig={columnsConfig}
+            enableSelection={true}
+          />
+          
+          <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
             <Typography variant="small" color="blue-gray" className="font-normal">
               Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
             </Typography>
@@ -187,7 +172,7 @@ const PurchaseRequestPage = () => {
               previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-              activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+              activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
               forcePage={currentPage}
               disabledClassName="opacity-50 cursor-not-allowed"
             />

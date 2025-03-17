@@ -8,7 +8,7 @@ import {
     from "@material-tailwind/react";
 import MultiSelectDropdown from "@/components/MultiSelectDropdown";
 
-const CreatePartnerPopup = ({ onClose, onSuccess }) => {
+const CreatePartnerModal = ({ onClose, onSuccess }) => {
     const [partnerTypes, setPartnerTypes] = useState([]);
     const [partnerCodes, setPartnerCodes] = useState([]);
     const [errorMessage, setErrorMessage] = useState("");
@@ -174,4 +174,4 @@ const CreatePartnerPopup = ({ onClose, onSuccess }) => {
     );
 };
 
-export default CreatePartnerPopup;
+export default CreatePartnerModal;

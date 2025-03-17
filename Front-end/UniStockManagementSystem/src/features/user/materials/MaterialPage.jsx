@@ -2,12 +2,13 @@ import React, { useEffect, useState } from "react";
 import useMaterial from "./useMaterial";
 import { Button, Card, CardHeader, Typography } from "@material-tailwind/react";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
-import { FaEdit, FaFileExcel, FaPlus } from "react-icons/fa";
+import { BiSolidEdit } from "react-icons/bi";
 import ReactPaginate from "react-paginate";
 import CreateMaterialModal from './CreateMaterialModal';
 import EditMaterialModal from './EditMaterialModal';
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
+import Table from "@/components/Table";
 
 import {
     importExcel,
@@ -150,6 +151,103 @@ const MaterialPage = () => {
         handlePageChange(selectedItem.selected);
     };
 
+    const columnsConfig = [
+        { field: 'materialCode', headerName: 'Mã NVL', flex: 1, minWidth: 50, editable: false, filterable: false },
+        { field: 'materialName', headerName: 'Tên nguyên vật liệu', flex: 2, minWidth: 250, editable: false, filterable: false },
+        {
+            field: 'unitName',
+            headerName: 'Đơn vị',
+            flex: 1,
+            minWidth: 50,
+            editable: false,
+            filterable: false,
+        },
+        {
+            field: 'materialTypeName',
+            headerName: 'Danh mục',
+            flex: 1.5,
+            minWidth: 150,
+            editable: false,
+            filterable: false,
+        },
+        {
+            field: 'imageUrl',
+            headerName: 'Hình ảnh',
+            flex: 1,
+            minWidth: 150,
+            editable: false,
+            filterable: false,
+            renderCell: (params) => {
+                return params.value ? (
+                    <img
+                        src={params.value}
+                        alt="Hình ảnh NVL"
+                        className="w-12 h-12 object-cover rounded-lg"
+                        onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.parentElement.innerHTML = 'Không có ảnh';
+                        }}
+                    />
+                ) : (
+                    <Typography className="text-xs text-gray-600">Không có ảnh</Typography>
+                );
+            },
+        },
+        {
+            field: 'isUsing',
+            headerName: 'Trạng thái',
+            flex: 1,
+            minWidth: 200,
+            editable: false,
+            filterable: false,
+            renderCell: (params) => {
+                return (
+                    <div className="flex items-center gap-2">
+                        <Switch
+                            color="green"
+                            checked={params.value}
+                            onChange={() => handleToggleStatus(params.row.id)}
+                        />
+                        <Typography className="text-xs font-semibold text-blue-gray-600">
+                            {params.value ? "Đang sử dụng" : "Ngừng sử dụng"}
+                        </Typography>
+                    </div>
+                );
+            },
+        },
+        {
+            field: 'actions',
+            headerName: 'Hành động',
+            flex: 0.5,
+            minWidth: 50,
+            renderCell: (params) => (
+                <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                    <Tooltip content="Chỉnh sửa">
+                        <button
+                            onClick={() => {
+                                setSelectedMaterial(params.row);
+                                setShowEditModal(true);
+                            }}
+                            className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+                        >
+                            <BiSolidEdit className="h-5 w-5" />
+                        </button>
+                    </Tooltip>
+                </div>
+            ),
+        },
+    ];
+
+    const data = materials.map((material) => ({
+        id: material.materialId,  // DataGrid cần trường 'id'
+        materialCode: material.materialCode || "N/A",
+        materialName: material.materialName,
+        unitName: material.unitName || "N/A",
+        materialTypeName: materialCategories.find(cat => cat.materialTypeId === material.typeId)?.name || material.typeName || "Không có danh mục",
+        imageUrl: material.imageUrl,
+        isUsing: material.isUsing,
+    }));
+
     const filteredMaterials = Array.isArray(materials)
         ? materials.filter(material =>
             material.materialCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -205,130 +303,13 @@ const MaterialPage = () => {
 
                     </div>
 
-                    <table className="w-full min-w-[640px] table-auto border border-gray-200">
-                        <thead>
-                            <tr>
-                                {[
-                                    "STT",
-                                    "Mã NVL",
-                                    "Tên nguyên vật liệu",
-                                    "Đơn vị",
-                                    "Danh mục",
-                                    "Hình ảnh",
-                                    "Trạng thái",
-                                    "Thao tác",
-                                ].map((el) => (
-                                    <th key={el} className="border-b border-blue-gray-50 py-3 px-5 text-left">
-                                        <Typography variant="small" className="text-[11px] font-bold uppercase text-blue-gray-400">
-                                            {el}
-                                        </Typography>
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredMaterials.length > 0 ? (
-                                filteredMaterials.map((material, index) => {
-                                    const className = `py-3 px-5 ${index === materials.length - 1 ? "" : "border-b border-blue-gray-50"}`;
-                                    const actualIndex = currentPage * pageSize + index + 1;
+                    <Table
+                        data={data}
+                        columnsConfig={columnsConfig}
+                        enableSelection={false}
+                    />
 
-                                    return (
-                                        <tr key={material.materialId}>
-                                            <td className={className}>
-                                                <Typography variant="small" color="blue-gray" className="font-semibold">
-                                                    {actualIndex}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {material.materialCode || "N/A"}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                    {material.materialName}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-normal text-blue-gray-600">
-                                                    {material.unitName || "N/A"}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                <Typography className="text-xs font-normal text-blue-gray-600">
-                                                    {(() => {
-                                                        console.log('material.typeId:', material.typeId);
-                                                        console.log('materialCategories:', materialCategories);
-                                                        const category = materialCategories.find(cat => cat.materialTypeId === material.typeId);
-                                                        console.log('Found category:', category);
-                                                        return category ? category.name : material.typeName || "Không có danh mục";
-                                                    })()}
-                                                </Typography>
-                                            </td>
-                                            <td className={className}>
-                                                {material.imageUrl ? (
-                                                    <img
-                                                        src={material.imageUrl}
-                                                        alt={material.materialName}
-                                                        className="w-16 h-16 object-cover rounded-lg"
-                                                        onError={(e) => {
-                                                            const imgElement = e.target;
-                                                            imgElement.style.display = 'none';
-                                                            imgElement.parentElement.innerHTML = 'Không có ảnh';
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <Typography className="text-xs font-normal text-gray-600">
-                                                        Không có ảnh
-                                                    </Typography>
-                                                )}
-                                            </td>
-                                            <td className={className}>
-                                                <div className="flex items-center gap-2">
-                                                    <Switch
-                                                        color="green"
-                                                        checked={material.isUsing}
-                                                        onChange={() => {
-                                                            if (!material.materialId) {
-                                                                console.error("❌ Lỗi: Nguyên vật liệu không có ID!", material);
-                                                                alert("Lỗi: Nguyên vật liệu không có ID!");
-                                                                return;
-                                                            }
-                                                            handleToggleStatus(material.materialId);
-                                                        }}
-                                                    />
-                                                    <Typography className="text-xs font-semibold text-blue-gray-600">
-                                                        {material.isUsing ? "Đang sử dụng" : "Ngừng sử dụng"}
-                                                    </Typography>
-                                                </div>
-                                            </td>
-
-                                            <td className={className}>
-                                                <div className="flex items-center gap-2">
-                                                    <Tooltip content="Chỉnh sửa">
-                                                        <button
-                                                            onClick={() => handleEdit(material)}
-                                                            className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-                                                        >
-                                                            <FaEdit className="h-4 w-4" />
-                                                        </button>
-                                                    </Tooltip>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })
-                            ) : (
-                                <tr>
-                                    <td colSpan="10" className="border-b border-gray-200 px-3 py-4 text-center text-gray-500">
-                                        Không có dữ liệu
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-
-                    <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+                    <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
                         <div className="flex items-center gap-2">
                             <Typography variant="small" color="blue-gray" className="font-normal">
                                 Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
@@ -348,7 +329,7 @@ const MaterialPage = () => {
                             previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                             nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                             breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-                            activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+                            activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
                             forcePage={currentPage}
                             disabledClassName="opacity-50 cursor-not-allowed"
                         />
