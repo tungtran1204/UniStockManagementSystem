@@ -13,15 +13,17 @@ import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/unistock/user/materials") // ✅ API dành riêng cho User
+@RequestMapping("/api/unistock/user/materials")
 @RequiredArgsConstructor
 public class MaterialsController {
     private final MaterialsService materialsService;
     private final AzureBlobService azureBlobService;
+    private final MaterialsMapper materialsMapper;
 
     // 🟢 API lấy tất cả nguyên liệu
     @GetMapping
@@ -37,9 +39,6 @@ public class MaterialsController {
     public ResponseEntity<MaterialsDTO> getMaterialById(@PathVariable Long id) {
         return ResponseEntity.ok(materialsService.getMaterialById(id));
     }
-
-    // 🟢 API import nguyên liệu từ file Excel
-
 
     // 🟢 API bật/tắt trạng thái sử dụng
     @PatchMapping("/{id}/toggle-using")
@@ -59,20 +58,18 @@ public class MaterialsController {
 
     // 🟢 API THÊM NGUYÊN LIỆU MỚI
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> createMaterial(
+    public ResponseEntity<MaterialsDTO> createMaterial(
             @RequestParam("materialCode") String materialCode,
             @RequestParam("materialName") String materialName,
             @RequestParam("description") String description,
             @RequestParam(value = "unitId", required = false) Long unitId,
             @RequestParam(value = "typeId", required = false) Long typeId,
             @RequestParam(value = "isUsingActive", required = false) Boolean isUsingActive,
-            @RequestParam(value = "image", required = false) MultipartFile image
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "supplierIds", required = false) List<Long> supplierIds
     ) throws IOException {
         // ✅ Upload ảnh lên Azure nếu có
-        String imageUrl = null;
-        if (image != null && !image.isEmpty()) {
-            imageUrl = azureBlobService.uploadFile(image);
-        }
+        String imageUrl = (image != null && !image.isEmpty()) ? azureBlobService.uploadFile(image) : null;
 
         // ✅ Tạo DTO để lưu nguyên liệu
         MaterialsDTO materialDTO = new MaterialsDTO();
@@ -83,10 +80,12 @@ public class MaterialsController {
         materialDTO.setTypeId(typeId);
         materialDTO.setIsUsing(isUsingActive);
         materialDTO.setImageUrl(imageUrl);
+        materialDTO.setSupplierIds(supplierIds);
 
-        // ✅ Gọi service để lưu nguyên liệu
-        Material createdMaterial = materialsService.createMaterial(materialDTO, "Admin");
-        return ResponseEntity.ok(createdMaterial);
+        // ✅ Gọi service để lưu nguyên liệu và trả về DTO
+        MaterialsDTO createdMaterialDTO = materialsService.createMaterial(materialDTO, "Admin");
+
+        return ResponseEntity.ok(createdMaterialDTO);
     }
 
     // 🟢 API kiểm tra mã nguyên vật liệu đã tồn tại chưa
@@ -111,7 +110,8 @@ public class MaterialsController {
             @RequestParam(value = "unitId", required = false) Long unitId,
             @RequestParam(value = "typeId", required = false) Long typeId,
             @RequestParam(value = "isUsingActive", required = false) Boolean isUsingActive,
-            @RequestParam(value = "image", required = false) MultipartFile image
+            @RequestParam(value = "image", required = false) MultipartFile image,
+            @RequestParam(value = "supplierIds", required = false) List<Long> supplierIds
     ) throws IOException {
         MaterialsDTO materialDTO = new MaterialsDTO();
         materialDTO.setMaterialCode(materialCode);
@@ -120,6 +120,7 @@ public class MaterialsController {
         materialDTO.setUnitId(unitId);
         materialDTO.setTypeId(typeId);
         materialDTO.setIsUsing(isUsingActive);
+        materialDTO.setSupplierIds(supplierIds);
 
         return ResponseEntity.ok(materialsService.updateMaterial(id, materialDTO, image));
     }

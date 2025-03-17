@@ -3,6 +3,8 @@ package vn.unistock.unistockmanagementsystem.features.user.materials;
 import lombok.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Data
@@ -26,4 +28,5 @@ public class MaterialsDTO {
     private String imageUrl;
     private Boolean isUsing;
     private MultipartFile image;
+    private List<Long> supplierIds;
 }

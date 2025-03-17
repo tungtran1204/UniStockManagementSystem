@@ -9,12 +9,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import vn.unistock.unistockmanagementsystem.entities.Material;
+import vn.unistock.unistockmanagementsystem.entities.MaterialPartner;
+import vn.unistock.unistockmanagementsystem.entities.Partner;
+import vn.unistock.unistockmanagementsystem.features.user.materialPartners.MaterialPartnerRepository;
+import vn.unistock.unistockmanagementsystem.features.user.materialPartners.MaterialPartnerService;
 import vn.unistock.unistockmanagementsystem.features.user.materialType.MaterialTypeRepository;
+import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerRepository;
 import vn.unistock.unistockmanagementsystem.features.user.units.UnitRepository;
 import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
 
+
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,8 +31,11 @@ public class MaterialsService {
     private final MaterialsRepository materialsRepository;
     private final UnitRepository unitRepository;
     private final MaterialTypeRepository materialTypeRepository;
-    private final MaterialsMapper materialsMapper = MaterialsMapper.INSTANCE;
+    private final MaterialsMapper materialsMapper;
     private final AzureBlobService azureBlobService;
+    private final MaterialPartnerRepository materialPartnerRepository;
+    private final PartnerRepository partnerRepository;
+    private final MaterialPartnerService materialPartnerService;
 
 
     // 🟢 Lấy tất cả nguyên liệu có phân trang
@@ -35,34 +46,65 @@ public class MaterialsService {
     }
 
     // 🟢 Tạo nguyên vật liệu mới
-    public Material createMaterial(MaterialsDTO materialDTO, String createdBy) {
+    @Transactional
+    public MaterialsDTO createMaterial(MaterialsDTO materialDTO, String createdBy) {
+        log.info("📌 [DEBUG] Creating Material: {}", materialDTO);
+
         Material material = new Material();
         material.setMaterialCode(materialDTO.getMaterialCode());
         material.setMaterialName(materialDTO.getMaterialName());
         material.setDescription(materialDTO.getDescription());
 
         if (materialDTO.getUnitId() != null) {
-            material.setUnit(unitRepository.findById(materialDTO.getUnitId()).orElseThrow(() ->
-                    new RuntimeException("Không tìm thấy đơn vị với ID: " + materialDTO.getUnitId())));        }
+            material.setUnit(unitRepository.findById(materialDTO.getUnitId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn vị với ID: " + materialDTO.getUnitId())));
+        }
         if (materialDTO.getTypeId() != null) {
-            material.setMaterialType(materialTypeRepository.findById(materialDTO.getTypeId()).orElseThrow(() ->
-                    new RuntimeException("Không tìm thấy danh mục với ID: " + materialDTO.getTypeId())));        }
+            material.setMaterialType(materialTypeRepository.findById(materialDTO.getTypeId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục với ID: " + materialDTO.getTypeId())));
+        }
 
-        // Đặt mặc định là true nếu không có giá trị
         material.setIsUsing(materialDTO.getIsUsing() != null ? materialDTO.getIsUsing() : true);
-
         material.setImageUrl(materialDTO.getImageUrl());
-        material.setCreatedBy((createdBy));
+        material.setCreatedBy(createdBy);
         material.setCreatedAt(LocalDateTime.now());
-        return materialsRepository.save(material);
+
+        Material savedMaterial = materialsRepository.save(material);
+
+        // ✅ Kiểm tra danh sách supplierIds
+        log.info("📌 [DEBUG] supplierIds received: {}", materialDTO.getSupplierIds());
+
+        if (materialDTO.getSupplierIds() != null && !materialDTO.getSupplierIds().isEmpty()) {
+            List<MaterialPartner> materialPartners = materialDTO.getSupplierIds().stream()
+                    .map(supplierId -> {
+                        Partner partner = partnerRepository.findById(supplierId)
+                                .orElseThrow(() -> new RuntimeException("Không tìm thấy nhà cung cấp với ID: " + supplierId));
+                        return new MaterialPartner(null, savedMaterial, partner);
+                    })
+                    .collect(Collectors.toList());
+
+            materialPartnerService.saveAll(materialPartners);
+            savedMaterial.getMaterialPartners().addAll(materialPartners);
+            log.info("✅ [SUCCESS] Saved MaterialPartners: {}", materialPartners.stream()
+                    .map(mp -> "MaterialPartner{id=" + mp.getId() + "}")
+                    .collect(Collectors.toList()));
+            } else {
+            log.warn("⚠️ [WARNING] No suppliers were provided or saved.");
+        }
+
+        return materialsMapper.toDTO(savedMaterial);
     }
+
+
 
     // 🟢 Lấy nguyên vật liệu theo ID
     public MaterialsDTO getMaterialById(Long materialId) {
-        Material material = materialsRepository.findById(materialId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nguyên vật liệu với ID: " + materialId));
+        Material material = materialsRepository.findByIdWithPartners(materialId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy vật tư với ID: " + materialId));
+
         return materialsMapper.toDTO(material);
     }
+
 
     // 🟢 Bật/tắt trạng thái sử dụng nguyên vật liệu
     @Transactional
@@ -118,4 +160,10 @@ public class MaterialsService {
         Material savedMaterial = materialsRepository.save(material);
         return materialsMapper.toDTO(savedMaterial);
     }
+
+    public Material getMaterialByIdRaw(Long materialId) {
+        return materialsRepository.findByIdWithPartners(materialId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy vật tư với ID: " + materialId));
+    }
+
 }
