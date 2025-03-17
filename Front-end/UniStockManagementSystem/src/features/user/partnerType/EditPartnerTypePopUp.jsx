@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { updatePartnerType } from "./partnerTypeService";
-import { Typography, Input, Textarea, Button, Select, Option } from "@material-tailwind/react";
+import {
+    Dialog,
+    DialogHeader,
+    DialogBody,
+    DialogFooter,
+    Typography,
+    Switch,
+    Button,
+    IconButton,
+} from "@material-tailwind/react";
+import {
+    TextField,
+    Divider,
+    Button as MuiButton
+} from "@mui/material";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 
 const EditPartnerTypePopup = ({ partnerType, onClose, onSuccess }) => {
     const [editPartnerType, setEditPartnerType] = useState(partnerType);
@@ -68,71 +83,180 @@ const EditPartnerTypePopup = ({ partnerType, onClose, onSuccess }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-[500px]">
-                <div className="flex justify-between items-center mb-4">
-                    <Typography variant="h6">Chỉnh sửa nhóm đối tác</Typography>
-                    <button className="text-gray-500 hover:text-gray-700" onClick={onClose}>✕</button>
-                </div>
-                {errorMessage && (
-                    <Typography variant="small" color="red" className="mb-4">
-                        {errorMessage}
+        <Dialog open={true} handler={onClose} size="md" className="px-4 py-2">
+            {/* Header của Dialog */}
+            <DialogHeader className="flex justify-between items-center pb-2">
+                <Typography variant="h4" color="blue-gray">
+                    Chỉnh sửa nhóm đối tác
+                </Typography>
+                <IconButton
+                    size="sm"
+                    variant="text"
+                    onClick={onClose}
+                >
+                    <XMarkIcon className="h-5 w-5 stroke-2" />
+                </IconButton>
+            </DialogHeader>
+            <Divider variant="middle" />
+            {/* Body của Dialog */}
+            <DialogBody className="space-y-4 pb-6 pt-6">
+                {errorMessage && <Typography variant="small" color="red" className="mb-4">{errorMessage}</Typography>}
+
+                {/* Mã nhóm đối tác */}
+                <div>
+                    <Typography variant="medium" className="text-black">
+                        Mã nhóm đối tác
+                        <span className="text-red-500"> *</span>
                     </Typography>
-                )}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="col-span-2">
-                        <Typography variant="small" className="mb-2">Mã nhóm đối tác *</Typography>
-                        <Input
-                            type="text"
-                            value={editPartnerType.typeCode}
-                            onChange={(e) => {
-                                setEditPartnerType({ ...editPartnerType, typeCode: e.target.value });
-                                setErrorTypeCode(""); // Reset lỗi khi user nhập lại
-                            }}
-                            className="w-full"
-                        />
-                        {errorTypeCode && <Typography variant="small" color="red">{errorTypeCode}</Typography>}
-                    </div>
-                    <div className="col-span-2">
-                        <Typography variant="small" className="mb-2">Tên nhóm đối tác *</Typography>
-                        <Input
-                            type="text"
-                            value={editPartnerType.typeName}
-                            onChange={(e) => {
-                                setEditPartnerType({ ...editPartnerType, typeName: e.target.value });
-                                setErrorTypeName(""); // Reset lỗi khi user nhập lại
-                            }}
-                            className="w-full"
-                        />
-                        {errorTypeName && <Typography variant="small" color="red">{errorTypeName}</Typography>}
-                    </div>
-                    <div className="col-span-2">
-                        <Typography variant="small" className="mb-2">Trạng thái</Typography>
-                        <Select
-                            value={editPartnerType.status ? "active" : "inactive"}
-                            onChange={(value) => setEditPartnerType({ ...editPartnerType, status: value === "active" })}
-                            className="w-full"
-                        >
-                            <Option value="active">Đang hoạt động</Option>
-                            <Option value="inactive">Ngừng hoạt động</Option>
-                        </Select>
-                    </div>
-                    <div className="col-span-2">
-                        <Typography variant="small" className="mb-2">Mô tả</Typography>
-                        <Textarea
-                            type="text"
-                            value={editPartnerType.description}
-                            onChange={(e) => setEditPartnerType({ ...editPartnerType, description: e.target.value })}
-                            className="w-full"
-                        />
-                    </div>
+                    <TextField
+                        fullWidth
+                        size="small"
+                        hiddenLabel
+                        placeholder="Mã nhóm đối tác"
+                        color="success"
+                        value={editPartnerType.typeCode}
+                        onChange={(e) => setEditPartnerType({ ...editPartnerType, typeCode: e.target.value })}
+                    />
+                    {errorTypeCode && <Typography variant="small" color="red">{errorTypeCode}</Typography>}
                 </div>
-                <div className="flex justify-end gap-2">
-                    <Button color="gray" onClick={onClose}>Hủy</Button>
-                    <Button color="blue" onClick={handleEditPartnerType}>Lưu</Button>
+
+                <div>
+                    <Typography variant="medium" className="text-black">
+                        Tên nhóm đối tác
+                        <span className="text-red-500"> *</span>
+                    </Typography>
+                    <TextField
+                        fullWidth
+                        size="small"
+                        hiddenLabel
+                        placeholder="Tên nhóm đối tác"
+                        variant="outlined"
+                        color="success"
+                        value={editPartnerType.typeName}
+                        onChange={(e) => setEditPartnerType({ ...editPartnerType, typeName: e.target.value })}
+                    />
                 </div>
-            </div>
-        </div>
+
+                <div>
+                    <Typography variant="medium" className="text-black">
+                        Trạng thái
+                        <span className="text-red-500"> *</span>
+                    </Typography>
+                    <Switch
+                        label={editPartnerType.status ? "Đang hoạt động" : "Vô hiệu hóa"}
+                        checked={editPartnerType.status}
+                        onChange={(e) => setEditPartnerType({ ...editPartnerType, status: e.target.checked })}
+                        color="green"
+                    />
+                </div>
+
+                {/* Mô tả */}
+                <div>
+                    <Typography variant="medium" className="text-black">
+                        Mô tả
+                    </Typography>
+                    <TextField
+                        fullWidth
+                        size="small"
+                        hiddenLabel
+                        placeholder="Mô tả"
+                        variant="outlined"
+                        multiline
+                        rows={4}
+                        color="success"
+                        value={editPartnerType.description}
+                        onChange={(e) => setEditPartnerType({ ...editPartnerType, description: e.target.value })}
+                    />
+                </div>
+            </DialogBody>
+
+            {/* Footer của Dialog */}
+            <DialogFooter className="pt-0">
+                <MuiButton
+                    size="medium"
+                    color="error"
+                    variant="outlined"
+                    onClick={onClose}
+                >
+                    Hủy
+                </MuiButton>
+                <Button
+                    size="lg"
+                    color="white"
+                    variant="text"
+                    className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-3 rounded-[4px] transition-all duration-200 ease-in-out"
+                    ripple={true}
+                    onClick={handleEditPartnerType}
+                >
+                    Lưu
+                </Button>
+            </DialogFooter>
+        </Dialog>
+        // <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        //     <div className="bg-white rounded-lg p-6 w-[500px]">
+        //         <div className="flex justify-between items-center mb-4">
+        //             <Typography variant="h6">Chỉnh sửa nhóm đối tác</Typography>
+        //             <button className="text-gray-500 hover:text-gray-700" onClick={onClose}>✕</button>
+        //         </div>
+        //         {errorMessage && (
+        //             <Typography variant="small" color="red" className="mb-4">
+        //                 {errorMessage}
+        //             </Typography>
+        //         )}
+        //         <div className="grid grid-cols-2 gap-4 mb-4">
+        //             <div className="col-span-2">
+        //                 <Typography variant="small" className="mb-2">Mã nhóm đối tác *</Typography>
+        //                 <Input
+        //                     type="text"
+        //                     value={editPartnerType.typeCode}
+        //                     onChange={(e) => {
+        //                         setEditPartnerType({ ...editPartnerType, typeCode: e.target.value });
+        //                         setErrorTypeCode(""); // Reset lỗi khi user nhập lại
+        //                     }}
+        //                     className="w-full"
+        //                 />
+        //                 {errorTypeCode && <Typography variant="small" color="red">{errorTypeCode}</Typography>}
+        //             </div>
+        //             <div className="col-span-2">
+        //                 <Typography variant="small" className="mb-2">Tên nhóm đối tác *</Typography>
+        //                 <Input
+        //                     type="text"
+        //                     value={editPartnerType.typeName}
+        //                     onChange={(e) => {
+        //                         setEditPartnerType({ ...editPartnerType, typeName: e.target.value });
+        //                         setErrorTypeName(""); // Reset lỗi khi user nhập lại
+        //                     }}
+        //                     className="w-full"
+        //                 />
+        //                 {errorTypeName && <Typography variant="small" color="red">{errorTypeName}</Typography>}
+        //             </div>
+        //             <div className="col-span-2">
+        //                 <Typography variant="small" className="mb-2">Trạng thái</Typography>
+        //                 <Select
+        //                     value={editPartnerType.status ? "active" : "inactive"}
+        //                     onChange={(value) => setEditPartnerType({ ...editPartnerType, status: value === "active" })}
+        //                     className="w-full"
+        //                 >
+        //                     <Option value="active">Đang hoạt động</Option>
+        //                     <Option value="inactive">Ngừng hoạt động</Option>
+        //                 </Select>
+        //             </div>
+        //             <div className="col-span-2">
+        //                 <Typography variant="small" className="mb-2">Mô tả</Typography>
+        //                 <Textarea
+        //                     type="text"
+        //                     value={editPartnerType.description}
+        //                     onChange={(e) => setEditPartnerType({ ...editPartnerType, description: e.target.value })}
+        //                     className="w-full"
+        //                 />
+        //             </div>
+        //         </div>
+        //         <div className="flex justify-end gap-2">
+        //             <Button color="gray" onClick={onClose}>Hủy</Button>
+        //             <Button color="blue" onClick={handleEditPartnerType}>Lưu</Button>
+        //         </div>
+        //     </div>
+        // </div>
     );
 };
 

@@ -14,6 +14,9 @@ import Select from "react-select";
 import axios from "axios";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
+import PageHeader from '@/components/PageHeader';
+import TableSearch from '@/components/TableSearch';
+import Table from "@/components/Table";
 
 const authHeader = () => {
     const token = localStorage.getItem("token");

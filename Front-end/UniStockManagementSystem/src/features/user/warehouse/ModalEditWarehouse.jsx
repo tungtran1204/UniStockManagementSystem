@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from "react";
 import {
-  Typography,
-  Button,
-  Input,
-  Textarea,
+    Dialog,
+    DialogHeader,
+    DialogBody,
+    DialogFooter,
+    Typography,
+    Button,
+    IconButton,
 } from "@material-tailwind/react";
+import { TextField, Divider, Button as MuiButton } from "@mui/material";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import useWarehouse from "./useWarehouse";
 
 const ModalEditWarehouse = ({ open, onClose, warehouse, fetchWarehouses }) => {
@@ -26,7 +31,7 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, fetchWarehouses }) => {
 
   const validateFields = (field, value) => {
     let errors = { ...error };
-    
+
     if (field === "warehouseCode") {
       if (!value.trim()) {
         errors.warehouseCode = "Mã kho không được để trống.";
@@ -54,13 +59,13 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, fetchWarehouses }) => {
         delete errors.warehouseDescription;
       }
     }
-    
+
     setError(errors);
   };
 
   const handleUpdate = async () => {
     if (Object.keys(error).length > 0) return;
-    
+
     setLoading(true);
     try {
       await editWarehouse(warehouse.warehouseId, { warehouseCode, warehouseName, warehouseDescription });
@@ -78,29 +83,57 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, fetchWarehouses }) => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-[600px] max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <Typography variant="h6">Chỉnh sửa kho</Typography>
-          <button className="text-gray-500 hover:text-gray-700" onClick={onClose}>✕</button>
-        </div>
+    <Dialog open={true} handler={onClose} size="md" className="px-4 py-2">
+      {/* Header của Dialog */}
+      <DialogHeader className="flex justify-between items-center pb-2">
+        <Typography variant="h4" color="blue-gray">
+          Chỉnh sửa kho
+        </Typography>
+        <IconButton
+          size="sm"
+          variant="text"
+          onClick={onClose}
+        >
+          <XMarkIcon className="h-5 w-5 stroke-2" />
+        </IconButton>
+      </DialogHeader>
+      <Divider variant="middle" />
+      {/* Body của Dialog */}
+      <DialogBody className="space-y-4 pb-6 pt-6">
 
-        <div className="grid grid-cols-12 gap-4">
-          <div className="col-span-6">
-            <Input
-              label="Mã kho*"
+        {/* Mã kho & Tên kho */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Typography variant="medium" className="text-black">
+              Mã kho
+              <span className="text-red-500"> *</span>
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              hiddenLabel
+              placeholder="Mã kho"
+              color="success"
               value={warehouseCode}
               onChange={(e) => {
                 setWarehouseCode(e.target.value);
                 validateFields("warehouseCode", e.target.value);
               }}
-              error={!!error.warehouseCode}
+              error={!!error.warehouseName}
             />
             {error.warehouseCode && <Typography variant="small" color="red">{error.warehouseCode}</Typography>}
           </div>
-          <div className="col-span-6">
-            <Input
-              label="Tên kho*"
+          <div>
+            <Typography variant="medium" className="text-black">
+              Tên kho
+              <span className="text-red-500"> *</span>
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              hiddenLabel
+              placeholder="Tên kho"
+              color="success"
               value={warehouseName}
               onChange={(e) => {
                 setWarehouseName(e.target.value);
@@ -110,28 +143,56 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, fetchWarehouses }) => {
             />
             {error.warehouseName && <Typography variant="small" color="red">{error.warehouseName}</Typography>}
           </div>
-          <div className="col-span-12">
-            <Textarea
-              label="Mô tả"
-              value={warehouseDescription}
-              onChange={(e) => {
-                setDescription(e.target.value);
-                validateFields("warehouseDescription", e.target.value);
-              }}
-            />
-            {error.warehouseDescription && <Typography variant="small" color="red">{error.warehouseDescription}</Typography>}
-          </div>
         </div>
 
-        <div className="flex justify-end gap-2 mt-4">
-          <Button color="gray" onClick={onClose} disabled={loading}>Hủy</Button>
-          <Button color="blue" onClick={handleUpdate} disabled={loading || Object.keys(error).length > 0}>
-            {loading ? "Đang xử lý..." : "Cập nhật"}
-          </Button>
+        {/* Mô tả */}
+        <div>
+          <Typography variant="medium" className="text-black">
+            Mô tả
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            hiddenLabel
+            placeholder="Mô tả"
+            variant="outlined"
+            multiline
+            rows={3}
+            color="success"
+            value={warehouseDescription}
+            onChange={(e) => {
+              setDescription(e.target.value);
+              validateFields("warehouseDescription", e.target.value);
+            }}
+          />
+          {error.warehouseDescription && <Typography variant="small" color="red">{error.warehouseDescription}</Typography>}
         </div>
-      </div>
-    </div>
+      </DialogBody>
+
+      {/* Footer của Dialog */}
+      <DialogFooter className="pt-0">
+        <MuiButton
+          size="medium"
+          color="error"
+          variant="outlined"
+          onClick={onClose}
+        >
+          Hủy
+        </MuiButton>
+        <Button
+          size="lg"
+          color="white"
+          variant="text"
+          className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-3 rounded-[4px] transition-all duration-200 ease-in-out"
+          ripple={true}
+          onClick={handleUpdate}
+        >
+          Lưu
+        </Button>
+      </DialogFooter>
+    </Dialog>
   );
 };
 
 export default ModalEditWarehouse;
+

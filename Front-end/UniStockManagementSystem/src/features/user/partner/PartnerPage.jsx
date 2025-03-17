@@ -77,7 +77,7 @@ const PartnerPage = () => {
                 return (
                     <Stack direction="column">
                         {params.value.map((code, index) => (
-                            <Typography key={index} className="text-xs font-semibold block">
+                            <Typography key={index} className="block font-normal text-sm text-black">
                                 {code}
                             </Typography>
                         ))}
