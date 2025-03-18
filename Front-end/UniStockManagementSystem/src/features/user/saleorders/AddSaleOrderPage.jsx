@@ -23,7 +23,7 @@ import PageHeader from '@/components/PageHeader';
 import TableSearch from "@/components/TableSearch";
 import Table from "@/components/Table";
 
-const CUSTOMER_TYPE_ID = 1;
+const CUSTOMER_TYPE_ID = 2;
 
 const AddCustomerDropdownIndicator = (props) => {
   return (

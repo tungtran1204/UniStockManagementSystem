@@ -9,10 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import vn.unistock.unistockmanagementsystem.entities.Product;
-import vn.unistock.unistockmanagementsystem.entities.Partner;
-import vn.unistock.unistockmanagementsystem.entities.SalesOrder;
-import vn.unistock.unistockmanagementsystem.entities.User;
+import vn.unistock.unistockmanagementsystem.entities.*;
 import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerRepository;
 import vn.unistock.unistockmanagementsystem.features.user.products.ProductsRepository;
 import vn.unistock.unistockmanagementsystem.security.filter.CustomUserDetails;
@@ -98,6 +95,38 @@ public class SaleOrdersService {
         SalesOrder savedOrder = saleOrdersRepository.save(order);
         return saleOrdersMapper.toDTO(savedOrder);
     }
+    public SaleOrdersDTO updateSaleOrder(Long orderId, SaleOrdersDTO saleOrdersDTO) {
+        SalesOrder existingOrder = saleOrdersRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found with ID: " + orderId));
 
+        Partner partner = partnerRepository.findByPartnerCode(saleOrdersDTO.getPartnerCode())
+                .orElseThrow(() -> new RuntimeException(
+                        "Không tìm thấy Partner với code: " + saleOrdersDTO.getPartnerCode()
+                ));
+
+        partner.setPartnerName(saleOrdersDTO.getPartnerName());
+        partner.setAddress(saleOrdersDTO.getAddress());
+        partner.setPhone(saleOrdersDTO.getPhoneNumber());
+        partner.setContactName(saleOrdersDTO.getContactName());
+
+        SalesOrder newOrderData = saleOrdersMapper.toEntity(saleOrdersDTO);
+
+        newOrderData.setPartner(partner);
+
+        newOrderData.setOrderId(existingOrder.getOrderId());
+
+        if (newOrderData.getDetails() != null) {
+            for (SalesOrderDetail detail : newOrderData.getDetails()) {
+                detail.setSalesOrder(newOrderData);
+
+            }
+        }
+        newOrderData.setCreatedByUser(existingOrder.getCreatedByUser());
+        newOrderData.setCreatedAt(existingOrder.getCreatedAt());
+
+        SalesOrder savedOrder = saleOrdersRepository.save(newOrderData);
+
+        return saleOrdersMapper.toDTO(savedOrder);
+    }
 
 }

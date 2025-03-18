@@ -89,3 +89,18 @@ export const getProducts = async () => {
     throw error;
   }
 };
+
+export const updateOrder = async (orderId, orderData) => {
+  try {
+    const response = await axios.put(
+      `${API_URL}/${orderId}`,
+      orderData,
+      { headers: authHeader() }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật đơn hàng:", error);
+    throw error; 
+  }
+  
+};
