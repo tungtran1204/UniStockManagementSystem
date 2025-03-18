@@ -16,7 +16,9 @@ import useSaleOrder from "./useSaleOrder";
 import { getPartnersByType } from "@/features/user/partner/partnerService";
 import { getProducts, getSaleOrderById } from "./saleOrdersService";
 import ModalAddCustomer from "./ModalAddCustomer";
-import PageHeader from "@/components/PageHeader";
+import PageHeader from '@/components/PageHeader';
+import TableSearch from '@/components/TableSearch';
+import Table from "@/components/Table";
 
 const CUSTOMER_TYPE_ID = 2;
 
@@ -56,8 +58,8 @@ const customStyles = {
     backgroundColor: state.isFocused
       ? "#f3f4f6"
       : state.isSelected
-      ? "#e5e7eb"
-      : "transparent",
+        ? "#e5e7eb"
+        : "transparent",
     color: "#000",
     cursor: "pointer",
     "&:active": {
@@ -113,9 +115,27 @@ const EditSaleOrderPage = () => {
   const selectRef = useRef(null);
 
   const [showStockColumns, setShowStockColumns] = useState(false);
+  // Quản lý ẩn/hiện cột qua columnVisibilityModel
+  const [columnVisibilityModel, setColumnVisibilityModel] = useState({
+    stt: true,
+    productCode: true,
+    productName: true,
+    unitName: true,
+    quantity: true,
+    inStock: false,       // ẩn mặc định
+    usedQuantity: false,  // ẩn mặc định
+    produceQuantity: true,
+    actions: true,
+  });
 
   const toggleStockColumns = () => {
-    setShowStockColumns((prev) => !prev);
+    setShowStockColumns(prev => !prev);
+    // Cập nhật cột inStock, usedQuantity
+    setColumnVisibilityModel(prev => ({
+      ...prev,
+      inStock: !prev.inStock,         // từ false -> true, hoặc ngược lại
+      usedQuantity: !prev.usedQuantity
+    }));
   };
 
   //================= Lấy dữ liệu đơn hàng =================
@@ -285,7 +305,7 @@ const EditSaleOrderPage = () => {
     setItems((prev) => [
       ...prev,
       {
-        id: `new-${nextId}`, // Tạo ID tạm để FE quản lý
+        id: `new-${nextId + 1}`, // Tạo ID tạm để FE quản lý
         productId: null,
         productCode: "",
         productName: "",
@@ -319,12 +339,12 @@ const EditSaleOrderPage = () => {
       prev.map((row) =>
         row.id === rowId
           ? {
-              ...row,
-              productId: selectedOption.productId,
-              productCode: selectedOption.value,
-              productName: selectedOption.label,
-              unitName: selectedOption.unit,
-            }
+            ...row,
+            productId: selectedOption.productId,
+            productCode: selectedOption.value,
+            productName: selectedOption.label,
+            unitName: selectedOption.unit,
+          }
           : row
       )
     );
@@ -468,6 +488,188 @@ const EditSaleOrderPage = () => {
     setIsCreatePartnerPopupOpen(false);
   };
 
+  // columnsConfig: Mỗi phần tử là 1 cột, map đến field trong items
+  // Ta có các cột: STT, productCode, productName, unitName, quantity, inStock, usedQuantity, produceQuantity, actions
+  const columnsConfig = [
+    {
+      field: "stt",
+      headerName: "STT",
+      minWidth: 60,
+      editable: isEditing,
+      renderCell: (params) => {
+        return params.id; // Return 1-based index
+      },
+    },
+    {
+      field: "productCode",
+      headerName: "Mã hàng",
+      minWidth: 150,
+      editable: false, // chỉ cho sửa nếu isEditing = true
+      // Ở đây bạn có thể render 1 <Select> (react-select) giống code cũ
+      // Tuỳ vào "item" => params.row
+      renderCell: (params) => {
+        const rowData = params.row; // item tương ứng
+        return (
+          <Select
+            placeholder="Chọn sản phẩm"
+            options={products}
+            styles={customStyles}
+            className="w-28 text-sm"
+            // mapping: rowData.productCode => "value"
+            value={products.find((p) => p.value === rowData.productCode) || null}
+            onChange={(selectedOption) =>
+              handleSelectProduct(rowData.id, selectedOption)
+            }
+            isSearchable
+            isDisabled={!isEditing}
+          />
+        );
+      },
+    },
+    {
+      field: "productName",
+      headerName: "Tên hàng",
+      minWidth: 200,
+      editable: isEditing,
+      renderCell: (params) => {
+        return (
+          <input
+            disabled
+            className="text-sm bg-transparent outline-none border-none w-full"
+            value={params.row.productName || ""}
+            readOnly
+          />
+        );
+      },
+    },
+    {
+      field: "unitName",
+      headerName: "Đơn vị",
+      minWidth: 100,
+      editable: isEditing,
+      renderCell: (params) => {
+        return (
+          <input
+            disabled
+            className="text-sm bg-transparent outline-none border-none w-full"
+            value={params.row.unitName || ""}
+            readOnly
+          />
+        );
+      },
+    },
+    {
+      field: "quantity",
+      headerName: "Số lượng",
+      minWidth: 100,
+      editable: isEditing,
+      renderCell: (params) => {
+        const rowData = params.row;
+        return (
+          <>
+            <input
+              type="number"
+              className="w-14 text-sm"
+              value={rowData.quantity || 0}
+              disabled={!isEditing}
+              onChange={(e) => handleQuantityChange(rowData.id, e.target.value)}
+            />
+            {itemsErrors[rowData.id]?.quantityError && (
+              <span style={{ color: "red", fontSize: "0.75rem" }}>
+                {itemsErrors[rowData.id].quantityError}
+              </span>
+            )}
+          </>
+        );
+      },
+    },
+
+    // Nếu đang "Xem tồn kho" => hiển thị inStock, usedQuantity
+    // Ngược lại => ẩn 2 cột này. => Cách đơn giản: định nghĩa cột,
+    // sau đó tuỳ `showStockColumns` để hiển thị/ẩn (hide: true/false).
+    {
+      field: "inStock",
+      headerName: "Tồn kho",
+      minWidth: 100,
+      editable: isEditing,
+      renderCell: (params) => {
+        const rowData = params.row;
+        return (
+          <input
+            type="number"
+            className="w-14 text-sm"
+            value={rowData.inStock || 0}
+            disabled={!isEditing}
+            onChange={(e) => handleInStockChange(rowData.id, e.target.value)}
+          />
+        );
+      },
+    },
+    {
+      field: "usedQuantity",
+      headerName: "SL sử dụng",
+      minWidth: 100,
+      editable: isEditing,
+      renderCell: (params) => {
+        const rowData = params.row;
+        return (
+          <input
+            type="number"
+            className="w-14 text-sm"
+            value={rowData.usedQuantity || 0}
+            disabled={!isEditing}
+            onChange={(e) => handleUsedQuantityChange(rowData.id, e.target.value)}
+          />
+        );
+      },
+    },
+    {
+      field: "produceQuantity",
+      headerName: "SL sản xuất",
+      minWidth: 100,
+      editable: isEditing,
+      renderCell: (params) => {
+        const rowData = params.row;
+        return (
+          <input
+            type="number"
+            className="w-14 text-sm"
+            value={rowData.produceQuantity || 0}
+            disabled={!isEditing}
+            onChange={(e) =>
+              handleProduceQuantityChange(rowData.id, e.target.value)
+            }
+          />
+        );
+      },
+    },
+    {
+      field: "actions",
+      headerName: "Thao tác",
+      minWidth: 120,
+      // Không chỉnh sửa cột này
+      editable: false,
+      renderCell: (params) => {
+        const rowData = params.row;
+        return isEditing ? (
+          <Button
+            color="error"
+            variant="text"
+            size="small"
+            onClick={() => handleDeleteRow(rowData.id)}
+          >
+            Xoá
+          </Button>
+        ) : null;
+      },
+    },
+  ];
+
+  const rows = items.map((row, index) => ({
+    id: index + 1,
+    ...row,
+  }));
+
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: "calc(100vh - 180px)" }}>
       <Card className="bg-gray-50 p-7">
@@ -484,21 +686,19 @@ const EditSaleOrderPage = () => {
           <div className="mb-4 flex border-b">
             <button
               onClick={() => setActiveTab("info")}
-              className={`py-2 px-4 ${
-                activeTab === "info"
-                  ? "border-b-2 border-blue-500 text-blue-500"
-                  : "text-gray-500"
-              }`}
+              className={`py-2 px-4 ${activeTab === "info"
+                ? "border-b-2 border-blue-500 text-blue-500"
+                : "text-gray-500"
+                }`}
             >
               Thông tin đơn hàng
             </button>
             <button
               onClick={() => setActiveTab("products")}
-              className={`py-2 px-4 ${
-                activeTab === "products"
-                  ? "border-b-2 border-blue-500 text-blue-500"
-                  : "text-gray-500"
-              }`}
+              className={`py-2 px-4 ${activeTab === "products"
+                ? "border-b-2 border-blue-500 text-blue-500"
+                : "text-gray-500"
+                }`}
             >
               Danh sách sản phẩm
             </button>
@@ -669,12 +869,19 @@ const EditSaleOrderPage = () => {
               </div>
 
               {/* Bảng chi tiết hàng */}
-              <div className="border border-gray-200 rounded mb-4">
-                {/* Bật table-fixed để cố định chiều rộng */}
+              <Table
+                data={rows}                 // Mảng items từ state
+                columnsConfig={columnsConfig}
+                enableSelection={false}
+                columnVisibilityModel={columnVisibilityModel}
+                onColumnVisibilityModelChange={setColumnVisibilityModel}      // Có cần chọn nhiều dòng không?
+              />
+              {/* <div className="border border-gray-200 rounded mb-4">
+                Bật table-fixed để cố định chiều rộng
                 <table className="table-fixed w-full text-left border-collapse">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      {/* Cố định width cho từng <th> */}
+                      Cố định width cho từng <th>
                       <th className=" w-5 px-2 py-2 text-sm font-semibold text-gray-600 border-r">
                         STT
                       </th>
@@ -719,7 +926,7 @@ const EditSaleOrderPage = () => {
                           <td className="px-2 py-2 text-sm text-gray-700 border-r text-left">
                             {index + 1}
                           </td>
-                          {/* Mã hàng (chọn từ dropdown) */}
+                          Mã hàng (chọn từ dropdown)
                           <td className="px-2 py-2 text-sm border-r">
                             <Select
                               placeholder="Chọn sản phẩm"
@@ -743,7 +950,7 @@ const EditSaleOrderPage = () => {
                               </Typography>
                             )}
                           </td>
-                          {/* Tên hàng */}
+                          Tên hàng
                           <td className="px-2 py-2 text-sm border-r">
                             <Input
                               className=" text-sm"
@@ -751,7 +958,7 @@ const EditSaleOrderPage = () => {
                               disabled
                             />
                           </td>
-                          {/* Đơn vị */}
+                          Đơn vị
                           <td className="px-2 py-2 text-sm border-r">
                             <Input
                               className="w-14 text-sm"
@@ -759,7 +966,7 @@ const EditSaleOrderPage = () => {
                               disabled
                             />
                           </td>
-                          {/* Số lượng */}
+                          Số lượng
                           <td className="px-2 py-2 text-sm border-r">
                             <Input
                               type="number"
@@ -796,7 +1003,7 @@ const EditSaleOrderPage = () => {
                               </td>
                             </>
                           )}
-                          {/* Số lượng cần sản xuất */}
+                          Số lượng cần sản xuất
                           <td className="px-2 py-2 text-sm border-r">
                             <Input
                               type="number"
@@ -809,7 +1016,7 @@ const EditSaleOrderPage = () => {
                             />
                           </td>
                           
-                          {/* Thao tác */}
+                          Thao tác
                           <td className="px-2 py-2 text-sm text-center">
                             {isEditing && (
                               <Button
@@ -833,7 +1040,7 @@ const EditSaleOrderPage = () => {
                     )}
                   </tbody>
                 </table>
-              </div>
+              </div> */}
 
               {/* Nút thêm / xóa dòng (chỉ hiển thị khi đang chỉnh sửa) */}
               {isEditing && (
