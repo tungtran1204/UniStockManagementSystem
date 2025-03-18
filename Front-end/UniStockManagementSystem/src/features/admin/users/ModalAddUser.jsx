@@ -4,13 +4,15 @@ import {
   DialogHeader,
   DialogBody,
   DialogFooter,
-  Input,
-  Button,
   Switch,
+  Button,
+  IconButton,
   Typography,
 } from "@material-tailwind/react";
+import { TextField, Divider, Button as MuiButton } from "@mui/material";
 import { getAllRoles } from "../roles/roleService";
 import { checkEmailExists, createUser } from "../users/userService";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const ModalAddUser = ({ open, onClose, fetchUsers }) => {
@@ -110,7 +112,7 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
       username: email.split("@")[0],
       email,
       password,
-      isActive,
+      isActive: true,
       roleIds: Array.from(selectedRoles),
       userDetail: {
         fullname,
@@ -138,41 +140,93 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
   };
 
   return (
-    <Dialog open={open} handler={onClose} size="md" className="rounded-lg shadow-lg">
-      <DialogHeader className="text-lg font-bold text-gray-800">Thêm Người Dùng</DialogHeader>
-      <DialogBody className="space-y-4">
+    <Dialog open={true} handler={onClose} size="md" className="px-4 py-2">
+      {/* Header của Dialog */}
+      <DialogHeader className="flex justify-between items-center pb-2">
+        <Typography variant="h4" color="blue-gray">
+          Thêm người dùng
+        </Typography>
+        <IconButton
+          size="sm"
+          variant="text"
+          onClick={onClose}
+        >
+          <XMarkIcon className="h-5 w-5 stroke-2" />
+        </IconButton>
+      </DialogHeader>
+      <Divider variant="middle" />
+      {/* Body của Dialog */}
+      <DialogBody className="space-y-4 pb-6 pt-6">
+
+        {/* Tên người dùng */}
         <div>
-          <Typography variant="small" className="mb-2">Họ và Tên *</Typography>
-          <Input
-            type="text"
+          <Typography variant="medium" className="text-black">
+            Họ và tên
+            <span className="text-red-500"> *</span>
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            hiddenLabel
+            placeholder="Họ và tên"
+            color="success"
             value={fullname}
             onChange={(e) => setFullname(e.target.value)}
-            required
-            className="w-full"
           />
+        </div>
+
+        {/* Email */}
+        <div>
+          <Typography variant="medium" className="text-black">
+            Email
+            <span className="text-red-500"> *</span>
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            hiddenLabel
+            placeholder="Email"
+            color="success"
+            value={email}
+            onChange={(e) => handleCheckEmail(e.target.value)}
+          />
+          {emailError && <Typography variant="small" color="red">{emailError}</Typography>}
         </div>
 
         <div>
-          <Typography variant="small" className="mb-2">Email *</Typography>
-          <Input
-            type="email"
-            value={email}
-            onChange={(e) => handleCheckEmail(e.target.value)}
-            required
-            className={`w-full ${emailError ? 'border-red-500' : ''}`}
+          <Typography variant="medium" className="text-black">
+            Số điện thoại
+            <span className="text-red-500"> *</span>
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            hiddenLabel
+            placeholder="Số điện thoại"
+            variant="outlined"
+            color="success"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
           />
-          {emailError && <Typography className="text-xs text-red-500 mt-1">{emailError}</Typography>}
         </div>
 
+        {/* Mật khẩu */}
         <div className="relative">
-          <Typography variant="small" className="mb-2">Mật khẩu *</Typography>
+          <Typography variant="medium" className="text-black">
+            Mật khẩu
+            <span className="text-red-500"> *</span>
+          </Typography>
           <div className="relative">
-            <Input
+            <TextField
+              fullWidth
+              size="small"
               type={showPassword ? "text" : "password"}
+              hiddenLabel
+              placeholder="Mật khẩu"
+              variant="outlined"
+              color="success"
               value={password}
               onChange={(e) => handlePasswordChange(e.target.value)}
-              required
-              className={`w-full ${passwordError ? 'border-red-500' : ''}`}
             />
             <button
               type="button"
@@ -182,64 +236,75 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
               {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
             </button>
           </div>
-          {passwordError && <Typography className="text-xs text-red-500 mt-1">{passwordError}</Typography>}
+          {passwordError && <Typography variant="small" color="red">{passwordError}</Typography>}
         </div>
 
-        <div>
-          <Typography variant="small" className="mb-2">Số điện thoại *</Typography>
-          <Input
-            type="tel"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            required
-            className="w-full"
-          />
-        </div>
-
-        <div className="flex flex-col">
-          <Typography variant="small" className="mb-2">Chọn Vai Trò:</Typography>
-          <div className="flex flex-wrap gap-2">
-            {roles
-              .filter((r) => r.name !== "USER" && r.name !== "ADMIN").length > 0 ? (
-              roles
-                .filter((r) => r.name !== "USER" && r.name !== "ADMIN")
-                .map((r) => (
-                  <button
-                    key={r.id}
-                    onClick={() => handleRoleChange(r.id)}
-                    className={`px-4 py-2 text-sm rounded-lg transition-all ${
-                      selectedRoles.has(r.id)
+        <div className="grid grid-cols-3">
+          {/* Vai trò */}
+          <div className="col-span-2">
+            <Typography variant="medium" className="text-black">
+              Vai trò
+            </Typography>
+            <div className="flex flex-wrap gap-2">
+              {roles
+                .filter((r) => r.name !== "USER" && r.name !== "ADMIN").length > 0 ? (
+                roles
+                  .filter((r) => r.name !== "USER" && r.name !== "ADMIN")
+                  .map((r) => (
+                    <button
+                      key={r.id}
+                      onClick={() => handleRoleChange(r.id)}
+                      className={`px-4 py-2 text-sm rounded-lg transition-all ${selectedRoles.has(r.id)
                         ? "bg-blue-500 text-white shadow-md"
                         : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                    }`}
-                  >
-                    {r.name}
-                  </button>
-                ))
-            ) : (
-              <p className="text-sm text-gray-500">Không có sẵn vai trò.</p>
-            )}
+                        }`}
+                    >
+                      {r.name}
+                    </button>
+                  ))
+              ) : (
+                <p className="text-sm text-gray-500">Không có sẵn vai trò.</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <div>
+              <Typography variant="medium" className="text-black">
+                Trạng thái
+                <span className="text-red-500"> *</span>
+              </Typography>
+              <Switch
+                label={isActive ? "Đang hoạt động" : "Vô hiệu hóa"}
+                checked={isActive}
+                onChange={() => setIsActive(!isActive)}
+                color="green"
+              />
+            </div>
           </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          <Typography variant="small" className="mb-0 mr-2">Trạng thái:</Typography>
-          <Switch color="green" checked={isActive} onChange={() => setIsActive(!isActive)} />
-          <span>{isActive ? "Hoạt động" : "Vô hiệu hóa"}</span>
-        </div>
-        
-        {error && <Typography className="text-sm text-red-500">{error}</Typography>}
       </DialogBody>
 
-      <DialogFooter className="flex justify-end">
-        <div className="flex gap-2">
-          <Button variant="text" color="red" onClick={onClose}>
-            Hủy
-          </Button>
-          <Button color="green" onClick={handleAddUser} disabled={loading}>
-            {loading ? "Đang tạo..." : "Lưu"}
-          </Button>
-        </div>
+      {/* Footer của Dialog */}
+      <DialogFooter className="pt-0">
+        <MuiButton
+          size="medium"
+          color="error"
+          variant="outlined"
+          onClick={onClose}
+        >
+          Hủy
+        </MuiButton>
+        <Button
+          size="lg"
+          color="white"
+          variant="text"
+          className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-3 rounded-[4px] transition-all duration-200 ease-in-out"
+          ripple={true}
+          onClick={handleAddUser}
+        >
+          Lưu
+        </Button>
       </DialogFooter>
     </Dialog>
   );
