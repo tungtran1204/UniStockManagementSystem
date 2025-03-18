@@ -2,7 +2,7 @@ import * as React from 'react';
 import { DataGrid, GridCellModes } from '@mui/x-data-grid';
 import { Stack, Button } from '@mui/material';
 
-const SingleClickEditing = ({ data, columnsConfig, enableSelection }) => {
+const SingleClickEditing = ({ data, columnsConfig, enableSelection, columnVisibilityModel, onColumnVisibilityModelChange, }) => {
     const [cellModesModel, setCellModesModel] = React.useState({});
     const [selectedRows, setSelectedRows] = React.useState([]);
 
@@ -54,10 +54,11 @@ const SingleClickEditing = ({ data, columnsConfig, enableSelection }) => {
             <DataGrid
                 rows={rows}
                 columns={columns}
-                getRowId={(row) => row.id || row.index}
                 cellModesModel={cellModesModel}
                 onCellModesModelChange={handleCellModesModelChange}
                 onCellClick={handleCellClick}
+                columnVisibilityModel={columnVisibilityModel}
+                onColumnVisibilityModelChange={onColumnVisibilityModelChange}
                 columnHeaderHeight={40}
                 getRowHeight={() => 'auto'}
                 hideFooter={true}
