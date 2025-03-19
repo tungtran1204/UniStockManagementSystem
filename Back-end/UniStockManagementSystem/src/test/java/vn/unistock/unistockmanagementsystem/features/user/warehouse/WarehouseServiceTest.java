@@ -543,6 +543,20 @@ class WarehouseServiceTest {
 
             verify(warehouseRepository, never()).deleteById(any());
         }
+        @Test
+        @DisplayName("Xóa kho với ID rất lớn")
+        void testDeleteWarehouse_VeryLargeId() {
+            // Arrange
+            doThrow(new RuntimeException("Không tìm thấy kho")).when(warehouseRepository).deleteById(Long.MAX_VALUE);
+
+            // Act & Assert
+            RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+                warehouseService.deleteWarehouse(Long.MAX_VALUE);
+            });
+
+            assertEquals("Không tìm thấy kho", exception.getMessage());
+            verify(warehouseRepository).deleteById(Long.MAX_VALUE);
+        }
     }
 
     @Nested
