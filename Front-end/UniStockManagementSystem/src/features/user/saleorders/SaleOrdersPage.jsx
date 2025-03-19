@@ -49,7 +49,7 @@ const SaleOrdersPage = () => {
   };
 
   const handleEditOrder = async (order) => {
-    navigate(`/user/sale-orders/${order.orderId}`, { state: { order } });
+    navigate(`/user/sale-orders/${order.id}`, { state: { order } });
   };
 
   const handlePageChange = (selectedItem) => {

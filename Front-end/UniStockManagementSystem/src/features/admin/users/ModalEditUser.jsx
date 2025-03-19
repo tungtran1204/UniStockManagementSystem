@@ -4,13 +4,21 @@ import {
   DialogHeader,
   DialogBody,
   DialogFooter,
-  Input,
+  Typography,
   Button,
+  IconButton,
   Switch,
 } from "@material-tailwind/react";
-import { updateUser, checkEmailExists } from "./userService"; 
-import { getAllRoles } from "../roles/roleService"; 
-import { FaEye, FaEyeSlash } from "react-icons/fa"; 
+import { TextField, Divider, Button as MuiButton } from "@mui/material";
+import { updateUser, checkEmailExists } from "./userService";
+import { getAllRoles } from "../roles/roleService";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { XMarkIcon } from "@heroicons/react/24/outline";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
+import "dayjs/locale/vi"; // Import Tiếng Việt
+import updateLocale from 'dayjs/plugin/updateLocale';
 
 const ModalEditUser = ({ open, onClose, user, fetchUsers }) => {
   const [email, setEmail] = useState("");
@@ -23,8 +31,8 @@ const ModalEditUser = ({ open, onClose, user, fetchUsers }) => {
   const [address, setAddress] = useState("");
   const [fullname, setFullname] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
-  const [roles, setRoles] = useState([]); 
-  const [selectedRoles, setSelectedRoles] = useState(new Set()); 
+  const [roles, setRoles] = useState([]);
+  const [selectedRoles, setSelectedRoles] = useState(new Set());
   const [error, setError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -36,8 +44,8 @@ const ModalEditUser = ({ open, onClose, user, fetchUsers }) => {
       setFullname(user.userDetail?.fullname || "");
       setPhoneNumber(user.userDetail?.phoneNumber || "");
       setAddress(user.userDetail?.address || "");
-      setDateOfBirth(user.userDetail?.dateOfBirth || "");
-      setSelectedRoles(new Set(user.roleIds || [])); 
+      setDateOfBirth(user.userDetail?.dateOfBirth ? dayjs(user.userDetail.dateOfBirth) : null);
+      setSelectedRoles(new Set(user.roleIds || []));
     }
   }, [user]);
 
@@ -137,12 +145,12 @@ const ModalEditUser = ({ open, onClose, user, fetchUsers }) => {
       email,
       isActive: isAdmin ? user.isActive : isActive,
       password: password.trim() !== "" ? password : undefined,
-      roleIds: Array.from(selectedRoles), 
+      roleIds: Array.from(selectedRoles),
       userDetail: {
         fullname,
         phoneNumber,
         address,
-        dateOfBirth,
+        dateOfBirth: dateOfBirth ? dayjs(dateOfBirth).format("YYYY-MM-DD") : "",
       },
     };
 
@@ -156,21 +164,204 @@ const ModalEditUser = ({ open, onClose, user, fetchUsers }) => {
   };
 
   return (
-    <Dialog open={open} handler={onClose} size="lg">
-      <DialogHeader>Chỉnh Sửa Người Dùng</DialogHeader>
-      <DialogBody divider className="space-y-4">
-        <Input label="Họ và tên" value={fullname} onChange={(e) => setFullname(e.target.value)} />
-        <Input label="Số điện thoại" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
+    <Dialog open={open} handler={onClose} size="md" className="px-4 py-2">
+      <DialogHeader className="flex justify-between items-center pb-2">
+        <Typography variant="h4" color="blue-gray">
+          Chỉnh sửa người dùng
+        </Typography>
+        <IconButton
+          size="sm"
+          variant="text"
+          onClick={onClose}
+        >
+          <XMarkIcon className="h-5 w-5 stroke-2" />
+        </IconButton>
+      </DialogHeader>
+      <Divider variant="middle" />
+      <DialogBody className="space-y-4 pb-4 pt-6">
+        {/* Tên người dùng */}
+        <div>
+          <Typography variant="medium" className="text-black">
+            Họ và tên
+            <span className="text-red-500"> *</span>
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            hiddenLabel
+            placeholder="Họ và tên"
+            color="success"
+            value={fullname}
+            onChange={(e) => setFullname(e.target.value)}
+          />
+        </div>
+
+        {/* Ngày sinh với DatePicker hỗ trợ Tiếng Việt */}
+        <div>
+          <Typography variant="medium" className="text-black">
+            Ngày sinh
+            <span className="text-red-500"> *</span>
+          </Typography>
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+            <DatePicker
+              value={dateOfBirth}
+              onChange={(newValue) => setDateOfBirth(newValue)}
+              format="DD/MM/YYYY" // Hiển thị ngày theo định dạng Việt Nam
+              dayOfWeekFormatter={(weekday) => `${weekday.format('dd')}`}
+              slotProps={{
+                popper: {
+                  color: "success",
+                  sx: { zIndex: 9999 }, // Cố định z-index trong Popper
+                },
+                day: {
+                  sx: (theme) => ({
+                    "&.Mui-selected": {
+                      backgroundColor: "#0ab067 !important", // Xanh lá
+                      color: "white",
+                    },
+                    "&.Mui-selected:hover": {
+                      backgroundColor: "#089456 !important", // Xanh lá đậm khi hover
+                    },
+                    "&:hover": {
+                      backgroundColor: "#0894561A !important", // Màu xanh lá nhạt khi hover bất kỳ ngày nào
+                    },
+                  }),
+                },
+                textField: { hiddenLabel: true, fullWidth: true, size: "small", color: "success" }
+              }}
+            />
+          </LocalizationProvider>
+        </div>
+
+        {/* Email */}
+        <div>
+          <Typography variant="medium" className="text-black">
+            Email
+            <span className="text-red-500"> *</span>
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            hiddenLabel
+            placeholder="Email"
+            color="success"
+            value={email}
+            onChange={(e) => handleCheckEmail(e.target.value)}
+          />
+          {emailError && <Typography variant="small" color="red">{emailError}</Typography>}
+        </div>
+
+        <div>
+          <Typography variant="medium" className="text-black">
+            Số điện thoại
+            <span className="text-red-500"> *</span>
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            hiddenLabel
+            placeholder="Số điện thoại"
+            variant="outlined"
+            color="success"
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <Typography variant="medium" className="text-black">
+            Địa chỉ
+            <span className="text-red-500"> *</span>
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            hiddenLabel
+            placeholder="Địa chỉ"
+            variant="outlined"
+            color="success"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+          />
+        </div>
+
+        {/* Mật khẩu */}
+        <div className="relative">
+          <Typography variant="medium" className="text-black">
+            Mật khẩu
+            <span className="text-red-500"> *</span>
+          </Typography>
+          <div className="relative">
+            <TextField
+              fullWidth
+              size="small"
+              type={showPassword ? "text" : "password"}
+              hiddenLabel
+              placeholder="Mật khẩu"
+              variant="outlined"
+              color="success"
+              value={password}
+              onChange={(e) => handlePasswordChange(e.target.value)}
+            />
+            <button
+              type="button"
+              className="absolute inset-y-0 right-3 flex items-center text-gray-600"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+            </button>
+          </div>
+          {passwordError && <Typography variant="small" color="red">{passwordError}</Typography>}
+        </div>
+
+        <div className="grid grid-cols-3">
+          {/* Vai trò */}
+          <div className="col-span-2">
+            <Typography variant="medium" className="text-black">
+              Vai trò
+            </Typography>
+            <div className="flex flex-wrap gap-2">
+              {roles
+                .filter((r) => r.name !== "USER" && (isAdmin || r.name !== "ADMIN")) // Exclude "USER" role and "ADMIN" role if not admin
+                .map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => handleRoleChange(r.id)}
+                    className={`px-4 py-2 text-sm rounded-lg transition-all ${selectedRoles.has(r.id) ? "bg-blue-500 text-white shadow-md" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
+                    disabled={isAdmin} // Disable role selection if current role is "ADMIN"
+                  >
+                    {r.name}
+                  </button>
+                ))}
+              {roles.filter((r) => r.name !== "USER" && (isAdmin || r.name !== "ADMIN")).length === 0 && (
+                <p className="text-sm text-gray-500">Không có sẵn vai trò.</p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <Typography variant="medium" className="text-black">
+              Trạng thái
+              <span className="text-red-500"> *</span>
+            </Typography>
+            <Switch
+              label={isActive ? "Đang hoạt động" : "Vô hiệu hóa"}
+              checked={isActive}
+              onChange={() => setIsActive(!isActive)}
+              color="green"
+            />
+          </div>
+        </div>
+
+        {/* <Input label="Số điện thoại" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
         <Input label="Địa chỉ" value={address} onChange={(e) => setAddress(e.target.value)} />
         <Input label="Ngày sinh" type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
 
-        {/* Email */}
         <div>
           <Input label="Email" type="email" value={email} onChange={(e) => handleCheckEmail(e.target.value)} required />
           {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
         </div>
 
-        {/* Mật khẩu */}
         <div className="relative">
           <Input label="Mật khẩu (Để trống nếu không muốn thay đổi)" type={showPassword ? "text" : "password"} value={password} onChange={(e) => handlePasswordChange(e.target.value)} />
           <button type="button" className="absolute inset-y-0 right-3 flex items-center text-gray-600" onClick={() => setShowPassword(!showPassword)}>
@@ -179,7 +370,6 @@ const ModalEditUser = ({ open, onClose, user, fetchUsers }) => {
           {passwordError && <p className="text-red-500 text-xs mt-1">{passwordError}</p>}
         </div>
 
-        {/* Vai trò */}
         <div>
           <p className="text-sm font-semibold text-gray-700">Chọn Vai Trò:</p>
           <div className="flex flex-wrap gap-2">
@@ -199,11 +389,27 @@ const ModalEditUser = ({ open, onClose, user, fetchUsers }) => {
               <p className="text-sm text-gray-500">Không có sẵn vai trò.</p>
             )}
           </div>
-        </div>
+        </div> */}
       </DialogBody>
-      <DialogFooter>
-        <Button variant="text" color="gray" onClick={onClose}>Hủy</Button>
-        <Button color="blue" onClick={handleUpdateUser}>Lưu</Button>
+      <DialogFooter className="pt-0">
+        <MuiButton
+          size="medium"
+          color="error"
+          variant="outlined"
+          onClick={onClose}
+        >
+          Hủy
+        </MuiButton>
+        <Button
+          size="lg"
+          color="white"
+          variant="text"
+          className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-3 rounded-[4px] transition-all duration-200 ease-in-out"
+          ripple={true}
+          onClick={handleUpdateUser}
+        >
+          Lưu
+        </Button>
       </DialogFooter>
     </Dialog>
   );

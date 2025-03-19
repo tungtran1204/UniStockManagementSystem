@@ -43,4 +43,14 @@ public class SaleOrdersController {
         return new ResponseEntity<>(createdOrder, HttpStatus.CREATED);
     }
 
+    @PutMapping("/{orderId}")
+    public ResponseEntity<SaleOrdersDTO> updateSaleOrder(
+            @PathVariable Long orderId,
+            @RequestBody SaleOrdersDTO saleOrdersDTO
+    ) {
+        // Gọi service để cập nhật
+        SaleOrdersDTO updatedOrder = saleOrdersService.updateSaleOrder(orderId, saleOrdersDTO);
+        return ResponseEntity.ok(updatedOrder);
+    }
+
 }
