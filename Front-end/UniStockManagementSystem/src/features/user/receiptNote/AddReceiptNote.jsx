@@ -17,7 +17,7 @@ import PageHeader from '@/components/PageHeader';
 import { getPurchaseOrderById } from "../purchaseOrder/purchaseOrderService";
 import { getWarehouseList } from "../warehouse/warehouseService";
 import ProductRow from "./ProductRow";
-
+import { createReceiptNote, uploadPaperEvidence as uploadPaperEvidenceService } from "./receiptNoteService";
 
 // Hàm lấy ngày hiện tại YYYY-MM-DD
 const getTodayDate = () => {
@@ -54,10 +54,12 @@ const AddReceiptNote = () => {
   const [manuallySelectedWarehouses, setManuallySelectedWarehouses] = useState({}); // NEW: Theo dõi các kho được chọn thủ công
   const [itemQuantities, setItemQuantities] = useState({}); // Lưu trữ số lượng nhập
   const [quantityErrors, setQuantityErrors] = useState({}); // Lưu trữ lỗi số lượng
+  const [isSubmitting, setIsSubmitting] = useState(false); // Track submission state
 
   const { orderId, nextCode } = location.state || {}; // Nhận dữ liệu từ navigate()
   const [receiptCode, setReceiptCode] = useState(nextCode || "");
   const [rowsData, setRowsData] = useState({});
+  
 
   console.log("Nhận orderId:", orderId);
   console.log("Nhận nextCode:", nextCode);
@@ -161,58 +163,116 @@ const AddReceiptNote = () => {
   };
 
   // Xử lý lưu phiếu nhập
-  const handleSaveReceipt = () => {
-    // Kiểm tra dữ liệu
-    const itemsWithMissingData = order.details.filter(item =>
-      !rowsData[item.id] || !rowsData[item.id].warehouse
-    );
+  const handleSaveReceipt = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    
+    try {
+      // Kiểm tra dữ liệu
+      const itemsWithMissingData = order.details.filter(item =>
+        !rowsData[item.id] || !rowsData[item.id].warehouse
+      );
 
-    if (itemsWithMissingData.length > 0) {
-      alert("Vui lòng chọn kho nhập cho tất cả sản phẩm!");
-      return;
+      if (itemsWithMissingData.length > 0) {
+        alert("Vui lòng chọn kho nhập cho tất cả sản phẩm!");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Kiểm tra lỗi số lượng
+      const itemsWithErrors = order.details.filter(item =>
+        rowsData[item.id] && rowsData[item.id].error
+      );
+
+      if (itemsWithErrors.length > 0) {
+        alert("Vui lòng sửa các lỗi số lượng nhập trước khi lưu!");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Kiểm tra xem tất cả các sản phẩm đã có số lượng nhập chưa
+      const itemsWithoutQuantity = order.details.filter(item =>
+        !rowsData[item.id] || !rowsData[item.id].quantity
+      );
+
+      if (itemsWithoutQuantity.length > 0) {
+        alert("Vui lòng nhập số lượng cho tất cả sản phẩm!");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const details = order.details.map(item => {
+        const rowData = rowsData[item.id];
+        const warehouse = warehouses.find(w => w.warehouseCode === rowData?.warehouse);
+        const warehouseId = warehouse ? warehouse.warehouseId : null;
+      
+        if (!warehouseId) {
+          alert(`Không tìm thấy kho cho sản phẩm/vật tư: ${item.materialName || item.productName}`);
+          return null;
+        }
+      
+        return {
+          warehouseId: warehouseId,
+          materialId: item.materialId || null,
+          productId: item.productId || null,
+          quantity: parseFloat(rowData?.quantity) || 0,
+        };
+      }).filter(detail => detail !== null);
+
+
+      // Tạo dữ liệu phiếu nhập theo cấu trúc của ReceiptNoteDTO
+      const receiptData = {
+        grnCode: receiptCode,
+        poId: orderId,
+        description: description,
+        receiptDate: new Date().toISOString(), 
+        details: details
+      };
+
+      console.log("Dữ liệu phiếu nhập:", receiptData);
+      
+      // Gọi API để lưu phiếu nhập
+      const response = await createReceiptNote(receiptData);
+      
+      // Xử lý tải lên file nếu có
+      if (files.length > 0) {
+        const formData = new FormData();
+        formData.append("noteId", response.grnId);
+        formData.append("noteType", "GOOD_RECEIPT_NOTE");
+        
+        files.forEach((file, index) => {
+          formData.append(`files[${index}]`, file);
+        });
+        
+        await uploadPaperEvidence(formData);
+      }
+
+      alert("Lưu phiếu nhập thành công!");
+      navigate("/user/receiptNote");
+    } catch (error) {
+      console.error("Lỗi khi lưu phiếu nhập:", error);
+      alert(`Lỗi khi lưu phiếu nhập: ${error.message || "Không xác định"}`);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Kiểm tra lỗi số lượng
-    const itemsWithErrors = order.details.filter(item =>
-      rowsData[item.id] && rowsData[item.id].error
-    );
-
-    if (itemsWithErrors.length > 0) {
-      alert("Vui lòng sửa các lỗi số lượng nhập trước khi lưu!");
-      return;
-    }
-
-    // Kiểm tra xem tất cả các sản phẩm đã có số lượng nhập chưa
-    const itemsWithoutQuantity = order.details.filter(item =>
-      !rowsData[item.id] || !rowsData[item.id].quantity
-    );
-
-    if (itemsWithoutQuantity.length > 0) {
-      alert("Vui lòng nhập số lượng cho tất cả sản phẩm!");
-      return;
-    }
-
-    // Tạo dữ liệu phiếu nhập
-    const receiptData = {
-      receiptCode,
-      description,
-      orderDate,
-      referenceDocument,
-      orderId,
-      items: order.details.map(item => ({
-        materialId: item.id,
-        quantity: parseFloat(rowsData[item.id].quantity),
-        warehouseId: rowsData[item.id].warehouse
-      }))
-    };
-
-    console.log("Dữ liệu phiếu nhập:", receiptData);
-    // TODO: Gọi API lưu phiếu nhập
-
-    // Sau khi lưu thành công
-    alert("Lưu phiếu nhập thành công!");
-    navigate("/user/receiptNote");
   };
+
+   // Implement the uploadPaperEvidence function for file uploads
+const uploadPaperEvidence = async (formData) => {
+  try {
+    // Call the imported service function, not this function again
+    const response = await uploadPaperEvidenceService(formData);
+    
+    if (!response.ok) {
+      throw new Error(`Upload failed with status: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Error uploading files:", error);
+    throw error;
+  }
+};
 
   // Lấy danh sách kho
   useEffect(() => {
@@ -319,44 +379,50 @@ const AddReceiptNote = () => {
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
             title={"Phiếu nhập kho " + receiptCode}
-            showAdd={false} // Ẩn nút thêm kho
-            onImport={() => {/* Xử lý import nếu có */ }}
-            onExport={() => {/* Xử lý export file ở đây nếu có */ }}
-            showImport={false} // Ẩn nút import nếu không dùng
-            showExport={false} // Ẩn xuất file nếu không dùng        
+            showAdd={false}
+            showImport={false}
+            showExport={false}
           />
+          
           {/* Thông tin chung */}
           <Typography variant="h6" className="mb-2 text-gray-700 text-sm font-semibold">
             Thông tin chung
           </Typography>
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
-              <Typography variant="small">Nhập kho</Typography>
+              <Typography variant="small">Nhập kho <span className="text-red-500">*</span></Typography>
               <Select
                 className="!border-t-blue-gray-200 focus:!border-t-gray-900"
                 labelProps={{
                   className: "before:content-none after:content-none",
                 }}
                 value={referenceDocument}
-                onChange={(value) => handleReferenceDocumentChange(value)}>
+                onChange={(value) => handleReferenceDocumentChange(value)}
+                required>
                 <Option value="Thành phẩm sản xuất">Thành phẩm sản xuất</Option>
                 <Option value="Vật tư mua bán">Vật tư mua bán</Option>
                 <Option value="Hàng hóa gia công">Hàng hóa gia công</Option>
                 <Option value="Hàng hóa trả lại">Hàng hóa trả lại</Option>
               </Select>
+              {!referenceDocument && (
+                <Typography variant="small" className="text-red-500 mt-1">
+                  Vui lòng chọn loại nhập kho
+                </Typography>
+              )}
             </div>
             <div>
               <Typography variant="small">Tham chiếu chứng từ gốc</Typography>
-              <Select
-                value={order.poCode}
-                disabled={!!orderId} // Vô hiệu hóa nếu có orderId
-              >
-                <Option value="Chứng từ A">Chứng từ A</Option>
-                <Option value="Chứng từ B">Chứng từ B</Option>
-              </Select>
+              <Input
+                value={order.poCode || ''}
+                disabled
+                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
+              />
             </div>
             <div>
-              <Typography variant="small">Ngày tạo phiếu</Typography>
+              <Typography variant="small">Ngày tạo phiếu <span className="text-red-500">*</span></Typography>
               <Input
                 type="date"
                 value={orderDate}
@@ -365,28 +431,58 @@ const AddReceiptNote = () => {
                   className: "before:content-none after:content-none",
                 }}
                 onChange={(e) => setOrderDate(e.target.value)}
+                required
               />
             </div>
           </div>
+          
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <Typography variant="small">Tên đối tác</Typography>
-              <Input value={order.supplierName} disabled />
+              <Input 
+                value={order.supplierName || ''} 
+                disabled 
+                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
+              />
             </div>
             <div>
               <Typography variant="small">Địa chỉ</Typography>
-              <Input value={order.supplierAddress} disabled />
+              <Input 
+                value={order.supplierAddress || ''} 
+                disabled 
+                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
+              />
             </div>
             <div>
               <Typography variant="small">Người liên hệ</Typography>
-              <Input value={order.supplierContactName} disabled />
+              <Input 
+                value={order.supplierContactName || ''} 
+                disabled 
+                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
+              />
             </div>
             <div>
               <Typography variant="small">Số điện thoại</Typography>
-              <Input value={order.supplierPhone} disabled />
+              <Input 
+                value={order.supplierPhone || 'không có thông tin'} 
+                disabled 
+                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
+              />
             </div>
           </div>
-
+  
           {/* Diễn giải & Kèm theo */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
@@ -396,12 +492,15 @@ const AddReceiptNote = () => {
                 labelProps={{
                   className: "before:content-none after:content-none",
                 }}
-                value={description} onChange={(e) => setDescription(e.target.value)} />
+                value={description} 
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Nhập diễn giải cho phiếu nhập kho"
+              />
             </div>
             <div>
               <Typography variant="small">Kèm theo</Typography>
               <div className="border border-dashed border-gray-400 p-4 rounded-md text-center">
-                <p className="text-gray-500 text-xs">Kéo thả file vào đây</p>
+                <p className="text-gray-500 text-xs">Kéo thả tối đa 3 file, mỗi file không quá 5MB</p>
                 <p className="text-xs">Hoặc</p>
                 <input
                   type="file"
@@ -411,7 +510,7 @@ const AddReceiptNote = () => {
                   className="mt-2 text-xs"
                 />
               </div>
-
+  
               {/* Hiển thị danh sách file đã chọn */}
               {files.length > 0 && (
                 <div className="mt-2">
@@ -425,7 +524,13 @@ const AddReceiptNote = () => {
                         className="flex items-center justify-between border p-1 rounded-md text-xs bg-gray-100"
                       >
                         <span className="truncate max-w-[80px]">{file.name}</span>
-                        <Button size="sm" color="red" variant="text" onClick={() => handleRemoveFile(index)}>
+                        <Button 
+                          size="sm" 
+                          color="red" 
+                          variant="text" 
+                          onClick={() => handleRemoveFile(index)}
+                          className="p-1 min-w-[20px] h-5"
+                        >
                           ✖
                         </Button>
                       </div>
@@ -435,12 +540,12 @@ const AddReceiptNote = () => {
               )}
             </div>
           </div>
-
+  
           {/* Danh sách sản phẩm */}
           <Typography variant="h6" className="mb-2 text-gray-700 text-sm font-semibold">
             Danh sách sản phẩm
           </Typography>
-
+  
           {/* Thanh điều khiển phân trang */}
           <div className="px-4 py-2 flex items-center gap-4 mb-4">
             <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
@@ -464,7 +569,7 @@ const AddReceiptNote = () => {
               kết quả mỗi trang
             </Typography>
           </div>
-
+  
           {/* Bảng sản phẩm */}
           <div className="overflow-auto border rounded">
             <table className="w-full table-auto text-sm">
@@ -474,32 +579,43 @@ const AddReceiptNote = () => {
                   <th className="p-2 border">Mã hàng</th>
                   <th className="p-2 border">Tên hàng</th>
                   <th className="p-2 border">Đơn vị</th>
-                  <th className="p-2 border">Nhập kho</th>
+                  <th className="p-2 border">Nhập kho <span className="text-red-500">*</span></th>
                   <th className="p-2 border">Số lượng đặt</th>
-                  <th className="p-2 border">Số lượng nhập</th>
+                  <th className="p-2 border">Số lượng còn phải nhập</th>
+                  <th className="p-2 border">Số lượng nhập kho <span className="text-red-500">*</span></th>
+                  <th className="p-2 border">Ghi chú</th>
                 </tr>
               </thead>
               <tbody>
-                {displayedItems.map((item, index) => (
-                  <ProductRow
-                    key={`item-${item.id}-${index}`}
-                    item={item}
-                    index={index}
-                    warehouses={warehouses}
-                    defaultWarehouseCode={getDefaultWarehouse(referenceDocument)}
-                    currentPage={currentPage}
-                    pageSize={pageSize}
-                    onDataChange={handleRowDataChange}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+                {displayedItems.length > 0 ? (
+                  displayedItems.map((item, index) => (
+                    <ProductRow
+                      key={`item-${item.id}-${index}`}
+                      item={item}
+                      index={index + currentPage * pageSize}
+                      warehouses={warehouses}
+                      defaultWarehouseCode={getDefaultWarehouse(referenceDocument)}
+                      currentPage={currentPage}
+                      pageSize={pageSize}
+                      onDataChange={handleRowDataChange}
+                    />
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="9" className="p-4 text-center text-gray-500">
+                      Không có dữ liệu sản phẩm
+                      </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
-          {/* Tổng số lượng */}
-          <div className="flex justify-end mt-2 pr-4 text-gray-800 text-sm font-semibold">
-            <span>TỔNG</span>
-            <span className="ml-6">
+           {/* Tổng số lượng */}
+        <div className="flex justify-end mt-4 pr-4 text-gray-800 text-sm font-semibold">
+          <div className="flex items-center">
+            <span className="mr-6">TỔNG SỐ LƯỢNG NHẬP:</span>
+            <span className="bg-gray-100 px-4 py-2 rounded border">
               {order.details.reduce((sum, item) => {
                 const rowData = rowsData[item.id];
                 const numQty = rowData && rowData.quantity ? parseFloat(rowData.quantity) || 0 : 0;
@@ -507,51 +623,107 @@ const AddReceiptNote = () => {
               }, 0).toFixed(2)}
             </span>
           </div>
+        </div>
 
-          {/* Phân trang */}
-          {totalElements > 0 && (
-            <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
-              <div className="flex items-center gap-2">
-                <Typography variant="small" color="blue-gray" className="font-normal">
-                  Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
-                </Typography>
-              </div>
-              <ReactPaginate
-                previousLabel={<ArrowLeftIcon className="h-4 w-4" />}
-                nextLabel={<ArrowRightIcon className="h-4 w-4" />}
-                pageCount={totalPages}
-                marginPagesDisplayed={2}
-                pageRangeDisplayed={5}
-                onPageChange={handlePageChange}
-                containerClassName="flex items-center gap-2"
-                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-                activeClassName="bg-blue-500 text-white"
-                disabledClassName="opacity-50 cursor-not-allowed"
-              />
+        {/* Phân trang */}
+        {totalElements > 0 && (
+          <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+            <div className="flex items-center gap-2">
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
+              </Typography>
             </div>
-          )}
-          <div className="mt-6 border-t pt-4 flex justify-between">
+            <ReactPaginate
+              previousLabel={<ArrowLeftIcon className="h-4 w-4" />}
+              nextLabel={<ArrowRightIcon className="h-4 w-4" />}
+              pageCount={totalPages}
+              marginPagesDisplayed={2}
+              pageRangeDisplayed={5}
+              onPageChange={handlePageChange}
+              containerClassName="flex items-center gap-2"
+              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              activeClassName="bg-blue-500 text-white border-blue-500"
+              previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              disabledClassName="opacity-50 cursor-not-allowed"
+            />
+          </div>
+        )}
+
+        {/* Validation summary */}
+        {Object.keys(quantityErrors).length > 0 && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-red-600">
+            <Typography variant="small" className="font-semibold mb-1">
+              Vui lòng sửa các lỗi sau:
+            </Typography>
+            <ul className="list-disc list-inside">
+              {Object.entries(quantityErrors).map(([itemId, error]) => {
+                const item = order.details.find(detail => detail.id === itemId);
+                return (
+                  <li key={itemId} className="text-xs">
+                    {item ? `${item.productCode || item.materialCode} - ${item.productName || item.materialName}: ` : ''}
+                    {error}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        {/* Button actions */}
+        <div className="mt-6 border-t pt-4 flex justify-between">
+          <div className="flex items-center">
             <Button
               size="sm"
               color="red"
               variant="text"
               onClick={() => navigate("/user/receiptNote")}
-              className="mr-4"
+              className="mr-4 flex items-center"
             >
+              <ArrowLeftIcon className="h-4 w-4 mr-1" />
               Quay lại danh sách
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              color="blue"
+              variant="outlined"
+              onClick={() => {
+                if (window.confirm("Bạn có chắc muốn hủy thao tác này?")) {
+                  navigate("/user/receiptNote");
+                }
+              }}
+            >
+              Hủy
             </Button>
             <Button
               size="sm"
               color="green"
               onClick={handleSaveReceipt}
+              disabled={isSubmitting || Object.keys(quantityErrors).length > 0 || !referenceDocument}
+              className="flex items-center"
             >
-              Lưu
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Đang lưu...
+                </>
+              ) : (
+                "Lưu phiếu nhập"
+              )}
             </Button>
           </div>
-        </CardBody>
-      </Card>
-    </div>
-  );
-};
+        </div>
 
+        {/* Confirmation dialog for successful save */}
+        {/* You can implement a modal dialog here for successful save confirmation */}
+      </CardBody>
+    </Card>
+  </div>
+);
+}
 export default AddReceiptNote;

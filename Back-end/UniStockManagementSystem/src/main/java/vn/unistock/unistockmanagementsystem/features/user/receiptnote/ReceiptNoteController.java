@@ -2,25 +2,72 @@ package vn.unistock.unistockmanagementsystem.features.user.receiptnote;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 import vn.unistock.unistockmanagementsystem.entities.GoodReceiptNote;
+import vn.unistock.unistockmanagementsystem.entities.User;
+import vn.unistock.unistockmanagementsystem.features.user.purchaseRequests.PurchaseRequestDTO;
+import vn.unistock.unistockmanagementsystem.security.filter.CustomUserDetails;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/unistock/user/receiptnote")
 @RequiredArgsConstructor
 public class ReceiptNoteController {
     @Autowired
-    private final ReceiptNoteService goodReceiptService;
+    private final ReceiptNoteService receiptNoteService;
+
+    @GetMapping
+    public ResponseEntity<Page<ReceiptNoteDTO>> getAllGoodReceipts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        PageRequest pageable = PageRequest.of(page, size);
+        Page<ReceiptNoteDTO> requests = receiptNoteService.getAllReceiptNote(pageable);
+        return ResponseEntity.ok(receiptNoteService.getAllReceiptNote(pageable));
+    }
+
 
     @PostMapping
-    public ResponseEntity<GoodReceiptNote> createGoodReceipt(@RequestBody ReceiptNoteDTO grnDto) {
-        return ResponseEntity.ok(goodReceiptService.createGoodReceipt(grnDto));
+    public ResponseEntity<ReceiptNoteDTO> createGoodReceipt(@RequestBody ReceiptNoteDTO grnDto) {
+        return ResponseEntity.ok(receiptNoteService.createGoodReceipt(grnDto));
     }
 
     @GetMapping("/nextcode")
     public ResponseEntity<String> getNextNoteCode() {
-        String nextCode = goodReceiptService.getNextReceiptCode();
+        String nextCode = receiptNoteService.getNextReceiptCode();
         return ResponseEntity.ok(nextCode);
+    }
+
+    @PostMapping("/upload-documents")
+    public ResponseEntity<?> uploadPaperEvidence(
+            @RequestParam("noteId") Long noteId,
+            @RequestParam("noteType") String noteType,
+            @RequestParam("files") List<MultipartFile> files) {
+
+        // Get current authenticated user
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
+        }
+
+        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+        User currentUser = userDetails.getUser();
+
+        try {
+            List<String> fileUrls = receiptNoteService.uploadPaperEvidence(noteId, noteType, files, currentUser);
+            return ResponseEntity.ok().body(fileUrls);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to upload files: " + e.getMessage());
+        }
     }
 }

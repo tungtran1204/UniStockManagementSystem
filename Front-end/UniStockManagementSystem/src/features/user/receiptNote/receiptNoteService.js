@@ -1,6 +1,7 @@
 import axios from "axios";
 
 const API_URL = "http://localhost:8080/api/unistock/user/receiptnote";
+//const API_URL = `${import.meta.env.VITE_API_URL}/user/receiptnote`;
 
 // Helper function to get the authorization header
 const authHeader = () => {
@@ -9,18 +10,35 @@ const authHeader = () => {
 };
 
 // Fetch paginated receipt notes
-export const fetchReceiptNotes = async (page, size) => {
+export const fetchReceiptNotes = async (page, size, searchTerm = "") => {
   try {
-    const response = await axios.get(`${API_URL}?page=${page}&size=${size}`, {
+    let url = `${API_URL}?page=${page}&size=${size}`;
+    
+    // Add search term if provided
+    if (searchTerm) {
+      url += `&search=${encodeURIComponent(searchTerm)}`;
+    }
+    
+    const response = await axios.get(url, {
       headers: authHeader(),
     });
-    return {
-      data: response.data.content,
-      totalPages: response.data.totalPages,
-      totalElements: response.data.totalElements,
-    };
+    
+    return response.data;
   } catch (error) {
     console.error("Error fetching receipt notes:", error);
+    throw error;
+  }
+};
+
+// Get a single receipt note by ID
+export const getReceiptNoteById = async (receiptNoteId) => {
+  try {
+    const response = await axios.get(`${API_URL}/${receiptNoteId}`, {
+      headers: authHeader(),
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching receipt note with ID ${receiptNoteId}:`, error);
     throw error;
   }
 };
@@ -38,15 +56,15 @@ export const createReceiptNote = async (receiptNote) => {
   }
 };
 
+// Get next code for new receipt note
 export const getNextCode = async () => {
   try {
     const response = await axios.get(`${API_URL}/nextcode`, {
       headers: authHeader(),
     });
-    console.log(" Mã phiếu nhập:", response.data);
     return response.data; 
   } catch (error) {
-    console.error("❌ [getNextOrderCode] Lỗi:", error);
+    console.error("Error getting next receipt note code:", error);
     throw error;
   }
 };
@@ -73,6 +91,31 @@ export const deleteReceiptNote = async (receiptNoteId) => {
     return response.data;
   } catch (error) {
     console.error("Error deleting receipt note:", error);
+    throw error;
+  }
+};
+
+// Upload files for receipt notes
+export const uploadPaperEvidence = async (noteId, noteType, files) => {
+  try {
+    const formData = new FormData();
+    formData.append("noteId", noteId);
+    formData.append("noteType", noteType);
+    
+    // Append multiple files
+    for (let i = 0; i < files.length; i++) {
+      formData.append("files", files[i]);
+    }
+    
+    const response = await axios.post(`${API_URL}/upload-documents`, formData, {
+      headers: { 
+        ...authHeader(),
+        'Content-Type': 'multipart/form-data'
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error uploading files:", error);
     throw error;
   }
 };

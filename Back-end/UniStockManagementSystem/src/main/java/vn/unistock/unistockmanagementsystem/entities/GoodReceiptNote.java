@@ -35,6 +35,10 @@ public class GoodReceiptNote {
     @NotBlank(message = "GRN code cannot be blank")
     private String grnCode;
 
+    @ManyToOne
+    @JoinColumn(name = "po_id", nullable = true)
+    private PurchaseOrder purchaseOrder;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 

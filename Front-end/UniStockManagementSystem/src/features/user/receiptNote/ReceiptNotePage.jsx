@@ -1,74 +1,75 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import ReactPaginate from "react-paginate";
-import { Button, Card, CardHeader, CardBody, Typography, Tooltip } from "@material-tailwind/react";
-import { FaEdit, FaFileExcel, FaPlus } from "react-icons/fa";
+import { Card, CardBody, Typography, Tooltip } from "@material-tailwind/react";
+import { FaEdit, FaEye } from "react-icons/fa";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
-
+import useReceiptNote from './useReceiptNote';
 
 const ReceiptNotePage = () => {
-  const [importReceipts, setImportReceipts] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalElements, setTotalElements] = useState(0);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState(""); // State for search term
+  
+  const {
+    receiptNotes,
+    totalPages,
+    totalElements,
+    fetchPaginatedReceiptNotes
+  } = useReceiptNote();
 
+  // Fetch data on component mount and when page or size changes
   useEffect(() => {
-    fetchPaginatedImportReceipts();
+    fetchPaginatedReceiptNotes(currentPage, pageSize);
   }, [currentPage, pageSize]);
 
-  const fetchPaginatedImportReceipts = async () => {
-    try {
-      const response = await axios.get("http://localhost:8080/api/import-receipts", {
-        params: { page: currentPage, size: pageSize },
-      });
-
-      if (response.data && response.data.content) {
-        setImportReceipts(response.data.content);
-        setTotalPages(response.data.totalPages || 1);
-        setTotalElements(response.data.totalElements || response.data.content.length);
-      }
-    } catch (error) {
-      console.error("Lỗi khi lấy danh sách phiếu nhập:", error);
-      setImportReceipts([]);
-      setTotalPages(1);
-      setTotalElements(0);
-    }
+  // Handle page change
+  const handlePageChange = (selectedPage) => {
+    setCurrentPage(selectedPage);
   };
 
-  const handleEdit = (receipt) => {
-    setSelectedReceipt(receipt);
-    setShowEditModal(true);
-  };
-
-  const handleCreateReceiptSuccess = () => {
-    fetchPaginatedImportReceipts();
-    setShowCreatePopup(false);
-  };
-
+  // Handle page change from ReactPaginate
   const handlePageChangeWrapper = (selectedItem) => {
     handlePageChange(selectedItem.selected);
+  };
+
+  // Handle view or edit receipt
+  const handleViewReceipt = (receipt) => {
+    navigate(`/user/receiptNote/view/${receipt.grnId}`);
+  };
+
+  // Handle search
+  const handleSearch = () => {
+    // Reset to first page when searching
+    setCurrentPage(0);
+    fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+    } catch (error) {
+      return dateString;
+    }
   };
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
-
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
             title="Danh sách phiếu nhập kho"
             addButtonLabel="Thêm phiếu nhập"
             onAdd={() => navigate("/user/receiptNote/add")}
-            onImport={() => setShowImportPopup(true)}
-            onExport={() => { /* export Excel */ }}
+            onImport={() => {/* Import functionality */}}
+            onExport={() => {/* Export functionality */}}
           />
+          
           <div className="py-2 flex items-center justify-between gap-2">
             {/* Items per page */}
             <div className="flex items-center gap-2">
@@ -96,17 +97,22 @@ const ReceiptNotePage = () => {
             <TableSearch
               value={searchTerm}
               onChange={setSearchTerm}
-              onSearch={() => {
-                // Thêm hàm xử lý tìm kiếm vào đây nếu có
-                console.log("Tìm kiếm kho:", searchTerm);
-              }}
-              placeholder="Tìm kiếm kho"
+              onSearch={handleSearch}
+              placeholder="Tìm kiếm phiếu nhập"
             />
           </div>
+          
           <table className="w-full min-w-[640px] table-auto border border-gray-200">
             <thead>
               <tr className="bg-gray-100">
-                {["Mã phiếu nhập", "Nhập kho", "Nhập từ", "Lý do nhập", "Ngày lập phiếu", "Tham chiếu", "Thao tác"].map((header) => (
+                {[
+                  "Mã phiếu nhập", 
+                  "Mô tả", 
+                  "Ngày nhập", 
+                  "Người tạo", 
+                  "Đơn đặt hàng", 
+                  "Thao tác"
+                ].map((header) => (
                   <th key={header} className="border border-gray-300 px-4 py-2 text-left text-sm font-bold">
                     {header}
                   </th>
@@ -114,18 +120,36 @@ const ReceiptNotePage = () => {
               </tr>
             </thead>
             <tbody>
-              {importReceipts.length > 0 ? (
-                importReceipts.map((receipt, index) => (
-                  <tr key={receipt.receiptId} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 px-4 py-2">{receipt.receiptCode}</td>
-                    <td className="border border-gray-300 px-4 py-2">{receipt.warehouseName}</td>
-                    <td className="border border-gray-300 px-4 py-2">{receipt.supplierName}</td>
-                    <td className="border border-gray-300 px-4 py-2">{receipt.reason}</td>
-                    <td className="border border-gray-300 px-4 py-2">{receipt.createdDate}</td>
-                    <td className="border border-gray-300 px-4 py-2">{receipt.reference || "N/A"}</td>
+              {receiptNotes && receiptNotes.length > 0 ? (
+                receiptNotes.map((receipt) => (
+                  <tr key={receipt.grnId} className="hover:bg-gray-50">
+                    <td className="border border-gray-300 px-4 py-2">{receipt.grnCode}</td>
                     <td className="border border-gray-300 px-4 py-2">
+                      {receipt.description ? 
+                        (receipt.description.length > 50 ? 
+                          `${receipt.description.substring(0, 50)}...` : 
+                          receipt.description) : 
+                        "N/A"}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2">{formatDate(receipt.receiptDate)}</td>
+                    <td className="border border-gray-300 px-4 py-2">{receipt.createdBy?.username || "N/A"}</td>
+                    <td className="border border-gray-300 px-4 py-2">
+                      {receipt.purchaseOrder?.poCode || "N/A"}
+                    </td>
+                    <td className="border border-gray-300 px-4 py-2 flex gap-2">
+                      <Tooltip content="Xem chi tiết">
+                        <button 
+                          onClick={() => handleViewReceipt(receipt)} 
+                          className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+                        >
+                          <FaEye className="h-4 w-4" />
+                        </button>
+                      </Tooltip>
                       <Tooltip content="Chỉnh sửa">
-                        <button onClick={() => handleEdit(receipt)} className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white">
+                        <button 
+                          onClick={() => navigate(`/user/receiptNote/edit/${receipt.grnId}`)} 
+                          className="p-2 rounded-full bg-green-500 hover:bg-green-600 text-white"
+                        >
                           <FaEdit className="h-4 w-4" />
                         </button>
                       </Tooltip>
@@ -134,7 +158,7 @@ const ReceiptNotePage = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" className="border border-gray-300 px-4 py-2 text-center">
+                  <td colSpan="6" className="border border-gray-300 px-4 py-2 text-center">
                     Không có dữ liệu
                   </td>
                 </tr>
@@ -142,18 +166,18 @@ const ReceiptNotePage = () => {
             </tbody>
           </table>
 
-          {/* Phần phân trang mới sử dụng ReactPaginate */}
+          {/* Pagination */}
           <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-normal">
-                Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
+                Trang {currentPage + 1} / {totalPages || 1} • {totalElements || 0} bản ghi
               </Typography>
             </div>
             <ReactPaginate
               previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
               nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
               breakLabel="..."
-              pageCount={totalPages}
+              pageCount={totalPages || 1}
               marginPagesDisplayed={2}
               pageRangeDisplayed={5}
               onPageChange={handlePageChangeWrapper}

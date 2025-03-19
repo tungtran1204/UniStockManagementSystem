@@ -1,12 +1,7 @@
 package vn.unistock.unistockmanagementsystem.features.user.receiptnote;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import vn.unistock.unistockmanagementsystem.entities.GoodReceiptDetail;
-import vn.unistock.unistockmanagementsystem.entities.User;
+import vn.unistock.unistockmanagementsystem.entities.Unit;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,7 +16,8 @@ public class ReceiptNoteDTO {
     private String grnCode;
     private String description;
     private LocalDateTime receiptDate;
-    private User createdBy;
-    private List<GoodReceiptDetail> details;
+    private Long createdBy;
+    private Long poId;
+    private List<ReceiptNoteDetailDTO> details;
 
 }
