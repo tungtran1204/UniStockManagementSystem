@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Card,
-  CardHeader,
+  Tooltip,
   CardBody,
   Typography,
   Button,
@@ -11,9 +11,11 @@ import {
   Textarea,
 } from "@material-tailwind/react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
+import Table from "@/components/Table";
 import { getPurchaseOrderById } from "../purchaseOrder/purchaseOrderService";
 import { getWarehouseList } from "../warehouse/warehouseService";
 import ProductRow from "./ProductRow";
@@ -370,8 +372,65 @@ const uploadPaperEvidence = async (formData) => {
 
   const items = order?.details || [];
 
+  const columnsConfig = [
+    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
+    { field: 'code', headerName: 'Mã hàng', flex: 1.5, minWidth: 150, editable: false, filterable: false },
+    { field: 'name', headerName: 'Tên hàng', flex: 2, minWidth: 350, editable: false, filterable: false },
+    { field: 'unit', headerName: 'Đơn vị', flex: 1, minWidth: 100, editable: false, filterable: false },
+    { field: 'warehouse', headerName: 'Kho nhập', flex: 1.5, minWidth: 100, editable: false, filterable: false },
+    {
+      field: 'quantity',
+      headerName: 'Số lượng',
+      flex: 1,
+      minWidth: 100,
+      editable: false,
+      filterable: false,
+      renderCell: (params) => (
+        <Input
+          type="number"
+          value={params.value}
+          onChange={(e) => handleQuantityChange(params.row.index - 1, e.target.value)}
+          min={1}
+          className="w-16 text-sm"
+        />
+      ),
+    },
+    {
+      field: 'actions',
+      headerName: 'Hành động',
+      flex: 0.5,
+      minWidth: 100,
+      editable: false,
+      filterable: false,
+      renderCell: (params) => (
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <Tooltip content="Xoá">
+            <button
+              onClick={() => {
+                handleRemoveRow(params.row.index - 1);
+              }}
+              className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white"
+            >
+              <FaTrash className="h-3 w-3" />
+            </button>
+          </Tooltip>
+        </div>
+      ),
+    },
+  ];
+
   // Lấy danh sách sản phẩm hiển thị theo trang hiện tại
   const displayedItems = items.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+
+  const data = displayedProducts.map((item, index) => ({
+    id: item.id,
+    index: currentPage * pageSize + index + 1,
+    code: item.code,
+    name: item.name,
+    unit: item.unit,
+    warehouse: item.warehouse,
+    quantity: item.quantity,
+  }));
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -540,90 +599,46 @@ const uploadPaperEvidence = async (formData) => {
               )}
             </div>
           </div>
-  
-          {/* Danh sách sản phẩm */}
-          <Typography variant="h6" className="mb-2 text-gray-700 text-sm font-semibold">
-            Danh sách sản phẩm
-          </Typography>
-  
-          {/* Thanh điều khiển phân trang */}
-          <div className="px-4 py-2 flex items-center gap-4 mb-4">
-            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-              Hiển thị
-            </Typography>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(0);
-              }}
-              className="border rounded px-2 py-1"
-            >
-              {[5, 10, 20, 50].map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
-            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-              kết quả mỗi trang
-            </Typography>
-          </div>
-  
-          {/* Bảng sản phẩm */}
-          <div className="overflow-auto border rounded">
-            <table className="w-full table-auto text-sm">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 border">STT</th>
-                  <th className="p-2 border">Mã hàng</th>
-                  <th className="p-2 border">Tên hàng</th>
-                  <th className="p-2 border">Đơn vị</th>
-                  <th className="p-2 border">Nhập kho <span className="text-red-500">*</span></th>
-                  <th className="p-2 border">Số lượng đặt</th>
-                  <th className="p-2 border">Số lượng còn phải nhập</th>
-                  <th className="p-2 border">Số lượng nhập kho <span className="text-red-500">*</span></th>
-                  <th className="p-2 border">Ghi chú</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayedItems.length > 0 ? (
-                  displayedItems.map((item, index) => (
-                    <ProductRow
-                      key={`item-${item.id}-${index}`}
-                      item={item}
-                      index={index + currentPage * pageSize}
-                      warehouses={warehouses}
-                      defaultWarehouseCode={getDefaultWarehouse(referenceDocument)}
-                      currentPage={currentPage}
-                      pageSize={pageSize}
-                      onDataChange={handleRowDataChange}
-                    />
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="9" className="p-4 text-center text-gray-500">
-                      Không có dữ liệu sản phẩm
-                      </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
 
-           {/* Tổng số lượng */}
-        <div className="flex justify-end mt-4 pr-4 text-gray-800 text-sm font-semibold">
-          <div className="flex items-center">
-            <span className="mr-6">TỔNG SỐ LƯỢNG NHẬP:</span>
-            <span className="bg-gray-100 px-4 py-2 rounded border">
-              {order.details.reduce((sum, item) => {
-                const rowData = rowsData[item.id];
-                const numQty = rowData && rowData.quantity ? parseFloat(rowData.quantity) || 0 : 0;
-                return sum + numQty;
-              }, 0).toFixed(2)}
-            </span>
-          </div>
-        </div>
+          <div className="mt-8">
+            <Typography variant="h6" color="blue-gray" className="mb-4">
+              Danh sách sản phẩm
+            </Typography>
+
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div className="flex items-center gap-2">
+                <Typography variant="small" color="blue-gray" className="font-normal">
+                  Hiển thị
+                </Typography>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(0);
+                  }}
+                  className="border rounded px-2 py-1"
+                >
+                  {[5, 10, 20, 50].map(size => (
+                    <option key={size} value={size}>{size}</option>
+                  ))}
+                </select>
+                <Typography variant="small" color="blue-gray" className="font-normal">
+                  bản ghi mỗi trang
+                </Typography>
+              </div>
+            </div>
+
+            {/* Bảng sản phẩm */}
+            <Table
+              data={data}
+              columnsConfig={columnsConfig}
+              enableSelection={false}
+            />
+
+            <div className="flex justify-end mt-2 pr-4 text-gray-800 text-sm font-semibold">
+              <span>TỔNG</span>
+              <span className="ml-6">{products.reduce((sum, item) => sum + item.quantity, 0)}</span>
+            </div>
 
         {/* Phân trang */}
         {totalElements > 0 && (

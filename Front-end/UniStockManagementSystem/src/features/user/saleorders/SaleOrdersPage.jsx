@@ -8,7 +8,7 @@ import {
   Tooltip,
   Input,
 } from "@material-tailwind/react";
-import { FaPlus, FaEdit } from "react-icons/fa";
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import useSaleOrder from "./useSaleOrder";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
@@ -16,6 +16,7 @@ import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
+import Table from "@/components/Table";
 // Nếu cần edit:
 // import ModalEditSaleOrder from "./ModalEditSaleOrder";
 
@@ -48,7 +49,7 @@ const SaleOrdersPage = () => {
   };
 
   const handleEditOrder = async (order) => {
-    navigate(`/user/sale-orders/${order.orderId}`, { state: { order } });
+    navigate(`/user/sale-orders/${order.id}`, { state: { order } });
   };
 
   const handlePageChange = (selectedItem) => {
@@ -63,6 +64,48 @@ const SaleOrdersPage = () => {
       (order.partnerName &&
         order.partnerName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const columnsConfig = [
+    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
+    { field: 'orderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false },
+    { field: 'partnerName', headerName: 'Khách hàng', flex: 2, minWidth: 200, editable: false },
+    { field: 'status', headerName: 'Trạng thái', flex: 1.5, minWidth: 150, editable: false },
+    {
+      field: 'orderDate',
+      headerName: 'Ngày đặt hàng',
+      flex: 1.5,
+      minWidth: 150,
+      editable: false,
+      renderCell: (params) => params.value ? dayjs(params.value).format("DD/MM/YYYY") : "N/A",
+    },
+    {
+      field: 'actions',
+      headerName: 'Hành động',
+      flex: 0.5,
+      minWidth: 100,
+      renderCell: (params) => (
+        <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+          <Tooltip content="Chỉnh sửa">
+            <button className="p-1 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+              onClick={() => handleEditOrder(params.row)}
+            >
+              <VisibilityIcon className="h-3 w-3" />
+            </button>
+          </Tooltip>
+        </div>
+      ),
+    },
+  ];
+
+  const data = filteredOrders.map((order, index) => ({
+    id: order.orderId,
+    index: currentPage * pageSize + index + 1,
+    orderCode: order.orderCode || "N/A",
+    partnerName: order.partnerName || "N/A",
+    status: order.status || "N/A",
+    orderDate: order.orderDate,
+  }));
+
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -115,81 +158,14 @@ const SaleOrdersPage = () => {
           </div>
 
           {/* Bảng đơn hàng */}
-          <table className="w-full min-w-[640px] table-auto border border-gray-200">
-            <thead>
-              <tr>
-                {["STT", "Mã đơn hàng", "Khách hàng", "Trạng thái", "Ngày đặt hàng", "Hành động"].map(
-                  (el) => (
-                    <th key={el} className="border-b border-blue-gray-50 py-3 px-5 text-left">
-                      <Typography variant="small" className="text-[11px] font-bold uppercase text-blue-gray-400">
-                        {el}
-                      </Typography>
-                    </th>
-                  )
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredOrders.length > 0 ? (
-                filteredOrders.map((order, index) => {
-                  const className = `py-3 px-5 ${index === filteredOrders.length - 1 ? "" : "border-b border-blue-gray-50"
-                    }`;
-                  const actualIndex = currentPage * pageSize + index + 1;
-
-                  return (
-                    <tr key={order.orderId}>
-                      <td className={className}>
-                        <Typography variant="small" color="blue-gray" className="font-semibold">
-                          {actualIndex}
-                        </Typography>
-                      </td>
-                      <td className={className}>
-                        <Typography className="text-xs font-semibold text-blue-gray-600">
-                          {order.orderCode || "N/A"}
-                        </Typography>
-                      </td>
-                      <td className={className}>
-                        <Typography className="text-xs font-semibold text-blue-gray-600">
-                          {order.partnerName || "N/A"}
-                        </Typography>
-                      </td>
-                      <td className={className}>
-                        <Typography className="text-xs font-normal text-blue-gray-600">
-                          {order.status || "N/A"}
-                        </Typography>
-                      </td>
-                      <td className={className}>
-                        <Typography className="text-xs font-normal text-blue-gray-600">
-                          {order.orderDate ? dayjs(order.orderDate).format("DD/MM/YYYY") : "N/A"}
-                        </Typography>
-                      </td>
-                      <td className={className}>
-                        <div className="flex items-center gap-2">
-                          <Tooltip content="Chỉnh sửa">
-                            <button
-                              onClick={() => handleEditOrder(order)}
-                              className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-                            >
-                              <FaEdit className="h-4 w-4" />
-                            </button>
-                          </Tooltip>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan="6" className="border-b border-gray-200 px-3 py-4 text-center text-gray-500">
-                    Không có dữ liệu
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          <Table
+            data={data}
+            columnsConfig={columnsConfig}
+            enableSelection={false}
+          />
 
           {/* Phân trang */}
-          <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+          <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
             <Typography variant="small" color="blue-gray" className="font-normal">
               Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
             </Typography>
@@ -207,7 +183,7 @@ const SaleOrdersPage = () => {
               previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-              activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+              activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
               forcePage={currentPage}
               disabledClassName="opacity-50 cursor-not-allowed"
             />
