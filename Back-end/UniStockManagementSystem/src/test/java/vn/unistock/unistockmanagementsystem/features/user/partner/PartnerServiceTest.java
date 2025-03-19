@@ -290,34 +290,7 @@ class PartnerServiceTest {
             verify(partnerRepository, times(2)).save(any(Partner.class));
         }
 
-        @Test
-        @DisplayName("N02: Cập nhật partner sau khi thêm partnerByType")
-        void createPartner_UpdatesPartnerAfterAddingPartnerByType() {
-            // Arrange
-            Partner savedPartner = Partner.builder()
-                    .partnerId(1L)
-                    .partnerName("Test Partner")
-                    .address("Test Address")
-                    .phone("0123456789")
-                    .email("test@example.com")
-                    .partnerTypes(new HashSet<>())
-                    .build();
 
-            PartnerByType partnerByType = mock(PartnerByType.class);
-
-            when(partnerRepository.existsByPartnerName(testPartnerDTO.getPartnerName())).thenReturn(false);
-            when(partnerRepository.save(any(Partner.class))).thenReturn(savedPartner);
-            when(partnerByTypeService.createPartnerByCode(any(Partner.class), anyString())).thenReturn(partnerByType);
-            when(partnerMapper.toDTO(any(Partner.class))).thenReturn(testPartnerDTO);
-
-            // Act
-            PartnerDTO result = partnerService.createPartner(testPartnerDTO);
-
-            // Assert
-            assertNotNull(result);
-            // Verify partner was saved twice (once initially, once after adding partnerByType)
-            verify(partnerRepository, times(2)).save(any(Partner.class));
-        }
     }
 
     @Nested
