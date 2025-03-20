@@ -104,3 +104,18 @@ export const updateOrder = async (orderId, orderData) => {
   }
   
 };
+
+export const getTotalQuantityOfProduct = async (productId) => {
+  try {
+    const response = await axios.get(
+      `http://localhost:8080/api/unistock/inventory/product/${productId}/total-quantity/warehouses`,
+      {
+        headers: authHeader(),
+      }
+    );
+    return response.data; 
+  } catch (error) {
+    console.error("❌ [getTotalQuantityOfProduct] Lỗi khi lấy tổng tồn kho:", error);
+    throw error;
+  }
+};
