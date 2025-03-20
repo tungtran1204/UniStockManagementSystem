@@ -34,10 +34,10 @@ public class PurchaseRequestService {
     private final PurchaseRequestMapper purchaseRequestMapper;
     private final PurchaseRequestDetailMapper purchaseRequestDetailMapper;
 
-    public Page<PurchaseRequestDTO> getAllPurchaseRequests(Pageable pageable) {
-        Page<PurchaseRequest> requests = purchaseRequestRepository.findAll(pageable);
-        return requests.map(purchaseRequestMapper::toDTO);
-    }
+        public Page<PurchaseRequestDTO> getAllPurchaseRequests(Pageable pageable) {
+            Page<PurchaseRequest> requests = purchaseRequestRepository.findAll(pageable);
+            return requests.map(purchaseRequestMapper::toDTO);
+        }
 
     public PurchaseRequestDTO getPurchaseRequestById(Long purchaseRequestId) {
         PurchaseRequest request = purchaseRequestRepository.findById(purchaseRequestId)

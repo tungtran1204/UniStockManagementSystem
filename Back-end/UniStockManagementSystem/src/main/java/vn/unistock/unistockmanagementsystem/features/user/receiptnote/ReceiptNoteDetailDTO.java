@@ -11,12 +11,12 @@ import vn.unistock.unistockmanagementsystem.entities.*;
 @Builder
 public class ReceiptNoteDetailDTO {
     private Long grnDetailsId;
-    private GoodReceiptNote goodReceiptNote;
-    private Warehouse warehouse;
-    private Material material;
-    private Product product;
+    private Long grnId;
+    private Long warehouseId;
+    private Long materialId;
+    private Long productId;
     private Double quantity;
-    private Unit unit;
+    private Long unitId;
     private Long referenceId;
     private GoodReceiptDetail.ReferenceType referenceType;
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Card,
-  CardHeader,
+  Tooltip,
   CardBody,
   Typography,
   Button,
@@ -11,12 +11,12 @@ import {
   Textarea,
 } from "@material-tailwind/react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
 import { getPurchaseOrderById } from "../purchaseOrder/purchaseOrderService";
 import { getWarehouseList } from "../warehouse/warehouseService";
-import ProductRow from "./ProductRow";
 import { createReceiptNote, uploadPaperEvidence as uploadPaperEvidenceService } from "./receiptNoteService";
 
 // Hàm lấy ngày hiện tại YYYY-MM-DD
@@ -50,20 +50,19 @@ const AddReceiptNote = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [warehouses, setWarehouses] = useState([]);
-  const [itemWarehouses, setItemWarehouses] = useState({});
-  const [manuallySelectedWarehouses, setManuallySelectedWarehouses] = useState({});
-  const [itemQuantities, setItemQuantities] = useState({});
-  // const [remainingQuantities, setRemainingQuantities] = useState({});
-  const [quantityErrors, setQuantityErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [category, setCategory] = useState("");
+  const [itemWarehouses, setItemWarehouses] = useState({}); // Lưu trữ kho cho từng sản phẩm
+  const [manuallySelectedWarehouses, setManuallySelectedWarehouses] = useState({}); // NEW: Theo dõi các kho được chọn thủ công
+  const [itemQuantities, setItemQuantities] = useState({}); // Lưu trữ số lượng nhập
+  const [quantityErrors, setQuantityErrors] = useState({}); // Lưu trữ lỗi số lượng
+  const [isSubmitting, setIsSubmitting] = useState(false); // Track submission state
 
-  const { orderId, nextCode } = location.state || {};
+  const { orderId, nextCode } = location.state || {}; // Nhận dữ liệu từ navigate()
   const [receiptCode, setReceiptCode] = useState(nextCode || "");
   const [rowsData, setRowsData] = useState({});
 
-  console.log("Received orderId:", orderId);
-  console.log("Received nextCode:", nextCode);
+
+  console.log("Nhận orderId:", orderId);
+  console.log("Nhận nextCode:", nextCode);
 
   // Xác định kho mặc định dựa trên loại nhập kho
   const getDefaultWarehouse = (warehouseType) => {
@@ -73,6 +72,7 @@ const AddReceiptNote = () => {
       "Hàng hóa gia công": "KVT", // Cũng sử dụng Kho vật tư
       "Hàng hóa trả lại": "KPL" // Mã cho Kho phế liệu
     };
+
     const warehouseCode = warehouseTypeMap[warehouseType] || "";
     const defaultWarehouse = warehouses.find(w => w.warehouseCode === warehouseCode);
     return defaultWarehouse ? defaultWarehouse.warehouseCode : "";
@@ -90,35 +90,23 @@ const AddReceiptNote = () => {
   const handleReferenceDocumentChange = (value) => {
     setReferenceDocument(value);
 
-    const defaultWarehouseCode = getDefaultWarehouse(value);
+    // Khi thay đổi loại nhập kho, chỉ cập nhật kho mặc định cho những sản phẩm chưa được chọn thủ công
+    if (order && order.details) {
+      const defaultWarehouseCode = getDefaultWarehouse(value);
 
-    setItemWarehouses(prev => {
-      const updatedWarehouses = { ...prev };
+      setItemWarehouses(prev => {
+        const updatedWarehouses = { ...prev };
 
-      order.details.forEach(item => {
-        if (!manuallySelectedWarehouses[item.id]) {
-          updatedWarehouses[item.id] = defaultWarehouseCode;
-        }
+        order.details.forEach(item => {
+          // Nếu sản phẩm chưa được chọn thủ công, cập nhật theo loại nhập kho mới
+          if (!manuallySelectedWarehouses[item.id]) {
+            updatedWarehouses[item.id] = defaultWarehouseCode;
+          }
+        });
+
+        return updatedWarehouses;
       });
-
-      return updatedWarehouses;
-    });
-
-    // Cập nhật dữ liệu cho ProductRow
-    setRowsData(prev => {
-      const updatedRows = { ...prev };
-
-      order.details.forEach(item => {
-        if (!manuallySelectedWarehouses[item.id]) {
-          updatedRows[item.id] = {
-            ...updatedRows[item.id],
-            warehouse: defaultWarehouseCode,
-          };
-        }
-      });
-
-      return updatedRows;
-    });
+    }
   };
 
   // Xử lý thay đổi kho cho sản phẩm
@@ -158,6 +146,40 @@ const AddReceiptNote = () => {
     }
   };
 
+  // Xử lý xóa hàng
+  const handleRemoveRow = (itemId) => {
+    // Trong trường hợp này, chúng ta không thực sự xóa hàng khỏi dữ liệu nguồn
+    // mà chỉ xóa các giá trị nhập vào
+    setItemQuantities(prev => {
+      const updated = { ...prev };
+      updated[itemId] = 0; // Set to 0 instead of deleting
+      return updated;
+    });
+
+    setItemWarehouses(prev => {
+      const updated = { ...prev };
+      updated[itemId] = ""; // Clear warehouse selection
+      return updated;
+    });
+
+    setManuallySelectedWarehouses(prev => {
+      const updated = { ...prev };
+      delete updated[itemId];
+      return updated;
+    });
+
+    setRowsData(prev => {
+      const updated = { ...prev };
+      if (updated[itemId]) {
+        updated[itemId] = {
+          ...updated[itemId],
+          quantity: 0,
+          warehouse: ""
+        };
+      }
+      return updated;
+    });
+  };
 
   // Xử lý upload file
   const handleFileChange = (e) => {
@@ -175,6 +197,7 @@ const AddReceiptNote = () => {
     setFiles(files.filter((_, i) => i !== index));
   };
 
+  // Xử lý lưu phiếu nhập
   const handleSaveReceipt = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
@@ -190,26 +213,28 @@ const AddReceiptNote = () => {
         setIsSubmitting(false);
         return;
       }
+
       // Kiểm tra lỗi số lượng
       const itemsWithErrors = order.details.filter(item =>
         rowsData[item.id] && rowsData[item.id].error
       );
+
       if (itemsWithErrors.length > 0) {
         alert("Vui lòng sửa các lỗi số lượng nhập trước khi lưu!");
         setIsSubmitting(false);
         return;
       }
+
       // Kiểm tra xem tất cả các sản phẩm đã có số lượng nhập chưa
-      const itemsWithoutQuantity = order.details.filter(item => {
-        const rowData = rowsData[item.id] || {}; // Lấy dữ liệu hàng nếu có, hoặc một object rỗng
-        return rowData.quantity === undefined || rowData.quantity === null || rowData.quantity === "";
-      });
+      const itemsWithoutQuantity = order.details.filter(item =>
+        !rowsData[item.id] || !rowsData[item.id].quantity
+      );
+
       if (itemsWithoutQuantity.length > 0) {
         alert("Vui lòng nhập số lượng cho tất cả sản phẩm!");
         setIsSubmitting(false);
         return;
       }
-
 
       const details = order.details.map(item => {
         const rowData = rowsData[item.id];
@@ -236,7 +261,6 @@ const AddReceiptNote = () => {
         poId: orderId,
         description: description,
         receiptDate: new Date().toISOString(),
-        category: category,
         details: details
       };
 
@@ -285,6 +309,22 @@ const AddReceiptNote = () => {
     }
   };
 
+  // Update rowsData whenever quantities or warehouses change
+  useEffect(() => {
+    if (order?.details?.length > 0) {
+      const updatedRowsData = {};
+
+      order.details.forEach(item => {
+        updatedRowsData[item.id] = {
+          warehouse: itemWarehouses[item.id] || "",
+          quantity: itemQuantities[item.id] || 0,
+          error: quantityErrors[item.id] ? true : false
+        };
+      });
+
+      setRowsData(updatedRowsData);
+    }
+  }, [order, itemWarehouses, itemQuantities, quantityErrors]);
 
   // Lấy danh sách kho
   useEffect(() => {
@@ -314,17 +354,13 @@ const AddReceiptNote = () => {
   // Khởi tạo số lượng cho các sản phẩm
   useEffect(() => {
     if (order?.details?.length > 0) {
-      const initialRowsData = {};
+      const initialQuantities = {};
       order.details.forEach(item => {
-        initialRowsData[item.id] = {
-          quantity: item.orderedQuantity, // 🔥 Gán giá trị mặc định
-          warehouse: itemWarehouses[item.id] || "", // Giữ warehouse mặc định
-        };
+        initialQuantities[item.id] = item.orderedQuantity || 0;
       });
-      setRowsData(initialRowsData);
+      setItemQuantities(initialQuantities);
     }
-  }, [order]);
-
+  }, [order]); // Chỉ chạy khi `order` thay đổi
 
   // Lấy chi tiết đơn hàng và khởi tạo các giá trị mặc định
   useEffect(() => {
@@ -334,7 +370,6 @@ const AddReceiptNote = () => {
     } else {
       const fetchOrderDetail = async () => {
         try {
-          if (order) return; // Ngăn gọi API nhiều lần
           console.log("📢 Gọi API lấy đơn hàng với ID:", orderId);
           const response = await getPurchaseOrderById(orderId);
           console.log("✅ Kết quả từ API:", response);
@@ -342,12 +377,15 @@ const AddReceiptNote = () => {
           setOrder(response);
 
           const initialQuantities = {};
-          const initialWarehouses = {};
+          const initialWarehouses = { ...itemWarehouses };
 
           if (response.details) {
             response.details.forEach(item => {
               initialQuantities[item.id] = parseFloat(item.orderedQuantity) || 0;
-              initialWarehouses[item.id] = getDefaultWarehouse(referenceDocument);
+
+              if (!initialWarehouses[item.id] && !manuallySelectedWarehouses[item.id]) {
+                initialWarehouses[item.id] = getDefaultWarehouse(referenceDocument);
+              }
             });
           }
 
@@ -363,7 +401,7 @@ const AddReceiptNote = () => {
 
       fetchOrderDetail();
     }
-  }, [orderId]);
+  }, [orderId, referenceDocument, warehouses, manuallySelectedWarehouses, itemWarehouses]);
 
   const totalPages = Math.ceil((order?.details?.length || 0) / pageSize);
   const totalElements = order?.details?.length || 0;
@@ -375,22 +413,15 @@ const AddReceiptNote = () => {
     }
   }, [order?.details, totalPages, currentPage]);
 
-  // Handle page change
-  const handlePageChange = (selectedPage) => {
-    setCurrentPage(selectedPage);
+  const handlePageChange = ({ selected }) => {
+    setCurrentPage(selected);
   };
 
-  // Handle page change from ReactPaginate
-  const handlePageChangeWrapper = (selectedItem) => {
-    handlePageChange(selectedItem.selected);
-  };
   if (loading) return <Typography>Đang tải dữ liệu...</Typography>;
   if (error) return <Typography className="text-red-500">{error}</Typography>;
 
-  const items = order?.details || [];
-
   // Lấy danh sách sản phẩm hiển thị theo trang hiện tại
-  const displayedItems = items.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+  const displayedItems = order?.details?.slice(currentPage * pageSize, (currentPage + 1) * pageSize) || [];
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -409,27 +440,23 @@ const AddReceiptNote = () => {
           </Typography>
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
-              <Typography variant="small">Phân loại nhập kho <span className="text-red-500">*</span></Typography>
+              <Typography variant="small">Nhập kho <span className="text-red-500">*</span></Typography>
               <Select
                 className="!border-t-blue-gray-200 focus:!border-t-gray-900"
                 labelProps={{
                   className: "before:content-none after:content-none",
                 }}
-                value={category}
-                onChange={(value) => {
-                  setCategory(value);
-                  handleReferenceDocumentChange(value);
-                }}
-                required
-              >
+                value={referenceDocument}
+                onChange={(value) => handleReferenceDocumentChange(value)}
+                required>
                 <Option value="Thành phẩm sản xuất">Thành phẩm sản xuất</Option>
                 <Option value="Vật tư mua bán">Vật tư mua bán</Option>
                 <Option value="Hàng hóa gia công">Hàng hóa gia công</Option>
                 <Option value="Hàng hóa trả lại">Hàng hóa trả lại</Option>
               </Select>
-              {!category && (
+              {!referenceDocument && (
                 <Typography variant="small" className="text-red-500 mt-1">
-                  Vui lòng chọn phân loại nhập kho
+                  Vui lòng chọn loại nhập kho
                 </Typography>
               )}
             </div>
@@ -505,6 +532,7 @@ const AddReceiptNote = () => {
               />
             </div>
           </div>
+
           {/* Diễn giải & Kèm theo */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
@@ -532,6 +560,7 @@ const AddReceiptNote = () => {
                   className="mt-2 text-xs"
                 />
               </div>
+
               {/* Hiển thị danh sách file đã chọn */}
               {files.length > 0 && (
                 <div className="mt-2">
@@ -561,94 +590,135 @@ const AddReceiptNote = () => {
               )}
             </div>
           </div>
-          {/* Danh sách sản phẩm */}
-          <div className="px-4 py-2 flex items-center gap-4 mb-4">
-            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-              Hiển thị
+
+          <div className="mt-8">
+            <Typography variant="h6" color="blue-gray" className="mb-4">
+              Danh sách sản phẩm
             </Typography>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(0);
-              }}
-              className="border rounded px-2 py-1"
-            >
-              {[5, 10, 20, 50].map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
-            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-              kết quả mỗi trang
-            </Typography>
-          </div>
-          {/* Product table - Using new table template */}
-          <div className="overflow-auto border rounded">
-            <table className="w-full table-auto text-sm">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 border">STT</th>
-                  <th className="p-2 border">Mã hàng</th>
-                  <th className="p-2 border">Tên hàng</th>
-                  <th className="p-2 border">Đơn vị</th>
-                  <th className="p-2 border">Nhập kho <span className="text-red-500">*</span></th>
-                  <th className="p-2 border">Số lượng đặt</th>
-                  <th className="p-2 border">Số lượng còn phải nhập</th>
-                  <th className="p-2 border">Số lượng nhập kho <span className="text-red-500">*</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayedItems.length > 0 ? (
-                  displayedItems.map((item, index) => (
-                    <ProductRow
-                      key={`item-${item.id}-${index}`}
-                      item={item}
-                      index={index + currentPage * pageSize}
-                      warehouses={warehouses}
-                      defaultWarehouseCode={getDefaultWarehouse(referenceDocument)}
-                      currentPage={currentPage}
-                      pageSize={pageSize}
-                      onDataChange={handleRowDataChange}
-                    />
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="9" className="p-4 text-center text-gray-500">
-                      Không có dữ liệu sản phẩm
-                    </td>
+
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div className="flex items-center gap-2">
+                <Typography variant="small" color="blue-gray" className="font-normal">
+                  Hiển thị
+                </Typography>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(0);
+                  }}
+                  className="border rounded px-2 py-1"
+                >
+                  {[5, 10, 20, 50].map(size => (
+                    <option key={size} value={size}>{size}</option>
+                  ))}
+                </select>
+                <Typography variant="small" color="blue-gray" className="font-normal">
+                  bản ghi mỗi trang
+                </Typography>
+              </div>
+            </div>
+
+            {/* Bảng sản phẩm - Sử dụng mẫu bảng mới */}
+            <div className="overflow-auto border rounded">
+              <table className="w-full table-auto text-sm">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="p-2 border">STT</th>
+                    <th className="p-2 border">Mã hàng</th>
+                    <th className="p-2 border">Tên hàng</th>
+                    <th className="p-2 border">Đơn vị</th>
+                    <th className="p-2 border">Nhập kho</th>
+                    <th className="p-2 border">Số lượng đặt</th>
+                    <th className="p-2 border">Số lượng nhập</th>
+                    <th className="p-2 border">Hành động</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {displayedItems.map((item, index) => (
+                    <tr key={item.id}>
+                      <td className="p-2 border text-center">{currentPage * pageSize + index + 1}</td>
+                      <td className="p-2 border">{item.materialCode || item.productCode}</td>
+                      <td className="p-2 border">{item.materialName || item.productName}</td>
+                      <td className="p-2 border text-center">{item.unit}</td>
+                      <td className="p-2 border">
+                        <Select
+                          value={itemWarehouses[item.id] || ''}
+                          onChange={(value) => handleWarehouseChange(item.id, value)}
+                          className="!border-t-blue-gray-200 focus:!border-t-gray-900 min-w-[150px]"
+                          labelProps={{
+                            className: "before:content-none after:content-none",
+                          }}
+                        >
+                          {warehouses.map((warehouse) => (
+                            <Option key={warehouse.warehouseId} value={warehouse.warehouseCode}>
+                              {warehouse.warehouseCode} - {warehouse.warehouseName}
+                            </Option>
+                          ))}
+                        </Select>
+                      </td>
+                      <td className="p-2 border text-center">{item.orderedQuantity}</td>
+                      <td className="p-2 border">
+                        <div>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={itemQuantities[item.id] || ""}
+                            onChange={(e) => handleQuantityChange(item.id, e.target.value, item.orderedQuantity)}
+                            className={`!border-t-blue-gray-200 focus:!border-t-gray-900 ${quantityErrors[item.id] ? "border-red-500" : ""}`}
+                            labelProps={{
+                              className: "before:content-none after:content-none",
+                            }}
+                          />
+                          {quantityErrors[item.id] && (
+                            <p className="text-red-500 text-xs mt-1">{quantityErrors[item.id]}</p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-2 border text-center">
+                        <Tooltip content="Xoá">
+                          <button
+                            onClick={() => handleRemoveRow(item.id)}
+                            className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white"
+                          >
+                            <FaTrash className="h-3 w-3" />
+                          </button>
+                        </Tooltip>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
+          <div className="flex justify-end mt-2 pr-4 text-gray-800 text-sm font-semibold">
+            <span>TỔNG</span>
+            <span className="ml-6">
+              {Object.values(itemQuantities).reduce((sum, qty) => sum + parseFloat(qty || 0), 0).toFixed(2)}
+            </span>
+          </div>
 
           {/* Phân trang */}
           {totalElements > 0 && (
-            <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
+            <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
               <div className="flex items-center gap-2">
                 <Typography variant="small" color="blue-gray" className="font-normal">
-                  Trang {currentPage + 1} / {totalPages || 1} • {totalElements || 0} bản ghi
+                  Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
                 </Typography>
               </div>
               <ReactPaginate
-                previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
-                nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
-                breakLabel="..."
-                pageCount={totalPages || 1}
+                previousLabel={<ArrowLeftIcon className="h-4 w-4" />}
+                nextLabel={<ArrowRightIcon className="h-4 w-4" />}
+                pageCount={totalPages}
                 marginPagesDisplayed={2}
                 pageRangeDisplayed={5}
-                onPageChange={handlePageChangeWrapper}
-                containerClassName="flex items-center gap-1"
+                onPageChange={handlePageChange}
+                containerClassName="flex items-center gap-2"
                 pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-                pageLinkClassName="flex items-center justify-center w-full h-full"
+                activeClassName="bg-blue-500 text-white border-blue-500"
                 previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                 nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-                breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-                activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
-                forcePage={currentPage}
                 disabledClassName="opacity-50 cursor-not-allowed"
               />
             </div>
