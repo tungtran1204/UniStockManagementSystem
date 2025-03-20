@@ -62,8 +62,7 @@ const ReceiptNotePage = () => {
 
   const columnsConfig = [
     { field: 'receiptCode', headerName: 'Mã phiếu nhập', flex: 1.5, minWidth: 150, editable: false },
-    { field: 'warehouseName', headerName: 'Nhập kho', flex: 2, minWidth: 100, editable: false },
-    { field: 'supplierName', headerName: 'Nhập từ', flex: 1.5, minWidth: 100, editable: false },
+    { field: 'category', headerName: 'Loại hàng hóa', flex: 2, minWidth: 100, editable: false },
     { field: 'reason', headerName: 'Lý do nhập', flex: 1.5, minWidth: 300, editable: false },
     {
       field: 'createdDate',
@@ -73,6 +72,7 @@ const ReceiptNotePage = () => {
       editable: false,
       renderCell: (params) => new Date(params.value).toLocaleDateString("vi-VN"),
     },
+    { field: 'createBy', headerName: 'Người tạo phiếu', flex: 1.5, minWidth: 100, editable: false },
     { field: 'reference', headerName: 'Tham chiếu', flex: 1.5, minWidth: 150, editable: false, renderCell: (params) => params.value || "N/A" },
     {
       field: 'actions',
@@ -95,10 +95,11 @@ const ReceiptNotePage = () => {
 
   const data = receiptNotes.map((receipt) => ({
     receiptCode: receipt.grnCode,
-    warehouseName: receipt.warehouseName,
+    category: receipt.category || 'không có dữ liệu',
     // supplierName: receipt.supplierName,
     reason: receipt.description,
     createdDate: receipt.receiptDate,
+    createBy: receipt.createdBy,
     reference: receipt.reference || "N/A",
   }));
 

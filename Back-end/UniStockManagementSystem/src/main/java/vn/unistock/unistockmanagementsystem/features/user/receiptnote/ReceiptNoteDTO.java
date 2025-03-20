@@ -18,6 +18,7 @@ public class ReceiptNoteDTO {
     private LocalDateTime receiptDate;
     private Long createdBy;
     private Long poId;
+    private String category;
     private List<ReceiptNoteDetailDTO> details;
 
 }

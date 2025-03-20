@@ -64,7 +64,17 @@ const PurchaseOrderPage = () => {
 
   // Fetch orders when component mounts or pagination changes
   useEffect(() => {
-    fetchPaginatedOrders(currentPage, pageSize, searchKeyword, selectedStatus);
+    let isMounted = true;
+    const timeoutId = setTimeout(() => {
+      if (isMounted) {
+        fetchPaginatedOrders(currentPage, pageSize, searchKeyword, selectedStatus);
+      }
+    }, 500); // Chỉ gọi API sau 500ms nếu không có thay đổi tiếp theo
+  
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
   }, [currentPage, pageSize, searchKeyword, selectedStatus]);
 
   // Sorting handler

@@ -10,19 +10,20 @@ const authHeader = () => {
 };
 
 // Fetch paginated receipt notes
-export const fetchReceiptNotes = async (page, size, searchTerm = "") => {
+export const fetchReceiptNotes = async (page, size, searchTerm = "", prevData = null) => {
   try {
     let url = `${API_URL}?page=${page}&size=${size}`;
-    
-    // Add search term if provided
+
     if (searchTerm) {
       url += `&search=${encodeURIComponent(searchTerm)}`;
     }
-    
-    const response = await axios.get(url, {
-      headers: authHeader(),
-    });
-    
+
+    const response = await axios.get(url, { headers: authHeader() });
+
+    if (prevData && JSON.stringify(response.data) === JSON.stringify(prevData)) {
+      return prevData;
+    }
+
     return response.data;
   } catch (error) {
     console.error("Error fetching receipt notes:", error);

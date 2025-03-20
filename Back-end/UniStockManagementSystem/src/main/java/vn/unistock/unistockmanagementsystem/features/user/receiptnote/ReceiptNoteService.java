@@ -85,6 +85,7 @@ public class ReceiptNoteService {
         GoodReceiptNote grn = GoodReceiptNote.builder()
                 .grnCode(grnDto.getGrnCode())
                 .description(grnDto.getDescription())
+                .category(grnDto.getCategory())
                 .createdBy(currentUser)
                 .details(new ArrayList<>())
                 .build();

@@ -42,6 +42,9 @@ public class GoodReceiptNote {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "category", nullable = false)
+    private String category;
+
     @CreationTimestamp
     private LocalDateTime receiptDate;
 

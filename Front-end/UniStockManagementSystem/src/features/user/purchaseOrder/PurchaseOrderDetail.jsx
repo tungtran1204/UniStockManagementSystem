@@ -31,32 +31,31 @@ const PurchaseOrderDetail = () => {
 
 
   useEffect(() => {
-    if (!orderId) {
-      setError("Không tìm thấy ID đơn hàng!");
-      setLoading(false);
-      return;
-    }
+    if (!orderId || order) return; // Nếu đã có dữ liệu, không gọi API
+  
+    let isMounted = true;
+    
     const fetchOrderDetail = async () => {
       try {
         console.log("📢 Gọi API lấy đơn hàng với ID:", orderId);
         const response = await getPurchaseOrderById(orderId);
         console.log("✅ Kết quả từ API:", response);
-
-        // Đảm bảo items không null
-        setOrder((prevOrder) => ({
-          ...prevOrder,
-          ...response,
-          items: response.items || [],
-        }));
+  
+        if (isMounted) {
+          setOrder({
+            ...response,
+            items: response.items || [],
+          });
+        }
       } catch (error) {
-        console.error("❌ Lỗi khi lấy chi tiết đơn hàng:", error);
-        setError("Không thể tải dữ liệu đơn hàng.");
+        if (isMounted) setError("Không thể tải dữ liệu đơn hàng.");
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
-
+  
     fetchOrderDetail();
+    return () => { isMounted = false; };
   }, [orderId]);
 
   if (loading) return <Typography>Đang tải dữ liệu...</Typography>;
