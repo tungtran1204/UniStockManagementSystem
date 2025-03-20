@@ -13,12 +13,9 @@ import ReactPaginate from "react-paginate";
 import { ArrowLeftIcon, ArrowRightIcon, EyeIcon, ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
-<<<<<<< HEAD
 import useReceiptNote from "../receiptNote/useReceiptNote";
 import { getNextCode } from "../receiptNote/receiptNoteService";
-=======
 import Table from "@/components/Table";
->>>>>>> 540e406a2328368890ec1f8964cff319d2612ac8
 
 const PurchaseOrderPage = () => {
   const navigate = useNavigate();
@@ -124,7 +121,6 @@ const PurchaseOrderPage = () => {
     navigate(`/user/purchaseOrder/${orderId}`);
   };
 
-<<<<<<< HEAD
   const [receiptCode, setReceiptCode] = useState("");
 
   useEffect(() => {
@@ -135,7 +131,6 @@ const PurchaseOrderPage = () => {
     }
   }, []);
 
-=======
   const columnsConfig = [
     { field: 'poCode', headerName: 'Mã đơn', flex: 1.5, minWidth: 150, editable: false },
     { field: 'supplierName', headerName: 'Nhà cung cấp', flex: 2, minWidth: 200, editable: false },
@@ -180,6 +175,7 @@ const PurchaseOrderPage = () => {
             <EyeIcon className="h-5 w-5" />
           </button>
         </Tooltip>
+        
       ),
     },
   ];
@@ -187,13 +183,12 @@ const PurchaseOrderPage = () => {
   const data = purchaseOrders.map((order) => ({
     id: order.poId,
     poCode: order.poCode,
-    supplierName: order.supplierName || "N/A",
-    supplierContactName: order.supplierContactName || "N/A",
-    supplierPhone: order.supplierPhone || "N/A",
+    supplierName: order.supplierName || "không có thông tin",
+    supplierContactName: order.supplierContactName || "không có thông tin",
+    supplierPhone: order.supplierPhone || "không có thông tin",
     orderDate: order.orderDate,
-    status: order.status.label || "Chờ nhận",
+    status: order.status.label || "n/a",
   }));
->>>>>>> 540e406a2328368890ec1f8964cff319d2612ac8
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -248,8 +243,7 @@ const PurchaseOrderPage = () => {
             enableSelection={false}
           />
 
-<<<<<<< HEAD
-                  <th className="p-2 border">
+                  {/* <th className="p-2 border">
                     <div className="flex items-center justify-between">
                       Trạng thái
                       <Menu>
@@ -315,12 +309,10 @@ const PurchaseOrderPage = () => {
                 ))}
               </tbody>
             </table>
-          </div>
+          </div> */}
 
           <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
-=======
           <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
->>>>>>> 540e406a2328368890ec1f8964cff319d2612ac8
             <Typography variant="small" color="blue-gray" className="font-normal">
               Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
             </Typography>
@@ -342,7 +334,8 @@ const PurchaseOrderPage = () => {
               forcePage={currentPage}
               disabledClassName="opacity-50 cursor-not-allowed"
             />
-          </div>
+            </div>
+                        </div>
         </CardBody>
       </Card>
     </div>

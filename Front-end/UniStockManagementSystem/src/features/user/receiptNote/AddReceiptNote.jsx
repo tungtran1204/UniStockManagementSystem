@@ -627,6 +627,7 @@ const uploadPaperEvidence = async (formData) => {
                 </Typography>
               </div>
             </div>
+            </div>
 
             {/* Bảng sản phẩm */}
             <Table

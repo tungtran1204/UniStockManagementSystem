@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { Button, Card, CardHeader, CardBody, Typography, Tooltip } from "@material-tailwind/react";
 import { BiSolidEdit } from "react-icons/bi";
+import { FaEdit, FaEye } from "react-icons/fa";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
@@ -92,13 +93,12 @@ const ReceiptNotePage = () => {
     },
   ];
 
-  const data = importReceipts.map((receipt) => ({
-    id: receipt.receiptId,
-    receiptCode: receipt.receiptCode,
+  const data = receiptNotes.map((receipt) => ({
+    receiptCode: receipt.grnCode,
     warehouseName: receipt.warehouseName,
-    supplierName: receipt.supplierName,
-    reason: receipt.reason,
-    createdDate: receipt.createdDate,
+    // supplierName: receipt.supplierName,
+    reason: receipt.description,
+    createdDate: receipt.receiptDate,
     reference: receipt.reference || "N/A",
   }));
 
