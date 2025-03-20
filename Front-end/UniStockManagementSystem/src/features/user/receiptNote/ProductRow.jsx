@@ -2,37 +2,38 @@ import React, { useState, useEffect } from "react";
 import {
   Input,
   Select,
-  Option,
+  Option
 } from "@material-tailwind/react";
 
-// Hàm kiểm tra số lượng nhập hợp lệ - đơn giản hóa chỉ cho phép số nguyên
+// Hàm kiểm tra số lượng nhập hợp lệ
 const isValidQuantity = (inputQty, remainingQty) => {
   if (!inputQty || isNaN(inputQty)) return false;
-
   const numInputQty = parseInt(inputQty, 10);
   const numRemainingQty = parseInt(remainingQty, 10);
   const minAllowed = 1;
-  const maxAllowed = Math.floor(numRemainingQty * 1.01); // +1% so với số lượng còn lại, làm tròn xuống
-
+  const maxAllowed = Math.floor(numRemainingQty * 1.01);
   return numInputQty >= minAllowed && numInputQty <= maxAllowed;
 };
 
 const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage, pageSize, onDataChange }) => {
   const [warehouse, setWarehouse] = useState(defaultWarehouseCode || '');
   const [quantity, setQuantity] = useState(item.orderedQuantity || '');
+  useEffect(() => {
+    setWarehouse(defaultWarehouseCode);
+  }, [defaultWarehouseCode]);
   const [quantityError, setQuantityError] = useState('');
-  const [remainingQuantity, setRemainingQuantity] = useState(item.remainingQuantity || '');
+  const [remainingQuantity, setRemainingQuantity] = useState(
+    Math.max(0, item.orderedQuantity - (item.orderedQuantity || 0))
+  );
 
   // Cập nhật số lượng còn lại dựa trên số lượng nhập
   const updateRemainingQuantity = (inputQty) => {
     const numInputQty = parseInt(inputQty, 10) || 0;
     const numOrderedQty = parseInt(item.orderedQuantity, 10) || 0;
-    
-    // Tính toán số lượng còn lại: số lượng đặt - số lượng nhập
+
     const newRemainingQty = Math.max(0, numOrderedQty - numInputQty);
-    
     setRemainingQuantity(newRemainingQty);
-    return newRemainingQty.toString();
+    return newRemainingQty;
   };
 
   // Xử lý thay đổi kho
@@ -43,57 +44,40 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
     onDataChange(item.id, { warehouse: value, warehouseId, quantity, error: quantityError });
   };
 
-  // Xử lý thay đổi số lượng - đơn giản hóa chỉ nhận số nguyên
+  // Xử lý thay đổi số lượng nhập
   const handleQuantityChange = (e) => {
     const inputValue = e.target.value;
-    
-    // Chỉ cho phép chuỗi rỗng hoặc số nguyên dương
+
     if (inputValue === '' || /^\d+$/.test(inputValue)) {
       setQuantity(inputValue);
-      
+
       let error = '';
       if (inputValue === '') {
         error = 'Số lượng nhập không được để trống';
-      } else if (!isValidQuantity(inputValue, item.remainingQuantity)) {
+      } else if (!isValidQuantity(inputValue, remainingQuantity)) {
         error = "Số lượng phải hợp lệ và không hơn 1% lượng cần nhập";
       }
-      
       setQuantityError(error);
-      
+
       // Cập nhật số lượng còn lại mới
-      const newRemainingQty = inputValue ? updateRemainingQuantity(inputValue) : remainingQuantity;
-      
+      const newRemainingQty = updateRemainingQuantity(inputValue);
+
       // Thông báo sự thay đổi lên component cha
-      onDataChange(item.id, { 
-        warehouse, 
-        quantity: inputValue, 
-        remainingQuantity: newRemainingQty, 
-        error 
+      onDataChange(item.id, {
+        warehouse,
+        quantity: inputValue,
+        remainingQuantity: newRemainingQty,
+        error
       });
     }
   };
 
-  // Cập nhật giá trị mặc định khi props thay đổi
-  useEffect(() => {
-    if (defaultWarehouseCode && !warehouse) {
-      setWarehouse(defaultWarehouseCode);
-      onDataChange(item.id, { warehouse: defaultWarehouseCode, quantity, error: quantityError });
-    }
-  }, [defaultWarehouseCode]);
-
-  useEffect(() => {
-    // Nếu đã có số lượng nhập, cập nhật số lượng còn lại
-    if (quantity) {
-      updateRemainingQuantity(quantity);
-    }
-  }, []);
-
   return (
     <tr>
       <td className="p-2 border text-center">{currentPage * pageSize + index + 1}</td>
-      <td className="p-2 border">{item.materialCode}</td>
-      <td className="p-2 border">{item.materialName}</td>
-      <td className="p-2 border text-center">{item.unit.unitName}</td>
+      <td className="p-2 border">{item.materialCode || item.productCode}</td>
+      <td className="p-2 border">{item.materialName || item.productName}</td>
+      <td className="p-2 border text-center">{item.unit}</td>
       <td className="p-2 border">
         <Select
           value={warehouse}
@@ -119,9 +103,7 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
             inputMode="numeric"
             value={quantity}
             onChange={handleQuantityChange}
-            className={`!border-t-blue-gray-200 focus:!border-t-gray-900 ${
-              quantityError ? "border-red-500" : ""
-            }`}
+            className={`!border-t-blue-gray-200 focus:!border-t-gray-900 ${quantityError ? "border-red-500" : ""}`}
             labelProps={{
               className: "before:content-none after:content-none",
             }}

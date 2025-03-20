@@ -8,7 +8,7 @@ import {
   Typography,
   Tooltip,
 } from "@material-tailwind/react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation} from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { ArrowLeftIcon, ArrowRightIcon, EyeIcon, ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
@@ -16,6 +16,7 @@ import TableSearch from '@/components/TableSearch';
 import useReceiptNote from "../receiptNote/useReceiptNote";
 import { getNextCode } from "../receiptNote/receiptNoteService";
 import Table from "@/components/Table";
+
 
 const PurchaseOrderPage = () => {
   const navigate = useNavigate();
@@ -30,10 +31,19 @@ const PurchaseOrderPage = () => {
   } = usePurchaseOrder();
 
 
-  const handleCreateReceipt = async (order) => { // order là object đầy đủ
+  const handleCreateReceipt = async (order) => {
     try {
       const nextCode = await getNextCode(); // Gọi API lấy mã phiếu nhập tiếp theo
-      navigate(`/user/receiptNote/add`, { state: { orderId: order.poId, nextCode } }); // Truyền đúng orderId
+      
+      // Make sure we're using the correct order ID property based on your data structure
+      const orderId = order.id; // This matches the id from the row data
+      
+      navigate(`/user/receiptNote/add`, { 
+        state: { 
+          orderId: orderId, 
+          nextCode: nextCode 
+        } 
+      });
     } catch (error) {
       console.error("Lỗi khi lấy mã phiếu nhập:", error);
     }
@@ -50,6 +60,7 @@ const PurchaseOrderPage = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [selectedOrders, setSelectedOrders] = useState([]);
+
 
   // Fetch orders when component mounts or pagination changes
   useEffect(() => {
@@ -121,15 +132,18 @@ const PurchaseOrderPage = () => {
     navigate(`/user/purchaseOrder/${orderId}`);
   };
 
-  const [receiptCode, setReceiptCode] = useState("");
+const [receiptCode, setReceiptCode] = useState("");
+const location = useNavigate();
 
-  useEffect(() => {
-    if (!location.state?.nextCode) {
-      getNextCode().then(setReceiptCode).catch(console.error);
-    } else {
-      setReceiptCode(location.state.nextCode);
-    }
-  }, []);
+useEffect(() => {
+  // Check if location.state exists and has nextCode
+  if (location.state?.nextCode) {
+    setReceiptCode(location.state.nextCode);
+  } else {
+    // If not, get the next code from the API
+    getNextCode().then(setReceiptCode).catch(console.error);
+  }
+}, [location]);
 
   const columnsConfig = [
     { field: 'poCode', headerName: 'Mã đơn', flex: 1.5, minWidth: 150, editable: false },
@@ -168,14 +182,27 @@ const PurchaseOrderPage = () => {
       flex: 0.5,
       minWidth: 100,
       renderCell: (params) => (
-        <Tooltip content="Xem chi tiết">
-          <button className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-            onClick={() => viewOrderDetail(params.row.id)}
-          >
-            <EyeIcon className="h-5 w-5" />
-          </button>
-        </Tooltip>
-        
+        <div className="flex space-x-2">
+          {/* Nút Xem Chi Tiết */}
+          <Tooltip content="Xem chi tiết">
+            <button
+              className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+              onClick={() => viewOrderDetail(params.row.id)}
+            >
+              <EyeIcon className="h-5 w-5" />
+            </button>
+          </Tooltip>
+      
+          {/* Nút Nhập kho */}
+          <Tooltip content="Nhập kho">
+            <button
+              className="p-1.5 rounded-full bg-green-500 hover:bg-green-600 text-white"
+              onClick={() => handleCreateReceipt(params.row)} // Fix: Pass the row data
+            >
+              <InboxArrowDownIcon className="h-5 w-5" />
+            </button>
+          </Tooltip>
+        </div>
       ),
     },
   ];
