@@ -166,6 +166,27 @@ class WarehouseServiceTest {
             assertNotNull(result);
             assertEquals(longName, result.getWarehouseName());
         }
+        @Test
+        @DisplayName("Thêm kho với tên khoảng trắng")
+        void testAddWarehouse_WhiteSpace() {
+            // Arrange
+            String longName = "               ";
+            WarehouseDTO longNameDTO = WarehouseDTO.builder().warehouseName(longName).build();
+
+            Warehouse longNameWarehouse = new Warehouse();
+            longNameWarehouse.setWarehouseName(longName);
+
+            when(warehouseRepository.existsByWarehouseName(anyString())).thenReturn(false);
+            when(warehouseMapper.toEntity(any(WarehouseDTO.class))).thenReturn(longNameWarehouse);
+            when(warehouseRepository.save(any(Warehouse.class))).thenReturn(longNameWarehouse);
+
+            // Act
+            Warehouse result = warehouseService.addWarehouse(longNameDTO);
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(longName, result.getWarehouseName());
+        }
     }
 
     @Nested
