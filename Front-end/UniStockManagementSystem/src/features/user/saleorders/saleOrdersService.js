@@ -108,7 +108,7 @@ export const updateOrder = async (orderId, orderData) => {
 export const getTotalQuantityOfProduct = async (productId) => {
   try {
     const response = await axios.get(
-      `http://localhost:8080/api/unistock/inventory/product/${productId}/total-quantity/warehouses`,
+      `${import.meta.env.VITE_API_URL}/user/inventory/product/${productId}/warehouses`,
       {
         headers: authHeader(),
       }
@@ -116,6 +116,20 @@ export const getTotalQuantityOfProduct = async (productId) => {
     return response.data; 
   } catch (error) {
     console.error("❌ [getTotalQuantityOfProduct] Lỗi khi lấy tổng tồn kho:", error);
+    throw error;
+  }
+};
+
+export const getProductMaterialsByProduct = async (productId) => {
+  try {
+    const response = await axios.get(
+      `${import.meta.env.VITE_API_URL}/user/product-materials/${productId}?page=0&size=100`,
+      { headers: authHeader() }
+    );
+    // Giả định BE trả về dữ liệu ở response.data.content
+    return response.data.content;
+  } catch (error) {
+    console.error("Error fetching product materials for product", productId, error);
     throw error;
   }
 };
