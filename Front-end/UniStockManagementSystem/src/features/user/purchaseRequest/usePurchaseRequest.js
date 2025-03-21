@@ -71,6 +71,7 @@ const usePurchaseRequest = () => {
     getNextCode,
     addRequest,
     toggleStatus,
+    getPurchaseOrderById,
   };
 };
 

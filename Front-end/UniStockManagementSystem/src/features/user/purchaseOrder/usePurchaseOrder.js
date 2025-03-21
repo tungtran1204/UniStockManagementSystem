@@ -67,7 +67,8 @@ const usePurchaseOrder = () => {
     searchKeyword,
     setSearchKeyword,
     selectedStatus,
-    setSelectedStatus
+    setSelectedStatus,
+    getPurchaseOrderById 
   };
 };
 

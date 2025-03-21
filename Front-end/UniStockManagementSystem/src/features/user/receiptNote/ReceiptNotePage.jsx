@@ -4,17 +4,23 @@ import ReactPaginate from "react-paginate";
 import { Button, Card, CardHeader, CardBody, Typography, Tooltip } from "@material-tailwind/react";
 import { BiSolidEdit } from "react-icons/bi";
 import { FaEdit, FaEye } from "react-icons/fa";
-import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowRightIcon, ArrowLeftIcon, EyeIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
-import useReceiptNote from './useReceiptNote';
+import useUser from "../../admin/users/useUser";
+import usePurchaseOrder from "../purchaseOrder/usePurchaseOrder";
+import useReceiptNote from "./useReceiptNote";
 
 const ReceiptNotePage = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+  const {getUserById} = useUser();
+  const {getPurchaseOrderById} = usePurchaseOrder();
+  const [usernames, setUsernames] = useState({});
+  const [purchaseOrders, setPurchaseOrders] = useState({});  
   
   const {
     receiptNotes,
@@ -27,6 +33,47 @@ const ReceiptNotePage = () => {
   useEffect(() => {
     fetchPaginatedReceiptNotes(currentPage, pageSize);
   }, [currentPage, pageSize]);
+
+  // Fetch thông tin user và đơn hàng
+  useEffect(() => {
+    const fetchUserAndOrderData = async () => {
+      for (const receipt of receiptNotes) {
+        // Xử lý người tạo phiếu
+        if (receipt.createdBy && !usernames[receipt.createdBy]) {
+          try {
+            const user = await getUserById(receipt.createdBy);
+            setUsernames(prev => ({
+              ...prev,
+              [receipt.createdBy]: user.username || user.email || "N/A"
+            }));
+          } catch (error) {
+            console.error("❌ Lỗi khi lấy thông tin người dùng:", error);
+          }
+        }
+  
+        // Xử lý đơn hàng tham chiếu
+        if (receipt.poId && !purchaseOrders[receipt.poId]) {
+          console.log(`📢 Gọi API lấy đơn hàng với ID: ${receipt.poId}`);
+          try {
+            const order = await getPurchaseOrderById(receipt.poId);
+            console.log("✅ Kết quả từ API:", order);
+  
+            setPurchaseOrders(prev => ({
+              ...prev,
+              [receipt.poId]: order.poCode || "N/A"
+            }));
+          } catch (error) {
+            console.error("❌ Lỗi khi lấy thông tin đơn hàng:", error);
+          }
+        }
+      }
+    };
+  
+    if (receiptNotes.length > 0) {
+      fetchUserAndOrderData();
+    }
+  }, [receiptNotes, getUserById, getPurchaseOrderById]);
+  
 
   // Handle page change
   const handlePageChange = (selectedPage) => {
@@ -63,7 +110,6 @@ const ReceiptNotePage = () => {
   const columnsConfig = [
     { field: 'receiptCode', headerName: 'Mã phiếu nhập', flex: 1.5, minWidth: 150, editable: false },
     { field: 'category', headerName: 'Loại hàng hóa', flex: 2, minWidth: 100, editable: false },
-    { field: 'reason', headerName: 'Lý do nhập', flex: 1.5, minWidth: 300, editable: false },
     {
       field: 'createdDate',
       headerName: 'Ngày lập phiếu',
@@ -72,8 +118,46 @@ const ReceiptNotePage = () => {
       editable: false,
       renderCell: (params) => new Date(params.value).toLocaleDateString("vi-VN"),
     },
-    { field: 'createBy', headerName: 'Người tạo phiếu', flex: 1.5, minWidth: 100, editable: false },
-    { field: 'reference', headerName: 'Tham chiếu', flex: 1.5, minWidth: 150, editable: false, renderCell: (params) => params.value || "N/A" },
+    {
+      field: 'createBy',
+      headerName: 'Người tạo phiếu',
+      flex: 1.5,
+      minWidth: 100,
+      editable: false,
+      renderCell: (params) => usernames[params.value] || "Đang tải...",
+    },
+    {
+      field: 'reference',
+      headerName: 'Tham chiếu',
+      flex: 1.5,
+      minWidth: 150,
+      editable: false,
+      renderCell: (params) => {
+        const { id, type } = params.value || {};
+        const label = purchaseOrders[id] || "N/A";
+      
+        const getPathByType = (type, id) => {
+          switch (type) {
+            case "PURCHASE_ORDER":
+              return `/user/purchaseOrder/${id}`;
+            default:
+              return null;
+          }
+        };
+      
+        const path = getPathByType(type, id);
+        if (!path) return label;
+      
+        return (
+          <span
+            onClick={() => navigate(path)}
+            className="text-blue-600 hover:underline cursor-pointer"
+          >
+            {label}
+          </span>
+        );
+      }
+    },
     {
       field: 'actions',
       headerName: 'Hành động',
@@ -81,11 +165,11 @@ const ReceiptNotePage = () => {
       minWidth: 100,
       renderCell: (params) => (
         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-          <Tooltip content="Chỉnh sửa">
+          <Tooltip content="Xem chi tiết">
             <button className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
               onClick={() => handleEdit(params.row)}
             >
-              <BiSolidEdit className="h-5 w-5" />
+              <EyeIcon className="h-5 w-5" />
             </button>
           </Tooltip>
         </div>
@@ -96,11 +180,12 @@ const ReceiptNotePage = () => {
   const data = receiptNotes.map((receipt) => ({
     receiptCode: receipt.grnCode,
     category: receipt.category || 'không có dữ liệu',
-    // supplierName: receipt.supplierName,
-    reason: receipt.description,
     createdDate: receipt.receiptDate,
     createBy: receipt.createdBy,
-    reference: receipt.reference || "N/A",
+    reference: {
+      id: receipt.poId || "N/AA",
+      type: "PURCHASE_ORDER"
+    }
   }));
 
   return (
