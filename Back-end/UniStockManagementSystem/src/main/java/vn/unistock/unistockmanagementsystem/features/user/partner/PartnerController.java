@@ -41,4 +41,11 @@ public class PartnerController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         }
     }
+
+    @GetMapping("/by-material/{materialId}")
+    public ResponseEntity<List<PartnerDTO>> getPartnersByMaterial(@PathVariable Long materialId) {
+        List<PartnerDTO> partners = partnerService.getPartnersByMaterial(materialId);
+        return ResponseEntity.ok(partners);
+    }
+
 }

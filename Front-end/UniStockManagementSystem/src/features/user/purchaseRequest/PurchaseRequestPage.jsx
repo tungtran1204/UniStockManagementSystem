@@ -51,7 +51,6 @@ const PurchaseRequestPage = () => {
     { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
     { field: 'purchaseRequestCode', headerName: 'Mã yêu cầu', flex: 1.5, minWidth: 150, editable: false },
     { field: 'purchaseOrderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false, renderCell: (params) => params.value || "Chưa có" },
-    { field: 'partnerName', headerName: 'Nhà cung cấp', flex: 2, minWidth: 200, editable: false },
     {
       field: 'createdDate',
       headerName: 'Ngày tạo yêu cầu',
@@ -99,7 +98,6 @@ const PurchaseRequestPage = () => {
     index: (currentPage * pageSize) + index + 1,
     purchaseRequestCode: request.purchaseRequestCode,
     purchaseOrderCode: request.purchaseOrderCode || "Chưa có",
-    partnerName: request.partnerName,
     createdDate: request.createdDate,
     status: request.status,
   }));

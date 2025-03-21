@@ -22,18 +22,32 @@ public class PurchaseRequest {
     private String purchaseRequestCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "partner_id", nullable = false)
-    private Partner partner;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = true) // Nullable để cho phép không liên kết
+    @JoinColumn(name = "order_id", nullable = true)
     private SalesOrder salesOrder;
 
     @Column(nullable = false)
     private LocalDateTime createdDate;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String status;
+    private RequestStatus status = RequestStatus.PENDING;
+
+    public enum RequestStatus {
+        PENDING("Chờ xác nhận"),
+        CONFIRMED("Xác nhận"),
+        CANCELLED("Hủy"),
+        FINISHED("Đã hoàn thành");
+
+        private final String label;
+
+        RequestStatus(String label) {
+            this.label = label;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+    }
 
     @Column(columnDefinition = "TEXT")
     private String notes;
@@ -41,16 +55,19 @@ public class PurchaseRequest {
     @OneToMany(mappedBy = "purchaseRequest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<PurchaseRequestDetail> purchaseRequestDetails;
 
-
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (status == null) {
+            status = RequestStatus.PENDING;
+        }
     }
 
     @PreUpdate
