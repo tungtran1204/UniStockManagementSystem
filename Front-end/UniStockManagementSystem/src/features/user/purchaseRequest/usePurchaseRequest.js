@@ -19,6 +19,10 @@ const usePurchaseRequest = () => {
       setTotalElements(data.totalElements || 0);
     } catch (error) {
       console.error("❌ Error fetching purchase requests:", error);
+      // Set empty state on error
+      setPurchaseRequests([]);
+      setTotalPages(1);
+      setTotalElements(0);
     }
   };
 

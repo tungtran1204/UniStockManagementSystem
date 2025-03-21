@@ -1,8 +1,8 @@
 import axios from "axios";
 
 // API endpoint for warehouses
-const API_URL = `${import.meta.env.VITE_API_URL}/user/warehouses`;
-
+//const API_URL = `${import.meta.env.VITE_API_URL}/user/warehouses`;
+const API_URL = `http://localhost:8080/api/unistock/user/warehouses`;
 // take token from local storage
 const authHeader = () => {
   const token = localStorage.getItem("token");
@@ -71,6 +71,17 @@ export const getWarehouseById = async (warehouseId) => {
     return response.data;
   } catch (error) {
     console.error(" Error fetching warehouse by ID:", error);
+    throw error;
+  }
+};
+
+//Get warehouse list
+export const getWarehouseList = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/list`, { headers: authHeader() });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching warehouse list:", error);
     throw error;
   }
 };

@@ -5,10 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import vn.unistock.unistockmanagementsystem.entities.PurchaseRequest;
 
 import java.util.Map;
 
@@ -48,10 +46,10 @@ public class PurchaseRequestController {
 
     @PostMapping("/manual")
     public ResponseEntity<PurchaseRequestDTO> createManualPurchaseRequest(@RequestBody PurchaseRequestDTO dto) {
+        logger.info("Creating manual purchase request: {}", dto);
         PurchaseRequestDTO response = purchaseRequestService.createManualPurchaseRequest(dto);
         return ResponseEntity.ok(response);
     }
-
 
     @PatchMapping("/{purchaseRequestId}/status")
     public ResponseEntity<PurchaseRequestDTO> updatePurchaseRequestStatus(
@@ -59,6 +57,9 @@ public class PurchaseRequestController {
             @RequestBody Map<String, String> statusRequest) {
         logger.info("Updating status of purchase request ID: {}", purchaseRequestId);
         String newStatus = statusRequest.get("status");
+        if (newStatus == null || newStatus.isEmpty()) {
+            throw new IllegalArgumentException("Trạng thái không được để trống");
+        }
         PurchaseRequestDTO updatedRequest = purchaseRequestService.updatePurchaseRequestStatus(purchaseRequestId, newStatus);
         return ResponseEntity.ok(updatedRequest);
     }

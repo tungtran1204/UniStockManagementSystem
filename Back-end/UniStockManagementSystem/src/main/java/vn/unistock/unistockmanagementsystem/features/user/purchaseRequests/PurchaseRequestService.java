@@ -6,16 +6,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import vn.unistock.unistockmanagementsystem.entities.*;
 import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerRepository;
-import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersRepository;
-import vn.unistock.unistockmanagementsystem.features.user.units.UnitRepository;
+
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -34,37 +31,35 @@ public class PurchaseRequestService {
     private final PurchaseRequestMapper purchaseRequestMapper;
     private final PurchaseRequestDetailMapper purchaseRequestDetailMapper;
 
-    public Page<PurchaseRequestDTO> getAllPurchaseRequests(Pageable pageable) {
-        Page<PurchaseRequest> requests = purchaseRequestRepository.findAll(pageable);
-        return requests.map(purchaseRequestMapper::toDTO);
-    }
+        public Page<PurchaseRequestDTO> getAllPurchaseRequests(Pageable pageable) {
+            Page<PurchaseRequest> requests = purchaseRequestRepository.findAll(pageable);
+            return requests.map(purchaseRequestMapper::toDTO);
+        }
 
     public PurchaseRequestDTO getPurchaseRequestById(Long purchaseRequestId) {
         PurchaseRequest request = purchaseRequestRepository.findById(purchaseRequestId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy yêu cầu với ID: " + purchaseRequestId));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu với ID: " + purchaseRequestId));
         return purchaseRequestMapper.toDTO(request);
     }
 
     @Transactional
     public PurchaseRequestDTO createManualPurchaseRequest(PurchaseRequestDTO dto) {
-        // Kiểm tra đối tác
-        Partner partner = partnerRepository.findById(dto.getPartnerId())
-                .orElseThrow(() -> new RuntimeException("Partner not found"));
-
         // Chuyển đổi DTO → Entity
         PurchaseRequest purchaseRequest = purchaseRequestMapper.toEntity(dto);
-        purchaseRequest.setPartner(partner);
         purchaseRequest.setCreatedDate(LocalDateTime.now());
-        purchaseRequest.setStatus("PENDING");
+        purchaseRequest.setStatus(PurchaseRequest.RequestStatus.PENDING);
 
         // Tạo danh sách details
         List<PurchaseRequestDetail> details = new ArrayList<>();
         for (PurchaseRequestDetailDTO detailDto : dto.getPurchaseRequestDetails()) {
             PurchaseRequestDetail detail = purchaseRequestDetailMapper.toEntity(detailDto);
             Material material = materialRepository.findById(detailDto.getMaterialId())
-                    .orElseThrow(() -> new RuntimeException("Material not found with ID: " + detailDto.getMaterialId()));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy vật tư với ID: " + detailDto.getMaterialId()));
+            Partner partner = partnerRepository.findById(detailDto.getPartnerId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy nhà cung cấp với ID: " + detailDto.getPartnerId()));
 
             detail.setMaterial(material);
+            detail.setPartner(partner);
             detail.setPurchaseRequest(purchaseRequest);
             details.add(detail);
         }
@@ -80,16 +75,20 @@ public class PurchaseRequestService {
         return responseDTO;
     }
 
-
-
-
-
-
-
+    @Transactional
     public PurchaseRequestDTO updatePurchaseRequestStatus(Long purchaseRequestId, String newStatus) {
         PurchaseRequest request = purchaseRequestRepository.findById(purchaseRequestId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy yêu cầu với ID: " + purchaseRequestId));
-        request.setStatus(newStatus);
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu với ID: " + purchaseRequestId));
+
+        // Chuyển String thành RequestStatus
+        PurchaseRequest.RequestStatus statusEnum;
+        try {
+            statusEnum = PurchaseRequest.RequestStatus.valueOf(newStatus);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trạng thái không hợp lệ: " + newStatus + ". Chỉ được phép là: PENDING, CONFIRMED, CANCELLED, FINISHED");
+        }
+
+        request.setStatus(statusEnum);
         PurchaseRequest updatedRequest = purchaseRequestRepository.save(request);
         return purchaseRequestMapper.toDTO(updatedRequest);
     }
@@ -102,9 +101,7 @@ public class PurchaseRequestService {
             return String.format("YC%05d", nextId);
         } catch (Exception e) {
             logger.error("Error generating next request code", e);
-            throw new RuntimeException("Không thể tạo mã yêu cầu mới: " + e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Không thể tạo mã yêu cầu mới: " + e.getMessage(), e);
         }
     }
-
-
 }

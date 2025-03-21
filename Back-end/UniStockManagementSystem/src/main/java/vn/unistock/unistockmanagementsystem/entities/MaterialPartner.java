@@ -1,19 +1,22 @@
 package vn.unistock.unistockmanagementsystem.entities;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
+
 
 @Entity
-@Table(name = "purchase_request_details")
+@Table(name = "material_partner")
 @Data
-public class PurchaseRequestDetail {
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class MaterialPartner {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long purchaseRequestDetailId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "purchase_request_id", nullable = false)
-    private PurchaseRequest purchaseRequest;
+    @Column(name = "id")
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "material_id", nullable = false)
@@ -23,6 +26,4 @@ public class PurchaseRequestDetail {
     @JoinColumn(name = "partner_id", nullable = false)
     private Partner partner;
 
-    @Column(nullable = false)
-    private Integer quantity;
 }
