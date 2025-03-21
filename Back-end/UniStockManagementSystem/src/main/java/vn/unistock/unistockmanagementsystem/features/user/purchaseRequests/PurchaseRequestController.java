@@ -5,9 +5,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import vn.unistock.unistockmanagementsystem.entities.PurchaseRequest;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
@@ -62,5 +65,11 @@ public class PurchaseRequestController {
         }
         PurchaseRequestDTO updatedRequest = purchaseRequestService.updatePurchaseRequestStatus(purchaseRequestId, newStatus);
         return ResponseEntity.ok(updatedRequest);
+    }
+
+    @PostMapping("/sale-order/{saleOrderId}")
+    public ResponseEntity<PurchaseRequestDTO> createFromSaleOrder(@PathVariable Long saleOrderId) {
+        PurchaseRequestDTO purchaseRequestDTO = purchaseRequestService.createFromSaleOrder(saleOrderId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(purchaseRequestDTO);
     }
 }

@@ -8,6 +8,7 @@ import vn.unistock.unistockmanagementsystem.entities.PurchaseRequest;
 @Mapper(componentModel = "spring", uses = {PurchaseRequestDetailMapper.class})
 public interface PurchaseRequestMapper {
 
+    @Mapping(source = "salesOrder.orderCode", target = "saleOrderCode")
     @Mapping(source = "notes", target = "notes")
     @Mapping(source = "purchaseRequestDetails", target = "purchaseRequestDetails")
     PurchaseRequestDTO toDTO(PurchaseRequest entity);
