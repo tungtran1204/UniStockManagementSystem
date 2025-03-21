@@ -12,6 +12,7 @@ const PageHeader = ({
     showImport = true,
     showExport = true,
     addButtonLabel = "Thêm",
+    customButtons = null, // Add this prop
 }) => {
     return (
         <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-300">
@@ -19,6 +20,7 @@ const PageHeader = ({
                 {title}
             </Typography>
             <div className="flex gap-2">
+                {customButtons}
                 {showImport && (
                     <Button
                         size="sm"

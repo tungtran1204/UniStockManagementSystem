@@ -70,4 +70,11 @@ public class PartnerService {
         Page<Partner> partnerPage = partnerRepository.findByPartnerTypes_PartnerType_typeId(typeId, pageable);
         return partnerPage.map(partnerMapper::toDTO);
     }
+
+    public List<PartnerDTO> getPartnersByMaterial(Long materialId) {
+        List<Partner> partners = partnerRepository.findPartnersByMaterialId(materialId);
+        return partners.stream()
+                .map(partnerMapper::toDTO)
+                .collect(Collectors.toList());
+    }
 }

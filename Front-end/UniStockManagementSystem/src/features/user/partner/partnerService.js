@@ -134,5 +134,16 @@ export const updatePartner = async (partner) => {
     }
 };
 
-
+export const getPartnersByMaterial = async (materialId) => {
+    try {
+      const response = await axios.get(`${API_URL}/by-material/${materialId}`, {
+        headers: authHeader(),
+        withCredentials: true,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("❌ [getPartnersByMaterial] Error:", error);
+      throw error;
+    }
+  };
 

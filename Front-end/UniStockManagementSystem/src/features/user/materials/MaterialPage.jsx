@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
 import useMaterial from "./useMaterial";
-import { Button, Card, CardHeader, Typography } from "@material-tailwind/react";
+import { Button, Card, Typography } from "@material-tailwind/react";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { BiSolidEdit } from "react-icons/bi";
 import ReactPaginate from "react-paginate";
-import CreateMaterialModal from './CreateMaterialModal';
-import EditMaterialModal from './EditMaterialModal';
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
+import { useNavigate } from "react-router-dom"; // Thêm import này
 
 import {
     importExcel,
@@ -17,6 +16,7 @@ import {
     fetchMaterialCategories,
     fetchUnits,
 } from "./materialService";
+import { getPartnersByType } from "../partner/partnerService"; // Thêm import này
 import {
     CardBody,
     Tooltip,
@@ -25,6 +25,8 @@ import {
 } from "@material-tailwind/react";
 
 const MaterialPage = () => {
+    const navigate = useNavigate(); // Thêm hook useNavigate
+
     // Sử dụng hook quản lý nguyên vật liệu
     const {
         materials,
@@ -40,10 +42,8 @@ const MaterialPage = () => {
     } = useMaterial();
 
     // Quản lý trạng thái các modal và form
-    const [showEditModal, setShowEditModal] = useState(false);
     const [selectedMaterial, setSelectedMaterial] = useState(null);
     const [showImportPopup, setShowImportPopup] = useState(false);
-    const [showCreatePopup, setShowCreatePopup] = useState(false);
     const [file, setFile] = useState(null);
     const [localLoading, setLocalLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState(""); // State for search term
@@ -52,6 +52,7 @@ const MaterialPage = () => {
     // Danh sách đơn vị và danh mục
     const [units, setUnits] = useState([]);
     const [materialCategories, setMaterialCategories] = useState([]);
+    const [suppliers, setSuppliers] = useState([]); // Thêm state cho suppliers
 
     // Dữ liệu cho nguyên vật liệu mới
     const [newMaterial, setNewMaterial] = useState({
@@ -60,24 +61,28 @@ const MaterialPage = () => {
         description: "",
         unitId: "",
         typeId: "",
-        isActive: "true"
+        isActive: "true",
+        supplierIds: [] // Thêm trường này
     });
 
     // Tải danh sách đơn vị và danh mục
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [unitsData, categoriesData] = await Promise.all([
+                const [unitsData, categoriesData, suppliersData] = await Promise.all([
                     fetchUnits(),
-                    fetchMaterialCategories()
+                    fetchMaterialCategories(),
+                    getPartnersByType(1) // Lấy danh sách nhà cung cấp (type = 1)
                 ]);
 
                 setUnits(Array.isArray(unitsData) ? unitsData : []);
                 setMaterialCategories(Array.isArray(categoriesData) ? categoriesData : []);
+                setSuppliers(Array.isArray(suppliersData.partners) ? suppliersData.partners : []); // Lấy partners từ response
             } catch (error) {
                 console.error("Lỗi khi tải danh sách:", error);
                 setUnits([]);
                 setMaterialCategories([]);
+                setSuppliers([]);
             }
         };
         fetchData();
@@ -86,7 +91,6 @@ const MaterialPage = () => {
     // Xử lý mở modal chỉnh sửa
     const handleEdit = (material) => {
         setSelectedMaterial(material);
-        setShowEditModal(true);
     };
 
     // Xử lý import Excel
@@ -121,14 +125,14 @@ const MaterialPage = () => {
             alert("Tạo nguyên vật liệu thành công!");
 
             fetchPaginatedMaterials();
-            setShowCreatePopup(false);
             setNewMaterial({
                 materialCode: "",
                 materialName: "",
                 description: "",
                 unitId: "",
                 typeId: "",
-                isActive: "true"
+                isActive: "true",
+                supplierIds: [] // Thêm trường này
             });
         } catch (error) {
             console.error("🚨 Chi tiết lỗi:", error);
@@ -222,12 +226,9 @@ const MaterialPage = () => {
             minWidth: 50,
             renderCell: (params) => (
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                    <Tooltip content="Chỉnh sửa">
+                    <Tooltip content="Chi tiết">
                         <button
-                            onClick={() => {
-                                setSelectedMaterial(params.row);
-                                setShowEditModal(true);
-                            }}
+                            onClick={() => navigate(`/user/materials/${params.row.id}`)}
                             className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
                         >
                             <BiSolidEdit className="h-5 w-5" />
@@ -263,7 +264,7 @@ const MaterialPage = () => {
                     <PageHeader
                         title="Danh sách nguyên vật liệu"
                         addButtonLabel="Thêm nguyên vật liệu"
-                        onAdd={() => setShowCreatePopup(true)}
+                        onAdd={() => navigate("/user/materials/add")} // Thay đổi này
                         onImport={() => setShowImportPopup(true)}
                         onExport={exportExcel}
                     />
@@ -337,19 +338,6 @@ const MaterialPage = () => {
                 </CardBody>
             </Card>
 
-            <CreateMaterialModal
-                show={showCreatePopup}
-                onClose={() => {
-                    setShowCreatePopup(false);
-                }}
-                loading={localLoading}
-                newMaterial={newMaterial}
-                setNewMaterial={setNewMaterial}
-                handleCreateMaterial={handleCreateMaterial}
-                units={units}
-                materialCategories={materialCategories}
-            />
-
             {showImportPopup && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 w-96">
@@ -390,14 +378,6 @@ const MaterialPage = () => {
                 </div>
             )}
 
-            <EditMaterialModal
-                show={showEditModal}
-                onClose={() => setShowEditModal(false)}
-                material={selectedMaterial}
-                onUpdate={fetchPaginatedMaterials}
-                units={units}
-                materialCategories={materialCategories}
-            />
         </div>
     );
 };

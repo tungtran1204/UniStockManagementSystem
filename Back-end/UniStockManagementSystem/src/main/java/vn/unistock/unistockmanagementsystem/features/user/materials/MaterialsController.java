@@ -34,6 +34,12 @@ public class MaterialsController {
         return ResponseEntity.ok(materialsService.getAllMaterials(page, size));
     }
 
+    @GetMapping("/by-partner/{partnerId}")
+    public ResponseEntity<List<MaterialsDTO>> getMaterialsByPartner(@PathVariable Long partnerId) {
+        List<MaterialsDTO> materials = materialsService.getMaterialsByPartner(partnerId);
+        return ResponseEntity.ok(materials);
+    }
+
     // 🟢 API lấy thông tin nguyên liệu theo ID
     @GetMapping("/{id}")
     public ResponseEntity<MaterialsDTO> getMaterialById(@PathVariable Long id) {
@@ -124,4 +130,7 @@ public class MaterialsController {
 
         return ResponseEntity.ok(materialsService.updateMaterial(id, materialDTO, image));
     }
+
+
+
 }

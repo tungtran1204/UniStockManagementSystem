@@ -433,22 +433,55 @@ const AddProductPage = () => {
 
     // Sửa lại hàm validate khi thay đổi số lượng
     const handleQuantityChange = (index, value) => {
+        // Chuyển đổi value thành số và đảm bảo giá trị hợp lệ
+        const numValue = value === '' ? '' : Number(value);
+        
         const updatedMaterials = [...productMaterials];
-        updatedMaterials[currentPage * pageSize + index].quantity = Number(value);
+        const actualIndex = index; // Không cần tính toán với currentPage vì index đã đúng
+    
+        updatedMaterials[actualIndex] = {
+            ...updatedMaterials[actualIndex],
+            quantity: numValue
+        };
+        
         setProductMaterials(updatedMaterials);
-
+    
         // Validate số lượng
-        if (!value || value <= 0) {
+        if (!numValue || numValue <= 0) {
             setQuantityErrors(prev => ({
                 ...prev,
-                [currentPage * pageSize + index]: "Số lượng phải lớn hơn 0"
+                [actualIndex]: "Số lượng phải lớn hơn 0"
             }));
         } else {
             setQuantityErrors(prev => ({
                 ...prev,
-                [currentPage * pageSize + index]: ""
+                [actualIndex]: ""
             }));
         }
+    };
+
+    // Thêm hàm filter mới
+    const filterMaterials = (inputValue) => {
+        return getAvailableMaterials().filter(material =>
+            material.materialCode.toLowerCase().includes(inputValue.toLowerCase()) ||
+            material.materialName.toLowerCase().includes(inputValue.toLowerCase())
+        );
+    };
+
+    // Thêm hàm handleRemoveRow
+    const handleRemoveRow = (index) => {
+        setProductMaterials(prev => prev.filter((_, i) => i !== index));
+        // Reset error nếu có
+        setMaterialErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors[index];
+            return newErrors;
+        });
+        setQuantityErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors[index];
+            return newErrors;
+        });
     };
 
     const columnsConfig = [
@@ -469,8 +502,18 @@ const AddProductPage = () => {
                         label: `${m.materialCode} - ${m.materialName}`,
                         material: m,
                     }))}
-                    styles={customStyles}
-                    className="w-68"
+                    styles={{
+                        ...customStyles,
+                        menu: (provided) => ({
+                            ...provided,
+                            zIndex: 9999 // Đảm bảo dropdown hiển thị phía trên các phần tử khác
+                        }),
+                        menuPortal: (base) => ({
+                            ...base,
+                            zIndex: 9999
+                        })
+                    }}
+                    className="w-full"
                     value={
                         params.row.materialId
                             ? {
@@ -480,9 +523,19 @@ const AddProductPage = () => {
                             : null
                     }
                     onChange={(selected) => {
-                        const material = selected.material;
-                        handleSelectSuggestion(params.row.index - 1, material);
+                        if (selected) {
+                            const material = selected.material;
+                            handleSelectSuggestion(params.row.index - 1, material);
+                        }
                     }}
+                    filterOption={(option, inputValue) => {
+                        const label = option.label.toLowerCase();
+                        const search = inputValue.toLowerCase();
+                        return label.includes(search);
+                    }}
+                    menuPosition="fixed" // Giúp dropdown menu không bị cut off
+                    menuPortalTarget={document.body} // Render dropdown vào body
+                    noOptionsMessage={() => "Không tìm thấy vật tư"}
                 />
             ),
         },
@@ -499,25 +552,35 @@ const AddProductPage = () => {
             headerName: 'Đơn vị',
             flex: 1,
             minWidth: 50,
-            editable: true,
+            editable: false,
             filterable: false,
         },
         {
             field: 'quantity',
             headerName: 'Số lượng *',
             flex: 1,
-            minWidth: 50,
-            editable: true,
+            minWidth: 100,
+            editable: false,
             filterable: false,
             renderCell: (params) => (
-                <Input
-                    type="number"
-                    variant="standard"
-                    value={params.value}
-                    onChange={(e) => handleQuantityChange(params.row.index - 1, e.target.value)}
-                    min={1}
-                    className={`w-16 text-sm ${quantityErrors[params.row.index - 1] ? "border-red-500" : ""}`}
-                />
+                <div className="w-full">
+                    <Input
+                        type="number"
+                        value={params.row.quantity || ''}
+                        onChange={(e) => handleQuantityChange(params.row.index - 1, e.target.value)}
+                        min="1"
+                        step="1"
+                        containerProps={{ className: "min-w-[100px]" }}
+                        labelProps={{ className: "hidden" }}
+                        className={`!border !border-gray-300 bg-white text-gray-900 shadow-lg shadow-gray-900/5 ring-4 ring-transparent placeholder:text-gray-500 focus:!border-gray-900 focus:!border-t-gray-900 focus:ring-gray-900/10
+                            ${quantityErrors[params.row.index - 1] ? "!border-red-500" : ""}`}
+                    />
+                    {quantityErrors[params.row.index - 1] && (
+                        <div className="text-xs text-red-500 mt-1">
+                            {quantityErrors[params.row.index - 1]}
+                        </div>
+                    )}
+                </div>
             ),
         },
         {
@@ -528,10 +591,11 @@ const AddProductPage = () => {
             editable: false,
             filterable: false,
             renderCell: (params) => (
-                <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                <div className="flex justify-center w-full">
                     <Tooltip content="Xoá">
                         <button
-                            onClick={() => {
+                            onClick={(e) => {
+                                e.stopPropagation(); // Ngăn sự kiện bubble
                                 handleRemoveRow(params.row.index - 1);
                             }}
                             className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white"
