@@ -31,7 +31,6 @@ import AddIssueNote from "../features/user/receiptNote/AddReceiptNote";
 import PurchaseOrderPage from "../features/user/purchaseOrder/PurchaseOrderPage";
 import AddProductPage from "@/features/user/products/AddProductPage";
 import DetailProductPage from "@/features/user/products/DetailProductPage";
-import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
 import PurchaseOrderDetail from "../features/user/purchaseOrder/PurchaseOrderDetail";
 
 import ProductTypePage from "@/features/user/productType/ProductTypePage";
@@ -40,6 +39,7 @@ import AddPurchaseRequestPage from "../features/user/purchaseRequest/AddPurchase
 import AddMaterialPage from "@/features/user/materials/AddMaterialPage";
 import DetailMaterialPage from "@/features/user/materials/DetailMaterialPage";
 
+import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
 const icon = { className: "w-5 h-5 text-inherit" };
 
 export const routes = [

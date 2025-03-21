@@ -89,3 +89,33 @@ export const getProducts = async () => {
     throw error;
   }
 };
+
+export const updateOrder = async (orderId, orderData) => {
+  try {
+    const response = await axios.put(
+      `${API_URL}/${orderId}`,
+      orderData,
+      { headers: authHeader() }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi cập nhật đơn hàng:", error);
+    throw error; 
+  }
+  
+};
+
+export const getTotalQuantityOfProduct = async (productId) => {
+  try {
+    const response = await axios.get(
+      `http://localhost:8080/api/unistock/inventory/product/${productId}/total-quantity/warehouses`,
+      {
+        headers: authHeader(),
+      }
+    );
+    return response.data; 
+  } catch (error) {
+    console.error("❌ [getTotalQuantityOfProduct] Lỗi khi lấy tổng tồn kho:", error);
+    throw error;
+  }
+};

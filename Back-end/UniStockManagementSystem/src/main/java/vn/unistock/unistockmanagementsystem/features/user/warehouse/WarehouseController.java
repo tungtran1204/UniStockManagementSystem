@@ -28,6 +28,12 @@ public class WarehouseController {
         return ResponseEntity.status(HttpStatus.CREATED).body(newWarehouse);
     }
 
+    @GetMapping("/list")
+    public ResponseEntity<List<Warehouse>> getAllActiveWarehouses(){
+        List<Warehouse> warehouses = warehouseService.getAllActiveWarehouses();
+        return ResponseEntity.ok(warehouses);
+    }
+
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllWarehouses(
             @RequestParam(defaultValue = "0") int page,

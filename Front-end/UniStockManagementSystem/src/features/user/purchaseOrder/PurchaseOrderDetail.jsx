@@ -2,7 +2,6 @@ import { FaSave, FaTimes, FaEdit, FaFileExport } from "react-icons/fa";
 import { getPurchaseOrderById } from "./purchaseOrderService";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import PurchaseOrderPage from "./PurchaseOrderPage";
 import {
   Card,
   CardHeader,
@@ -32,32 +31,31 @@ const PurchaseOrderDetail = () => {
 
 
   useEffect(() => {
-    if (!orderId) {
-      setError("Không tìm thấy ID đơn hàng!");
-      setLoading(false);
-      return;
-    }
+    if (!orderId || order) return; // Nếu đã có dữ liệu, không gọi API
+  
+    let isMounted = true;
+    
     const fetchOrderDetail = async () => {
       try {
         console.log("📢 Gọi API lấy đơn hàng với ID:", orderId);
         const response = await getPurchaseOrderById(orderId);
         console.log("✅ Kết quả từ API:", response);
-
-        // Đảm bảo items không null
-        setOrder((prevOrder) => ({
-          ...prevOrder,
-          ...response,
-          items: response.items || [],
-        }));
+  
+        if (isMounted) {
+          setOrder({
+            ...response,
+            items: response.items || [],
+          });
+        }
       } catch (error) {
-        console.error("❌ Lỗi khi lấy chi tiết đơn hàng:", error);
-        setError("Không thể tải dữ liệu đơn hàng.");
+        if (isMounted) setError("Không thể tải dữ liệu đơn hàng.");
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
-
+  
     fetchOrderDetail();
+    return () => { isMounted = false; };
   }, [orderId]);
 
   if (loading) return <Typography>Đang tải dữ liệu...</Typography>;
@@ -117,7 +115,7 @@ const PurchaseOrderDetail = () => {
                             { value: "Chờ nhận", label: "Chờ nhận hàng" },
                             { value: "Đang giao", label: "Đang giao" },
                             { value: "Hoàn thành", label: "Hoàn thành" },
-                            { value: "Hủy", label: "Hủy" }
+                            { value: "Hủy", label: "Hủy"}
                           ]}
                           isDisabled
                           className="bg-gray-100 rounded-md"
@@ -135,23 +133,18 @@ const PurchaseOrderDetail = () => {
                     </Typography>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div>
-                        <Typography variant="small" className="text-gray-600 mb-2">Mã nhà cung cấp</Typography>
-                        <div className="flex">
-                          <Input value="NCC01" disabled className="bg-gray-100 rounded-md" />
-                        </div>
-                      </div>
-                      <div>
                         <Typography variant="small" className="text-gray-600 mb-2">Tên nhà cung cấp</Typography>
                         <Input value={order.supplierName || "không có thông tin"} disabled className="bg-gray-100 rounded-md" />
-                      </div>
-                      <div>
-                        <Typography variant="small" className="text-gray-600 mb-2">Địa chỉ</Typography>
-                        <Input value={order.supplierAddress || "không có thông tin"} disabled className="bg-gray-100 rounded-md" />
                       </div>
                       <div>
                         <Typography variant="small" className="text-gray-600 mb-2">Người liên hệ</Typography>
                         <Input value={order.supplierContactName || "không có thông tin"} disabled className="bg-gray-100 rounded-md" />
                       </div>
+                      <div>
+                        <Typography variant="small" className="text-gray-600 mb-2">Địa chỉ</Typography>
+                        <Input value={order.supplierAddress || "không có thông tin"} disabled className="bg-gray-100 rounded-md" />
+                      </div>
+                      
                       <div>
                         <Typography variant="small" className="text-gray-600 mb-2">Số điện thoại</Typography>
                         <Input value={order.supplierPhone || "không có thông tin"} disabled className="bg-gray-100 rounded-md" />

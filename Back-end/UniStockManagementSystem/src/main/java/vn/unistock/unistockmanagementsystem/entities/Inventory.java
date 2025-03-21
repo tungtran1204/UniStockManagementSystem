@@ -33,7 +33,13 @@ public class Inventory {
     @Column(nullable = false)
     private Double quantity = 0.0;
 
+    private InventoryStatus status;
+
     @Column(name = "last_updated", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
     private LocalDateTime lastUpdated;
-
+    public enum InventoryStatus {
+        AVAILABLE,
+        RESERVED
+        // ...
+    }
 }

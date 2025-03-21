@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { addSaleOrder, getNextOrderCode,  getSaleOrders, toggleSaleOrderStatus } from "./saleOrdersService";
+import { addSaleOrder, getNextOrderCode,  getSaleOrders, toggleSaleOrderStatus, updateOrder } from "./saleOrdersService";
 
 const useSaleOrder = () => {
   const [saleOrders, setSaleOrders] = useState([]); // ✅ Danh sách đơn hàng
@@ -62,8 +62,17 @@ const useSaleOrder = () => {
     }
   };
 
+  const updateExistingOrder = async (orderId, orderData) => {
+    try {
+      const updated = await updateOrder(orderId, orderData);
+      return updated; // Trả về data sau khi update
+    } catch (err) {
+      console.error("Lỗi khi cập nhật đơn hàng:", err);
+      throw err;
+    }
+  };
 
-  return { saleOrders, fetchPaginatedSaleOrders, toggleStatus, totalPages, totalElements, getNextCode, addOrder };
+  return { saleOrders, fetchPaginatedSaleOrders, toggleStatus, totalPages, totalElements, getNextCode, addOrder, updateExistingOrder };
 };
 
 export default useSaleOrder;
