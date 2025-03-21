@@ -580,6 +580,7 @@ const AddReceiptNote = () => {
                 </option>
               ))}
             </select>
+            
             <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
               kết quả mỗi trang
             </Typography>

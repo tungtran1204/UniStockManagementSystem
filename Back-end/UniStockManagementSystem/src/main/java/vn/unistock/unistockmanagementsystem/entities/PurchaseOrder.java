@@ -38,7 +38,7 @@ public class PurchaseOrder {
 
     public enum OrderStatus {
         PENDING("Chờ nhận"),
-        IN_PROGRESS("Đang giao"),
+        IN_PROGRESS("Chưa hoàn thành"),
         COMPLETED("Hoàn thành"),
         CANCELED("Hủy");
 
