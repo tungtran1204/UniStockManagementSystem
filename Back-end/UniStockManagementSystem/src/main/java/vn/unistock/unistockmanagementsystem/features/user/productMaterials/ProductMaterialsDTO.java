@@ -9,4 +9,6 @@ public class ProductMaterialsDTO {
     private String materialCode;
     private String materialName;
     private Integer quantity;
+    private String unitName;
+
 }

@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import vn.unistock.unistockmanagementsystem.entities.ProductMaterial;
 
 import java.util.List;
 
@@ -48,5 +49,11 @@ public class ProductMaterialsController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
+    }
+
+    @GetMapping("/sale-order/{saleOrderId}")
+    public ResponseEntity<List<ProductMaterialsDTO>> getMaterialsBySaleOrder(@PathVariable Long saleOrderId) {
+        List<ProductMaterialsDTO> materials = productMaterialService.getMaterialsBySaleOrderId(saleOrderId);
+        return ResponseEntity.ok(materials);
     }
 }
