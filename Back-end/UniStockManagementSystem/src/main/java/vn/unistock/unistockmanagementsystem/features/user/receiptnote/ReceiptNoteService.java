@@ -94,6 +94,7 @@ public class ReceiptNoteService {
                 .grnCode(grnDto.getGrnCode())
                 .description(grnDto.getDescription())
                 .category(grnDto.getCategory())
+                .receiptDate(grnDto.getReceiptDate())
                 .createdBy(currentUser)
                 .details(new ArrayList<>())
                 .build();
@@ -123,6 +124,8 @@ public class ReceiptNoteService {
                     .warehouse(warehouse)
                     .quantity(detailDto.getQuantity())
                     .goodReceiptNote(grn)
+                    .referenceId(detailDto.getReferenceId())
+                    .referenceType(detailDto.getReferenceType())
                     .build();
 
             if (detailDto.getUnitId() != null) {
@@ -134,14 +137,19 @@ public class ReceiptNoteService {
                 if (detailDto.getMaterialId() != null) {
                     Material material = materialRepository.findById(detailDto.getMaterialId())
                             .orElseThrow(() -> new RuntimeException("Material not found with ID: " + detailDto.getMaterialId()));
-                    detail.setUnit(material.getUnit()); // Giả sử Material có phương thức getUnit()
+                    detail.setMaterial(material);
+                    if (detail.getUnit() == null) {
+                        detail.setUnit(material.getUnit());
+                    }// Giả sử Material có phương thức getUnit()
                 } else if (detailDto.getProductId() != null) {
                     Product product = productRepository.findById(detailDto.getProductId())
                             .orElseThrow(() -> new RuntimeException("Product not found with ID: " + detailDto.getProductId()));
-                    detail.setUnit(product.getUnit()); // Giả sử Product có phương thức getUnit()
+                    detail.setProduct(product);
+                    if (detail.getUnit() == null) {
+                        detail.setUnit(product.getUnit());
+                    }
                 }
             }
-
             // Lưu vào danh sách
             details.add(detail);
         }

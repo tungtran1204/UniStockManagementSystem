@@ -98,16 +98,6 @@ const ReceiptNotePage = () => {
     fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
-    } catch (error) {
-      return dateString;
-    }
-  };
-
   const columnsConfig = [
     { field: 'receiptCode', headerName: 'Mã phiếu nhập', flex: 1.5, minWidth: 150, editable: false },
     { field: 'category', headerName: 'Loại hàng hóa', flex: 2, minWidth: 100, editable: false },

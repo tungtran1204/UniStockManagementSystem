@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Card,
-  CardHeader,
   CardBody,
   Typography,
   Button,
@@ -162,14 +161,33 @@ const AddReceiptNote = () => {
   // Xử lý upload file
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
-
-    if (selectedFiles.length + files.length > 3) {
-      alert("Tải lên tối đa 3 file!");
+    const validTypes = [
+      "application/pdf", "image/png", "image/jpeg",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ];
+  
+    const validFiles = selectedFiles.filter(file => {
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`File "${file.name}" vượt quá 5MB`);
+        return false;
+      }
+      if (!validTypes.includes(file.type)) {
+        alert(`File "${file.name}" không đúng định dạng được hỗ trợ`);
+        return false;
+      }
+      return true;
+    });
+  
+    const total = files.length + validFiles.length;
+    if (total > 3) {
+      alert("Chỉ được tải tối đa 3 file");
       return;
     }
-
-    setFiles([...files, ...selectedFiles]);
+  
+    setFiles(prev => [...prev, ...validFiles]);
   };
+   
 
   const handleRemoveFile = (index) => {
     setFiles(files.filter((_, i) => i !== index));
@@ -247,15 +265,8 @@ const AddReceiptNote = () => {
 
       // Xử lý tải lên file nếu có
       if (files.length > 0) {
-        const formData = new FormData();
-        formData.append("noteId", response.grnId);
-        formData.append("noteType", "GOOD_RECEIPT_NOTE");
+        await uploadPaperEvidenceService(response.grnId, "GOOD_RECEIPT_NOTE", files);
 
-        files.forEach((file, index) => {
-          formData.append(`files[${index}]`, file);
-        });
-
-        await uploadPaperEvidence(formData);
       }
 
       alert("Lưu phiếu nhập thành công!");
@@ -267,24 +278,6 @@ const AddReceiptNote = () => {
       setIsSubmitting(false);
     }
   };
-
-  // Implement the uploadPaperEvidence function for file uploads
-  const uploadPaperEvidence = async (formData) => {
-    try {
-      // Call the imported service function, not this function again
-      const response = await uploadPaperEvidenceService(formData);
-
-      if (!response.ok) {
-        throw new Error(`Upload failed with status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Error uploading files:", error);
-      throw error;
-    }
-  };
-
 
   // Lấy danh sách kho
   useEffect(() => {

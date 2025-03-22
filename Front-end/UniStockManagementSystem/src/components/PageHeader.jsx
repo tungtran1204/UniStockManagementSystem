@@ -39,7 +39,7 @@ const PageHeader = ({
                         className="flex items-center gap-2 bg-white border text-[#089456] border-[#089456] hover:bg-[#089456]/10"
                         onClick={onExport}
                     >
-                        <BiExport className="h-5 w-5" /> Export Excel
+                        <BiExport className="h-5 w-5" /> Xuất File
                     </Button>
                 )}
                 {showAdd && (
