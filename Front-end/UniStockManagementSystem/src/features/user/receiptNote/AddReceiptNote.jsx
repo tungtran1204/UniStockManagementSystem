@@ -58,7 +58,7 @@ const AddReceiptNote = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [category, setCategory] = useState("");
 
-  const { orderId, nextCode } = location.state || {};
+  const { orderId, nextCode, saleOrderCode } = location.state || {};
   const [receiptCode, setReceiptCode] = useState(nextCode || "");
   const [rowsData, setRowsData] = useState({});
 
@@ -436,7 +436,9 @@ const AddReceiptNote = () => {
             <div>
               <Typography variant="small">Tham chiếu chứng từ gốc</Typography>
               <Input
-                value={order.poCode || ''}
+                value={
+                  [order?.poCode, saleOrderCode].filter(Boolean).join(" - ")
+                }
                 disabled
                 className="!border-t-blue-gray-200 focus:!border-t-gray-900"
                 labelProps={{

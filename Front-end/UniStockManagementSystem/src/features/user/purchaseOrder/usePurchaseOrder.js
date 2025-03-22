@@ -5,7 +5,8 @@ import {
   updatePurchaseOrderStatus, 
   updatePurchaseOrder, 
   deletePurchaseOrder,
-  getPurchaseOrderById
+  getPurchaseOrderById,
+  getSaleOrderByPurchaseOrderId
 } from "./purchaseOrderService";
 
 const usePurchaseOrder = () => {
@@ -68,7 +69,8 @@ const usePurchaseOrder = () => {
     setSearchKeyword,
     selectedStatus,
     setSelectedStatus,
-    getPurchaseOrderById 
+    getPurchaseOrderById,
+    getSaleOrderByPurchaseOrderId
   };
 };
 

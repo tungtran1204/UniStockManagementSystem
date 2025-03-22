@@ -120,13 +120,3 @@ export const uploadPaperEvidence = async (noteId, noteType, files) => {
     throw error;
   }
 };
-
-const mapStatusToVietnamese = (status) => {
-  const statusMap = {
-    PENDING: "Chờ duyệt",
-    IN_PROGRESS: "Chưa hoàn thành",
-    COMPLETED: "Hoàn thành",
-    CANCELLED: "Đã hủy",
-  };
-  return statusMap[status] || status;
-};

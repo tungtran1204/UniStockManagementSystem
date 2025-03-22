@@ -87,7 +87,8 @@ const ReceiptNotePage = () => {
 
   // Handle view or edit receipt
   const handleViewReceipt = (receipt) => {
-    navigate(`/user/receiptNote/view/${receipt.grnId}`);
+    navigate(`/user/receiptNote/${receipt.grnId}`);
+    console.log(receipt.grnId);
   };
 
   // Handle search
@@ -167,7 +168,7 @@ const ReceiptNotePage = () => {
         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
           <Tooltip content="Xem chi tiết">
             <button className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-              onClick={() => handleEdit(params.row)}
+              onClick={() => handleViewReceipt(params.row)}
             >
               <EyeIcon className="h-5 w-5" />
             </button>
@@ -178,12 +179,13 @@ const ReceiptNotePage = () => {
   ];
 
   const data = receiptNotes.map((receipt) => ({
+    grnId: receipt.grnId,
     receiptCode: receipt.grnCode,
     category: receipt.category || 'không có dữ liệu',
     createdDate: receipt.receiptDate,
     createBy: receipt.createdBy,
     reference: {
-      id: receipt.poId || "N/AA",
+      id: receipt.poId || "N/A",
       type: "PURCHASE_ORDER"
     }
   }));

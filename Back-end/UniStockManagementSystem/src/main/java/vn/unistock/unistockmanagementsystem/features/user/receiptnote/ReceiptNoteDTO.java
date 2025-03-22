@@ -20,5 +20,5 @@ public class ReceiptNoteDTO {
     private Long poId;
     private String category;
     private List<ReceiptNoteDetailDTO> details;
-
+    private List<String> paperEvidence;
 }

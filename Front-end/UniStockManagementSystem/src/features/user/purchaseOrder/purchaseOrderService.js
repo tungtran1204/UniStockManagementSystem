@@ -90,3 +90,11 @@ export const deletePurchaseOrder = async (orderId) => {
     throw error;
   }
 };
+
+//tìm đơn đặt hàng (nếu có) từ mã đơn mua vật tư
+export const getSaleOrderByPurchaseOrderId = async (poId) => {
+  const response = await axios.get(`${API_URL}/${poId}/sale-order`, {
+    headers: authHeader(),
+  });
+  return response.data;
+};

@@ -1,6 +1,5 @@
 package vn.unistock.unistockmanagementsystem.entities;
 
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -8,9 +7,6 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
-import vn.unistock.unistockmanagementsystem.validation.CommonStatus;
-
-import java.time.LocalDateTime;
 
 @Data
 @Entity
@@ -39,5 +35,4 @@ public class Warehouse {
     @Column(name = "is_active")
     @ColumnDefault("true")
     private Boolean isActive = true;
-
 }

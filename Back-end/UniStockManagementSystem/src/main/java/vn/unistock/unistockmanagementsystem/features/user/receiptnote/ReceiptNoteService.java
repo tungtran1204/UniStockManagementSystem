@@ -27,6 +27,7 @@ import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -67,7 +68,14 @@ public class ReceiptNoteService {
     public ReceiptNoteDTO getAllReceiptNoteById(Long receiptNoteId) {
         GoodReceiptNote note = receiptNoteRepository.findById(receiptNoteId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu nhập với ID: " + receiptNoteId));
-        return receiptNoteMapper.toDTO(note);
+        ReceiptNoteDTO dto = receiptNoteMapper.toDTO(note);
+        List<String> files = paperEvidenceRepository
+                .findByNoteIdAndNoteType(receiptNoteId, PaperEvidence.NoteType.GOOD_RECEIPT_NOTE)
+                .stream()
+                .map(PaperEvidence::getPaperUrl)
+                .collect(Collectors.toList());
+        dto.setPaperEvidence(files);
+        return dto;
     }
 
     @Transactional
