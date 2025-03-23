@@ -14,6 +14,7 @@ import dayjs from "dayjs";
 
 import useSaleOrder from "./useSaleOrder";
 import { getPartnersByType } from "@/features/user/partner/partnerService";
+import { createPurchaseRequestFromSaleOrder } from "@/features/user/purchaseRequest/PurchaseRequestService";
 import {
   getProducts,
   getSaleOrderById,
@@ -70,8 +71,8 @@ const customStyles = {
     backgroundColor: state.isFocused
       ? "#f3f4f6"
       : state.isSelected
-      ? "#e5e7eb"
-      : "transparent",
+        ? "#e5e7eb"
+        : "transparent",
     color: "#000",
     cursor: "pointer",
     "&:active": {
@@ -415,12 +416,12 @@ const EditSaleOrderPage = () => {
       prev.map((r) =>
         r.id === rowId
           ? {
-              ...r,
-              productId: opt.productId,
-              productCode: opt.value,
-              productName: opt.label.split(" - ")[1] || "",
-              unitName: opt.unit,
-            }
+            ...r,
+            productId: opt.productId,
+            productCode: opt.value,
+            productName: opt.label.split(" - ")[1] || "",
+            unitName: opt.unit,
+          }
           : r
       )
     );
@@ -480,6 +481,23 @@ const EditSaleOrderPage = () => {
     );
     setGlobalError("");
   };
+
+  const handleCreatePurchaseRequest = async () => {
+    if (!orderId) {
+      alert("Không tìm thấy đơn hàng để tạo yêu cầu mua vật tư!");
+      return;
+    }
+
+    try {
+      const response = await createPurchaseRequestFromSaleOrder(orderId);
+      alert("Tạo yêu cầu mua vật tư thành công!");
+      console.log("Chi tiết yêu cầu mua vật tư:", response);
+      navigate("/user/purchase-request"); 
+    } catch (error) {
+      alert("Lỗi khi tạo yêu cầu mua vật tư!");
+    }
+  };
+
 
   const handleSaveOrder = async () => {
     let hasError = false;
@@ -1034,8 +1052,8 @@ const EditSaleOrderPage = () => {
                 </Button>
               )}
               {mode === MODE_DINHMUC && (
-                <Button variant="gradient" color="green" onClick={handleXacNhan} className="flex items-center gap-2">
-                  <FaCheck /> Xác nhận
+                <Button variant="gradient" color="green" onClick={handleCreatePurchaseRequest} className="flex items-center gap-2">
+                  <FaCheck /> Tạo yêu cầu mua vật tư
                 </Button>
               )}
             </div>

@@ -16,6 +16,7 @@ import vn.unistock.unistockmanagementsystem.features.user.products.ProductsRepos
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -76,5 +77,10 @@ public class ProductMaterialsService {
 
         // Xóa nếu tồn tại
         productMaterialRepository.deleteByProductIdAndMaterialId(productId, materialId);
+    }
+
+    public List<ProductMaterialsDTO> getMaterialsBySaleOrderId(Long saleOrderId) {
+        List<ProductMaterial> materials = productMaterialRepository.findBySaleOrderId(saleOrderId);
+        return materials.stream().map(productMaterialMapper::toDTO).collect(Collectors.toList());
     }
 }

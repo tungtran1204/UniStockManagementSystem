@@ -95,3 +95,23 @@ export const togglePurchaseRequestStatus = async (requestId, newStatus) => {
     throw error;
   }
 };
+
+export const createPurchaseRequestFromSaleOrder = async (saleOrderId) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/sale-order/${saleOrderId}`,
+      {},
+      {
+        headers: {
+          ...authHeader(),
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tạo yêu cầu mua vật tư:", error);
+    throw error;
+  }
+};

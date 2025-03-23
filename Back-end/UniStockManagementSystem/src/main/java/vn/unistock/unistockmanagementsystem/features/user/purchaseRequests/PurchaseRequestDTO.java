@@ -12,5 +12,6 @@ public class PurchaseRequestDTO {
     private String notes;
     private LocalDateTime createdDate;
     private String status;
+    private String saleOrderCode;
     private List<PurchaseRequestDetailDTO> purchaseRequestDetails;
 }

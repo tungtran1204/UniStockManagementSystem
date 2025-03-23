@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -53,7 +54,7 @@ public class PurchaseRequest {
     private String notes;
 
     @OneToMany(mappedBy = "purchaseRequest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<PurchaseRequestDetail> purchaseRequestDetails;
+    private List<PurchaseRequestDetail> purchaseRequestDetails = new ArrayList<>();
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
