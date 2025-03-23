@@ -46,7 +46,8 @@ public class LoginController {
 
             return ResponseEntity.ok(new LoginDTO(token, roles, user.getEmail()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Sai email hoặc mật khẩu!");
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Lỗi: " + e.getMessage());
         }
     }
 
