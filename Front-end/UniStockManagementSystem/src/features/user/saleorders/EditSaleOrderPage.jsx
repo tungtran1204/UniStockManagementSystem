@@ -14,7 +14,7 @@ import dayjs from "dayjs";
 
 import useSaleOrder from "./useSaleOrder";
 import { getPartnersByType } from "@/features/user/partner/partnerService";
-import { createPurchaseRequestFromSaleOrder } from "@/features/user/purchaseRequest/purchaseRequestService";
+import { createPurchaseRequestFromSaleOrder } from "@/features/user/purchaseRequest/PurchaseRequestService";
 import {
   getProducts,
   getSaleOrderById,

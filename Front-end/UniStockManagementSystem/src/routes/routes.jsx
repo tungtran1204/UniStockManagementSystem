@@ -15,6 +15,8 @@ import RolePage from "@/features/admin/roles/RolePage";
 import UnauthorizedPage from "@/components/UnauthorizedPage";
 import NotFoundPage from "@/components/NotFoundPage";
 import LoginPage from "@/features/login/LoginPage";
+import ConfirmEmailPage from "@/features/login/ConfirmEmailPage";
+import ResetPasswordPage from "@/features/login/ResetPasswordPage";
 import AdminDashboard from "@/features/admin/dashboard/AdminDashboard";
 import WarehousePage from "@/features/user/warehouse/WarehousePage";
 import ProductPage from "@/features/user/products/ProductPage";
@@ -215,6 +217,19 @@ export const routes = [
         name: "Sign In",
         path: "/login",
         element: <LoginPage />,
+      },
+
+      {
+        icon: <ServerStackIcon {...icon} />,
+        name: "Confirm Password",
+        path: "/confirmEmail",
+        element: <ConfirmEmailPage />,
+      },
+      {
+        icon: <ServerStackIcon {...icon} />,
+        name: "Reset Password",
+        path: "/resetPassword",
+        element: <ResetPasswordPage />,
       },
     ],
   },
