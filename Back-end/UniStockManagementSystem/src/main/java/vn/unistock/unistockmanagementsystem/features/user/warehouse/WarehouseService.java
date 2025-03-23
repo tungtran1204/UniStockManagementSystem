@@ -32,6 +32,10 @@ public class WarehouseService {
         return warehousePage;
     }
 
+    public List<Warehouse> getAllActiveWarehouses() {
+        return warehouseRepository.findAllByIsActive(true);
+    }
+
     public Warehouse getWarehouseById(Long id) {
         return warehouseRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy kho với ID được cung cấp"));
     }

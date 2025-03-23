@@ -14,5 +14,5 @@ public class WarehouseDTO {
     private String warehouseCode;
     private String warehouseName;
     private String warehouseDescription;
-    private CommonStatus status;
+    private Boolean isActive;
 }

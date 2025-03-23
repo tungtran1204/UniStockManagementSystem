@@ -38,6 +38,9 @@ import PurchaseOrderDetail from "../features/user/purchaseOrder/PurchaseOrderDet
 import ProductTypePage from "@/features/user/productType/ProductTypePage";
 import PurchaseRequestPage from "@/features/user/purchaseRequest/PurchaseRequestPage";
 import AddPurchaseRequestPage from "../features/user/purchaseRequest/AddPurchaseRequestPage";
+import AddMaterialPage from "@/features/user/materials/AddMaterialPage";
+import DetailMaterialPage from "@/features/user/materials/DetailMaterialPage";
+
 import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -294,6 +297,18 @@ export const routes = [
         name: "Thêm yêu cầu mua vật tư",
         path: "/user/purchase-request/add",
         element: <AddPurchaseRequestPage />,
+        roles: ["USER"],
+      },
+      {
+        icon: <TableCellsIcon {...icon} />,
+        name: "Thêm nguyên vật liệu",
+        path: "/user/materials/add",
+        element: <AddMaterialPage />,
+        roles: ["USER"],
+      },
+      {
+        path: "/user/materials/:id",
+        element: <DetailMaterialPage />,
         roles: ["USER"],
       },
     ],

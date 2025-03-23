@@ -33,10 +33,6 @@ public class GoodIssueDetail {
     @Column(nullable = false)
     private Double quantity;
 
-    @ManyToOne
-    @JoinColumn(name = "unit_id", nullable = false)
-    private Unit unit;
-
     private Long referenceId;
 
     @Enumerated(EnumType.STRING)

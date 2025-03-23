@@ -9,5 +9,6 @@ public interface ProductMaterialsMapper {
     @Mapping(source = "material.materialId", target = "materialId")
     @Mapping(source = "material.materialCode", target = "materialCode")
     @Mapping(source = "material.materialName", target = "materialName")
+    @Mapping(source = "material.unit.unitName", target = "unitName")
     ProductMaterialsDTO toDTO(ProductMaterial productMaterial);
 }

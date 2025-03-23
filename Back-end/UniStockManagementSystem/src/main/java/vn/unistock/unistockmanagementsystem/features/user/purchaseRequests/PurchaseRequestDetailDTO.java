@@ -9,5 +9,7 @@ public class PurchaseRequestDetailDTO {
     private String materialCode;
     private String materialName;
     private String unitName;
+    private Long partnerId;
+    private String partnerName;
     private Integer quantity;
 }
