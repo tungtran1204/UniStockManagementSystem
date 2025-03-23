@@ -95,7 +95,7 @@ const PurchaseRequestPage = () => {
   ];
 
   const data = purchaseRequests.map((request, index) => ({
-    id: request.id,
+    id: index + 1,
     index: (currentPage * pageSize) + index + 1,
     purchaseRequestCode: request.purchaseRequestCode,
     purchaseOrderCode: request.purchaseOrderCode || "Chưa có",
