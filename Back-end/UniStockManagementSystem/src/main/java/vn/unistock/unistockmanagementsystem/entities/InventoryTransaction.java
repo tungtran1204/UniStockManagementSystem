@@ -40,11 +40,16 @@ public class InventoryTransaction {
     @Column(nullable = false)
     private Double quantity;
 
-    private Long referenceId;
+    @ManyToOne
+    @JoinColumn(name = "grn_id")
+    private GoodReceiptNote goodReceiptNote;
+
+    @ManyToOne
+    @JoinColumn(name = "gin_id")
+    private GoodIssueNote goodIssueNote;
 
     @Enumerated(EnumType.STRING)
     private NoteType referenceType;
-
 
     public enum TransactionType {
         IMPORT, EXPORT

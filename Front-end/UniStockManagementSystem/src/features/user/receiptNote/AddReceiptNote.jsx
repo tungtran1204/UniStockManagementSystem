@@ -233,19 +233,21 @@ const AddReceiptNote = () => {
         const rowData = rowsData[item.id];
         const warehouse = warehouses.find(w => w.warehouseCode === rowData?.warehouse);
         const warehouseId = warehouse ? warehouse.warehouseId : null;
-
+      
         if (!warehouseId) {
           alert(`Không tìm thấy kho cho sản phẩm/vật tư: ${item.materialName || item.productName}`);
           return null;
         }
-
+      
         return {
           warehouseId: warehouseId,
           materialId: item.materialId || null,
           productId: item.productId || null,
           quantity: parseFloat(rowData?.quantity) || 0,
+          unitId: item.unitId || null,                  
         };
       }).filter(detail => detail !== null);
+      
 
 
       // Tạo dữ liệu phiếu nhập theo cấu trúc của ReceiptNoteDTO

@@ -18,51 +18,40 @@ import vn.unistock.unistockmanagementsystem.features.admin.user.UserRepository;
 import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryRepository;
 import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.products.ProductsRepository;
-
 import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderRepository;
+import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderService;
 import vn.unistock.unistockmanagementsystem.features.user.units.UnitRepository;
 import vn.unistock.unistockmanagementsystem.features.user.warehouse.WarehouseRepository;
 import vn.unistock.unistockmanagementsystem.security.filter.CustomUserDetails;
 import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
 
 @Service
 @RequiredArgsConstructor
 public class ReceiptNoteService {
     private static final Logger logger = LoggerFactory.getLogger(ReceiptNoteService.class);
 
-    @Autowired
-    private ReceiptNoteDetailRepository goodReceiptDetailRepository;
-    @Autowired
-    private InventoryRepository inventoryRepository;
-    @Autowired
-    private InventoryTransactionRepository inventoryTransactionRepository;
-    @Autowired
-    private WarehouseRepository warehouseRepository;
-    @Autowired
-    private MaterialsRepository materialRepository;
-    @Autowired
-    private ProductsRepository productRepository;
-    @Autowired
-    private ReceiptNoteRepository receiptNoteRepository;
-    @Autowired
-    private ReceiptNoteMapper receiptNoteMapper;
-    @Autowired
-    private PaperEvidenceRepository paperEvidenceRepository;
-    @Autowired
-    private AzureBlobService azureBlobService;
-    @Autowired
-    private UnitRepository unitRepository;
-    @Autowired
-    private PurchaseOrderRepository purchaseOrderRepository;
+    @Autowired private ReceiptNoteDetailRepository goodReceiptDetailRepository;
+    @Autowired private InventoryRepository inventoryRepository;
+    @Autowired private InventoryTransactionRepository inventoryTransactionRepository;
+    @Autowired private WarehouseRepository warehouseRepository;
+    @Autowired private MaterialsRepository materialRepository;
+    @Autowired private ProductsRepository productRepository;
+    @Autowired private ReceiptNoteRepository receiptNoteRepository;
+    @Autowired private ReceiptNoteMapper receiptNoteMapper;
+    @Autowired private PaperEvidenceRepository paperEvidenceRepository;
+    @Autowired private AzureBlobService azureBlobService;
+    @Autowired private UnitRepository unitRepository;
+    @Autowired private PurchaseOrderRepository purchaseOrderRepository;
+    @Autowired private PurchaseOrderService purchaseOrderService;
 
     public Page<ReceiptNoteDTO> getAllReceiptNote(Pageable page) {
-            Page<GoodReceiptNote> notes = receiptNoteRepository.findAll(page);
-            return notes.map(receiptNoteMapper::toDTO);
+        Page<GoodReceiptNote> notes = receiptNoteRepository.findAll(page);
+        return notes.map(receiptNoteMapper::toDTO);
     }
 
     public ReceiptNoteDTO getAllReceiptNoteById(Long receiptNoteId) {
@@ -80,7 +69,6 @@ public class ReceiptNoteService {
 
     @Transactional
     public ReceiptNoteDTO createGoodReceipt(ReceiptNoteDTO grnDto) {
-        // Lấy user hiện tại
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
@@ -88,8 +76,6 @@ public class ReceiptNoteService {
         CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
         User currentUser = userDetails.getUser();
 
-
-        // Chuyển DTO thành Entity (GoodReceiptNote)
         GoodReceiptNote grn = GoodReceiptNote.builder()
                 .grnCode(grnDto.getGrnCode())
                 .description(grnDto.getDescription())
@@ -99,27 +85,29 @@ public class ReceiptNoteService {
                 .details(new ArrayList<>())
                 .build();
 
-        // tham chieu chung tu khac
+        boolean hasSaleOrder = false;
         if (grnDto.getPoId() != null) {
             PurchaseOrder po = purchaseOrderRepository.findById(grnDto.getPoId())
                     .orElseThrow(() -> new RuntimeException("Purchase order not found with ID: " + grnDto.getPoId()));
             grn.setPurchaseOrder(po);
+            try {
+                purchaseOrderService.getSaleOrderFromPurchaseOrder(po.getPoId());
+                hasSaleOrder = true;
+            } catch (Exception ignored) {
+                hasSaleOrder = false;
+            }
         }
 
-        // Lưu GoodReceiptNote trước để lấy ID hợp lệ
         grn = receiptNoteRepository.save(grn);
 
         List<GoodReceiptDetail> details = new ArrayList<>();
         for (ReceiptNoteDetailDTO detailDto : grnDto.getDetails()) {
-            // Kiểm tra warehouseId không null
             if (detailDto.getWarehouseId() == null) {
                 throw new RuntimeException("warehouseId is required");
             }
             Warehouse warehouse = warehouseRepository.findById(detailDto.getWarehouseId())
                     .orElseThrow(() -> new RuntimeException("Warehouse not found with ID: " + detailDto.getWarehouseId()));
 
-
-            // Tạo GoodReceiptDetail từ DTO
             GoodReceiptDetail detail = GoodReceiptDetail.builder()
                     .warehouse(warehouse)
                     .quantity(detailDto.getQuantity())
@@ -132,70 +120,87 @@ public class ReceiptNoteService {
                 Unit unit = unitRepository.findById(detailDto.getUnitId())
                         .orElseThrow(() -> new RuntimeException("Unit not found with ID: " + detailDto.getUnitId()));
                 detail.setUnit(unit);
-            } else {
-                // Nếu không có unitId trong DTO, cần lấy unit từ material hoặc product
-                if (detailDto.getMaterialId() != null) {
-                    Material material = materialRepository.findById(detailDto.getMaterialId())
-                            .orElseThrow(() -> new RuntimeException("Material not found with ID: " + detailDto.getMaterialId()));
-                    detail.setMaterial(material);
-                    if (detail.getUnit() == null) {
-                        detail.setUnit(material.getUnit());
-                    }// Giả sử Material có phương thức getUnit()
-                } else if (detailDto.getProductId() != null) {
-                    Product product = productRepository.findById(detailDto.getProductId())
-                            .orElseThrow(() -> new RuntimeException("Product not found with ID: " + detailDto.getProductId()));
-                    detail.setProduct(product);
-                    if (detail.getUnit() == null) {
-                        detail.setUnit(product.getUnit());
-                    }
-                }
             }
-            // Lưu vào danh sách
+
+            if (detailDto.getMaterialId() != null) {
+                Material material = materialRepository.findById(detailDto.getMaterialId())
+                        .orElseThrow(() -> new RuntimeException("Material not found with ID: " + detailDto.getMaterialId()));
+                detail.setMaterial(material);
+                if (detail.getUnit() == null) detail.setUnit(material.getUnit());
+                updateInventoryAndTransaction(warehouse, material, null, detailDto.getQuantity(), hasSaleOrder, grn);            }
+            else if (detailDto.getProductId() != null) {
+                Product product = productRepository.findById(detailDto.getProductId())
+                        .orElseThrow(() -> new RuntimeException("Product not found with ID: " + detailDto.getProductId()));
+                detail.setProduct(product);
+                if (detail.getUnit() == null) detail.setUnit(product.getUnit());
+                updateInventoryAndTransaction(warehouse, null, product, detailDto.getQuantity(), hasSaleOrder, grn);            }
+
             details.add(detail);
         }
 
-        // Lưu danh sách chi tiết phiếu nhập
         goodReceiptDetailRepository.saveAll(details);
         grn.setDetails(details);
-
-        // Trả về DTO
         return receiptNoteMapper.toDTO(grn);
-
     }
 
-    private void updateInventory(Warehouse warehouse, Material material, Double quantity) {
-        Inventory inventory = inventoryRepository.findByWarehouseAndMaterial(warehouse, material)
-                .orElse(new Inventory());
-        inventory.setWarehouse(warehouse);
-        inventory.setMaterial(material);
-        inventory.setQuantity(inventory.getQuantity() + quantity);
-        inventoryRepository.save(inventory);
-        saveInventoryTransaction(warehouse, material, null, quantity);
+    private void updateInventoryAndTransaction(Warehouse warehouse, Material material, Product product, Double quantity, boolean hasSaleOrder, GoodReceiptNote grn) {
+        Inventory.InventoryStatus status = hasSaleOrder ? Inventory.InventoryStatus.RESERVED : Inventory.InventoryStatus.AVAILABLE;
+        Inventory inventory = null;
+
+        if (material != null) {
+            inventory = inventoryRepository.findByWarehouseAndMaterial(warehouse, material)
+                    .filter(i -> i.getStatus() == status)
+                    .orElse(null);
+            if (inventory == null) {
+                inventory = Inventory.builder()
+                        .warehouse(warehouse)
+                        .material(material)
+                        .status(status)
+                        .quantity(0.0)
+                        .build();
+            }
+            inventory.setQuantity(inventory.getQuantity() + quantity);
+            inventory.setLastUpdated(LocalDateTime.now());
+            inventoryRepository.save(inventory);
+
+            InventoryTransaction transaction = InventoryTransaction.builder()
+                    .warehouse(warehouse)
+                    .material(material)
+                    .transactionType(InventoryTransaction.TransactionType.IMPORT)
+                    .quantity(quantity)
+                    .goodReceiptNote(grn)
+                    .referenceType(InventoryTransaction.NoteType.GOOD_RECEIPT_NOTE)
+                    .build();
+            inventoryTransactionRepository.save(transaction);
+        }
+
+        if (product != null) {
+            inventory = inventoryRepository.findByWarehouseAndProduct(warehouse, product)
+                    .filter(i -> i.getStatus() == status)
+                    .orElse(null);
+            if (inventory == null) {
+                inventory = Inventory.builder()
+                        .warehouse(warehouse)
+                        .product(product)
+                        .status(status)
+                        .quantity(0.0)
+                        .build();
+            }
+            inventory.setQuantity(inventory.getQuantity() + quantity);
+            inventory.setLastUpdated(LocalDateTime.now());
+            inventoryRepository.save(inventory);
+
+            InventoryTransaction transaction = InventoryTransaction.builder()
+                    .warehouse(warehouse)
+                    .product(product)
+                    .transactionType(InventoryTransaction.TransactionType.IMPORT)
+                    .quantity(quantity)
+                    .goodReceiptNote(grn)
+                    .referenceType(InventoryTransaction.NoteType.GOOD_RECEIPT_NOTE)
+                    .build();
+            inventoryTransactionRepository.save(transaction);
+        }
     }
-
-    private void updateInventory(Warehouse warehouse, Product product, Double quantity) {
-        Inventory inventory = inventoryRepository.findByWarehouseAndProduct(warehouse, product)
-                .orElse(new Inventory());
-        inventory.setWarehouse(warehouse);
-        inventory.setProduct(product);
-        inventory.setQuantity(inventory.getQuantity() + quantity);
-        inventoryRepository.save(inventory);
-        saveInventoryTransaction(warehouse, null, product, quantity);
-    }
-
-    private void saveInventoryTransaction(Warehouse warehouse, Material material, Product product, Double quantity) {
-        InventoryTransaction transaction = InventoryTransaction.builder()
-                .warehouse(warehouse)
-                .material(material)
-                .product(product)
-                .transactionType(InventoryTransaction.TransactionType.IMPORT)
-                .quantity(quantity)
-                .referenceType(InventoryTransaction.NoteType.GOOD_RECEIPT_NOTE)
-                .build();
-        inventoryTransactionRepository.save(transaction);
-    }
-
-
     @Transactional
     public String getNextReceiptCode() {
         try {
@@ -212,7 +217,6 @@ public class ReceiptNoteService {
     public List<String> uploadPaperEvidence(Long noteId, String noteType, List<MultipartFile> files, User currentUser) {
         logger.info("Uploading {} files for note ID: {}, type: {}", files.size(), noteId, noteType);
 
-        // Validate note exists if necessary
         if (noteType.equals("GOOD_RECEIPT_NOTE")) {
             receiptNoteRepository.findById(noteId)
                     .orElseThrow(() -> new RuntimeException("Receipt Note not found with ID: " + noteId));
@@ -223,10 +227,8 @@ public class ReceiptNoteService {
         try {
             for (MultipartFile file : files) {
                 if (!file.isEmpty()) {
-                    // Upload file to Azure Blob Storage
                     String fileUrl = azureBlobService.uploadFile(file);
 
-                    // Save file metadata to database
                     PaperEvidence evidence = PaperEvidence.builder()
                             .noteId(noteId)
                             .noteType(PaperEvidence.NoteType.valueOf(noteType))
