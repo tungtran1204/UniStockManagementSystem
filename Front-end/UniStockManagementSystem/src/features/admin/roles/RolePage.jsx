@@ -9,6 +9,7 @@ import {
   Switch,
   Button,
 } from "@material-tailwind/react";
+import { Button as MuiButton } from "@mui/material";
 import { FaPlus, FaEdit } from "react-icons/fa";
 import useRole from "./useRole";
 import PageHeader from '@/components/PageHeader';
@@ -331,18 +332,20 @@ function RolePage() {
                             }
                           >
                             <div className="flex justify-end py-2 pr-5">
-                              <Button
-                                size="sm"
-                                color="red"
-                                variant="text"
+                              <MuiButton
+                                size="medium"
+                                color="error"
+                                variant="outlined"
                                 onClick={() => onRemoveTempRole(role.id)}
-                                className="mr-4"
                               >
                                 Hủy
-                              </Button>
+                              </MuiButton>
                               <Button
-                                size="sm"
-                                color="green"
+                                size="lg"
+                                color="white"
+                                variant="text"
+                                className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-3 rounded-[4px] transition-all duration-200 ease-in-out"
+                                ripple={true}
                                 onClick={() => onSaveTempRole(role)}
                               >
                                 Lưu

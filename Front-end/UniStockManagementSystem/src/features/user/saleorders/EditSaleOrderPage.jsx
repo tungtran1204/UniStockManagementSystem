@@ -1,4 +1,4 @@
-import { FaSave, FaTimes, FaEdit, FaPlus, FaTrash, FaEye, FaCheck } from "react-icons/fa";
+import { FaSave, FaArrowLeft, FaEdit, FaPlus, FaTrash, FaEye, FaCheck } from "react-icons/fa";
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -9,6 +9,7 @@ import {
   Textarea,
   Typography,
 } from "@material-tailwind/react";
+import { TextField, Button as MuiButton } from '@mui/material';
 import Select, { components } from "react-select";
 import dayjs from "dayjs";
 
@@ -492,7 +493,7 @@ const EditSaleOrderPage = () => {
       const response = await createPurchaseRequestFromSaleOrder(orderId);
       alert("Tạo yêu cầu mua vật tư thành công!");
       console.log("Chi tiết yêu cầu mua vật tư:", response);
-      navigate("/user/purchase-request"); 
+      navigate("/user/purchase-request");
     } catch (error) {
       alert("Lỗi khi tạo yêu cầu mua vật tư!");
     }
@@ -952,9 +953,23 @@ const EditSaleOrderPage = () => {
             <div>
               {mode === MODE_VIEW && (
                 <div className="flex justify-end mb-4">
-                  <Button variant="outlined" onClick={handleXemDinhMuc} className="flex items-center gap-2">
-                    <FaEye /> Xem định mức
-                  </Button>
+                  <MuiButton
+                    color="info"
+                    size="medium"
+                    variant="outlined"
+                    sx={{
+                      color: '#616161',           // text color
+                      borderColor: '#9e9e9e',     // border
+                      '&:hover': {
+                        backgroundColor: '#f5f5f5',
+                        borderColor: '#757575',
+                      },
+                    }}
+                    onClick={handleXemDinhMuc}
+                    className="flex items-center gap-2"
+                  >
+                    <FaEye className="h-3 w-3" /> Xem định mức
+                  </MuiButton>
                 </div>
               )}
               <div className="border border-gray-200 rounded mb-4 overflow-x-auto">
@@ -983,13 +998,28 @@ const EditSaleOrderPage = () => {
                 </table>
               </div>
               {mode === MODE_EDIT && (
-                <div className="flex gap-2 mb-4">
-                  <Button variant="outlined" onClick={handleAddRow} className="flex items-center gap-2">
-                    <FaPlus /> Thêm dòng
-                  </Button>
-                  <Button variant="outlined" color="red" onClick={handleRemoveAllRows} className="flex items-center gap-2">
-                    <FaTrash /> Xóa hết dòng
-                  </Button>
+                <div className="flex gap-2 mb-4 h-8">
+                  <MuiButton
+                    size="small"
+                    variant="outlined"
+                    onClick={handleAddRow}
+                  >
+                    <div className='flex items-center gap-2'>
+                      <FaPlus className="h-4 w-4" />
+                      <span>Thêm dòng</span>
+                    </div>
+                  </MuiButton>
+                  <MuiButton
+                    size="small"
+                    variant="outlined"
+                    color="error"
+                    onClick={handleRemoveAllRows}
+                  >
+                    <div className='flex items-center gap-2'>
+                      <FaTrash className="h-4 w-4" />
+                      <span>Xóa hết dòng</span>
+                    </div>
+                  </MuiButton>
                 </div>
               )}
               {/* Bảng định mức nguyên vật liệu sẽ xuất hiện ngay bên dưới bảng sản phẩm khi đã xem định mức */}
@@ -1037,9 +1067,85 @@ const EditSaleOrderPage = () => {
                 {globalError}
               </Typography>
             )}
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-between mt-2">
+              <MuiButton
+                color="info"
+                size="medium"
+                variant="outlined"
+                sx={{
+                  color: '#616161',           // text color
+                  borderColor: '#9e9e9e',     // border
+                  '&:hover': {
+                    backgroundColor: '#f5f5f5',
+                    borderColor: '#757575',
+                  },
+                }}
+                onClick={handleCancel}
+                className="flex items-center gap-2"
+              >
+                <FaArrowLeft className="h-3 w-3" /> Quay lại
+              </MuiButton>
+
+              {mode === MODE_VIEW && activeTab === "products" && (
+                <MuiButton
+                  variant="contained"
+                  size="medium"
+                  onClick={handleEdit}
+                  sx={{
+                    boxShadow: 'none',
+                    '&:hover': { boxShadow: 'none' }
+                  }}
+                >
+                  <div className='flex items-center gap-2'>
+                    <FaEdit className="h-4 w-4" />
+                    <span>Chỉnh sửa</span>
+                  </div>
+                </MuiButton>
+              )}
+
+              {mode === MODE_EDIT && (
+                <div className="flex items-center gap-2">
+                  <MuiButton
+                    size="medium"
+                    color="error"
+                    variant="outlined"
+                    onClick={handleCancel}
+                  >
+                    Hủy
+                  </MuiButton>
+                  <Button
+                    size="lg"
+                    color="white"
+                    variant="text"
+                    className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                    ripple={true}
+                    onClick={handleSaveOrder}
+                  >
+                    Lưu
+                  </Button>
+                </div>
+              )}
+
+              {mode === MODE_DINHMUC && (
+                <Button
+                  size="lg"
+                  color="white"
+                  variant="text"
+                  className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                  ripple={true}
+                  onClick={handleCreatePurchaseRequest}
+                >
+                  <div className='flex items-center gap-2'>
+                    <FaCheck />
+                    <span>Tạo yêu cầu mua vật tư</span>
+                  </div>
+                </Button>
+              )}
+            </div>
+
+            {/* <div className="flex justify-end gap-2">
               <Button variant="text" color="gray" onClick={handleCancel} className="flex items-center gap-2">
-                <FaTimes /> {mode === MODE_EDIT ? "Hủy" : "Quay lại"}
+                {mode === MODE_EDIT ? "Hủy" : "Quay lại"}
               </Button>
               {mode === MODE_VIEW && activeTab === "products" && (
                 <Button variant="gradient" color="blue" onClick={handleEdit} className="flex items-center gap-2">
@@ -1056,7 +1162,7 @@ const EditSaleOrderPage = () => {
                   <FaCheck /> Tạo yêu cầu mua vật tư
                 </Button>
               )}
-            </div>
+            </div> */}
           </div>
         </CardBody>
       </Card>

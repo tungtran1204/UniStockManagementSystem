@@ -9,6 +9,7 @@ import {
   Textarea,
   Typography,
 } from "@material-tailwind/react";
+import { TextField, Button as MuiButton, Divider } from '@mui/material';
 import Select from "react-select";
 import { FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
@@ -18,6 +19,8 @@ import dayjs from "dayjs";
 import usePurchaseRequest from "./usePurchaseRequest";
 import axios from "axios";
 import { createPurchaseRequest } from "./PurchaseRequestService";
+import PageHeader from '@/components/PageHeader';
+import TableSearch from '@/components/TableSearch';
 
 const SUPPLIER_TYPE_ID = 2;
 
@@ -401,14 +404,19 @@ const AddPurchaseRequestPage = () => {
   };
 
   return (
-    <div className="mt-12 mb-8 flex flex-col gap-12">
-      <Card>
-        <CardHeader variant="gradient" color="gray" className="mb-4 p-4">
-          <Typography variant="h6" color="white">
-            Yêu cầu mua vật tư {requestCode}
-          </Typography>
-        </CardHeader>
-        <CardBody className="px-4 py-4">
+    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+      <Card className="bg-gray-50 p-7 rounded-none shadow-none">
+        <CardBody className="pb-2 bg-white rounded-xl">
+          <PageHeader
+            title={"Yêu cầu mua vật tư " + requestCode}
+            addButtonLabel=""
+            onAdd={() => { }}
+            onImport={() => {/* Xử lý import nếu có */ }}
+            onExport={() => {/* Xử lý export file ở đây nếu có */ }}
+            showAdd={false}
+            showImport={false} // Ẩn nút import nếu không dùng
+            showExport={false} // Ẩn xuất file nếu không dùng
+          />
           {errors.message && (
             <Typography className="text-xs text-red-500 mb-4">{errors.message}</Typography>
           )}
@@ -507,15 +515,14 @@ const AddPurchaseRequestPage = () => {
                   {["STT", "Mã vật tư", "Tên vật tư", "Nhà cung cấp *", "Đơn vị", "Số lượng *", "Thao tác"].map((head) => (
                     <th
                       key={head}
-                      className={`px-2 py-2 text-sm font-semibold text-gray-600 border-r last:border-r-0 ${
-                        head === "STT" ? "w-10" :
+                      className={`px-2 py-2 text-sm font-semibold text-gray-600 border-r last:border-r-0 ${head === "STT" ? "w-10" :
                         head === "Mã vật tư" ? "w-56" :  // Changed from w-64 to w-56
-                        head === "Tên vật tư" ? "w-48" :
-                        head === "Nhà cung cấp *" ? "w-56" :
-                        head === "Đơn vị" ? "w-10" :
-                        head === "Số lượng *" ? "w-10" :
-                        head === "Thao tác" ? "w-10" : ""
-                      }`}
+                          head === "Tên vật tư" ? "w-48" :
+                            head === "Nhà cung cấp *" ? "w-56" :
+                              head === "Đơn vị" ? "w-10" :
+                                head === "Số lượng *" ? "w-10" :
+                                  head === "Thao tác" ? "w-10" : ""
+                        }`}
                     >
                       {head}
                     </th>
@@ -575,8 +582,8 @@ const AddPurchaseRequestPage = () => {
                           value={
                             item.supplierId
                               ? (materialSuppliers[item.materialId] || []).find(
-                                  (s) => s.value === item.supplierId
-                                ) || null
+                                (s) => s.value === item.supplierId
+                              ) || null
                               : null
                           }
                           onChange={(selected) =>
@@ -667,40 +674,56 @@ const AddPurchaseRequestPage = () => {
                   previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                   nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                   breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-                  activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+                  activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
                   forcePage={currentPage}
                   disabledClassName="opacity-50 cursor-not-allowed"
                 />
               </div>
             )}
           </div>
-
-          <div className="flex gap-2 mb-4">
-            <Button variant="outlined" onClick={handleAddRow} className="flex items-center gap-2">
-              <FaPlus /> Thêm dòng
-            </Button>
-            <Button
+          <div className="flex gap-2 mb-4 h-8">
+            <MuiButton
+              size="small"
               variant="outlined"
-              color="red"
-              onClick={handleRemoveAllRows}
-              className="flex items-center gap-2"
+              onClick={handleAddRow}
             >
-              <FaTrash /> Xóa hết dòng
-            </Button>
+              <div className='flex items-center gap-2'>
+                <FaPlus className="h-4 w-4" />
+                <span>Thêm dòng</span>
+              </div>
+            </MuiButton>
+            <MuiButton
+              size="small"
+              variant="outlined"
+              color="error"
+              onClick={handleRemoveAllRows}
+            >
+              <div className='flex items-center gap-2'>
+                <FaTrash className="h-4 w-4" />
+                <span>Xóa hết dòng</span>
+              </div>
+            </MuiButton>
           </div>
 
-          <div className="flex justify-end gap-2">
-            <Button variant="text" color="gray" onClick={handleCancel} className="flex items-center gap-2">
-              <FaTimes /> Hủy
-            </Button>
+          <div className="flex justify-end gap-2 pb-2">
+            <MuiButton
+              size="medium"
+              color="error"
+              variant="outlined"
+              onClick={handleCancel}
+            >
+              Hủy
+            </MuiButton>
             <Button
-              variant="gradient"
-              color="green"
+              size="lg"
+              color="white"
+              variant="text"
+              className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+              ripple={true}
               onClick={handleSaveRequest}
               disabled={!isFormValid()}
-              className="flex items-center gap-2"
             >
-              <FaSave /> {loading ? "Đang lưu..." : "Lưu"}
+              Lưu
             </Button>
           </div>
         </CardBody>

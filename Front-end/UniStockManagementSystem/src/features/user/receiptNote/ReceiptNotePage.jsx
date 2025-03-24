@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { Button, Card, CardHeader, CardBody, Typography, Tooltip } from "@material-tailwind/react";
-import { BiSolidEdit } from "react-icons/bi";
 import { FaEdit, FaEye } from "react-icons/fa";
 import { ArrowRightIcon, ArrowLeftIcon, EyeIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
