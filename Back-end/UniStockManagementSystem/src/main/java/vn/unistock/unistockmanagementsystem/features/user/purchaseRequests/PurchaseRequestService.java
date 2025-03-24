@@ -16,6 +16,7 @@ import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerReposit
 import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsDTO;
 import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsService;
+import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersDTO;
 import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersMapper;
 import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersRepository;
 
@@ -39,6 +40,7 @@ public class PurchaseRequestService {
     private final PurchaseRequestDetailMapper purchaseRequestDetailMapper;
     private final SaleOrdersRepository saleOrdersRepository;
     private final ProductMaterialsService productMaterialsService;
+    private final SaleOrdersMapper saleOrdersMapper;
 
     public Page<PurchaseRequestDTO> getAllPurchaseRequests(Pageable pageable) {
             Page<PurchaseRequest> requests = purchaseRequestRepository.findAll(pageable);

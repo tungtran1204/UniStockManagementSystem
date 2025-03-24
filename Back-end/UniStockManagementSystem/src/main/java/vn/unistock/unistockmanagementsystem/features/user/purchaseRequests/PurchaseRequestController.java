@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.unistock.unistockmanagementsystem.entities.PurchaseRequest;
+import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersDTO;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -72,4 +73,5 @@ public class PurchaseRequestController {
         PurchaseRequestDTO purchaseRequestDTO = purchaseRequestService.createFromSaleOrder(saleOrderId);
         return ResponseEntity.status(HttpStatus.CREATED).body(purchaseRequestDTO);
     }
+
 }

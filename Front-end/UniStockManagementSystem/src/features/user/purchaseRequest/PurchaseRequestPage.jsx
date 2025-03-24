@@ -8,11 +8,12 @@ import {
     Tooltip,
     Input,
 } from "@material-tailwind/react";
-import { BiSolidEdit } from "react-icons/bi";
+import { BiSolidEdit, BiCartAdd } from "react-icons/bi";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon, KeyIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
 import usePurchaseRequest from "./usePurchaseRequest";
+import usePurchaseOrder from "../purchaseOrder/usePurchaseOrder";
 import { useNavigate } from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
@@ -25,11 +26,13 @@ const PurchaseRequestPage = () => {
         totalElements,
         fetchPurchaseRequests,
         getNextCode,
+        getPurchaseRequestById,
     } = usePurchaseRequest();
 
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
+    const { createOrdersFromRequest } = usePurchaseOrder();
 
     const navigate = useNavigate();
 
@@ -54,6 +57,39 @@ const PurchaseRequestPage = () => {
     const handleSearch = () => {
         fetchPurchaseRequests(0, pageSize, searchTerm);
         setCurrentPage(0);
+    };
+
+    const handleCreatePurchaseOrder = async (requestId) => {
+        const confirm = window.confirm("Bạn có muốn tạo đơn mua hàng cho yêu cầu này không?");
+        if (!confirm) return;
+
+        try {
+            const selectedRequest = await getPurchaseRequestById(requestId);
+            console.log("📦 Chi tiết yêu cầu mua vật tư:", selectedRequest);
+            if (!selectedRequest || !selectedRequest.purchaseRequestDetails) {
+                throw new Error("Yêu cầu mua không có vật tư nào");
+            }
+
+            const payload = {
+                items: selectedRequest.purchaseRequestDetails.map((item) => ({
+                    materialId: item.materialId,
+                    materialCode: item.materialCode,
+                    materialName: item.materialName,
+                    supplierId: item.partnerId,
+                    supplierName: item.partnerName,
+                    unit: item.unitName,
+                    quantity: item.quantity,
+                })),
+            };
+
+
+            const response = await createOrdersFromRequest(payload);
+            alert(`Đã tạo ${response.orders.length} đơn hàng thành công.`);
+            navigate("/user/purchaseOrder");
+        } catch (error) {
+            console.error("Lỗi tạo đơn hàng:", error);
+            alert("Không thể tạo đơn mua hàng. Vui lòng thử lại.");
+        }
     };
 
     const columnsConfig = [
@@ -90,15 +126,27 @@ const PurchaseRequestPage = () => {
             flex: 0.5,
             minWidth: 50,
             renderCell: (params) => (
-                <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                <div className="flex gap-2 justify-center items-center w-full">
                     <Tooltip content="Chỉnh sửa">
-                        <button 
+                        <button
                             className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
                             onClick={() => navigate(`/user/purchase-request/edit/${params.id}`)}
                         >
                             <BiSolidEdit className="h-5 w-5" />
                         </button>
                     </Tooltip>
+
+                    {/* Nút tạo đơn hàng nếu đã duyệt */}
+                    {params.row.status === 'CONFIRMED' && (
+                        <Tooltip content="Tạo đơn mua hàng">
+                            <button
+                                className="p-1.5 rounded-full bg-green-500 hover:bg-green-600 text-white"
+                                onClick={() => handleCreatePurchaseOrder(params.row.id)}
+                            >
+                                <BiCartAdd className="h-5 w-5" />
+                            </button>
+                        </Tooltip>
+                    )}
                 </div>
             ),
         },
@@ -160,7 +208,7 @@ const PurchaseRequestPage = () => {
                         columnsConfig={columnsConfig}
                         enableSelection={true}
                     />
-                    
+
                     <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
                         <Typography variant="small" color="blue-gray" className="font-normal">
                             Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi

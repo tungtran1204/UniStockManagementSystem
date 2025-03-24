@@ -75,4 +75,7 @@ public class PurchaseRequest {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    @OneToMany(mappedBy = "purchaseRequest", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PurchaseOrder> purchaseOrders = new ArrayList<>();
 }

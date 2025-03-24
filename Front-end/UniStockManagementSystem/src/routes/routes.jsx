@@ -37,8 +37,9 @@ import PurchaseRequestPage from "@/features/user/purchaseRequest/PurchaseRequest
 import AddPurchaseRequestPage from "../features/user/purchaseRequest/AddPurchaseRequestPage";
 import AddMaterialPage from "@/features/user/materials/AddMaterialPage";
 import DetailMaterialPage from "@/features/user/materials/DetailMaterialPage";
-
+import ViewReceiptNote from "../features/user/receiptNote/ViewReceiptNote";
 import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
+import AddReceiptNoteManually from "../features/user/receiptNote/AddReceiptNoteManually";
 import ForgotPassword from "../features/auth/reset_password/ConfirmEmailPage";
 import ResetPassword from "../features/auth/reset_password/ResetPasswordPage";
 import LoginPage from "../features/auth/login/LoginPage";
@@ -313,7 +314,16 @@ export const routes = [
         element: <DetailMaterialPage />,
         roles: ["USER"],
       },
-      
+      {
+        path: "/user/receiptNote/:id",
+        element: <ViewReceiptNote />,
+        roles: ["USER"],
+      },
+      {
+        path: "/user/receiptNote/manual",
+        element: <AddReceiptNoteManually />,
+        roles: ["USER"],
+      }
     ],
   },
 ];

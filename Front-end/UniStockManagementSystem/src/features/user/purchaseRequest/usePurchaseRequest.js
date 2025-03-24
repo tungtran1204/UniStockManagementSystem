@@ -4,6 +4,7 @@ import {
   getNextRequestCode,
   createPurchaseRequest,
   togglePurchaseRequestStatus,
+  getPurchaseRequestById as fetchRequestDetail
 } from "./PurchaseRequestService";
 
 const usePurchaseRequest = () => {
@@ -63,6 +64,15 @@ const usePurchaseRequest = () => {
     }
   };
 
+  const getPurchaseRequestById = async (id) => {
+    try {
+      return await fetchRequestDetail(id);
+    } catch (error) {
+      console.error("❌ Lỗi getPurchaseRequestById trong hook:", error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     fetchPurchaseRequests();
   }, []);
@@ -75,6 +85,7 @@ const usePurchaseRequest = () => {
     getNextCode,
     addRequest,
     toggleStatus,
+    getPurchaseRequestById
   };
 };
 

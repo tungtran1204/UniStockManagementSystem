@@ -17,6 +17,4 @@ public class ReceiptNoteDetailDTO {
     private Long productId;
     private Double quantity;
     private Long unitId;
-    private Long referenceId;
-    private GoodReceiptDetail.ReferenceType referenceType;
 }
