@@ -93,7 +93,8 @@ const ViewReceiptNote = () => {
         { content: "Mã hàng", styles: { halign: 'center' } },
         { content: "Tên hàng hóa", styles: { halign: 'center' } },
         { content: "Đơn vị", styles: { halign: 'center' } },
-        { content: "Số lượng nhập", styles: { halign: 'center' } }
+        { content: "Số lượng nhập", styles: { halign: 'center' } },
+        { content: "Nhập kho", styles: { halign: 'center' } }
       ]],
       body: data.details.map((item, index) => [
         { content: index + 1, styles: { halign: 'center' } },
@@ -101,6 +102,7 @@ const ViewReceiptNote = () => {
         { content: item.materialName || item.productName, styles: { halign: 'left' } },
         { content: item.unitName || "-", styles: { halign: 'center' } },
         { content: item.quantity, styles: { halign: 'center' } },
+        { content: item.warehouseName , styles: { halign: 'center' } }
       ]),
       styles: {
         font: "Roboto",
@@ -209,7 +211,7 @@ const ViewReceiptNote = () => {
                   to={`/user/purchaseOrder/${data.poId}`}
                   className="text-blue-600 hover:underline text-sm block mt-1"
                 >
-                  Xem đơn mua hàng ({data.poId})
+                  Xem chứng từ
                 </Link>
               ) : (
                 <Input value="Không có" disabled className="bg-gray-100" />
@@ -253,6 +255,7 @@ const ViewReceiptNote = () => {
                   <th className="p-2 border">Tên hàng</th>
                   <th className="p-2 border">Đơn vị</th>
                   <th className="p-2 border">Số lượng</th>
+                  <th className="p-2 border">Nhập kho</th>
                 </tr>
               </thead>
               <tbody>
@@ -260,10 +263,11 @@ const ViewReceiptNote = () => {
                   data.details.map((item, index) => (
                     <tr key={index}>
                       <td className="p-2 border text-center">{index + 1}</td>
-                      <td className="p-2 border">{item.materialCode || item.productCode}</td>
-                      <td className="p-2 border">{item.materialName || item.productName}</td>
+                      <td className="p-2 border text-center">{item.materialCode || item.productCode}</td>
+                      <td className="p-2 border text-center">{item.materialName || item.productName}</td>
                       <td className="p-2 border text-center">{item.unitName || "-"}</td>
                       <td className="p-2 border text-center">{item.quantity}</td>
+                      <td className="p-2 border text-center">{item.warehouseCode} - {item.warehouseName}</td>
                     </tr>
                   ))
                 ) : (

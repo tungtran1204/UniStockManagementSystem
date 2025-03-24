@@ -48,6 +48,7 @@ public class ReceiptNoteService {
     @Autowired private UnitRepository unitRepository;
     @Autowired private PurchaseOrderRepository purchaseOrderRepository;
     @Autowired private PurchaseOrderService purchaseOrderService;
+    @Autowired private ReceiptNoteDetailViewMapper detailViewMapper;
 
     public Page<ReceiptNoteDTO> getAllReceiptNote(Pageable page) {
         Page<GoodReceiptNote> notes = receiptNoteRepository.findAll(page);
@@ -57,15 +58,26 @@ public class ReceiptNoteService {
     public ReceiptNoteDTO getAllReceiptNoteById(Long receiptNoteId) {
         GoodReceiptNote note = receiptNoteRepository.findById(receiptNoteId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu nhập với ID: " + receiptNoteId));
+
         ReceiptNoteDTO dto = receiptNoteMapper.toDTO(note);
+
+        // Gán danh sách detail đã map view
+        List<ReceiptNoteDetailViewDTO> viewDetails = note.getDetails().stream()
+                .map(detailViewMapper::toViewDTO)
+                .collect(Collectors.toList());
+        dto.setDetails((List) viewDetails);
+
+        // Gán file đính kèm
         List<String> files = paperEvidenceRepository
                 .findByNoteIdAndNoteType(receiptNoteId, PaperEvidence.NoteType.GOOD_RECEIPT_NOTE)
                 .stream()
                 .map(PaperEvidence::getPaperUrl)
                 .collect(Collectors.toList());
         dto.setPaperEvidence(files);
+
         return dto;
     }
+
 
     @Transactional
     public ReceiptNoteDTO createGoodReceipt(ReceiptNoteDTO grnDto) {

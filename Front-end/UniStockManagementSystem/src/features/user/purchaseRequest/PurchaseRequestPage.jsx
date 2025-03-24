@@ -8,7 +8,7 @@ import {
     Tooltip,
     Input,
 } from "@material-tailwind/react";
-import { BiSolidEdit, BiCartAdd  } from "react-icons/bi";
+import { BiSolidEdit, BiCartAdd } from "react-icons/bi";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon, KeyIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
@@ -26,6 +26,7 @@ const PurchaseRequestPage = () => {
         totalElements,
         fetchPurchaseRequests,
         getNextCode,
+        getPurchaseRequestById,
     } = usePurchaseRequest();
 
     const [searchTerm, setSearchTerm] = useState("");
@@ -61,31 +62,35 @@ const PurchaseRequestPage = () => {
     const handleCreatePurchaseOrder = async (requestId) => {
         const confirm = window.confirm("Bạn có muốn tạo đơn mua hàng cho yêu cầu này không?");
         if (!confirm) return;
-      
+
         try {
-          const selectedRequest = purchaseRequests.find((r) => r.id === requestId);
-          if (!selectedRequest) throw new Error("Không tìm thấy yêu cầu mua");
-      
-          // Giả định selectedRequest.items đã có mảng vật tư (cần đảm bảo backend gửi về đủ thông tin)
-          const payload = {
-            items: selectedRequest.items.map((item) => ({
-              materialId: item.materialId,
-              materialCode: item.materialCode,
-              materialName: item.materialName,
-              supplierId: item.supplierId,
-              supplierName: item.supplierName,
-              unit: item.unit,
-              quantity: item.quantity,
-            })),
-          };
-      
-          const response = await createOrdersFromRequest(payload);
-          alert(`Đã tạo ${response.orders.length} đơn hàng thành công.`);
+            const selectedRequest = await getPurchaseRequestById(requestId);
+            console.log("📦 Chi tiết yêu cầu mua vật tư:", selectedRequest);
+            if (!selectedRequest || !selectedRequest.purchaseRequestDetails) {
+                throw new Error("Yêu cầu mua không có vật tư nào");
+            }
+
+            const payload = {
+                items: selectedRequest.purchaseRequestDetails.map((item) => ({
+                    materialId: item.materialId,
+                    materialCode: item.materialCode,
+                    materialName: item.materialName,
+                    supplierId: item.partnerId,
+                    supplierName: item.partnerName,
+                    unit: item.unitName,
+                    quantity: item.quantity,
+                })),
+            };
+
+
+            const response = await createOrdersFromRequest(payload);
+            alert(`Đã tạo ${response.orders.length} đơn hàng thành công.`);
+            navigate("/user/purchaseOrder");
         } catch (error) {
-          console.error("Lỗi tạo đơn hàng:", error);
-          alert("Không thể tạo đơn mua hàng. Vui lòng thử lại.");
+            console.error("Lỗi tạo đơn hàng:", error);
+            alert("Không thể tạo đơn mua hàng. Vui lòng thử lại.");
         }
-      };
+    };
 
     const columnsConfig = [
         { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
