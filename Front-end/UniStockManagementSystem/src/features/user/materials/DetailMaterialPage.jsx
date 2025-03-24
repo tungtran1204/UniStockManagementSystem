@@ -7,11 +7,13 @@ import {
   Input,
   Typography,
 } from "@material-tailwind/react";
+import { TextField, Button as MuiButton, Divider } from '@mui/material';
 import { FaEdit, FaArrowLeft, FaSave, FaTimes, FaTimesCircle } from "react-icons/fa";
 import Select from "react-select";
 import { fetchUnits, fetchMaterialCategories, getMaterialById, updateMaterial } from "./materialService";
 import { getPartnersByType } from "../partner/partnerService";
 import PageHeader from '@/components/PageHeader';
+import ImageUploadBox from '@/components/ImageUploadBox';
 
 const customStyles = {
   // ...existing code...
@@ -150,31 +152,6 @@ const DetailMaterialPage = () => {
     }));
   };
 
-  const headerButtons = (
-    <div className="flex gap-2">
-      <Button
-        variant="text"
-        color="gray"
-        size="sm"
-        onClick={() => navigate("/user/materials")}
-        className="flex items-center gap-2"
-      >
-        <FaArrowLeft className="h-3 w-3"/> Quay lại
-      </Button>
-      {!isEditing && (
-        <Button
-          variant="gradient"
-          color="blue"
-          size="sm"
-          onClick={handleEdit}
-          className="flex items-center gap-2"
-        >
-          <FaEdit className="h-3 w-3"/> Chỉnh sửa
-        </Button>
-      )}
-    </div>
-  );
-
   if (!material || !editedMaterial) return <div>Loading...</div>;
 
   return (
@@ -183,7 +160,6 @@ const DetailMaterialPage = () => {
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
             title="Chi tiết nguyên vật liệu"
-            customButtons={headerButtons}
             showAdd={false}
             showImport={false}
             showExport={false}
@@ -196,11 +172,16 @@ const DetailMaterialPage = () => {
           <div className="grid grid-cols-2 gap-x-12 gap-y-4">
             <div className="flex flex-col gap-4">
               <div>
-                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
+                <Typography variant="medium" className="mb-1 text-black">
                   Mã nguyên vật liệu
+                  {isEditing && <span className="text-red-500"> *</span>}
                 </Typography>
-                <Input
-                  type="text"
+                <TextField
+                  fullWidth
+                  size="small"
+                  hiddenLabel
+                  placeholder="Mã nguyên vật liệu"
+                  color="success"
                   value={editedMaterial?.materialCode || ""}
                   onChange={(e) => {
                     if (isEditing) {
@@ -211,16 +192,25 @@ const DetailMaterialPage = () => {
                     }
                   }}
                   disabled={!isEditing}
-                  className="w-full"
+                  error={Boolean(validationErrors.materialCode)}
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
                 />
                 {validationErrors.materialCode && (
-                  <Typography className="text-xs text-red-500 mt-1">{validationErrors.materialCode}</Typography>
+                  <Typography color="red" className="text-xs text-start mt-1">{validationErrors.materialCode}</Typography>
                 )}
               </div>
 
               <div>
-                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
+                <Typography variant="medium" className="mb-1 text-black">
                   Đơn vị
+                  {isEditing && <span className="text-red-500"> *</span>}
                 </Typography>
                 <Select
                   isDisabled={!isEditing}
@@ -251,11 +241,17 @@ const DetailMaterialPage = () => {
               </div>
 
               <div>
-                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
+                <Typography variant="medium" className="mb-1 text-black">
                   Mô tả
                 </Typography>
-                <Input
-                  type="text"
+                <TextField
+                  fullWidth
+                  size="small"
+                  hiddenLabel
+                  placeholder="Mô tả"
+                  multiline
+                  rows={4}
+                  color="success"
                   value={editedMaterial?.description || ""}
                   onChange={(e) => {
                     if (isEditing) {
@@ -266,18 +262,30 @@ const DetailMaterialPage = () => {
                     }
                   }}
                   disabled={!isEditing}
-                  className="w-full"
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
                 />
               </div>
             </div>
 
             <div className="flex flex-col gap-4">
               <div>
-                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
+                <Typography variant="medium" className="mb-1 text-black">
                   Tên nguyên vật liệu
+                  {isEditing && <span className="text-red-500"> *</span>}
                 </Typography>
-                <Input
-                  type="text"
+                <TextField
+                  fullWidth
+                  size="small"
+                  hiddenLabel
+                  placeholder="Tên nguyên vật liệu"
+                  color="success"
                   value={editedMaterial?.materialName || ""}
                   onChange={(e) => {
                     if (isEditing) {
@@ -288,7 +296,15 @@ const DetailMaterialPage = () => {
                     }
                   }}
                   disabled={!isEditing}
-                  className="w-full"
+                  error={Boolean(validationErrors.materialName)}
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
                 />
                 {validationErrors.materialName && (
                   <Typography className="text-xs text-red-500 mt-1">{validationErrors.materialName}</Typography>
@@ -296,8 +312,9 @@ const DetailMaterialPage = () => {
               </div>
 
               <div>
-                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
+                <Typography variant="medium" className="mb-1 text-black">
                   Danh mục
+                  {isEditing && <span className="text-red-500"> *</span>}
                 </Typography>
                 <Select
                   isDisabled={!isEditing}
@@ -328,8 +345,9 @@ const DetailMaterialPage = () => {
               </div>
 
               <div>
-                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
+                <Typography variant="medium" className="mb-1 text-black">
                   Nhà cung cấp
+                  {isEditing && <span className="text-red-500"> *</span>}
                 </Typography>
                 <Select
                   isMulti
@@ -352,28 +370,18 @@ const DetailMaterialPage = () => {
               </div>
 
               <div>
-                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
+                <Typography variant="medium" className="mb-1 text-black">
                   Hình ảnh nguyên vật liệu
                 </Typography>
                 {isEditing && (
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        if (file.size > 5 * 1024 * 1024) {
-                          alert("Kích thước file không được vượt quá 5MB");
-                          e.target.value = "";
-                          return;
-                        }
-                        const imageUrl = URL.createObjectURL(file);
-                        setPreviewImage(imageUrl);
-                        setEditedMaterial((prev) => ({
-                          ...prev,
-                          image: file,
-                        }));
-                      }
+                  <ImageUploadBox
+                    onFileSelect={(file) => {
+                      const imageUrl = URL.createObjectURL(file);
+                      setPreviewImage(imageUrl);
+                      setEditedMaterial((prev) => ({
+                        ...prev,
+                        image: file,
+                      }));
                     }}
                   />
                 )}
@@ -404,28 +412,64 @@ const DetailMaterialPage = () => {
               </div>
             </div>
           </div>
-
-          {isEditing && (
-            <div className="flex justify-end gap-2 mt-4">
-              <Button
-                variant="text"
-                color="gray"
-                onClick={handleCancel}
-                className="flex items-center gap-2"
+          <Divider sx={{ mt: 2 }} />
+          <div className="flex justify-between my-4">
+            <MuiButton
+              color="info"
+              size="medium"
+              variant="outlined"
+              sx={{
+                color: '#616161',           // text color
+                borderColor: '#9e9e9e',     // border
+                '&:hover': {
+                  backgroundColor: '#f5f5f5',
+                  borderColor: '#757575',
+                },
+              }}
+              onClick={() => navigate("/user/materials")}
+              className="flex items-center gap-2"
+            >
+              <FaArrowLeft className="h-3 w-3" /> Quay lại
+            </MuiButton>
+            {!isEditing ? (
+              <MuiButton
+                variant="contained"
+                size="medium"
+                onClick={handleEdit}
+                sx={{
+                  boxShadow: 'none',
+                  '&:hover': { boxShadow: 'none' }
+                }}
               >
-                <FaTimes /> Hủy
-              </Button>
-              <Button
-                variant="gradient"
-                color="green"
-                onClick={handleSave}
-                disabled={loading}
-                className="flex items-center gap-2"
-              >
-                <FaSave /> {loading ? "Đang xử lý..." : "Lưu"}
-              </Button>
-            </div>
-          )}
+                <div className='flex items-center gap-2'>
+                  <FaEdit className="h-4 w-4" />
+                  <span>Chỉnh sửa</span>
+                </div>
+              </MuiButton>
+            ) : (
+              <div className="flex items-center gap-2">
+                <MuiButton
+                  size="medium"
+                  color="error"
+                  variant="outlined"
+                  onClick={handleCancel}
+                >
+                  Hủy
+                </MuiButton>
+                <Button
+                  size="lg"
+                  color="white"
+                  variant="text"
+                  className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                  ripple={true}
+                  onClick={handleSave}
+                  disabled={loading}
+                >
+                  Lưu
+                </Button>
+              </div>
+            )}
+          </div>
         </CardBody>
       </Card>
     </div>

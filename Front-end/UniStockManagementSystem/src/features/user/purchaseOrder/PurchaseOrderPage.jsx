@@ -348,7 +348,6 @@ useEffect(() => {
             </table>
           </div> */}
 
-          <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
           <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
             <Typography variant="small" color="blue-gray" className="font-normal">
               Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
@@ -372,7 +371,6 @@ useEffect(() => {
               disabledClassName="opacity-50 cursor-not-allowed"
             />
             </div>
-                        </div>
         </CardBody>
       </Card>
     </div>

@@ -13,6 +13,7 @@ import { Navigate } from "react-router-dom";
 import UserPage from "@/features/admin/users/UserPage";
 import RolePage from "@/features/admin/roles/RolePage";
 import UnauthorizedPage from "@/components/UnauthorizedPage";
+import ProfilePage from "@/features/profile/ProfilePage";
 import NotFoundPage from "@/components/NotFoundPage";
 import LoginPage from "@/features/login/LoginPage";
 import ConfirmEmailPage from "@/features/login/ConfirmEmailPage";
@@ -244,6 +245,11 @@ export const routes = [
       {
         path: "*",
         element: <NotFoundPage />,
+      },
+      {
+        path: "/profile",
+        name: "Tài khoản",
+        element: <ProfilePage />,
       },
       {
         icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho

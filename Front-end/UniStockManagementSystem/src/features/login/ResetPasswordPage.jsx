@@ -84,7 +84,11 @@ const ResetPassword = () => {
                             type="submit"
                             variant="contained"
                             color="primary"
-                            className="mt-4 bg-blue-600 hover:bg-blue-700"
+                            className="mt-4"
+                            sx={{
+                                boxShadow: 'none',
+                                '&:hover': { boxShadow: 'none' }
+                            }}
                         >
                             GỬI
                         </Button>

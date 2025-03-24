@@ -8,7 +8,7 @@ import {
     Tooltip,
     Input,
 } from "@material-tailwind/react";
-import { BiSolidEdit } from "react-icons/bi";
+import { EyeIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon, KeyIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
@@ -91,12 +91,12 @@ const PurchaseRequestPage = () => {
             minWidth: 50,
             renderCell: (params) => (
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                    <Tooltip content="Chỉnh sửa">
+                    <Tooltip content="Xem chi tiết">
                         <button 
                             className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
                             onClick={() => navigate(`/user/purchase-request/edit/${params.id}`)}
                         >
-                            <BiSolidEdit className="h-5 w-5" />
+                            <EyeIcon className="h-5 w-5" />
                         </button>
                     </Tooltip>
                 </div>

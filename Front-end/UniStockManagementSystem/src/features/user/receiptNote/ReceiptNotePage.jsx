@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { Button, Card, CardHeader, CardBody, Typography, Tooltip } from "@material-tailwind/react";
-import { BiSolidEdit } from "react-icons/bi";
+import { EyeIcon } from "@heroicons/react/24/outline";
 import { FaEdit, FaEye } from "react-icons/fa";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
@@ -81,11 +81,11 @@ const ReceiptNotePage = () => {
       minWidth: 100,
       renderCell: (params) => (
         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-          <Tooltip content="Chỉnh sửa">
+          <Tooltip content="Xem chi tiết">
             <button className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
               onClick={() => handleEdit(params.row)}
             >
-              <BiSolidEdit className="h-5 w-5" />
+              <EyeIcon className="h-5 w-5" />
             </button>
           </Tooltip>
         </div>

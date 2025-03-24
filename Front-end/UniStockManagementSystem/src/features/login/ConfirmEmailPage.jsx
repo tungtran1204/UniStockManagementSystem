@@ -45,9 +45,9 @@ const ForgotPassword = () => {
                             <TextField
                                 fullWidth
                                 hiddenLable
-                                size="small"
                                 color="success"
                                 variant="outlined"
+                                size="small"
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -59,7 +59,11 @@ const ForgotPassword = () => {
                             type="submit"
                             variant="contained"
                             color="primary"
-                            className="mt-4 bg-blue-600 hover:bg-blue-700"
+                            className="mt-4"
+                            sx={{
+                                boxShadow: 'none',
+                                '&:hover': { boxShadow: 'none' }
+                            }}
                         >
                             Gửi yêu cầu
                         </Button>
