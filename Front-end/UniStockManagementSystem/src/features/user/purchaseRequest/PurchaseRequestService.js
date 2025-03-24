@@ -115,3 +115,15 @@ export const createPurchaseRequestFromSaleOrder = async (saleOrderId) => {
     throw error;
   }
 };
+
+export const getPurchaseRequestById = async (requestId) => {
+  try {
+    const response = await axios.get(`${API_URL}/${requestId}`, {
+      headers: authHeader(),
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi lấy chi tiết yêu cầu mua:", error);
+    throw error;
+  }
+};

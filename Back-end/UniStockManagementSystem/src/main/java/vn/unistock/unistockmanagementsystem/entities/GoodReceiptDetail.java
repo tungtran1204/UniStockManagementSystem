@@ -40,14 +40,4 @@ public class GoodReceiptDetail {
 
     @Column(nullable = false)
     private Double quantity;
-
-    private Long referenceId;
-
-    @Enumerated(EnumType.STRING)
-    private ReferenceType referenceType;
-
-    public enum ReferenceType {
-        PURCHASE_ORDER_DETAIL, SALE_ORDER_DETAIL
-    }
-
 }

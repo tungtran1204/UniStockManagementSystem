@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersDTO;
 
 import java.util.HashMap;
 
@@ -47,6 +48,12 @@ public class PurchaseOrderController {
         response.put("orders", createdOrders);
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{poId}/sale-order")
+    public ResponseEntity<SaleOrdersDTO> getSaleOrderByPurchaseOrder(@PathVariable Long poId) {
+        SaleOrdersDTO dto = purchaseOrderService.getSaleOrderFromPurchaseOrder(poId);
+        return ResponseEntity.ok(dto);
     }
 
 }

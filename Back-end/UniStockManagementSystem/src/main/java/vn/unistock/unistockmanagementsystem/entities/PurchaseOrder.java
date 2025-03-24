@@ -23,6 +23,10 @@ public class PurchaseOrder {
     @Column(name = "po_code", unique = true, length = 10, updatable = false, nullable = false)
     private String poCode;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "purchase_request_id")
+    private PurchaseRequest purchaseRequest;
+
     @NotNull(message = "Supplier ID cannot be null")
     @ManyToOne
     @JoinColumn(name = "partner_id", nullable = false)
@@ -38,7 +42,7 @@ public class PurchaseOrder {
 
     public enum OrderStatus {
         PENDING("Chờ nhận"),
-        IN_PROGRESS("Đang giao"),
+        IN_PROGRESS("Chưa hoàn thành"),
         COMPLETED("Hoàn thành"),
         CANCELED("Hủy");
 
