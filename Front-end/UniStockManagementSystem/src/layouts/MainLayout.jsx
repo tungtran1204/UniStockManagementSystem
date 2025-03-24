@@ -10,7 +10,7 @@ const MainLayout = ({ children }) => {
   const [controller] = useMaterialTailwindController();
   const { openSidenav } = controller; // Lấy openSidenav
   const location = useLocation();
-  const specialRoutes = ["/login", "/unauthorized", "/not-found"];
+  const specialRoutes = ["/login", "/unauthorized", "/not-found", "/confirmEmail", "/resetPassword"];
 
   if (specialRoutes.includes(location.pathname)) {
     return <div>{children}</div>;
@@ -39,13 +39,6 @@ const MainLayout = ({ children }) => {
         className={`flex flex-col transition-all duration-300 ${openSidenav ? "xl:ml-60 xl:w-[calc(100%-240px)]" : "ml-0 w-full"
           }`}
       >
-        {/* Navbar
-        <div
-          className={`fixed top-0 left-0 z-40 transition-all duration-300 bg-white ${openSidenav ? "xl:w-[calc(100%-240px)] xl:left-60" : "w-full left-0"
-            }`}
-        >
-          <Navbar />
-        </div> */}
 
         {/* Phần nội dung cuộn */}
         <div className="flex-grow max-w-full mt-[65px] overflow-y-auto bg-gray-50">

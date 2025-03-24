@@ -7,6 +7,15 @@ spring:
     username: uniadmin
     password: Tst120403
     driver-class-name: com.mysql.cj.jdbc.Driver
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: tst12042003@gmail.com
+    password: dcdg uerg svgs pprg
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
 
 app:
   cors:
