@@ -5,9 +5,8 @@ import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 import vn.unistock.unistockmanagementsystem.entities.GoodReceiptNote;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {ReceiptNoteDetailMapper.class})
 public interface ReceiptNoteMapper {
-    ReceiptNoteMapper INSTANCE = Mappers.getMapper(ReceiptNoteMapper.class);
 
     @Mapping(source = "createdBy.userId", target = "createdBy")
     @Mapping(source = "details", target = "details")

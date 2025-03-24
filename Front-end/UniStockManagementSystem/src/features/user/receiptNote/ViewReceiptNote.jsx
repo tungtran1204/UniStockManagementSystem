@@ -31,7 +31,7 @@ const ViewReceiptNote = () => {
       try {
         const receipt = await getReceiptNote(id);
         setData(receipt);
-
+        console.log("Phiếu nhập: ",receipt);
         if (receipt.createdBy) {
           const user = await getUserById(receipt.createdBy);
           setCreator(user.username || user.email || "Không xác định");

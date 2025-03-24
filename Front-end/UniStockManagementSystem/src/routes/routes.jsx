@@ -40,6 +40,7 @@ import AddMaterialPage from "@/features/user/materials/AddMaterialPage";
 import DetailMaterialPage from "@/features/user/materials/DetailMaterialPage";
 import ViewReceiptNote from "../features/user/receiptNote/ViewReceiptNote";
 import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
+import AddReceiptNoteManually from "../features/user/receiptNote/AddReceiptNoteManually";
 const icon = { className: "w-5 h-5 text-inherit" };
 
 export const routes = [
@@ -301,6 +302,11 @@ export const routes = [
         element: <ViewReceiptNote />,
         roles: ["USER"],
       },
+      {
+        path: "/user/receiptNote/manual",
+        element: <AddReceiptNoteManually />,
+        roles: ["USER"],
+      }
     ],
   },
 ];

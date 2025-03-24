@@ -11,17 +11,23 @@ import Table from "@/components/Table";
 import useUser from "../../admin/users/useUser";
 import usePurchaseOrder from "../purchaseOrder/usePurchaseOrder";
 import useReceiptNote from "./useReceiptNote";
+import {
+  Menu,
+  MenuHandler,
+  MenuList,
+  MenuItem
+} from "@material-tailwind/react";
 
 const ReceiptNotePage = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
-  const {getUserById} = useUser();
-  const {getPurchaseOrderById} = usePurchaseOrder();
+  const { getUserById } = useUser();
+  const { getPurchaseOrderById } = usePurchaseOrder();
   const [usernames, setUsernames] = useState({});
-  const [purchaseOrders, setPurchaseOrders] = useState({});  
-  
+  const [purchaseOrders, setPurchaseOrders] = useState({});
+
   const {
     receiptNotes,
     totalPages,
@@ -50,14 +56,14 @@ const ReceiptNotePage = () => {
             console.error("❌ Lỗi khi lấy thông tin người dùng:", error);
           }
         }
-  
+
         // Xử lý đơn hàng tham chiếu
         if (receipt.poId && !purchaseOrders[receipt.poId]) {
           console.log(`📢 Gọi API lấy đơn hàng với ID: ${receipt.poId}`);
           try {
             const order = await getPurchaseOrderById(receipt.poId);
             console.log("✅ Kết quả từ API:", order);
-  
+
             setPurchaseOrders(prev => ({
               ...prev,
               [receipt.poId]: order.poCode || "N/A"
@@ -68,12 +74,12 @@ const ReceiptNotePage = () => {
         }
       }
     };
-  
+
     if (receiptNotes.length > 0) {
       fetchUserAndOrderData();
     }
   }, [receiptNotes, getUserById, getPurchaseOrderById]);
-  
+
 
   // Handle page change
   const handlePageChange = (selectedPage) => {
@@ -126,7 +132,7 @@ const ReceiptNotePage = () => {
       renderCell: (params) => {
         const { id, type } = params.value || {};
         const label = purchaseOrders[id] || "N/A";
-      
+
         const getPathByType = (type, id) => {
           switch (type) {
             case "PURCHASE_ORDER":
@@ -135,10 +141,10 @@ const ReceiptNotePage = () => {
               return null;
           }
         };
-      
+
         const path = getPathByType(type, id);
         if (!path) return label;
-      
+
         return (
           <span
             onClick={() => navigate(path)}
@@ -186,13 +192,20 @@ const ReceiptNotePage = () => {
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
             title="Danh sách phiếu nhập kho"
-            addButtonLabel="Thêm phiếu nhập"
-            onAdd={() => navigate("/user/receiptNote/add")}
-            onImport={() => {/* Import functionality */}}
-            onExport={() => {/* Export functionality */}}
+            showAdd={false}
+            customButtons={
+              <Menu>
+                <MenuHandler>
+                  <Button color="green" size="sm">Thêm phiếu nhập</Button>
+                </MenuHandler>
+                <MenuList>
+                  <MenuItem onClick={() => navigate("/user/receiptNote/add")}>Từ đơn mua hàng</MenuItem>
+                  <MenuItem onClick={() => navigate("/user/receiptNote/manual")}>Nhập kho thủ công</MenuItem>
+                </MenuList>
+              </Menu>
+            }
           />
-          
-          <div className="py-2 flex items-center justify-between gap-2">
+      <div className="py-2 flex items-center justify-between gap-2">
             {/* Items per page */}
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-light">

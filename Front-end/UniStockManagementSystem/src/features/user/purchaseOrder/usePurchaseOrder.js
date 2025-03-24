@@ -1,19 +1,20 @@
 import { useState, useEffect } from "react";
-import { 
-  fetchPurchaseOrders, 
-  createPurchaseOrder, 
-  updatePurchaseOrderStatus, 
-  updatePurchaseOrder, 
+import {
+  fetchPurchaseOrders,
+  createPurchaseOrder,
+  updatePurchaseOrderStatus,
+  updatePurchaseOrder,
   deletePurchaseOrder,
   getPurchaseOrderById,
-  getSaleOrderByPurchaseOrderId
+  getSaleOrderByPurchaseOrderId,
+  createPurchaseOrdersFromRequest,
 } from "./purchaseOrderService";
 
 const usePurchaseOrder = () => {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-  const [currentPage, setCurrentPage] = useState(0); 
+  const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -37,7 +38,7 @@ const usePurchaseOrder = () => {
       console.log("📢 Gọi API lấy đơn hàng với ID:", orderId);
       const response = await getPurchaseOrderById(orderId);
       console.log("✅ Kết quả từ API:", response);
-  
+
       // Cập nhật state với items luôn có giá trị (không undefined)
       setOrder({ ...response, items: response.items || [] });
     } catch (error) {
@@ -47,7 +48,16 @@ const usePurchaseOrder = () => {
       setLoading(false);
     }
   };
-  
+
+  //tạo đơn mua hàng từ yêu cầu mua
+  const createOrdersFromRequest = async (requestData) => {
+    try {
+      return await createPurchaseOrdersFromRequest(requestData);
+    } catch (error) {
+      throw error;
+    }
+  };
+
 
   useEffect(() => {
     fetchPaginatedOrders();
@@ -70,7 +80,8 @@ const usePurchaseOrder = () => {
     selectedStatus,
     setSelectedStatus,
     getPurchaseOrderById,
-    getSaleOrderByPurchaseOrderId
+    getSaleOrderByPurchaseOrderId,
+    createOrdersFromRequest
   };
 };
 

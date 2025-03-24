@@ -101,6 +101,7 @@ public class ReceiptNoteService {
         grn = receiptNoteRepository.save(grn);
 
         List<GoodReceiptDetail> details = new ArrayList<>();
+        details.forEach(d -> System.out.println("Saving detail: " + d));
         for (ReceiptNoteDetailDTO detailDto : grnDto.getDetails()) {
             if (detailDto.getWarehouseId() == null) {
                 throw new RuntimeException("warehouseId is required");
@@ -112,8 +113,6 @@ public class ReceiptNoteService {
                     .warehouse(warehouse)
                     .quantity(detailDto.getQuantity())
                     .goodReceiptNote(grn)
-                    .referenceId(detailDto.getReferenceId())
-                    .referenceType(detailDto.getReferenceType())
                     .build();
 
             if (detailDto.getUnitId() != null) {
@@ -127,17 +126,16 @@ public class ReceiptNoteService {
                         .orElseThrow(() -> new RuntimeException("Material not found with ID: " + detailDto.getMaterialId()));
                 detail.setMaterial(material);
                 if (detail.getUnit() == null) detail.setUnit(material.getUnit());
-                updateInventoryAndTransaction(warehouse, material, null, detailDto.getQuantity(), hasSaleOrder, grn);            }
-            else if (detailDto.getProductId() != null) {
+                updateInventoryAndTransaction(warehouse, material, null, detailDto.getQuantity(), hasSaleOrder, grn);
+            } else if (detailDto.getProductId() != null) {
                 Product product = productRepository.findById(detailDto.getProductId())
                         .orElseThrow(() -> new RuntimeException("Product not found with ID: " + detailDto.getProductId()));
                 detail.setProduct(product);
                 if (detail.getUnit() == null) detail.setUnit(product.getUnit());
-                updateInventoryAndTransaction(warehouse, null, product, detailDto.getQuantity(), hasSaleOrder, grn);            }
-
+                updateInventoryAndTransaction(warehouse, null, product, detailDto.getQuantity(), hasSaleOrder, grn);
+            }
             details.add(detail);
         }
-
         goodReceiptDetailRepository.saveAll(details);
         grn.setDetails(details);
         return receiptNoteMapper.toDTO(grn);

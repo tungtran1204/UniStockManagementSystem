@@ -69,6 +69,22 @@ export const updatePurchaseOrderStatus = async (orderId, newStatus) => {
   }
 };
 
+export const createPurchaseOrdersFromRequest = async (requestData) => {
+  try {
+    const response = await axios.post(`${API_URL}`, requestData, {
+      headers: {
+        ...authHeader(),
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi khi tạo đơn mua hàng từ yêu cầu:", error);
+    throw error;
+  }
+};
+
+
 // Cập nhật thông tin đơn hàng
 export const updatePurchaseOrder = async (orderId, orderData) => {
   try {
@@ -98,3 +114,4 @@ export const getSaleOrderByPurchaseOrderId = async (poId) => {
   });
   return response.data;
 };
+
