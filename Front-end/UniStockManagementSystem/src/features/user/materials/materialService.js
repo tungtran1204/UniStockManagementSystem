@@ -69,21 +69,8 @@ export const getMaterialById = async (materialId) => {
 };
 
 // Tạo nguyên vật liệu mới
-export const createMaterial = async (materialData) => {
+export const createMaterial = async (formData) => {
   try {
-    const formData = new FormData();
-
-    formData.append("materialCode", materialData.materialCode.trim());
-    formData.append("materialName", materialData.materialName.trim());
-    formData.append("description", materialData.description?.trim() || "");
-    formData.append("unitId", parseInt(materialData.unitId) || "");
-    formData.append("typeId", parseInt(materialData.typeId) || "");
-    formData.append("isActive", materialData.isActive === "true");
-
-    if (materialData.image) {
-      formData.append("image", materialData.image);
-    }
-
     const response = await axios.post(
       `${import.meta.env.VITE_API_URL}/user/materials/create`,
       formData,
@@ -142,7 +129,25 @@ const handleUpdateMaterial = async () => {
   }
 };
 
-
+export const updateMaterial = async (id, formData) => {
+  try {
+    const response = await axios.put(
+      `${API_URL}/${id}`,
+      formData,
+      {
+        headers: {
+          ...authHeader(),
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    console.log("✅ [updateMaterial] API Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi khi cập nhật nguyên vật liệu:", error);
+    throw error;
+  }
+};
 
 // Thay đổi trạng thái nguyên vật liệu
 export const toggleMaterialStatus = async (materialId) => {

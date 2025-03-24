@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.unistock.unistockmanagementsystem.entities.PurchaseOrder;
+import vn.unistock.unistockmanagementsystem.entities.SalesOrder;
 
 import java.util.Optional;
 @Repository
@@ -17,4 +18,14 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
     // Thêm vào PurchaseOrderRepository
     @Query("SELECT p FROM PurchaseOrder p LEFT JOIN FETCH p.partner")
     Page<PurchaseOrder> findAllWithPartner(Pageable pageable);
+
+    //find sale order by purchase order
+    @Query("""
+    SELECT so
+    FROM PurchaseOrder po
+    JOIN po.purchaseRequest pr
+    JOIN pr.salesOrder so
+    WHERE po.poId = :purchaseOrderId
+""")
+    Optional<SalesOrder> findSalesOrderByPurchaseOrderId(@Param("purchaseOrderId") Long purchaseOrderId);
 }

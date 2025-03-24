@@ -32,12 +32,24 @@ public class LoginController {
         try {
             User user = loginService.loadUserByEmail(request.getEmail());
 
+            // Nếu user không tồn tại, trả về thông báo "Sai email hoặc mật khẩu!"
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("Sai email hoặc mật khẩu!");
+            }
+
+            // Kiểm tra mật khẩu
             if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Sai email hoặc mật khẩu!");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("Sai email hoặc mật khẩu!");
             }
-            if (!user.getIsActive()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Tài khoản đã bị khóa!");
+
+            // Kiểm tra trạng thái active của user; sử dụng Boolean.TRUE.equals để tránh NullPointerException
+            if (!Boolean.TRUE.equals(user.getIsActive())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body("Tài khoản đã bị khóa!");
             }
+
             List<String> roles = user.getRoles().stream()
                     .map(Role::getRoleName)
                     .collect(Collectors.toList());
@@ -46,9 +58,12 @@ public class LoginController {
 
             return ResponseEntity.ok(new LoginDTO(token, roles, user.getEmail()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Sai email hoặc mật khẩu!");
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Lỗi: " + e.getMessage());
         }
     }
+
 
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser() {

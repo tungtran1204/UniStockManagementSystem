@@ -71,7 +71,7 @@ export function Navbar({ brandName, routes }) {
         <div className="capitalize flex items-center gap-3">
           <div className="flex items-center justify-center w-[210px]">
             <Link to="/home" className="pr-2">
-              <img src="/img/logo.png" alt="Brand Logo" className="h-11 w-11" />
+              <img src="/img/logo.svg" alt="Brand Logo" className="h-11 w-11" />
             </Link>
             <Link to="/home">
               <Typography className="font-bold text-black text-2xl pt-1">UniStock</Typography>

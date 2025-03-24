@@ -9,13 +9,9 @@ import java.util.List;
 public class PurchaseRequestDTO {
     private Long purchaseRequestId;
     private String purchaseRequestCode;
-    private Long partnerId;
-    private String partnerName;
-    private String address;
-    private String phoneNumber;
-    private String contactPerson;
     private String notes;
     private LocalDateTime createdDate;
     private String status;
+    private String saleOrderCode;
     private List<PurchaseRequestDetailDTO> purchaseRequestDetails;
 }

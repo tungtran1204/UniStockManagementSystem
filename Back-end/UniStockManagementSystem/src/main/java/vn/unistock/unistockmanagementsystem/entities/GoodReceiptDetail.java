@@ -1,5 +1,6 @@
 package vn.unistock.unistockmanagementsystem.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,7 +17,8 @@ public class GoodReceiptDetail {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long grnDetailsId;
 
-    @ManyToOne
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "grn_id", nullable = false)
     private GoodReceiptNote goodReceiptNote;
 
@@ -29,24 +31,13 @@ public class GoodReceiptDetail {
     private Material material;
 
     @ManyToOne
-    @JoinColumn(name = "product)_id", nullable = true)
+    @JoinColumn(name = "product_id", nullable = true)
     private Product product;
+
+    @ManyToOne
+    @JoinColumn(name = "unit_id")
+    private Unit unit;
 
     @Column(nullable = false)
     private Double quantity;
-
-    @ManyToOne
-    @JoinColumn(name = "unit_id", nullable = false)
-    private Unit unit;
-
-    private Long referenceId;
-
-    @Enumerated(EnumType.STRING)
-    private ReferenceType referenceType;
-
-    public enum ReferenceType {
-        PURCHASE_ORDER_DETAIL, SALE_ORDER_DETAIL
-    }
-
-
 }

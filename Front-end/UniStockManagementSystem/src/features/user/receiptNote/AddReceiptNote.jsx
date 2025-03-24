@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Card,
-  Tooltip,
   CardBody,
   Typography,
   Button,
@@ -10,189 +9,440 @@ import {
   Option,
   Textarea,
 } from "@material-tailwind/react";
-import { useNavigate } from "react-router-dom";
-import { FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa";
+import { useLocation, useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
-import Table from "@/components/Table";
+import { getPurchaseOrderById } from "../purchaseOrder/purchaseOrderService";
+import { getWarehouseList } from "../warehouse/warehouseService";
+import ProductRow from "./ProductRow";
+import { createReceiptNote, uploadPaperEvidence as uploadPaperEvidenceService } from "./receiptNoteService";
 
+// Hàm lấy ngày hiện tại YYYY-MM-DD
+const getTodayDate = () => {
+  const today = new Date();
+  return today.toISOString().split("T")[0]; // Cắt chỉ lấy YYYY-MM-DD
+};
 
-const AddIssueNote = () => {
+// Hàm kiểm tra số lượng nhập hợp lệ (không được chênh lệch quá 1% so với số lượng đặt)
+const isValidQuantity = (inputQty, orderedQty) => {
+  if (!inputQty || isNaN(inputQty)) return false;
+
+  const numInputQty = parseFloat(inputQty);
+  const numOrderedQty = parseFloat(orderedQty);
+  const minAllowed = 1;
+  const maxAllowed = numOrderedQty * 1.01; // +1%
+
+  return numInputQty >= minAllowed && numInputQty <= maxAllowed;
+};
+
+const AddReceiptNote = () => {
+  const location = useLocation();
   const navigate = useNavigate();
-
-  const [orderType, setOrderType] = useState("Mua hàng vật tư");
-  const [supplierCode, setSupplierCode] = useState("NC001");
-  const [supplierName, setSupplierName] = useState("Công ty A");
-  const [address, setAddress] = useState("Hà Nội");
-  const [contactPerson, setContactPerson] = useState("Nguyễn Văn A");
-  const [phone, setPhone] = useState("0987654321");
-  const [orderDate, setOrderDate] = useState("2024-10-13");
+  const [order, setOrder] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [description, setDescription] = useState("");
   const [referenceDocument, setReferenceDocument] = useState("");
-  const [files, setFiles] = useState([]); // Cập nhật để hỗ trợ nhiều file;
+  const [files, setFiles] = useState([]);
+  const [orderDate, setOrderDate] = useState(getTodayDate());
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [warehouses, setWarehouses] = useState([]);
+  const [itemWarehouses, setItemWarehouses] = useState({});
+  const [manuallySelectedWarehouses, setManuallySelectedWarehouses] = useState({});
+  const [itemQuantities, setItemQuantities] = useState({});
+  // const [remainingQuantities, setRemainingQuantities] = useState({});
+  const [quantityErrors, setQuantityErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [category, setCategory] = useState("");
 
-  // Danh sách sản phẩm
-  const [products, setProducts] = useState([
-    { id: 1, code: "UNI01_27", name: "Product name", unit: "Cái", warehouse: "KTP", quantity: 4 },
-    { id: 2, code: "UNI02_44", name: "Product name", unit: "Cái", warehouse: "KTP", quantity: 4 },
-    { id: 3, code: "UNI01_98", name: "Product name", unit: "Cái", warehouse: "KTP", quantity: 4 },
-  ]);
+  const { orderId, nextCode, saleOrderCode } = location.state || {};
+  const [receiptCode, setReceiptCode] = useState(nextCode || "");
+  const [rowsData, setRowsData] = useState({});
+
+  console.log("Received orderId:", orderId);
+  console.log("Received nextCode:", nextCode);
+
+  // Xác định kho mặc định dựa trên loại nhập kho
+  const getDefaultWarehouse = (warehouseType) => {
+    const warehouseTypeMap = {
+      "Thành phẩm sản xuất": "KTP", // Mã cho Kho thành phẩm
+      "Vật tư mua bán": "KVT", // Mã cho Kho vật tư
+      "Hàng hóa gia công": "KVT", // Cũng sử dụng Kho vật tư
+      "Hàng hóa trả lại": "KPL" // Mã cho Kho phế liệu
+    };
+    const warehouseCode = warehouseTypeMap[warehouseType] || "";
+    const defaultWarehouse = warehouses.find(w => w.warehouseCode === warehouseCode);
+    return defaultWarehouse ? defaultWarehouse.warehouseCode : "";
+  };
+
+  // Xử lý thay đổi dữ liệu từ ProductRow
+  const handleRowDataChange = (itemId, data) => {
+    setRowsData(prev => ({
+      ...prev,
+      [itemId]: data
+    }));
+  };
+
+  // Xử lý khi loại nhập kho thay đổi
+  const handleReferenceDocumentChange = (value) => {
+    setReferenceDocument(value);
+
+    const defaultWarehouseCode = getDefaultWarehouse(value);
+
+    setItemWarehouses(prev => {
+      const updatedWarehouses = { ...prev };
+
+      order.details.forEach(item => {
+        if (!manuallySelectedWarehouses[item.id]) {
+          updatedWarehouses[item.id] = defaultWarehouseCode;
+        }
+      });
+
+      return updatedWarehouses;
+    });
+
+    // Cập nhật dữ liệu cho ProductRow
+    setRowsData(prev => {
+      const updatedRows = { ...prev };
+
+      order.details.forEach(item => {
+        if (!manuallySelectedWarehouses[item.id]) {
+          updatedRows[item.id] = {
+            ...updatedRows[item.id],
+            warehouse: defaultWarehouseCode,
+          };
+        }
+      });
+
+      return updatedRows;
+    });
+  };
+
+  // Xử lý thay đổi kho cho sản phẩm
+  const handleWarehouseChange = (itemId, warehouseCode) => {
+    setItemWarehouses(prev => ({
+      ...prev,
+      [itemId]: warehouseCode
+    }));
+
+    // Đánh dấu rằng kho này đã được chọn thủ công
+    setManuallySelectedWarehouses(prev => ({
+      ...prev,
+      [itemId]: true
+    }));
+  };
+
+  // Xử lý thay đổi số lượng nhập
+  const handleQuantityChange = (itemId, value, orderedQuantity) => {
+    // Cập nhật số lượng cho sản phẩm cụ thể
+    setItemQuantities(prev => ({
+      ...prev,
+      [itemId]: value
+    }));
+
+    // Validate số lượng riêng cho sản phẩm này
+    if (!isValidQuantity(value, orderedQuantity)) {
+      setQuantityErrors(prev => ({
+        ...prev,
+        [itemId]: "Số lượng nhập phải hợp lệ và không lớn hơn 1% so với số lượng đặt"
+      }));
+    } else {
+      setQuantityErrors(prev => {
+        const updated = { ...prev };
+        delete updated[itemId];
+        return updated;
+      });
+    }
+  };
+
 
   // Xử lý upload file
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
-
-    if (selectedFiles.length + files.length > 3) {
-      alert("Tải lên tối đa 3 file!");
+    const validTypes = [
+      "application/pdf", "image/png", "image/jpeg",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ];
+  
+    const validFiles = selectedFiles.filter(file => {
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`File "${file.name}" vượt quá 5MB`);
+        return false;
+      }
+      if (!validTypes.includes(file.type)) {
+        alert(`File "${file.name}" không đúng định dạng được hỗ trợ`);
+        return false;
+      }
+      return true;
+    });
+  
+    const total = files.length + validFiles.length;
+    if (total > 3) {
+      alert("Chỉ được tải tối đa 3 file");
       return;
     }
-
-    setFiles([...files, ...selectedFiles]);
+  
+    setFiles(prev => [...prev, ...validFiles]);
   };
+   
 
   const handleRemoveFile = (index) => {
     setFiles(files.filter((_, i) => i !== index));
   };
 
-  // Phân trang
-  const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const handleSaveReceipt = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
-  const totalPages = Math.ceil(products.length / pageSize);
-  const totalElements = products.length;
+    try {
+      // Kiểm tra dữ liệu
+      const itemsWithMissingData = order.details.filter(item =>
+        !rowsData[item.id] || !rowsData[item.id].warehouse
+      );
+
+      if (itemsWithMissingData.length > 0) {
+        alert("Vui lòng chọn kho nhập cho tất cả sản phẩm!");
+        setIsSubmitting(false);
+        return;
+      }
+      // Kiểm tra lỗi số lượng
+      const itemsWithErrors = order.details.filter(item =>
+        rowsData[item.id] && rowsData[item.id].error
+      );
+      if (itemsWithErrors.length > 0) {
+        alert("Vui lòng sửa các lỗi số lượng nhập trước khi lưu!");
+        setIsSubmitting(false);
+        return;
+      }
+      // Kiểm tra xem tất cả các sản phẩm đã có số lượng nhập chưa
+      const itemsWithoutQuantity = order.details.filter(item => {
+        const rowData = rowsData[item.id] || {}; // Lấy dữ liệu hàng nếu có, hoặc một object rỗng
+        return rowData.quantity === undefined || rowData.quantity === null || rowData.quantity === "";
+      });
+      if (itemsWithoutQuantity.length > 0) {
+        alert("Vui lòng nhập số lượng cho tất cả sản phẩm!");
+        setIsSubmitting(false);
+        return;
+      }
+
+
+      const details = order.details.map(item => {
+        const rowData = rowsData[item.id];
+        const warehouse = warehouses.find(w => w.warehouseCode === rowData?.warehouse);
+        const warehouseId = warehouse ? warehouse.warehouseId : null;
+      
+        if (!warehouseId) {
+          alert(`Không tìm thấy kho cho sản phẩm/vật tư: ${item.materialName || item.productName}`);
+          return null;
+        }
+      
+        return {
+          warehouseId: warehouseId,
+          materialId: item.materialId || null,
+          productId: item.productId || null,
+          quantity: parseFloat(rowData?.quantity) || 0,
+          unitId: item.unitId || null,                  
+        };
+      }).filter(detail => detail !== null);
+      
+
+
+      // Tạo dữ liệu phiếu nhập theo cấu trúc của ReceiptNoteDTO
+      const receiptData = {
+        grnCode: receiptCode,
+        poId: orderId,
+        description: description,
+        receiptDate: new Date().toISOString(),
+        category: category,
+        details: details
+      };
+
+      console.log("Dữ liệu phiếu nhập:", receiptData);
+
+      // Gọi API để lưu phiếu nhập
+      const response = await createReceiptNote(receiptData);
+
+      // Xử lý tải lên file nếu có
+      if (files.length > 0) {
+        await uploadPaperEvidenceService(response.grnId, "GOOD_RECEIPT_NOTE", files);
+
+      }
+
+      alert("Lưu phiếu nhập thành công!");
+      navigate("/user/receiptNote");
+    } catch (error) {
+      console.error("Lỗi khi lưu phiếu nhập:", error);
+      alert(`Lỗi khi lưu phiếu nhập: ${error.message || "Không xác định"}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Lấy danh sách kho
+  useEffect(() => {
+    const fetchWarehouses = async () => {
+      try {
+        const response = await getWarehouseList();
+
+        console.log("Danh sách kho trả về từ API:", response);
+        // Đảm bảo response có dữ liệu đúng định dạng
+        if (response && Array.isArray(response.data)) {
+          setWarehouses(response.data);
+        } else if (Array.isArray(response)) {
+          setWarehouses(response);
+        } else {
+          console.error("Dữ liệu kho không đúng định dạng:", response);
+          setWarehouses([]);
+        }
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách kho:", error);
+        setWarehouses([]);
+      }
+    };
+
+    fetchWarehouses();
+  }, []);
+
+  // Khởi tạo số lượng cho các sản phẩm
+  useEffect(() => {
+    if (order?.details?.length > 0) {
+      const initialRowsData = {};
+      order.details.forEach(item => {
+        initialRowsData[item.id] = {
+          quantity: item.orderedQuantity, // 🔥 Gán giá trị mặc định
+          warehouse: itemWarehouses[item.id] || "", // Giữ warehouse mặc định
+        };
+      });
+      setRowsData(initialRowsData);
+    }
+  }, [order]);
+
+
+  // Lấy chi tiết đơn hàng và khởi tạo các giá trị mặc định
+  useEffect(() => {
+    if (!orderId) {
+      setError("Không tìm thấy ID đơn hàng!");
+      setLoading(false);
+    } else {
+      const fetchOrderDetail = async () => {
+        try {
+          if (order) return; // Ngăn gọi API nhiều lần
+          console.log("📢 Gọi API lấy đơn hàng với ID:", orderId);
+          const response = await getPurchaseOrderById(orderId);
+          console.log("✅ Kết quả từ API:", response);
+
+          setOrder(response);
+
+          const initialQuantities = {};
+          const initialWarehouses = {};
+
+          if (response.details) {
+            response.details.forEach(item => {
+              initialQuantities[item.id] = parseFloat(item.orderedQuantity) || 0;
+              initialWarehouses[item.id] = getDefaultWarehouse(referenceDocument);
+            });
+          }
+
+          setItemQuantities(initialQuantities);
+          setItemWarehouses(initialWarehouses);
+        } catch (error) {
+          console.error("❌ Lỗi khi lấy chi tiết đơn hàng:", error);
+          setError("Không thể tải dữ liệu đơn hàng.");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchOrderDetail();
+    }
+  }, [orderId]);
+
+  const totalPages = Math.ceil((order?.details?.length || 0) / pageSize);
+  const totalElements = order?.details?.length || 0;
 
   // Kiểm tra nếu currentPage > totalPages khi dữ liệu thay đổi
   useEffect(() => {
     if (currentPage >= totalPages) {
       setCurrentPage(totalPages > 0 ? totalPages - 1 : 0);
     }
-  }, [products, totalPages]);
+  }, [order?.details, totalPages, currentPage]);
 
-  const handlePageChange = ({ selected }) => {
-    setCurrentPage(selected);
+  // Handle page change
+  const handlePageChange = (selectedPage) => {
+    setCurrentPage(selectedPage);
   };
 
-  const handleAddRow = () => {
-    setProducts([
-      ...products,
-      { id: products.length + 1, code: "", name: "Product name", unit: "Cái", warehouse: "KTP", quantity: 0 },
-    ]);
+  // Handle page change from ReactPaginate
+  const handlePageChangeWrapper = (selectedItem) => {
+    handlePageChange(selectedItem.selected);
   };
+  if (loading) return <Typography>Đang tải dữ liệu...</Typography>;
+  if (error) return <Typography className="text-red-500">{error}</Typography>;
 
-  const handleRemoveRow = (id) => {
-    const updatedProducts = products.filter((product) => product.id !== id);
-    setProducts(updatedProducts);
-
-    if (updatedProducts.length === 0) {
-      setCurrentPage(0);
-    }
-  };
-
-  const handleRemoveAllRows = () => {
-    setProducts([]);
-    setCurrentPage(0);
-  };
-
-  const columnsConfig = [
-    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
-    { field: 'code', headerName: 'Mã hàng', flex: 1.5, minWidth: 150, editable: false, filterable: false },
-    { field: 'name', headerName: 'Tên hàng', flex: 2, minWidth: 350, editable: false, filterable: false },
-    { field: 'unit', headerName: 'Đơn vị', flex: 1, minWidth: 100, editable: false, filterable: false },
-    { field: 'warehouse', headerName: 'Kho nhập', flex: 1.5, minWidth: 100, editable: false, filterable: false },
-    {
-      field: 'quantity',
-      headerName: 'Số lượng',
-      flex: 1,
-      minWidth: 100,
-      editable: false,
-      filterable: false,
-      renderCell: (params) => (
-        <Input
-          type="number"
-          value={params.value}
-          onChange={(e) => handleQuantityChange(params.row.index - 1, e.target.value)}
-          min={1}
-          className="w-16 text-sm"
-        />
-      ),
-    },
-    {
-      field: 'actions',
-      headerName: 'Hành động',
-      flex: 0.5,
-      minWidth: 100,
-      editable: false,
-      filterable: false,
-      renderCell: (params) => (
-        <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-          <Tooltip content="Xoá">
-            <button
-              onClick={() => {
-                handleRemoveRow(params.row.index - 1);
-              }}
-              className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white"
-            >
-              <FaTrash className="h-3 w-3" />
-            </button>
-          </Tooltip>
-        </div>
-      ),
-    },
-  ];
+  const items = order?.details || [];
 
   // Lấy danh sách sản phẩm hiển thị theo trang hiện tại
-  const displayedProducts = products.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
-
-  const data = displayedProducts.map((item, index) => ({
-    id: item.id,
-    index: currentPage * pageSize + index + 1,
-    code: item.code,
-    name: item.name,
-    unit: item.unit,
-    warehouse: item.warehouse,
-    quantity: item.quantity,
-  }));
+  const displayedItems = items.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
-
-        {/* <Select value={orderType} onChange={(value) => setOrderType(value)}>
-              <Option value="Nhập kho thành phẩm">Nhập kho thành phẩm</Option>
-              <Option value="Nhập vật tư">Nhập vật tư</Option>
-            </Select> */}
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
-            title="Phiếu nhập kho NK00009"
-
-            showAdd={false} // Ẩn nút thêm kho
-            onAdd={() => setOpenAddModal(true)}
-            onImport={() => {/* Xử lý import nếu có */ }}
-            onExport={() => {/* Xử lý export file ở đây nếu có */ }}
-            showImport={false} // Ẩn nút import nếu không dùng
-            showExport={false} // Ẩn xuất file nếu không dùng
-
+            title={"Phiếu nhập kho " + receiptCode}
+            showAdd={false}
+            showImport={false}
+            showExport={false}
           />
+
           {/* Thông tin chung */}
           <Typography variant="h6" className="mb-2 text-gray-700 text-sm font-semibold">
             Thông tin chung
           </Typography>
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
-              <Typography variant="small">Tham chiếu chứng từ gốc</Typography>
+              <Typography variant="small">Phân loại nhập kho <span className="text-red-500">*</span></Typography>
               <Select
                 className="!border-t-blue-gray-200 focus:!border-t-gray-900"
                 labelProps={{
                   className: "before:content-none after:content-none",
                 }}
-                value={referenceDocument} onChange={setReferenceDocument}>
-                <Option value="Chứng từ A">Chứng từ A</Option>
-                <Option value="Chứng từ B">Chứng từ B</Option>
+                value={category}
+                onChange={(value) => {
+                  setCategory(value);
+                  handleReferenceDocumentChange(value);
+                }}
+                required
+              >
+                <Option value="Thành phẩm sản xuất">Thành phẩm sản xuất</Option>
+                <Option value="Vật tư mua bán">Vật tư mua bán</Option>
+                <Option value="Hàng hóa gia công">Hàng hóa gia công</Option>
+                <Option value="Hàng hóa trả lại">Hàng hóa trả lại</Option>
               </Select>
+              {!category && (
+                <Typography variant="small" className="text-red-500 mt-1">
+                  Vui lòng chọn phân loại nhập kho
+                </Typography>
+              )}
             </div>
             <div>
-              <Typography variant="small">Ngày tạo phiếu</Typography>
+              <Typography variant="small">Tham chiếu chứng từ gốc</Typography>
+              <Input
+                value={
+                  [order?.poCode, saleOrderCode].filter(Boolean).join(" - ")
+                }
+                disabled
+                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
+              />
+            </div>
+            <div>
+              <Typography variant="small">Ngày tạo phiếu <span className="text-red-500">*</span></Typography>
               <Input
                 type="date"
                 value={orderDate}
@@ -200,32 +450,58 @@ const AddIssueNote = () => {
                 labelProps={{
                   className: "before:content-none after:content-none",
                 }}
-                onChange={(e) => setOrderDate(e.target.value)} />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <Typography variant="small">Mã đối tác</Typography>
-              <Input value={supplierCode} disabled className="bg-gray-100" />
-            </div>
-            <div>
-              <Typography variant="small">Tên đối tác</Typography>
-              <Input value={supplierName} disabled />
-            </div>
-            <div className="col-span-2">
-              <Typography variant="small">Địa chỉ</Typography>
-              <Input value={address} disabled />
-            </div>
-            <div>
-              <Typography variant="small">Người liên hệ</Typography>
-              <Input value={contactPerson} disabled />
-            </div>
-            <div>
-              <Typography variant="small">Số điện thoại</Typography>
-              <Input value={phone} disabled />
+                onChange={(e) => setOrderDate(e.target.value)}
+                required
+              />
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <Typography variant="small">Tên đối tác</Typography>
+              <Input
+                value={order.supplierName || ''}
+                disabled
+                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
+              />
+            </div>
+            <div>
+              <Typography variant="small">Địa chỉ</Typography>
+              <Input
+                value={order.supplierAddress || ''}
+                disabled
+                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
+              />
+            </div>
+            <div>
+              <Typography variant="small">Người liên hệ</Typography>
+              <Input
+                value={order.supplierContactName || ''}
+                disabled
+                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
+              />
+            </div>
+            <div>
+              <Typography variant="small">Số điện thoại</Typography>
+              <Input
+                value={order.supplierPhone || 'không có thông tin'}
+                disabled
+                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
+              />
+            </div>
+          </div>
           {/* Diễn giải & Kèm theo */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
@@ -235,12 +511,15 @@ const AddIssueNote = () => {
                 labelProps={{
                   className: "before:content-none after:content-none",
                 }}
-                value={description} onChange={(e) => setDescription(e.target.value)} />
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Nhập diễn giải cho phiếu nhập kho"
+              />
             </div>
             <div>
               <Typography variant="small">Kèm theo</Typography>
               <div className="border border-dashed border-gray-400 p-4 rounded-md text-center">
-                <p className="text-gray-500 text-xs">Kéo thả file vào đây</p>
+                <p className="text-gray-500 text-xs">Kéo thả tối đa 3 file, mỗi file không quá 5MB</p>
                 <p className="text-xs">Hoặc</p>
                 <input
                   type="file"
@@ -250,7 +529,6 @@ const AddIssueNote = () => {
                   className="mt-2 text-xs"
                 />
               </div>
-
               {/* Hiển thị danh sách file đã chọn */}
               {files.length > 0 && (
                 <div className="mt-2">
@@ -264,7 +542,13 @@ const AddIssueNote = () => {
                         className="flex items-center justify-between border p-1 rounded-md text-xs bg-gray-100"
                       >
                         <span className="truncate max-w-[80px]">{file.name}</span>
-                        <Button size="sm" color="red" variant="text" onClick={() => handleRemoveFile(index)}>
+                        <Button
+                          size="sm"
+                          color="red"
+                          variant="text"
+                          onClick={() => handleRemoveFile(index)}
+                          className="p-1 min-w-[20px] h-5"
+                        >
                           ✖
                         </Button>
                       </div>
@@ -274,105 +558,174 @@ const AddIssueNote = () => {
               )}
             </div>
           </div>
-
-          <div className="mt-8">
-            <Typography variant="h6" color="blue-gray" className="mb-4">
-              Danh sách sản phẩm
+          {/* Danh sách sản phẩm */}
+          <div className="px-4 py-2 flex items-center gap-4 mb-4">
+            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
+              Hiển thị
             </Typography>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(0);
+              }}
+              className="border rounded px-2 py-1"
+            >
+              {[5, 10, 20, 50].map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+            
+            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
+              kết quả mỗi trang
+            </Typography>
+          </div>
+          {/* Product table - Using new table template */}
+          <div className="overflow-auto border rounded">
+            <table className="w-full table-auto text-sm">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="p-2 border">STT</th>
+                  <th className="p-2 border">Mã hàng</th>
+                  <th className="p-2 border">Tên hàng</th>
+                  <th className="p-2 border">Đơn vị</th>
+                  <th className="p-2 border">Nhập kho <span className="text-red-500">*</span></th>
+                  <th className="p-2 border">Số lượng đặt</th>
+                  <th className="p-2 border">Số lượng còn phải nhập</th>
+                  <th className="p-2 border">Số lượng nhập kho <span className="text-red-500">*</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayedItems.length > 0 ? (
+                  displayedItems.map((item, index) => (
+                    <ProductRow
+                      key={`item-${item.id}-${index}`}
+                      item={item}
+                      index={index + currentPage * pageSize}
+                      warehouses={warehouses}
+                      defaultWarehouseCode={getDefaultWarehouse(referenceDocument)}
+                      currentPage={currentPage}
+                      pageSize={pageSize}
+                      onDataChange={handleRowDataChange}
+                    />
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="9" className="p-4 text-center text-gray-500">
+                      Không có dữ liệu sản phẩm
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-            <div className="flex items-center justify-between gap-4 mb-4">
+
+          {/* Phân trang */}
+          {totalElements > 0 && (
+            <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
               <div className="flex items-center gap-2">
                 <Typography variant="small" color="blue-gray" className="font-normal">
-                  Hiển thị
-                </Typography>
-                <select
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setCurrentPage(0);
-                  }}
-                  className="border rounded px-2 py-1"
-                >
-                  {[5, 10, 20, 50].map(size => (
-                    <option key={size} value={size}>{size}</option>
-                  ))}
-                </select>
-                <Typography variant="small" color="blue-gray" className="font-normal">
-                  bản ghi mỗi trang
+                  Trang {currentPage + 1} / {totalPages || 1} • {totalElements || 0} bản ghi
                 </Typography>
               </div>
+              <ReactPaginate
+                previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
+                nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
+                breakLabel="..."
+                pageCount={totalPages || 1}
+                marginPagesDisplayed={2}
+                pageRangeDisplayed={5}
+                onPageChange={handlePageChangeWrapper}
+                containerClassName="flex items-center gap-1"
+                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                pageLinkClassName="flex items-center justify-center w-full h-full"
+                previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
+                activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
+                forcePage={currentPage}
+                disabledClassName="opacity-50 cursor-not-allowed"
+              />
             </div>
+          )}
 
-            {/* Bảng sản phẩm */}
-            <Table
-              data={data}
-              columnsConfig={columnsConfig}
-              enableSelection={false}
-            />
-
-            <div className="flex justify-end mt-2 pr-4 text-gray-800 text-sm font-semibold">
-              <span>TỔNG</span>
-              <span className="ml-6">{products.reduce((sum, item) => sum + item.quantity, 0)}</span>
+          {/* Validation summary */}
+          {Object.keys(quantityErrors).length > 0 && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-red-600">
+              <Typography variant="small" className="font-semibold mb-1">
+                Vui lòng sửa các lỗi sau:
+              </Typography>
+              <ul className="list-disc list-inside">
+                {Object.entries(quantityErrors).map(([itemId, error]) => {
+                  const item = order.details.find(detail => detail.id === itemId);
+                  return (
+                    <li key={itemId} className="text-xs">
+                      {item ? `${item.productCode || item.materialCode} - ${item.productName || item.materialName}: ` : ''}
+                      {error}
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
+          )}
 
-            {totalElements > 0 && (
-              <div className="flex items-center justify-between py-4">
-                <div className="flex items-center gap-2">
-                  <Typography variant="small" color="blue-gray" className="font-normal">
-                    Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
-                  </Typography>
-                </div>
-                <ReactPaginate
-                  previousLabel={<ArrowLeftIcon className="h-4 w-4" />}
-                  nextLabel={<ArrowRightIcon className="h-4 w-4" />}
-                  pageCount={totalPages}
-                  marginPagesDisplayed={2}
-                  pageRangeDisplayed={5}
-                  onPageChange={handlePageChange}
-                  containerClassName="flex items-center gap-2"
-                  pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-                  activeClassName="bg-blue-500 text-white"
-                  disabledClassName="opacity-50 cursor-not-allowed"
-                />
-              </div>
-            )}
-
-            <div className="flex gap-2 mb-4">
-              <Button variant="outlined" onClick={handleAddRow} className="flex items-center gap-2">
-                <FaPlus /> Thêm dòng
+          {/* Button actions */}
+          <div className="mt-6 border-t pt-4 flex justify-between">
+            <div className="flex items-center">
+              <Button
+                size="sm"
+                color="red"
+                variant="text"
+                onClick={() => navigate("/user/receiptNote")}
+                className="mr-4 flex items-center"
+              >
+                <ArrowLeftIcon className="h-4 w-4 mr-1" />
+                Quay lại danh sách
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                color="blue"
+                variant="outlined"
+                onClick={() => {
+                  if (window.confirm("Bạn có chắc muốn hủy thao tác này?")) {
+                    navigate("/user/receiptNote");
+                  }
+                }}
+              >
+                Hủy
               </Button>
               <Button
-                variant="outlined"
-                color="red"
-                onClick={handleRemoveAllRows}
-                className="flex items-center gap-2"
+                size="sm"
+                color="green"
+                onClick={handleSaveReceipt}
+                disabled={isSubmitting || Object.keys(quantityErrors).length > 0 || !referenceDocument}
+                className="flex items-center"
               >
-                <FaTrash /> Xóa hết dòng
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Đang lưu...
+                  </>
+                ) : (
+                  "Lưu phiếu nhập"
+                )}
               </Button>
             </div>
           </div>
 
-          <div className="mt-6 border-t pt-4 flex justify-between">
-            <Button
-              size="sm"
-              color="red"
-              variant="text"
-              onClick={() => navigate("/user/receiptNote")}
-              className="mr-4"
-            >
-              Quay lại danh sách
-            </Button>
-            <Button
-              size="sm"
-              color="green"
-            >
-              Lưu
-            </Button>
-          </div>
+          {/* Confirmation dialog for successful save */}
+          {/* You can implement a modal dialog here for successful save confirmation */}
         </CardBody>
       </Card>
     </div>
   );
-};
-
-export default AddIssueNote;
+}
+export default AddReceiptNote;

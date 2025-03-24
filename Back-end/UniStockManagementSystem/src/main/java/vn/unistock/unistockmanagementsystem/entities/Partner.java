@@ -7,6 +7,8 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -42,6 +44,9 @@ public class Partner {
     @NotBlank(message = "Email không được để trống.")
     @Email(message = "Email không hợp lệ.")
     private String email;
+
+    @OneToMany(mappedBy = "partner", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<MaterialPartner> materialPartners = new ArrayList<>();
 
     // Audit
     private LocalDateTime createdAt;

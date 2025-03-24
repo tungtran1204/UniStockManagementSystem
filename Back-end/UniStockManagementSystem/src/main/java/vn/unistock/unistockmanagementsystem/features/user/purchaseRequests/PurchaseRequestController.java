@@ -9,7 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.unistock.unistockmanagementsystem.entities.PurchaseRequest;
+import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersDTO;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
@@ -48,10 +50,10 @@ public class PurchaseRequestController {
 
     @PostMapping("/manual")
     public ResponseEntity<PurchaseRequestDTO> createManualPurchaseRequest(@RequestBody PurchaseRequestDTO dto) {
+        logger.info("Creating manual purchase request: {}", dto);
         PurchaseRequestDTO response = purchaseRequestService.createManualPurchaseRequest(dto);
         return ResponseEntity.ok(response);
     }
-
 
     @PatchMapping("/{purchaseRequestId}/status")
     public ResponseEntity<PurchaseRequestDTO> updatePurchaseRequestStatus(
@@ -59,7 +61,17 @@ public class PurchaseRequestController {
             @RequestBody Map<String, String> statusRequest) {
         logger.info("Updating status of purchase request ID: {}", purchaseRequestId);
         String newStatus = statusRequest.get("status");
+        if (newStatus == null || newStatus.isEmpty()) {
+            throw new IllegalArgumentException("Trạng thái không được để trống");
+        }
         PurchaseRequestDTO updatedRequest = purchaseRequestService.updatePurchaseRequestStatus(purchaseRequestId, newStatus);
         return ResponseEntity.ok(updatedRequest);
     }
+
+    @PostMapping("/sale-order/{saleOrderId}")
+    public ResponseEntity<PurchaseRequestDTO> createFromSaleOrder(@PathVariable Long saleOrderId) {
+        PurchaseRequestDTO purchaseRequestDTO = purchaseRequestService.createFromSaleOrder(saleOrderId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(purchaseRequestDTO);
+    }
+
 }

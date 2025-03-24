@@ -14,7 +14,6 @@ import UserPage from "@/features/admin/users/UserPage";
 import RolePage from "@/features/admin/roles/RolePage";
 import UnauthorizedPage from "@/components/UnauthorizedPage";
 import NotFoundPage from "@/components/NotFoundPage";
-import LoginPage from "@/features/login/LoginPage";
 import AdminDashboard from "@/features/admin/dashboard/AdminDashboard";
 import WarehousePage from "@/features/user/warehouse/WarehousePage";
 import ProductPage from "@/features/user/products/ProductPage";
@@ -36,7 +35,15 @@ import PurchaseOrderDetail from "../features/user/purchaseOrder/PurchaseOrderDet
 import ProductTypePage from "@/features/user/productType/ProductTypePage";
 import PurchaseRequestPage from "@/features/user/purchaseRequest/PurchaseRequestPage";
 import AddPurchaseRequestPage from "../features/user/purchaseRequest/AddPurchaseRequestPage";
+import AddMaterialPage from "@/features/user/materials/AddMaterialPage";
+import DetailMaterialPage from "@/features/user/materials/DetailMaterialPage";
+import ViewReceiptNote from "../features/user/receiptNote/ViewReceiptNote";
 import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
+import AddReceiptNoteManually from "../features/user/receiptNote/AddReceiptNoteManually";
+import ForgotPassword from "../features/auth/reset_password/ConfirmEmailPage";
+import ResetPassword from "../features/auth/reset_password/ResetPasswordPage";
+import LoginPage from "../features/auth/login/LoginPage";
+import ConfirmOTPPage from "../features/auth/reset_password/ConfirmOTPPage";
 const icon = { className: "w-5 h-5 text-inherit" };
 
 export const routes = [
@@ -213,6 +220,20 @@ export const routes = [
         path: "/login",
         element: <LoginPage />,
       },
+      {
+        path: "/confirmEmail",
+        element: <ForgotPassword />,
+      },
+      {
+        path: "/confirmOTP",
+        element: <ConfirmOTPPage />,
+      },
+      {
+        icon: <ServerStackIcon {...icon} />,
+        name: "Reset Password",
+        path: "/resetPassword",
+        element: <ResetPassword />,
+      },
     ],
   },
   {
@@ -281,6 +302,28 @@ export const routes = [
         element: <AddPurchaseRequestPage />,
         roles: ["USER"],
       },
+      {
+        icon: <TableCellsIcon {...icon} />,
+        name: "Thêm nguyên vật liệu",
+        path: "/user/materials/add",
+        element: <AddMaterialPage />,
+        roles: ["USER"],
+      },
+      {
+        path: "/user/materials/:id",
+        element: <DetailMaterialPage />,
+        roles: ["USER"],
+      },
+      {
+        path: "/user/receiptNote/:id",
+        element: <ViewReceiptNote />,
+        roles: ["USER"],
+      },
+      {
+        path: "/user/receiptNote/manual",
+        element: <AddReceiptNoteManually />,
+        roles: ["USER"],
+      }
     ],
   },
 ];

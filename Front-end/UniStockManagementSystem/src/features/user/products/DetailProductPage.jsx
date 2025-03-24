@@ -8,7 +8,7 @@ import {
     Button,
     Input,
 } from "@material-tailwind/react";
-import { FaEdit, FaArrowLeft, FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa";
+import { FaEdit, FaArrowLeft, FaSave, FaTimes, FaPlus, FaTrash, FaTimesCircle } from "react-icons/fa";
 import { getProductById, updateProduct, fetchUnits, fetchProductTypes, checkProductCodeExists } from "./productService";
 import Select from "react-select";
 import axios from "axios";
@@ -368,72 +368,165 @@ const DetailProductPage = () => {
         }
     };
 
+    const handleRemoveImage = () => {
+        setPreviewImage(null);
+        setEditedProduct(prev => ({
+          ...prev,
+          image: null,
+          imageUrl: null
+        }));
+      };
+
+    const headerButtons = (
+        <div className="flex gap-2">
+            <Button
+                variant="text"
+                color="gray"
+                size="sm"
+                onClick={() => navigate("/user/products")}
+                className="flex items-center gap-2"
+            >
+                <FaArrowLeft className="h-3 w-3"/> Quay lại
+            </Button>
+            {!isEditing && (
+                <Button
+                    variant="gradient"
+                    color="blue"
+                    size="sm"
+                    onClick={handleEdit}
+                    className="flex items-center gap-2"
+                >
+                    <FaEdit className="h-3 w-3"/> Chỉnh sửa
+                </Button>
+            )}
+        </div>
+    );
+
+    const getTableData = () => {
+        return getPaginatedData().map((item, index) => ({
+            ...item,
+            id: `${currentPage * pageSize + index + 1}`, // Ensure unique id
+            index: currentPage * pageSize + index + 1,
+            materialId: item.materialId,
+            materialCode: item.materialCode,
+            materialName: item.materialName,
+            quantity: item.quantity,
+            unitName: materials.find(m => m.materialId === item.materialId)?.unitName || ""
+        }));
+    };
+
+    const columnsConfig = [
+        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50 },
+        { 
+            field: 'materialCode', 
+            headerName: 'Mã NVL', 
+            flex: 1.5, 
+            minWidth: 250,
+            renderCell: (params) => (
+                isEditing ? (
+                    <Select
+                        placeholder="Chọn nguyên vật liệu"
+                        isSearchable
+                        options={getAvailableMaterials(params.row.index - 1).map((m) => ({
+                            value: m.materialId,
+                            label: `${m.materialCode} - ${m.materialName}`,
+                            material: m,
+                        }))}
+                        styles={{
+                            ...customStyles,
+                            menu: (provided) => ({
+                                ...provided,
+                                zIndex: 9999
+                            }),
+                            menuPortal: (base) => ({
+                                ...base,
+                                zIndex: 9999
+                            })
+                        }}
+                        className="w-full"
+                        value={
+                            params.row.materialId
+                                ? {
+                                    value: params.row.materialId,
+                                    label: `${params.row.materialCode} - ${params.row.materialName}`,
+                                }
+                                : null
+                        }
+                        onChange={(selected) => {
+                            if (selected) {
+                                const material = selected.material;
+                                handleMaterialChange(params.row.index - 1, selected);
+                            }
+                        }}
+                        menuPosition="fixed"
+                        menuPortalTarget={document.body}
+                        noOptionsMessage={() => "Không tìm thấy vật tư"}
+                    />
+                ) : (
+                    <div className="px-3">{params.value}</div>
+                )
+            )
+        },
+        { field: 'materialName', headerName: 'Tên NVL', flex: 2, minWidth: 400 },
+        { field: 'unitName', headerName: 'Đơn vị', flex: 1, minWidth: 100 },
+        { 
+            field: 'quantity', 
+            headerName: 'Số lượng', 
+            flex: 1, 
+            minWidth: 100,
+            renderCell: (params) => (
+                <div className="w-full">
+                    <Input
+                        type="number"
+                        value={params.value || ''}
+                        onChange={(e) => handleQuantityChange(params.row.index - 1, e.target.value)}
+                        disabled={!isEditing}
+                        min="1"
+                        step="1"
+                        className={`w-full ${quantityErrors[params.row.index - 1] ? "border-red-500" : ""}`}
+                    />
+                    {isEditing && quantityErrors[params.row.index - 1] && (
+                        <div className="text-xs text-red-500 mt-1">
+                            {quantityErrors[params.row.index - 1]}
+                        </div>
+                    )}
+                </div>
+            )
+        },
+        {
+            field: 'actions',
+            headerName: 'Thao tác',
+            flex: 0.5,
+            minWidth: 100,
+            renderCell: (params) => (
+                isEditing && (
+                    <Button
+                        color="red"
+                        variant="text"
+                        size="sm"
+                        onClick={() => handleRemoveRow(params.row.index - 1)}
+                    >
+                        <FaTrash className="h-3 w-3" />
+                    </Button>
+                )
+            )
+        }
+    ];
+
     if (!product) return <div>Loading...</div>;
 
     return (
         <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
-                {/* <CardHeader variant="gradient" color="gray" className="mb-4 p-4">
-                    <div className="flex justify-between items-center">
-                        <Typography variant="h6" color="white">
-                            Chi tiết sản phẩm
-                        </Typography>
-                        <div className="flex gap-2">
-                            {!isEditing ? (
-                                <>
-                                    <Button
-                                        variant="text"
-                                        color="white"
-                                        onClick={() => navigate("/user/products")}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <FaArrowLeft /> Quay lại
-                                    </Button>
-                                    <Button
-                                        variant="text"
-                                        color="white"
-                                        onClick={handleEdit}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <FaEdit /> Chỉnh sửa
-                                    </Button>
-                                </>
-                            ) : (
-                                <>
-                                    <Button
-                                        variant="text"
-                                        color="white"
-                                        onClick={handleCancel}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <FaTimes /> Hủy
-                                    </Button>
-                                    <Button
-                                        variant="text"
-                                        color="white"
-                                        onClick={handleSave}
-                                        className="flex items-center gap-2"
-                                        disabled={loading}
-                                    >
-                                        <FaSave /> {loading ? "Đang xử lý..." : "Lưu"}
-                                    </Button>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </CardHeader> */}
-
                 <CardBody className="pb-2 bg-white rounded-xl">
                     <PageHeader
-                        title={"Chi tiết sản phẩm"}
-                        addButtonLabel=""
-                        onAdd={() => { }}
-                        onImport={() => {/* Xử lý import nếu có */ }}
-                        onExport={() => {/* Xử lý export file ở đây nếu có */ }}
+                        title="Chi tiết sản phẩm"
+                        customButtons={headerButtons}
                         showAdd={false}
-                        showImport={false} // Ẩn nút import nếu không dùng
-                        showExport={false} // Ẩn xuất file nếu không dùng
+                        showImport={false}
+                        showExport={false}
                     />
+
                     <div className="grid grid-cols-2 gap-x-12 gap-y-4">
                         <div className="flex flex-col gap-4">
                             <div>
@@ -594,17 +687,28 @@ const DetailProductPage = () => {
                                 />
                                 {(previewImage || editedProduct?.imageUrl) && (
                                     <div className="mt-2 relative">
+                                      <div className="relative inline-block">
                                         <img
-                                            src={previewImage || editedProduct.imageUrl}
-                                            alt="Preview"
-                                            className="w-32 h-32 object-cover rounded-lg"
-                                            onError={(e) => {
-                                                e.target.onerror = null;
-                                                e.target.src = 'path_to_default_image.jpg';
-                                            }}
+                                          src={previewImage || editedProduct.imageUrl}
+                                          alt="Preview"
+                                          className="w-32 h-32 object-cover rounded-lg border-2 border-gray-200"
+                                          onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.src = 'path_to_default_image.jpg';
+                                          }}
                                         />
+                                        {isEditing && (
+                                          <button
+                                            onClick={handleRemoveImage}
+                                            className="absolute -top-2 -right-2 bg-white rounded-full shadow-lg p-1 hover:bg-red-50 transition-colors duration-200 ease-in-out border-2 border-gray-200 group"
+                                            title="Xóa ảnh"
+                                          >
+                                            <FaTimesCircle className="h-4 w-4 text-gray-400 group-hover:text-red-500 transition-colors duration-200 ease-in-out" />
+                                          </button>
+                                        )}
+                                      </div>
                                     </div>
-                                )}
+                                  )}
                             </div>
                         </div>
                     </div>
@@ -642,147 +746,19 @@ const DetailProductPage = () => {
                                 </Typography>
                             </div>
 
-                            <div className="w-96 md:w-[900px]">
-                                <Input
-                                    label="Tìm kiếm trong danh sách"
-                                    value={tableSearchQuery}
-                                    onChange={(e) => setTableSearchQuery(e.target.value)}
-                                    icon={
-                                        tableSearchQuery && (
-                                            <button
-                                                className="absolute right-3 top-1/2 -translate-y-1/2"
-                                                onClick={() => setTableSearchQuery("")}
-                                            >
-                                                <FaTimes className="h-4 w-4 text-gray-500 hover:text-gray-700" />
-                                            </button>
-                                        )
-                                    }
-                                />
-                            </div>
+                            <TableSearch
+                                value={tableSearchQuery}
+                                onChange={setTableSearchQuery}
+                                onSearch={() => {}}
+                                placeholder="Tìm kiếm trong danh sách"
+                            />
                         </div>
 
-                        <div className="border border-gray-200 rounded mb-4">
-                            <table className="w-full text-left min-w-max border-collapse">
-                                <thead className="bg-gray-50 border-b border-gray-200">
-                                    <tr>
-                                        {["STT", "Mã NVL", "Tên NVL", "Đơn vị", "Số lượng", "Thao tác"].map((head) => (
-                                            <th
-                                                key={head}
-                                                className="px-4 py-2 text-sm font-semibold text-gray-600 border-r last:border-r-0"
-                                            >
-                                                {head}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {getPaginatedData().length > 0 ? (
-                                        getPaginatedData().map((item, index) => {
-                                            const globalIndex = currentPage * pageSize + index;
-                                            const materialData = materials.find(m => m.materialId === item.materialId);
-                                            return (
-                                                <tr
-                                                    key={item.materialId || globalIndex}
-                                                    className="border-b last:border-b-0 hover:bg-gray-50"
-                                                >
-                                                    <td className="px-4 py-2 text-sm text-gray-700 border-r">
-                                                        {globalIndex + 1}
-                                                    </td>
-                                                    <td className="px-4 py-2 text-sm border-r">
-                                                        {isEditing ? (
-                                                            <Select
-                                                                placeholder="Chọn nguyên vật liệu"
-                                                                isSearchable
-                                                                options={getAvailableMaterials(globalIndex).map((m) => ({
-                                                                    value: m.materialId,
-                                                                    label: `${m.materialCode} - ${m.materialName}`,
-                                                                    material: m,
-                                                                }))}
-                                                                styles={customStyles}
-                                                                className="w-68"
-                                                                value={
-                                                                    item.materialId
-                                                                        ? {
-                                                                            value: item.materialId,
-                                                                            label: `${item.materialCode} - ${item.materialName}`,
-                                                                        }
-                                                                        : null
-                                                                }
-                                                                onFocus={() => setCurrentRow(globalIndex)} // Thêm handler này
-                                                                onChange={(selected) => handleMaterialChange(globalIndex, selected)}
-                                                            />
-                                                        ) : (
-                                                            <Input
-                                                                variant="standard"
-                                                                value={item.materialCode || ""}
-                                                                disabled
-                                                                className="w-full text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
-                                                            />
-                                                        )}
-                                                    </td>
-                                                    <td className="px-4 py-2 text-sm border-r">
-                                                        <Input
-                                                            variant="standard"
-                                                            value={item.materialName || ""}
-                                                            disabled
-                                                            className="w-full text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
-                                                        />
-                                                    </td>
-                                                    <td className="px-4 py-2 text-sm border-r">
-                                                        <Input
-                                                            variant="standard"
-                                                            value={materialData ? materialData.unitName : ""}
-                                                            disabled
-                                                            className="w-16 text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
-                                                        />
-                                                    </td>
-                                                    <td className="px-4 py-2 text-sm border-r">
-                                                        <div>
-                                                            <Input
-                                                                type="number"
-                                                                variant="standard"
-                                                                value={item.quantity || ""}
-                                                                onChange={(e) => handleQuantityChange(globalIndex, e.target.value)}
-                                                                min={1}
-                                                                className={`w-16 text-sm ${quantityErrors[globalIndex] ? "border-red-500" : ""
-                                                                    }`}
-                                                                disabled={!isEditing}
-                                                            />
-                                                            {isEditing && quantityErrors[globalIndex] && (
-                                                                <div className="text-xs text-red-500 mt-1">
-                                                                    {quantityErrors[globalIndex]}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-4 py-2 text-sm text-center">
-                                                        {isEditing && (
-                                                            <Button
-                                                                color="red"
-                                                                variant="text"
-                                                                size="sm"
-                                                                onClick={() => handleRemoveRow(globalIndex)}
-                                                            >
-                                                                Xóa
-                                                            </Button>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
-                                    ) : (
-                                        <tr>
-                                            <td
-                                                colSpan={6}
-                                                className="px-4 py-2 text-center text-gray-500"
-                                            >
-                                                Không có dữ liệu định mức nguyên vật liệu
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                        <Table 
+                            data={getTableData()} 
+                            columnsConfig={columnsConfig} 
+                            enableSelection={false}
+                        />
 
                         {editedProduct?.materials?.length > 0 && (
                             <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
@@ -833,6 +809,27 @@ const DetailProductPage = () => {
                             </div>
                         )}
                     </div>
+                    {isEditing && (
+                        <div className="flex justify-end gap-2 mt-4">
+                            <Button
+                                variant="text"
+                                color="gray"
+                                onClick={handleCancel}
+                                className="flex items-center gap-2"
+                            >
+                                <FaTimes /> Hủy
+                            </Button>
+                            <Button
+                                variant="gradient"
+                                color="green"
+                                onClick={handleSave}
+                                disabled={loading}
+                                className="flex items-center gap-2"
+                            >
+                                <FaSave /> {loading ? "Đang xử lý..." : "Lưu"}
+                            </Button>
+                        </div>
+                    )}
                 </CardBody>
             </Card>
         </div>

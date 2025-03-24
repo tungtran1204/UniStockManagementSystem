@@ -33,6 +33,10 @@ public class GoodIssueNote {
     private LocalDateTime issueDate;
 
     @ManyToOne
+    @JoinColumn(name = "po_id", nullable = true)
+    private PurchaseOrder purchaseOrder;
+
+    @ManyToOne
     @JoinColumn(name = "created_by", nullable = false)
     @NotNull(message = "Created by is required")
     private User createdBy;

@@ -6,17 +6,26 @@ const authHeader = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-export const getPurchaseRequests = async (page, size) => {
+export const getPurchaseRequests = async (page = 0, size = 10) => {
   try {
-    const response = await axios.get(API_URL, {
-      params: { page, size },
-      headers: authHeader(),
+    const response = await axios.get(`${API_URL}`, {
+      params: { 
+        page: page,
+        size: size,
+        sort: "createdDate,desc" // Thêm sort để tránh lỗi
+      },
+      headers: {
+        ...authHeader(),
+        "Content-Type": "application/json",
+      },
+      withCredentials: true, // Thêm withCredentials
     });
-    console.log("✅ [getPurchaseRequests] API Response:", response.data);
+    
     if (response.data && response.data.content) {
       return {
         ...response.data,
         content: response.data.content.map((request) => ({
+          id: request.purchaseRequestId, // Thêm id để tránh lỗi undefined
           ...request,
           status: mapStatusToVietnamese(request.status),
           partnerName: request.partner?.partnerName || request.partnerName || "Không xác định",
@@ -26,7 +35,14 @@ export const getPurchaseRequests = async (page, size) => {
     return response.data;
   } catch (error) {
     console.error("❌ [getPurchaseRequests] Error:", error);
-    throw error;
+    // Return empty data instead of throwing error
+    return {
+      content: [],
+      totalPages: 0,
+      totalElements: 0,
+      size: size,
+      number: page
+    };
   }
 };
 
@@ -76,6 +92,38 @@ export const togglePurchaseRequestStatus = async (requestId, newStatus) => {
     return response.data;
   } catch (error) {
     console.error("❌ [togglePurchaseRequestStatus] Error:", error);
+    throw error;
+  }
+};
+
+export const createPurchaseRequestFromSaleOrder = async (saleOrderId) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/sale-order/${saleOrderId}`,
+      {},
+      {
+        headers: {
+          ...authHeader(),
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi tạo yêu cầu mua vật tư:", error);
+    throw error;
+  }
+};
+
+export const getPurchaseRequestById = async (requestId) => {
+  try {
+    const response = await axios.get(`${API_URL}/${requestId}`, {
+      headers: authHeader(),
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi lấy chi tiết yêu cầu mua:", error);
     throw error;
   }
 };

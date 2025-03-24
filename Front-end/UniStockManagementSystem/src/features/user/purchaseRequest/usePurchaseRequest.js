@@ -4,6 +4,7 @@ import {
   getNextRequestCode,
   createPurchaseRequest,
   togglePurchaseRequestStatus,
+  getPurchaseRequestById as fetchRequestDetail
 } from "./PurchaseRequestService";
 
 const usePurchaseRequest = () => {
@@ -19,6 +20,10 @@ const usePurchaseRequest = () => {
       setTotalElements(data.totalElements || 0);
     } catch (error) {
       console.error("❌ Error fetching purchase requests:", error);
+      // Set empty state on error
+      setPurchaseRequests([]);
+      setTotalPages(1);
+      setTotalElements(0);
     }
   };
 
@@ -59,6 +64,15 @@ const usePurchaseRequest = () => {
     }
   };
 
+  const getPurchaseRequestById = async (id) => {
+    try {
+      return await fetchRequestDetail(id);
+    } catch (error) {
+      console.error("❌ Lỗi getPurchaseRequestById trong hook:", error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     fetchPurchaseRequests();
   }, []);
@@ -71,6 +85,7 @@ const usePurchaseRequest = () => {
     getNextCode,
     addRequest,
     toggleStatus,
+    getPurchaseRequestById
   };
 };
 

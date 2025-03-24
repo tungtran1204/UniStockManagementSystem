@@ -19,7 +19,10 @@ public class PurchaseRequestDetail {
     @JoinColumn(name = "material_id", nullable = false)
     private Material material;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "partner_id", nullable = false)
+    private Partner partner;
+
     @Column(nullable = false)
     private Integer quantity;
-
 }
