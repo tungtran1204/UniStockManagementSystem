@@ -10,7 +10,7 @@ const MainLayout = ({ children }) => {
   const [controller] = useMaterialTailwindController();
   const { openSidenav } = controller; // Lấy openSidenav
   const location = useLocation();
-  const specialRoutes = ["/login", "/unauthorized", "/not-found", "/confirmEmail", "/resetPassword"];
+  const specialRoutes = ["/login", "/unauthorized", "/not-found", "/confirmEmail", "/resetPassword", "/confirmOTP"];
 
   if (specialRoutes.includes(location.pathname)) {
     return <div>{children}</div>;

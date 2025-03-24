@@ -14,9 +14,6 @@ import UserPage from "@/features/admin/users/UserPage";
 import RolePage from "@/features/admin/roles/RolePage";
 import UnauthorizedPage from "@/components/UnauthorizedPage";
 import NotFoundPage from "@/components/NotFoundPage";
-import LoginPage from "@/features/login/LoginPage";
-import ConfirmEmailPage from "@/features/login/ConfirmEmailPage";
-import ResetPasswordPage from "@/features/login/ResetPasswordPage";
 import AdminDashboard from "@/features/admin/dashboard/AdminDashboard";
 import WarehousePage from "@/features/user/warehouse/WarehousePage";
 import ProductPage from "@/features/user/products/ProductPage";
@@ -42,6 +39,10 @@ import AddMaterialPage from "@/features/user/materials/AddMaterialPage";
 import DetailMaterialPage from "@/features/user/materials/DetailMaterialPage";
 
 import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
+import ForgotPassword from "../features/auth/reset_password/ConfirmEmailPage";
+import ResetPassword from "../features/auth/reset_password/ResetPasswordPage";
+import LoginPage from "../features/auth/login/LoginPage";
+import ConfirmOTPPage from "../features/auth/reset_password/ConfirmOTPPage";
 const icon = { className: "w-5 h-5 text-inherit" };
 
 export const routes = [
@@ -218,18 +219,19 @@ export const routes = [
         path: "/login",
         element: <LoginPage />,
       },
-
       {
-        icon: <ServerStackIcon {...icon} />,
-        name: "Confirm Password",
         path: "/confirmEmail",
-        element: <ConfirmEmailPage />,
+        element: <ForgotPassword />,
+      },
+      {
+        path: "/confirmOTP",
+        element: <ConfirmOTPPage />,
       },
       {
         icon: <ServerStackIcon {...icon} />,
         name: "Reset Password",
         path: "/resetPassword",
-        element: <ResetPasswordPage />,
+        element: <ResetPassword />,
       },
     ],
   },
@@ -311,6 +313,7 @@ export const routes = [
         element: <DetailMaterialPage />,
         roles: ["USER"],
       },
+      
     ],
   },
 ];

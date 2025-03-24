@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { TextField, Button, Box } from '@mui/material';
 import { Typography } from "@material-tailwind/react";
 import { Link, useNavigate } from "react-router-dom";
-import useLogin from "../../features/login/useLogin";
+import useLogin from "./useLogin";
 
 export function LoginPage() {
   const { handleLogin } = useLogin();

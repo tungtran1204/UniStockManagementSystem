@@ -33,17 +33,6 @@ public class Jwt {
                 .compact();
     }
 
-    public String generateResetToken(String email, long expirationMillis) {
-        // expirationMillis = 600_000 (10 phút) chẳng hạn
-        return Jwts.builder()
-                .setSubject("Reset Password") // Subject để phân biệt
-                .claim("email", email)        // Lưu email trong claim
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expirationMillis))
-                .signWith(SignatureAlgorithm.HS256, JWT_SECRET_KEY)
-                .compact();
-    }
-
     /**
      * Giải mã token, trả về đối tượng Claims.
      * Ném IllegalArgumentException nếu token sai format.
