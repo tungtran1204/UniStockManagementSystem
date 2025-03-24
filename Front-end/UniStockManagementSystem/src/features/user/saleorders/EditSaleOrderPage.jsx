@@ -953,9 +953,23 @@ const EditSaleOrderPage = () => {
             <div>
               {mode === MODE_VIEW && (
                 <div className="flex justify-end mb-4">
-                  <Button variant="outlined" onClick={handleXemDinhMuc} className="flex items-center gap-2">
-                    <FaEye /> Xem định mức
-                  </Button>
+                  <MuiButton
+                    color="info"
+                    size="medium"
+                    variant="outlined"
+                    sx={{
+                      color: '#616161',           // text color
+                      borderColor: '#9e9e9e',     // border
+                      '&:hover': {
+                        backgroundColor: '#f5f5f5',
+                        borderColor: '#757575',
+                      },
+                    }}
+                    onClick={handleXemDinhMuc}
+                    className="flex items-center gap-2"
+                  >
+                    <FaEye className="h-3 w-3" /> Xem định mức
+                  </MuiButton>
                 </div>
               )}
               <div className="border border-gray-200 rounded mb-4 overflow-x-auto">
