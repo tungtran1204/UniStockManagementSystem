@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getUsers, deleteUserById, toggleUserStatus } from "./userService";
+import { getUserById as fetchUserById } from "./userService"; // ✅ Đổi tên để tránh đệ quy
 
 const useUser = () => {
   const [users, setUsers] = useState([]);
@@ -47,12 +48,23 @@ const useUser = () => {
     }
   };
 
+  const getUserById = async (userId) => {
+    try {
+      const user = await fetchUserById(userId);
+      return user;
+    } catch (error) {
+      console.error("❌ Lỗi khi lấy thông tin User:", error);
+    }
+  };
+
+  
+
   // ✅ Gọi `fetchPaginatedUsers` khi Component được mount
   useEffect(() => {
     fetchPaginatedUsers();
   }, []);
 
-  return { users, fetchPaginatedUsers, deleteUser, toggleStatus, totalPages, totalElements };
+  return { users, fetchPaginatedUsers, deleteUser, toggleStatus, totalPages, totalElements, getUserById };
 };
 
 export default useUser;

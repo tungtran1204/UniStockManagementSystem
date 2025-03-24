@@ -1,4 +1,4 @@
-/*
+
 package vn.unistock.unistockmanagementsystem.utils;
 
 import org.springframework.boot.CommandLineRunner;
@@ -108,4 +108,4 @@ public class DataInitializer implements CommandLineRunner {
     }
 
 }
-*/
+

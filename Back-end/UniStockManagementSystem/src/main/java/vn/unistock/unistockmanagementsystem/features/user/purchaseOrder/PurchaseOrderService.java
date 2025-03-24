@@ -3,14 +3,19 @@ package vn.unistock.unistockmanagementsystem.features.user.purchaseOrder;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import vn.unistock.unistockmanagementsystem.entities.*;
 import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerRepository;
+import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersDTO;
+import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersMapper;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -24,6 +29,9 @@ public class PurchaseOrderService {
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    @Autowired
+    private SaleOrdersMapper saleOrdersMapper;
 
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final PurchaseOrderDetailRepository purchaseOrderDetailRepository;
@@ -187,7 +195,7 @@ public class PurchaseOrderService {
      * Tạo mã purchase order
      */
     private String generatePurchaseOrderCode(Partner supplier) {
-        String prefix = "PO";
+        String prefix = "MH";
 
         // Tìm mã đơn hàng lớn nhất trong hệ thống
         String maxPoCodeQuery = "SELECT MAX(p.poCode) FROM PurchaseOrder p WHERE p.poCode LIKE :prefix";
@@ -212,4 +220,16 @@ public class PurchaseOrderService {
 
         return prefix + numberStr;
     }
+
+    public SaleOrdersDTO getSaleOrderFromPurchaseOrder(Long poId) {
+        SalesOrder salesOrder = purchaseOrderRepository
+                .findSalesOrderByPurchaseOrderId(poId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Không tìm thấy đơn hàng bán liên kết với PurchaseOrder ID: " + poId
+                ));
+
+        return saleOrdersMapper.toDTO(salesOrder);
+    }
+
 }

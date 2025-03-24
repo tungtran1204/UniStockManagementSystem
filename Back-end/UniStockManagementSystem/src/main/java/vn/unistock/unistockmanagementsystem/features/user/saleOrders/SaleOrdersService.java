@@ -12,6 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 import vn.unistock.unistockmanagementsystem.entities.*;
 import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerRepository;
 import vn.unistock.unistockmanagementsystem.features.user.products.ProductsRepository;
+import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderRepository;
 import vn.unistock.unistockmanagementsystem.security.filter.CustomUserDetails;
 
 @Service
@@ -20,6 +21,7 @@ public class SaleOrdersService {
     private final SaleOrdersMapper saleOrdersMapper;
     private final PartnerRepository partnerRepository;
     private final ProductsRepository productsRepository;
+    private PurchaseOrderRepository purchaseOrderRepository;
 
     public SaleOrdersService(SaleOrdersRepository saleOrdersRepository,
                              SaleOrdersMapper saleOrdersMapper,
@@ -128,5 +130,4 @@ public class SaleOrdersService {
 
         return saleOrdersMapper.toDTO(savedOrder);
     }
-
 }

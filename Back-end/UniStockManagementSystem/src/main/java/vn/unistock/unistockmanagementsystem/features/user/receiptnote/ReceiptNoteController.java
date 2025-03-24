@@ -1,5 +1,6 @@
 package vn.unistock.unistockmanagementsystem.features.user.receiptnote;
 
+import com.azure.core.annotation.Get;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -39,6 +40,15 @@ public class ReceiptNoteController {
     @PostMapping
     public ResponseEntity<ReceiptNoteDTO> createGoodReceipt(@RequestBody ReceiptNoteDTO grnDto) {
         return ResponseEntity.ok(receiptNoteService.createGoodReceipt(grnDto));
+    }
+
+    @GetMapping("/{grnId}")
+    public ResponseEntity<ReceiptNoteDTO> getGoodReceiptById(@PathVariable Long grnId) {
+        ReceiptNoteDTO grn = receiptNoteService.getAllReceiptNoteById(grnId);
+        if (grn == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Good Receipt Note not found");
+        }
+        return ResponseEntity.ok(grn);
     }
 
     @GetMapping("/nextcode")
