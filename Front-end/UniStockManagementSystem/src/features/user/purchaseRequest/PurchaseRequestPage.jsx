@@ -13,7 +13,7 @@ import {
     Select,
     Option,
 } from "@material-tailwind/react";
-import { BiSolidEdit } from "react-icons/bi";
+import { EyeIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
@@ -161,9 +161,21 @@ const PurchaseRequestPage = () => {
                             className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
                             onClick={() => navigate(`/user/purchase-request/${params.id}`)}
                         >
-                            <BiSolidEdit className="h-5 w-5" />
+                            <EyeIcon className="h-5 w-5" />
                         </button>
                     </Tooltip>
+
+                    {/* Nút tạo đơn hàng nếu đã duyệt */}
+                    {params.row.status === 'CONFIRMED' && (
+                        <Tooltip content="Tạo đơn mua hàng">
+                            <button
+                                className="p-1.5 rounded-full bg-green-500 hover:bg-green-600 text-white"
+                                onClick={() => handleCreatePurchaseOrder(params.row.id)}
+                            >
+                                <BiCartAdd className="h-5 w-5" />
+                            </button>
+                        </Tooltip>
+                    )}
                 </div>
             ),
         },

@@ -34,7 +34,9 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/unistock/auth/login","/api/unistock/auth/me").permitAll()
+                        .requestMatchers("/api/unistock/auth/login","/api/unistock/auth/me",
+                                "/api/unistock/auth/forgot-password", "/api/unistock/auth/verify-otp",
+                                "/api/unistock/auth/reset-password").permitAll()
                         .anyRequest().authenticated()
                 )
                 // Thêm filter xác thực JWT (đọc token) trước UsernamePasswordAuthenticationFilter

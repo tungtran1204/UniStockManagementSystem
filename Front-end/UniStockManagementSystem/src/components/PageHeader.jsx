@@ -12,7 +12,7 @@ const PageHeader = ({
     showImport = true,
     showExport = true,
     addButtonLabel = "Thêm",
-    customButtons = null, // Add this prop
+    // customButtons = null, // Add this prop
 }) => {
     return (
         <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-300">
@@ -20,12 +20,12 @@ const PageHeader = ({
                 {title}
             </Typography>
             <div className="flex gap-2">
-                {customButtons}
+                {/* {customButtons} */}
                 {showImport && (
                     <Button
                         size="sm"
-                        variant="text"
-                        className="flex items-center gap-2 bg-white border text-[#089456] border-[#089456] hover:bg-[#089456]/10"
+                        variant="contained"
+                        className="flex items-center gap-2 bg-white border shadow-none hover:shadow-none rounded-[4px] text-[#089456] border-[#089456] hover:bg-[#089456]/10"
                         onClick={onImport}
                     >
                         <BiImport className="h-5 w-5" /> Import Excel
@@ -35,23 +35,26 @@ const PageHeader = ({
                     <Button
                         size="sm"
                         color="black"
-                        variant="text"
-                        className="flex items-center gap-2 bg-white border text-[#089456] border-[#089456] hover:bg-[#089456]/10"
+                        variant="contained"
+                        className="flex items-center gap-2 bg-white border shadow-none hover:shadow-none rounded-[4px] text-[#089456] border-[#089456] hover:bg-[#089456]/10"
                         onClick={onExport}
                     >
-                        <BiExport className="h-5 w-5" /> Export Excel
+                        <BiExport className="h-5 w-5" /> Xuất File
                     </Button>
                 )}
                 {showAdd && (
                     <Button
                         size="sm"
                         color="white"
-                        variant="text"
-                        className="flex items-center gap-2 bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 ease-in-out"
+                        className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none hover:shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                        variant="contained"
                         ripple={true}
                         onClick={onAdd}
                     >
-                        <FaPlus className="h-4 w-4" /> {addButtonLabel}
+                        <div className='flex items-center gap-2'>
+                            <FaPlus className="h-4 w-4" />
+                            <span>{addButtonLabel}</span>
+                        </div>
                     </Button>
                 )}
             </div>

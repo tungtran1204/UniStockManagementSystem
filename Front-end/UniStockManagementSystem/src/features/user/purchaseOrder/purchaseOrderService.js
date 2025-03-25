@@ -69,6 +69,22 @@ export const updatePurchaseOrderStatus = async (orderId, newStatus) => {
   }
 };
 
+export const createPurchaseOrdersFromRequest = async (requestData) => {
+  try {
+    const response = await axios.post(`${API_URL}`, requestData, {
+      headers: {
+        ...authHeader(),
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi khi tạo đơn mua hàng từ yêu cầu:", error);
+    throw error;
+  }
+};
+
+
 // Cập nhật thông tin đơn hàng
 export const updatePurchaseOrder = async (orderId, orderData) => {
   try {
@@ -90,3 +106,12 @@ export const deletePurchaseOrder = async (orderId) => {
     throw error;
   }
 };
+
+//tìm đơn đặt hàng (nếu có) từ mã đơn mua vật tư
+export const getSaleOrderByPurchaseOrderId = async (poId) => {
+  const response = await axios.get(`${API_URL}/${poId}/sale-order`, {
+    headers: authHeader(),
+  });
+  return response.data;
+};
+

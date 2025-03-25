@@ -8,11 +8,13 @@ import {
     Input,
     Typography,
 } from "@material-tailwind/react";
+import { TextField, Button as MuiButton } from '@mui/material';
 import { FaSave, FaTimes } from "react-icons/fa";
 import Select from "react-select";
 import MultiSelectDropdown from "@/components/MultiSelectDropdown";
 import { checkMaterialCodeExists, fetchUnits, fetchMaterialCategories, createMaterial } from "./materialService";
 import PageHeader from '@/components/PageHeader';
+import ImageUploadBox from '@/components/ImageUploadBox';
 import { getPartnersByType } from "../partner/partnerService";
 
 const customStyles = {
@@ -217,25 +219,31 @@ const AddMaterialPage = () => {
                     <div className="grid grid-cols-2 gap-x-12 gap-y-4">
                         <div className="flex flex-col gap-4">
                             <div>
-                                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
-                                    Mã nguyên vật liệu *
+                                <Typography variant="medium" className="mb-1 text-black">
+                                    Mã nguyên vật liệu
+                                    <span className="text-red-500"> *</span>
                                 </Typography>
-                                <Input
-                                    type="text"
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    hiddenLabel
+                                    placeholder="Mã nguyên vật liệu"
+                                    color="success"
                                     value={newMaterial.materialCode}
                                     onChange={(e) => handleCheckMaterialCode(e.target.value)}
-                                    className={`w-full ${materialCodeError || validationErrors.materialCode ? "border-red-500" : ""}`}
+                                    error={Boolean(materialCodeError || validationErrors.materialCode)}
                                 />
                                 {(materialCodeError || validationErrors.materialCode) && (
-                                    <Typography className="text-xs text-red-500 mt-1">
+                                    <Typography color="red" className="text-xs text-start mt-1">
                                         {materialCodeError || validationErrors.materialCode}
                                     </Typography>
                                 )}
                             </div>
 
                             <div>
-                                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
-                                    Đơn vị *
+                                <Typography variant="medium" className="mb-1 text-black">
+                                    Đơn vị
+                                    <span className="text-red-500"> *</span>
                                 </Typography>
                                 <Select
                                     placeholder="Chọn đơn vị"
@@ -263,42 +271,53 @@ const AddMaterialPage = () => {
                             </div>
 
                             <div>
-                                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
+                                <Typography variant="medium" className="mb-1 text-black">
                                     Mô tả
                                 </Typography>
-                                <Input
-                                    type="text"
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    hiddenLabel
+                                    placeholder="Mô tả"
+                                    multiline
+                                    rows={4}
+                                    color="success"
                                     value={newMaterial.description}
                                     onChange={(e) => setNewMaterial({ ...newMaterial, description: e.target.value })}
-                                    className="w-full"
                                 />
                             </div>
                         </div>
 
                         <div className="flex flex-col gap-4">
                             <div>
-                                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
-                                    Tên nguyên vật liệu *
+                                <Typography variant="medium" className="mb-1 text-black">
+                                    Tên nguyên vật liệu
+                                    <span className="text-red-500"> *</span>
                                 </Typography>
-                                <Input
-                                    type="text"
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    hiddenLabel
+                                    placeholder="Tên nguyên vật liệu"
+                                    color="success"
                                     value={newMaterial.materialName}
                                     onChange={(e) => {
                                         setNewMaterial({ ...newMaterial, materialName: e.target.value });
                                         setValidationErrors(prev => ({ ...prev, materialName: "" }));
                                     }}
-                                    className={`w-full ${validationErrors.materialName ? "border-red-500" : ""}`}
+                                    error={Boolean(validationErrors.materialName)}
                                 />
                                 {validationErrors.materialName && (
-                                    <Typography className="text-xs text-red-500 mt-1">
+                                    <Typography color="red" className="text-xs text-start mt-1">
                                         {validationErrors.materialName}
                                     </Typography>
                                 )}
                             </div>
 
                             <div>
-                                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
-                                    Danh mục *
+                                <Typography variant="medium" className="mb-1 text-black">
+                                    Danh mục
+                                    <span className="text-red-500"> *</span>
                                 </Typography>
                                 <Select
                                     placeholder="Chọn danh mục"
@@ -326,8 +345,9 @@ const AddMaterialPage = () => {
                             </div>
 
                             <div>
-                                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
-                                    Nhà cung cấp *
+                                <Typography variant="medium" className="mb-1 text-black">
+                                    Nhà cung cấp
+                                    <span className="text-red-500"> *</span>
                                 </Typography>
                                 <Select
                                     isMulti
@@ -346,28 +366,17 @@ const AddMaterialPage = () => {
                             </div>
 
                             <div>
-                                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
+                                <Typography variant="medium" className="mb-1 text-black">
                                     Hình ảnh nguyên vật liệu
                                 </Typography>
-                                <Input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                        const file = e.target.files[0];
-                                        if (file) {
-                                            if (file.size > 5 * 1024 * 1024) {
-                                                alert("Kích thước file không được vượt quá 5MB");
-                                                e.target.value = "";
-                                                return;
-                                            }
-                                            const imageUrl = URL.createObjectURL(file);
-                                            setPreviewImage(imageUrl);
-                                            setNewMaterial((prev) => ({
-                                                ...prev,
-                                                image: file,
-                                                imageUrl: imageUrl,
-                                            }));
-                                        }
+                                <ImageUploadBox
+                                    onFileSelect={(file) => {
+                                        const imageUrl = URL.createObjectURL(file);
+                                        setPreviewImage(imageUrl);
+                                        setEditedMaterial((prev) => ({
+                                            ...prev,
+                                            image: file,
+                                        }));
                                     }}
                                 />
                                 {previewImage && (
@@ -388,22 +397,24 @@ const AddMaterialPage = () => {
                     </div>
 
                     <div className="flex justify-end gap-2 mt-8">
-                        <Button
-                            variant="text"
-                            color="gray"
+                        <MuiButton
+                            size="medium"
+                            color="error"
+                            variant="outlined"
                             onClick={() => navigate("/user/materials")}
-                            className="flex items-center gap-2"
                         >
-                            <FaTimes /> Hủy
-                        </Button>
+                            Hủy
+                        </MuiButton>
                         <Button
-                            variant="gradient"
-                            color="green"
+                            size="lg"
+                            color="white"
+                            variant="text"
+                            className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-2 rounded-[4px] transition-all duration-200 ease-in-out"
+                            ripple={true}
                             onClick={handleCreateMaterial}
                             disabled={isCreateDisabled()}
-                            className="flex items-center gap-2"
                         >
-                            <FaSave /> {loading ? "Đang xử lý..." : "Lưu"}
+                            Lưu
                         </Button>
                     </div>
                 </CardBody>

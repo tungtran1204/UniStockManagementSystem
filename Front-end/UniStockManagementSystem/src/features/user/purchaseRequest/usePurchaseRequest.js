@@ -67,6 +67,15 @@ const usePurchaseRequest = () => {
     }
   };
 
+  const getPurchaseRequestById = async (id) => {
+    try {
+      return await fetchRequestDetail(id);
+    } catch (error) {
+      console.error("❌ Lỗi getPurchaseRequestById trong hook:", error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     fetchPurchaseRequests();
   }, []);

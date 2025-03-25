@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
-import usePurchaseOrder from "./usePurchaseOrder";
 import { InboxArrowDownIcon } from "@heroicons/react/24/solid";
+import Table from "@/components/Table";
+import { useNavigate, useLocation } from "react-router-dom";
+import ReactPaginate from "react-paginate";
+import { ArrowLeftIcon, ArrowRightIcon, EyeIcon, ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import PageHeader from '@/components/PageHeader';
+import TableSearch from '@/components/TableSearch';
 import {
   Card,
   CardHeader,
@@ -8,14 +13,10 @@ import {
   Typography,
   Tooltip,
 } from "@material-tailwind/react";
-import { useNavigate, useLocation} from "react-router-dom";
-import ReactPaginate from "react-paginate";
-import { ArrowLeftIcon, ArrowRightIcon, EyeIcon, ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
-import PageHeader from '@/components/PageHeader';
-import TableSearch from '@/components/TableSearch';
+import usePurchaseOrder from "./usePurchaseOrder";
 import useReceiptNote from "../receiptNote/useReceiptNote";
 import { getNextCode } from "../receiptNote/receiptNoteService";
-import Table from "@/components/Table";
+import { getSaleOrderByPurchaseOrderId } from "./purchaseOrderService";
 
 
 const PurchaseOrderPage = () => {
@@ -34,15 +35,24 @@ const PurchaseOrderPage = () => {
   const handleCreateReceipt = async (order) => {
     try {
       const nextCode = await getNextCode(); // Gọi API lấy mã phiếu nhập tiếp theo
-      
+
       // Make sure we're using the correct order ID property based on your data structure
       const orderId = order.id; // This matches the id from the row data
-      
-      navigate(`/user/receiptNote/add`, { 
-        state: { 
-          orderId: orderId, 
-          nextCode: nextCode 
-        } 
+      let saleOrderCode = null;
+
+      try {
+        const saleOrder = await getSaleOrderByPurchaseOrderId(orderId);
+        saleOrderCode = saleOrder?.orderCode || null;
+      } catch (err) {
+        console.warn("Không tìm thấy đơn bán liên kết:", err);
+      }
+
+      navigate(`/user/receiptNote/add`, {
+        state: {
+          orderId: orderId,
+          nextCode: nextCode,
+          saleOrderCode,
+        }
       });
     } catch (error) {
       console.error("Lỗi khi lấy mã phiếu nhập:", error);
@@ -70,7 +80,7 @@ const PurchaseOrderPage = () => {
         fetchPaginatedOrders(currentPage, pageSize, searchKeyword, selectedStatus);
       }
     }, 500); // Chỉ gọi API sau 500ms nếu không có thay đổi tiếp theo
-  
+
     return () => {
       isMounted = false;
       clearTimeout(timeoutId);
@@ -113,6 +123,32 @@ const PurchaseOrderPage = () => {
       }
     });
 
+    const getStatusLabel = (statusCode) => {
+      const statusMap = {
+        PENDING: "Chờ nhận",
+        IN_PROGRESS: "Chưa hoàn thành",
+        COMPLETED: "Hoàn thành",
+        CANCELED: "Hủy",
+      };
+      return statusMap[statusCode] || "Không xác định";
+    };
+    
+    const getStatusClass = (statusCode) => {
+      switch (statusCode) {
+        case "COMPLETED":
+          return "bg-green-100 text-green-800";
+        case "IN_PROGRESS":
+          return "bg-yellow-100 text-yellow-800";
+        case "PENDING":
+          return "bg-blue-100 text-blue-800";
+        case "CANCELED":
+          return "bg-red-100 text-red-800";
+        default:
+          return "bg-gray-100 text-gray-800";
+      }
+    };
+    
+
   const handlePageChange = (selectedItem) => {
     setCurrentPage(selectedItem.selected);
   };
@@ -142,18 +178,18 @@ const PurchaseOrderPage = () => {
     navigate(`/user/purchaseOrder/${orderId}`);
   };
 
-const [receiptCode, setReceiptCode] = useState("");
-const location = useNavigate();
+  const [receiptCode, setReceiptCode] = useState("");
+  const location = useNavigate();
 
-useEffect(() => {
-  // Check if location.state exists and has nextCode
-  if (location.state?.nextCode) {
-    setReceiptCode(location.state.nextCode);
-  } else {
-    // If not, get the next code from the API
-    getNextCode().then(setReceiptCode).catch(console.error);
-  }
-}, [location]);
+  useEffect(() => {
+    // Check if location.state exists and has nextCode
+    if (location.state?.nextCode) {
+      setReceiptCode(location.state.nextCode);
+    } else {
+      // If not, get the next code from the API
+      getNextCode().then(setReceiptCode).catch(console.error);
+    }
+  }, [location]);
 
   const columnsConfig = [
     { field: 'poCode', headerName: 'Mã đơn', flex: 1.5, minWidth: 150, editable: false },
@@ -169,23 +205,22 @@ useEffect(() => {
       renderCell: (params) => new Date(params.value).toLocaleDateString("vi-VN"),
     },
     {
-      field: 'status',
-      headerName: 'Trạng thái',
+      field: "status",
+      headerName: "Trạng thái",
       flex: 1.5,
       minWidth: 150,
-      renderCell: (params) => (
-        <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                ${params.value === "Hoàn thành"
-            ? "bg-green-100 text-green-800"
-            : params.value === "Đang giao"
-              ? "bg-yellow-100 text-yellow-800"
-              : "bg-red-100 text-red-800"
-          }`
-        }>
-          {params.value}
-        </div>
-      ),
-    },
+      renderCell: (params) => {
+        const label = getStatusLabel(params.value);
+        const className = getStatusClass(params.value);
+        return (
+          <div
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${className}`}
+          >
+            {label}
+          </div>
+        );
+      },
+    },   
     {
       field: 'actions',
       headerName: 'Hành động',
@@ -202,7 +237,7 @@ useEffect(() => {
               <EyeIcon className="h-5 w-5" />
             </button>
           </Tooltip>
-      
+
           {/* Nút Nhập kho */}
           <Tooltip content="Nhập kho">
             <button
@@ -224,7 +259,7 @@ useEffect(() => {
     supplierContactName: order.supplierContactName || "không có thông tin",
     supplierPhone: order.supplierPhone || "không có thông tin",
     orderDate: order.orderDate,
-    status: order.status.label || "n/a",
+    status: order.status,
   }));
 
   return (
@@ -280,7 +315,7 @@ useEffect(() => {
             enableSelection={false}
           />
 
-                  {/* <th className="p-2 border">
+          {/* <th className="p-2 border">
                     <div className="flex items-center justify-between">
                       Trạng thái
                       <Menu>
@@ -348,7 +383,6 @@ useEffect(() => {
             </table>
           </div> */}
 
-          <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
           <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
             <Typography variant="small" color="blue-gray" className="font-normal">
               Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
@@ -372,7 +406,6 @@ useEffect(() => {
               disabledClassName="opacity-50 cursor-not-allowed"
             />
             </div>
-                        </div>
         </CardBody>
       </Card>
     </div>

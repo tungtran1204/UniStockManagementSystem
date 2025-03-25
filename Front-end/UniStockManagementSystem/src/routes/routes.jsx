@@ -13,10 +13,8 @@ import { Navigate } from "react-router-dom";
 import UserPage from "@/features/admin/users/UserPage";
 import RolePage from "@/features/admin/roles/RolePage";
 import UnauthorizedPage from "@/components/UnauthorizedPage";
+import ProfilePage from "@/features/profile/ProfilePage";
 import NotFoundPage from "@/components/NotFoundPage";
-import LoginPage from "@/features/login/LoginPage";
-import ConfirmEmailPage from "@/features/login/ConfirmEmailPage";
-import ResetPasswordPage from "@/features/login/ResetPasswordPage";
 import AdminDashboard from "@/features/admin/dashboard/AdminDashboard";
 import WarehousePage from "@/features/user/warehouse/WarehousePage";
 import ProductPage from "@/features/user/products/ProductPage";
@@ -40,8 +38,13 @@ import PurchaseRequestPage from "@/features/user/purchaseRequest/PurchaseRequest
 import AddPurchaseRequestPage from "../features/user/purchaseRequest/AddPurchaseRequestPage";
 import AddMaterialPage from "@/features/user/materials/AddMaterialPage";
 import DetailMaterialPage from "@/features/user/materials/DetailMaterialPage";
-
+import ViewReceiptNote from "../features/user/receiptNote/ViewReceiptNote";
 import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
+import AddReceiptNoteManually from "../features/user/receiptNote/AddReceiptNoteManually";
+import ForgotPassword from "../features/auth/reset_password/ConfirmEmailPage";
+import ResetPassword from "../features/auth/reset_password/ResetPasswordPage";
+import LoginPage from "../features/auth/login/LoginPage";
+import ConfirmOTPPage from "../features/auth/reset_password/ConfirmOTPPage";
 import DetailPurchaseRequestPage from "../features/user/purchaseRequest/DetailPurchaseRequestPage";
 
 const icon = { className: "w-5 h-5 text-inherit" };
@@ -220,18 +223,19 @@ export const routes = [
         path: "/login",
         element: <LoginPage />,
       },
-
       {
-        icon: <ServerStackIcon {...icon} />,
-        name: "Confirm Password",
         path: "/confirmEmail",
-        element: <ConfirmEmailPage />,
+        element: <ForgotPassword />,
+      },
+      {
+        path: "/confirmOTP",
+        element: <ConfirmOTPPage />,
       },
       {
         icon: <ServerStackIcon {...icon} />,
         name: "Reset Password",
         path: "/resetPassword",
-        element: <ResetPasswordPage />,
+        element: <ResetPassword />,
       },
     ],
   },
@@ -246,6 +250,11 @@ export const routes = [
       {
         path: "*",
         element: <NotFoundPage />,
+      },
+      {
+        path: "/profile",
+        name: "Tài khoản",
+        element: <ProfilePage />,
       },
       {
         icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
@@ -314,6 +323,15 @@ export const routes = [
         roles: ["USER"],
       },
       {
+        path: "/user/receiptNote/:id",
+        element: <ViewReceiptNote />,
+        roles: ["USER"],
+      },
+      {
+        path: "/user/receiptNote/manual",
+        element: <AddReceiptNoteManually />,
+        roles: ["USER"],
+      }
         path: "/user/purchase-request/:id",
         element: <DetailPurchaseRequestPage />,
         roles: ["USER"],

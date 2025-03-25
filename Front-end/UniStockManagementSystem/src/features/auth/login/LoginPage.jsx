@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { TextField, Button, Box } from '@mui/material';
 import { Typography } from "@material-tailwind/react";
 import { Link, useNavigate } from "react-router-dom";
-import useLogin from "../../features/login/useLogin";
+import useLogin from "./useLogin";
 
 export function LoginPage() {
   const { handleLogin } = useLogin();
@@ -34,7 +34,7 @@ export function LoginPage() {
       setErrorPassword("Mật khẩu không được để trống");
       return;
     }
-    
+
     if (!email) {
       setErrorEmail("Email không được để trống");
       return;
@@ -144,7 +144,11 @@ export function LoginPage() {
               type="submit"
               variant="contained"
               color="primary"
-              className="mt-4 bg-blue-600 hover:bg-blue-700"
+              className="mt-4"
+              sx={{
+                boxShadow: 'none',
+                '&:hover': { boxShadow: 'none' }
+              }}
             >
               ĐĂNG NHẬP
             </Button>

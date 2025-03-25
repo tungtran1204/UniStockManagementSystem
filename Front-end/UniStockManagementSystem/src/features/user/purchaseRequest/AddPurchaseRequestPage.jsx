@@ -9,6 +9,7 @@ import {
   Textarea,
   Typography,
 } from "@material-tailwind/react";
+import { TextField, Button as MuiButton, Divider } from '@mui/material';
 import Select from "react-select";
 import { FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
@@ -18,6 +19,8 @@ import dayjs from "dayjs";
 import usePurchaseRequest from "./usePurchaseRequest";
 import axios from "axios";
 import { createPurchaseRequest } from "./PurchaseRequestService";
+import PageHeader from '@/components/PageHeader';
+import TableSearch from '@/components/TableSearch';
 
 const SUPPLIER_TYPE_ID = 2;
 
@@ -656,7 +659,7 @@ const AddPurchaseRequestPage = () => {
                   previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                   nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                   breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-                  activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+                  activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
                   forcePage={currentPage}
                   disabledClassName="opacity-50 cursor-not-allowed"
                 />
@@ -682,18 +685,26 @@ const AddPurchaseRequestPage = () => {
             )}
           </div>
 
-          <div className="flex justify-end gap-2">
-            <Button variant="text" color="gray" onClick={handleCancel} className="flex items-center gap-2">
-              <FaTimes /> Hủy
-            </Button>
+          <div className="flex justify-end gap-2 pb-2">
+            <MuiButton
+              size="medium"
+              color="error"
+              variant="outlined"
+              onClick={handleCancel}
+            >
+              Hủy
+            </MuiButton>
             <Button
-              variant="gradient"
-              color="green"
+              size="lg"
+              color="white"
+              variant="text"
+              className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+              ripple={true}
               onClick={handleSaveRequest}
               disabled={loading || items.length === 0 || !!quantityValidationError} // Vô hiệu hóa nút Lưu nếu có lỗi
               className="flex items-center gap-2"
             >
-              <FaSave /> {loading ? "Đang lưu..." : "Lưu"}
+              Lưu
             </Button>
           </div>
         </CardBody>
