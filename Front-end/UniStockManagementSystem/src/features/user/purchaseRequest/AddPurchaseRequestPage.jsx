@@ -696,13 +696,9 @@ const AddPurchaseRequestPage = () => {
             </MuiButton>
             <Button
               size="lg"
-              color="white"
-              variant="text"
-              className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
-              ripple={true}
+              disabled={loading || items.length === 0 || !!quantityValidationError}
+              className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out flex items-center gap-2"
               onClick={handleSaveRequest}
-              disabled={loading || items.length === 0 || !!quantityValidationError} // Vô hiệu hóa nút Lưu nếu có lỗi
-              className="flex items-center gap-2"
             >
               Lưu
             </Button>

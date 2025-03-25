@@ -40,12 +40,12 @@ import AddMaterialPage from "@/features/user/materials/AddMaterialPage";
 import DetailMaterialPage from "@/features/user/materials/DetailMaterialPage";
 import ViewReceiptNote from "../features/user/receiptNote/ViewReceiptNote";
 import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
+import DetailPurchaseRequestPage from "../features/user/purchaseRequest/DetailPurchaseRequestPage";
 import AddReceiptNoteManually from "../features/user/receiptNote/AddReceiptNoteManually";
 import ForgotPassword from "../features/auth/reset_password/ConfirmEmailPage";
 import ResetPassword from "../features/auth/reset_password/ResetPasswordPage";
 import LoginPage from "../features/auth/login/LoginPage";
 import ConfirmOTPPage from "../features/auth/reset_password/ConfirmOTPPage";
-import DetailPurchaseRequestPage from "../features/user/purchaseRequest/DetailPurchaseRequestPage";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -323,6 +323,11 @@ export const routes = [
         roles: ["USER"],
       },
       {
+        path: "/user/purchase-request/:id",
+        element: <DetailPurchaseRequestPage />,
+        roles: ["USER"],
+      },
+      {
         path: "/user/receiptNote/:id",
         element: <ViewReceiptNote />,
         roles: ["USER"],
@@ -332,10 +337,6 @@ export const routes = [
         element: <AddReceiptNoteManually />,
         roles: ["USER"],
       }
-        path: "/user/purchase-request/:id",
-        element: <DetailPurchaseRequestPage />,
-        roles: ["USER"],
-      },
     ],
   },
 ];
