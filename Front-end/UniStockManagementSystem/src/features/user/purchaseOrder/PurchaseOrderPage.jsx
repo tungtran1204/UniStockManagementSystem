@@ -59,9 +59,6 @@ const PurchaseOrderPage = () => {
     }
   };
 
-
-  const statuses = ["Chờ nhận", "Đang giao", "Hoàn thành", "Hủy"];
-
   // State for search, filtering and sorting
   const [searchKeyword, setSearchKeyword] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -126,7 +123,7 @@ const PurchaseOrderPage = () => {
     const getStatusLabel = (statusCode) => {
       const statusMap = {
         PENDING: "Chờ nhận",
-        IN_PROGRESS: "Chưa hoàn thành",
+        IN_PROGRESS: "Đã nhập một phần",
         COMPLETED: "Hoàn thành",
         CANCELED: "Hủy",
       };
