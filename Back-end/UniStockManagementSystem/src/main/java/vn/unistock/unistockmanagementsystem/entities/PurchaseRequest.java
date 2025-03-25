@@ -22,9 +22,11 @@ public class PurchaseRequest {
     @Column(nullable = false, unique = true)
     private String purchaseRequestCode;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = true)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = true, unique = true)
     private SalesOrder salesOrder;
+
+
 
     @Column(nullable = false)
     private LocalDateTime createdDate;

@@ -3,7 +3,7 @@ import {
   getPurchaseRequests,
   getNextRequestCode,
   createPurchaseRequest,
-  togglePurchaseRequestStatus,
+  updatePurchaseRequestStatus
 } from "./PurchaseRequestService";
 
 const usePurchaseRequest = () => {
@@ -47,18 +47,22 @@ const usePurchaseRequest = () => {
     }
   }, []);
 
-  const toggleStatus = async (requestId, currentStatus) => {
+  const mapVietnameseToStatus = (vietnameseStatus) => {
+    const statusMap = {
+      "Chờ duyệt": "PENDING",
+      "Đã duyệt": "CONFIRMED",
+      "Từ chối": "CANCELLED",
+    };
+    return statusMap[vietnameseStatus] || vietnameseStatus;
+  };
+
+  const togglePurchaseRequestStatus = async (id, status) => {
     try {
-      const newStatus = currentStatus === "PENDING" ? "APPROVED" : "PENDING";
-      const updatedRequest = await togglePurchaseRequestStatus(requestId, newStatus);
-      setPurchaseRequests((prevRequests) =>
-        prevRequests.map((request) =>
-          request.purchaseRequestId === requestId ? { ...request, status: updatedRequest.status } : request
-        )
-      );
-      return updatedRequest;
+      const apiStatus = mapVietnameseToStatus(status);
+      await updatePurchaseRequestStatus(id, apiStatus);
+      await fetchPurchaseRequests();
     } catch (error) {
-      console.error("❌ Error toggling status:", error);
+      console.error("Error toggling status:", error);
       throw error;
     }
   };
@@ -74,7 +78,7 @@ const usePurchaseRequest = () => {
     fetchPurchaseRequests,
     getNextCode,
     addRequest,
-    toggleStatus,
+    togglePurchaseRequestStatus,
   };
 };
 

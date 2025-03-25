@@ -42,6 +42,8 @@ import AddMaterialPage from "@/features/user/materials/AddMaterialPage";
 import DetailMaterialPage from "@/features/user/materials/DetailMaterialPage";
 
 import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
+import DetailPurchaseRequestPage from "../features/user/purchaseRequest/DetailPurchaseRequestPage";
+
 const icon = { className: "w-5 h-5 text-inherit" };
 
 export const routes = [
@@ -171,7 +173,7 @@ export const routes = [
             icon: <Bars3BottomRightIcon {...icon} />,
             name: "Dòng sản phẩm",
             path: "/user/products-types",
-            element: <ProductTypePage/>,
+            element: <ProductTypePage />,
             roles: ["USER"],
           },
         ],
@@ -201,7 +203,7 @@ export const routes = [
             icon: <Bars3BottomRightIcon {...icon} />,
             name: "Đối tác",
             path: "/user/partner/list", // Relative path
-            element: <PartnerPage />, 
+            element: <PartnerPage />,
             roles: ["USER"],
           },
         ],
@@ -309,6 +311,11 @@ export const routes = [
       {
         path: "/user/materials/:id",
         element: <DetailMaterialPage />,
+        roles: ["USER"],
+      },
+      {
+        path: "/user/purchase-request/:id",
+        element: <DetailPurchaseRequestPage />,
         roles: ["USER"],
       },
     ],

@@ -54,16 +54,11 @@ public class PurchaseRequestController {
         return ResponseEntity.ok(response);
     }
 
-    @PatchMapping("/{purchaseRequestId}/status")
-    public ResponseEntity<PurchaseRequestDTO> updatePurchaseRequestStatus(
+    @PutMapping("/{purchaseRequestId}/status")
+    public ResponseEntity<PurchaseRequestDTO> updateStatus(
             @PathVariable Long purchaseRequestId,
-            @RequestBody Map<String, String> statusRequest) {
-        logger.info("Updating status of purchase request ID: {}", purchaseRequestId);
-        String newStatus = statusRequest.get("status");
-        if (newStatus == null || newStatus.isEmpty()) {
-            throw new IllegalArgumentException("Trạng thái không được để trống");
-        }
-        PurchaseRequestDTO updatedRequest = purchaseRequestService.updatePurchaseRequestStatus(purchaseRequestId, newStatus);
+            @RequestParam String status) {
+        PurchaseRequestDTO updatedRequest = purchaseRequestService.updatePurchaseRequestStatus(purchaseRequestId, status);
         return ResponseEntity.ok(updatedRequest);
     }
 
@@ -72,4 +67,6 @@ public class PurchaseRequestController {
         PurchaseRequestDTO purchaseRequestDTO = purchaseRequestService.createFromSaleOrder(saleOrderId);
         return ResponseEntity.status(HttpStatus.CREATED).body(purchaseRequestDTO);
     }
+
+
 }

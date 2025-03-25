@@ -14,16 +14,12 @@ import vn.unistock.unistockmanagementsystem.entities.*;
 import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerRepository;
 import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsDTO;
-import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsService;
-import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersMapper;
 import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersRepository;
-
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -41,14 +37,25 @@ public class PurchaseRequestService {
     private final ProductMaterialsService productMaterialsService;
 
     public Page<PurchaseRequestDTO> getAllPurchaseRequests(Pageable pageable) {
-            Page<PurchaseRequest> requests = purchaseRequestRepository.findAll(pageable);
-            return requests.map(purchaseRequestMapper::toDTO);
+        Page<PurchaseRequest> requests = purchaseRequestRepository.findAll(pageable);
+        return requests.map(purchaseRequestMapper::toDTO);
     }
 
-    public PurchaseRequestDTO getPurchaseRequestById(Long purchaseRequestId) {
-        PurchaseRequest request = purchaseRequestRepository.findById(purchaseRequestId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu với ID: " + purchaseRequestId));
-        return purchaseRequestMapper.toDTO(request);
+    public PurchaseRequestDTO getPurchaseRequestById(Long id) {
+        PurchaseRequest purchaseRequest = purchaseRequestRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu mua vật tư với id: " + id));
+
+        // Tải purchaseRequestDetails và các liên kết liên quan
+        Hibernate.initialize(purchaseRequest.getPurchaseRequestDetails());
+        for (PurchaseRequestDetail detail : purchaseRequest.getPurchaseRequestDetails()) {
+            Hibernate.initialize(detail.getMaterial());
+            Hibernate.initialize(detail.getMaterial().getUnit());
+            Hibernate.initialize(detail.getPartner());
+        }
+
+        // Sử dụng mapper để ánh xạ
+        PurchaseRequestDTO dto = purchaseRequestMapper.toDTO(purchaseRequest);
+        return dto;
     }
 
     @Transactional
@@ -57,6 +64,12 @@ public class PurchaseRequestService {
         PurchaseRequest purchaseRequest = purchaseRequestMapper.toEntity(dto);
         purchaseRequest.setCreatedDate(LocalDateTime.now());
         purchaseRequest.setStatus(PurchaseRequest.RequestStatus.PENDING);
+
+        if (dto.getSaleOrderId() != null) {
+            SalesOrder salesOrder = saleOrdersRepository.findById(dto.getSaleOrderId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng với ID: " + dto.getSaleOrderId()));
+            purchaseRequest.setSalesOrder(salesOrder);
+        }
 
         // Tạo danh sách details
         List<PurchaseRequestDetail> details = new ArrayList<>();
@@ -89,16 +102,17 @@ public class PurchaseRequestService {
         PurchaseRequest request = purchaseRequestRepository.findById(purchaseRequestId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu với ID: " + purchaseRequestId));
 
-        // Chuyển String thành RequestStatus
+        // Chuyển đổi String thành Enum RequestStatus
         PurchaseRequest.RequestStatus statusEnum;
         try {
             statusEnum = PurchaseRequest.RequestStatus.valueOf(newStatus);
         } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trạng thái không hợp lệ: " + newStatus + ". Chỉ được phép là: PENDING, CONFIRMED, CANCELLED, FINISHED");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trạng thái không hợp lệ: " + newStatus);
         }
 
         request.setStatus(statusEnum);
         PurchaseRequest updatedRequest = purchaseRequestRepository.save(request);
+
         return purchaseRequestMapper.toDTO(updatedRequest);
     }
 
@@ -114,9 +128,14 @@ public class PurchaseRequestService {
         }
     }
 
-
     @Transactional
     public PurchaseRequestDTO createFromSaleOrder(Long saleOrderId) {
+        if (purchaseRequestRepository.existsBySalesOrder_OrderId(saleOrderId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Đơn hàng này đã có yêu cầu mua vật tư!"
+            );
+        }
         // 🟢 1. Lấy danh sách vật tư từ đơn hàng
         List<ProductMaterialsDTO> materials = productMaterialsService.getMaterialsBySaleOrderId(saleOrderId);
         logger.info("Materials for SaleOrder {}: {}", saleOrderId, materials);
@@ -147,7 +166,6 @@ public class PurchaseRequestService {
             detail.setQuantity(materialDTO.getQuantity());
             detail.setPartner(suppliers.get(0));
             details.add(detail);
-
         }
 
         // 🟢 3. Tạo mã yêu cầu mua vật tư
@@ -166,7 +184,6 @@ public class PurchaseRequestService {
         for (PurchaseRequestDetail detail : details) {
             detail.setPurchaseRequest(purchaseRequest);
             purchaseRequestDetailRepository.save(detail);
-
         }
         purchaseRequestDetailRepository.flush();
 
@@ -183,13 +200,10 @@ public class PurchaseRequestService {
         }
         purchaseRequest.setPurchaseRequestDetails(loadedDetails);
 
-
-
         // 🟢 7. Chuyển sang DTO và kiểm tra purchaseRequestDetails
         PurchaseRequestDTO dto = purchaseRequestMapper.toDTO(purchaseRequest);
         if (dto.getPurchaseRequestDetails() == null) {
             dto.setPurchaseRequestDetails(new ArrayList<>());
-        } else {
         }
 
         return dto;
