@@ -316,7 +316,7 @@ const AddSaleOrderPage = () => {
     return items.filter(item => {
       const searchLower = tableSearchQuery.toLowerCase().trim();
       return item.productCode?.toLowerCase().includes(searchLower) ||
-             item.productName?.toLowerCase().includes(searchLower);
+        item.productName?.toLowerCase().includes(searchLower);
     });
   };
 
@@ -334,18 +334,18 @@ const AddSaleOrderPage = () => {
   return (
     <div className="mb-8 flex flex-col gap-12">
       <Card className="bg-gray-50 p-7">
-        
+
         <CardBody className="pb-2 bg-white rounded-xl">
-        <PageHeader
-          title={"Đơn hàng " + orderCode}
-          addButtonLabel="Thêm đơn hàng"
-          onAdd={() => {}}
-          onImport={() => {/* Xử lý import nếu có */ }}
-          onExport={() => {/* Xử lý export file ở đây nếu có */ }}
-          showAdd={false}
-          showImport={false} // Ẩn nút import nếu không dùng
-          showExport={false} // Ẩn xuất file nếu không dùng
-        />
+          <PageHeader
+            title={"Đơn hàng " + orderCode}
+            addButtonLabel="Thêm đơn hàng"
+            onAdd={() => { }}
+            onImport={() => {/* Xử lý import nếu có */ }}
+            onExport={() => {/* Xử lý export file ở đây nếu có */ }}
+            showAdd={false}
+            showImport={false} // Ẩn nút import nếu không dùng
+            showExport={false} // Ẩn xuất file nếu không dùng
+          />
 
           <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-6">
             <div className="flex flex-col gap-4">
@@ -434,7 +434,7 @@ const AddSaleOrderPage = () => {
 
           {/* Thêm ô tìm kiếm và hiển thị số dòng mỗi trang */}
           <div className="flex items-center gap-4 mb-4">
-          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-normal">
                 Hiển thị
               </Typography>
@@ -472,7 +472,7 @@ const AddSaleOrderPage = () => {
                 }
               />
             </div>
-            
+
           </div>
 
           {/* Bảng chi tiết hàng */}
@@ -541,7 +541,8 @@ const AddSaleOrderPage = () => {
                       </td>
                       <td className="px-4 py-2 text-sm">
                         <Input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           className="w-16 text-sm"
                           value={item.quantity}
                           onChange={(e) => handleQuantityChange(item.id, e.target.value)}
