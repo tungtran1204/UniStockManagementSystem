@@ -35,7 +35,6 @@ public class PurchaseRequestService {
     private final PurchaseRequestDetailMapper purchaseRequestDetailMapper;
     private final SaleOrdersRepository saleOrdersRepository;
     private final ProductMaterialsService productMaterialsService;
-    private final SaleOrdersMapper saleOrdersMapper;
 
     public Page<PurchaseRequestDTO> getAllPurchaseRequests(Pageable pageable) {
         Page<PurchaseRequest> requests = purchaseRequestRepository.findAll(pageable);
