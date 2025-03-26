@@ -34,7 +34,7 @@ export function LoginPage() {
       setErrorPassword("Mật khẩu không được để trống");
       return;
     }
-    
+
     if (!email) {
       setErrorEmail("Email không được để trống");
       return;
@@ -144,7 +144,11 @@ export function LoginPage() {
               type="submit"
               variant="contained"
               color="primary"
-              className="mt-4 bg-blue-600 hover:bg-blue-700"
+              className="mt-4"
+              sx={{
+                boxShadow: 'none',
+                '&:hover': { boxShadow: 'none' }
+              }}
             >
               ĐĂNG NHẬP
             </Button>

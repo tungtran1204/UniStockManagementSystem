@@ -4,7 +4,7 @@ import useProduct from "./useProduct";
 import { Button, IconButton } from "@material-tailwind/react";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { FaEdit, FaFileExcel, FaPlus } from "react-icons/fa";
-import { BiSolidEdit } from "react-icons/bi";
+import { EyeIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
 import axios from "axios";
 import {
@@ -191,12 +191,12 @@ const ProductPage = () => {
       minWidth: 50,
       renderCell: (params) => (
         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-          <Tooltip content="Chỉnh sửa">
+          <Tooltip content="Xem chi tiết">
             <button
               onClick={() => navigate(`/user/products/${params.row.id}`)}
               className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
             >
-              <BiSolidEdit className="h-5 w-5" />
+              <EyeIcon className="h-5 w-5" />
             </button>
           </Tooltip>
         </div>  

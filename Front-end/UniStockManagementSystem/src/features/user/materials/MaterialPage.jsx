@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import useMaterial from "./useMaterial";
 import { Button, Card, Typography } from "@material-tailwind/react";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
-import { BiSolidEdit } from "react-icons/bi";
+import { EyeIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
@@ -226,12 +226,12 @@ const MaterialPage = () => {
             minWidth: 50,
             renderCell: (params) => (
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                    <Tooltip content="Chi tiết">
+                    <Tooltip content="Xem chi tiết">
                         <button
                             onClick={() => navigate(`/user/materials/${params.row.id}`)}
                             className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
                         >
-                            <BiSolidEdit className="h-5 w-5" />
+                            <EyeIcon className="h-5 w-5" />
                         </button>
                     </Tooltip>
                 </div>

@@ -8,6 +8,7 @@ import {
     Button,
     Input,
 } from "@material-tailwind/react";
+import { TextField, Button as MuiButton, Divider } from '@mui/material';
 import { FaEdit, FaArrowLeft, FaSave, FaTimes, FaPlus, FaTrash, FaTimesCircle } from "react-icons/fa";
 import { getProductById, updateProduct, fetchUnits, fetchProductTypes, checkProductCodeExists } from "./productService";
 import Select from "react-select";
@@ -16,6 +17,7 @@ import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
+import ImageUploadBox from '@/components/ImageUploadBox';
 import Table from "@/components/Table";
 
 const authHeader = () => {
@@ -119,10 +121,10 @@ const DetailProductPage = () => {
             try {
                 const productData = await getProductById(id);
                 console.log("📌 Product Data:", productData);
-                
+
                 // Lấy danh sách dòng sản phẩm đang hoạt động
                 const activeProductTypes = await fetchProductTypes();
-                
+
                 // Tìm kiếm trong danh sách đã được lọc
                 const matchingType = activeProductTypes.find(
                     (type) => type.typeName === productData.typeName
@@ -371,11 +373,11 @@ const DetailProductPage = () => {
     const handleRemoveImage = () => {
         setPreviewImage(null);
         setEditedProduct(prev => ({
-          ...prev,
-          image: null,
-          imageUrl: null
+            ...prev,
+            image: null,
+            imageUrl: null
         }));
-      };
+    };
 
     const headerButtons = (
         <div className="flex gap-2">
@@ -386,7 +388,7 @@ const DetailProductPage = () => {
                 onClick={() => navigate("/user/products")}
                 className="flex items-center gap-2"
             >
-                <FaArrowLeft className="h-3 w-3"/> Quay lại
+                <FaArrowLeft className="h-3 w-3" /> Quay lại
             </Button>
             {!isEditing && (
                 <Button
@@ -396,7 +398,7 @@ const DetailProductPage = () => {
                     onClick={handleEdit}
                     className="flex items-center gap-2"
                 >
-                    <FaEdit className="h-3 w-3"/> Chỉnh sửa
+                    <FaEdit className="h-3 w-3" /> Chỉnh sửa
                 </Button>
             )}
         </div>
@@ -417,10 +419,10 @@ const DetailProductPage = () => {
 
     const columnsConfig = [
         { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50 },
-        { 
-            field: 'materialCode', 
-            headerName: 'Mã NVL', 
-            flex: 1.5, 
+        {
+            field: 'materialCode',
+            headerName: 'Mã NVL',
+            flex: 1.5,
             minWidth: 250,
             renderCell: (params) => (
                 isEditing ? (
@@ -469,10 +471,10 @@ const DetailProductPage = () => {
         },
         { field: 'materialName', headerName: 'Tên NVL', flex: 2, minWidth: 400 },
         { field: 'unitName', headerName: 'Đơn vị', flex: 1, minWidth: 100 },
-        { 
-            field: 'quantity', 
-            headerName: 'Số lượng', 
-            flex: 1, 
+        {
+            field: 'quantity',
+            headerName: 'Số lượng',
+            flex: 1,
             minWidth: 100,
             renderCell: (params) => (
                 <div className="w-full">
@@ -521,7 +523,6 @@ const DetailProductPage = () => {
                 <CardBody className="pb-2 bg-white rounded-xl">
                     <PageHeader
                         title="Chi tiết sản phẩm"
-                        customButtons={headerButtons}
                         showAdd={false}
                         showImport={false}
                         showExport={false}
@@ -530,28 +531,42 @@ const DetailProductPage = () => {
                     <div className="grid grid-cols-2 gap-x-12 gap-y-4">
                         <div className="flex flex-col gap-4">
                             <div>
-                                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
+                                <Typography variant="medium" className="mb-1 text-black">
                                     Mã sản phẩm
+                                    {isEditing && <span className="text-red-500"> *</span>}
                                 </Typography>
-                                <Input
-                                    type="text"
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    hiddenLabel
+                                    placeholder="Mã sản phẩm"
+                                    color="success"
                                     value={editedProduct?.productCode || ""}
                                     onChange={(e) =>
                                         setEditedProduct({ ...editedProduct, productCode: e.target.value })
                                     }
                                     disabled={!isEditing}
-                                    className={`w-full ${validationErrors.productCode ? "border-red-500" : ""}`}
+                                    error={Boolean(validationErrors.productCode)}
+                                    sx={{
+                                        '& .MuiInputBase-root.Mui-disabled': {
+                                            bgcolor: '#eeeeee',
+                                            '& .MuiOutlinedInput-notchedOutline': {
+                                                border: 'none',
+                                            },
+                                        },
+                                    }}
                                 />
                                 {validationErrors.productCode && (
-                                    <Typography className="text-xs text-red-500 mt-1">
+                                    <Typography color="red" className="text-xs text-start mt-1">
                                         {validationErrors.productCode}
                                     </Typography>
                                 )}
                             </div>
 
                             <div>
-                                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
+                                <Typography variant="medium" className="mb-1 text-black">
                                     Đơn vị
+                                    {isEditing && <span className="text-red-500"> *</span>}
                                 </Typography>
                                 <Select
                                     placeholder="Chọn đơn vị"
@@ -585,34 +600,60 @@ const DetailProductPage = () => {
                             </div>
 
                             <div>
-                                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
+                                <Typography variant="medium" className="mb-1 text-black">
                                     Mô tả
                                 </Typography>
-                                <Input
-                                    type="text"
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    hiddenLabel
+                                    placeholder="Mô tả"
+                                    multiline
+                                    rows={4}
+                                    color="success"
                                     value={editedProduct?.description || ""}
                                     onChange={(e) =>
                                         setEditedProduct({ ...editedProduct, description: e.target.value })
                                     }
                                     disabled={!isEditing}
-                                    className="w-full disabled:bg-gray-100"
+                                    sx={{
+                                        '& .MuiInputBase-root.Mui-disabled': {
+                                            bgcolor: '#eeeeee',
+                                            '& .MuiOutlinedInput-notchedOutline': {
+                                                border: 'none',
+                                            },
+                                        },
+                                    }}
                                 />
                             </div>
                         </div>
 
                         <div className="flex flex-col gap-4">
                             <div>
-                                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
-                                    Tên sản phẩm *
+                                <Typography variant="medium" className="mb-1 text-black">
+                                    Tên sản phẩm
+                                    {isEditing && <span className="text-red-500"> *</span>}
                                 </Typography>
-                                <Input
-                                    type="text"
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    hiddenLabel
+                                    placeholder="Tên sản phẩm"
+                                    color="success"
                                     value={editedProduct?.productName || ""}
                                     onChange={(e) =>
                                         setEditedProduct({ ...editedProduct, productName: e.target.value })
                                     }
-                                    className={`w-full ${validationErrors.productName || errors.productName ? "border-red-500" : ""}`}
                                     disabled={!isEditing}
+                                    error={Boolean(validationErrors.productName || errors.productName)}
+                                    sx={{
+                                        '& .MuiInputBase-root.Mui-disabled': {
+                                            bgcolor: '#eeeeee',
+                                            '& .MuiOutlinedInput-notchedOutline': {
+                                                border: 'none',
+                                            },
+                                        },
+                                    }}
                                 />
                                 {(validationErrors.productName || errors.productName) && (
                                     <Typography className="text-xs text-red-500 mt-1">
@@ -622,8 +663,9 @@ const DetailProductPage = () => {
                             </div>
 
                             <div>
-                                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
+                                <Typography variant="medium" className="mb-1 text-black">
                                     Dòng sản phẩm
+                                    {isEditing && <span className="text-red-500"> *</span>}
                                 </Typography>
                                 <Select
                                     placeholder="Chọn dòng sản phẩm"
@@ -660,55 +702,46 @@ const DetailProductPage = () => {
                             </div>
 
                             <div>
-                                <Typography variant="small" className="mb-2 text-gray-900 font-bold">
-                                    Hình ảnh sản phẩm
+                                <Typography variant="medium" className="mb-1 text-black">
+                                    Hình ảnh nguyên vật liệu
                                 </Typography>
-                                <Input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                        const file = e.target.files[0];
-                                        if (file) {
-                                            if (file.size > 5 * 1024 * 1024) {
-                                                alert("Kích thước file không được vượt quá 5MB");
-                                                e.target.value = "";
-                                                return;
-                                            }
-                                            const previewUrl = URL.createObjectURL(file);
-                                            setPreviewImage(previewUrl);
+                                {isEditing && (
+                                    <ImageUploadBox
+                                        onFileSelect={(file) => {
+                                            const imageUrl = URL.createObjectURL(file);
+                                            setPreviewImage(imageUrl);
                                             setEditedProduct((prev) => ({
                                                 ...prev,
                                                 image: file,
                                                 imageUrl: null
                                             }));
-                                        }
-                                    }}
-                                    disabled={!isEditing}
-                                />
+                                        }}
+                                    />
+                                )}
                                 {(previewImage || editedProduct?.imageUrl) && (
                                     <div className="mt-2 relative">
-                                      <div className="relative inline-block">
-                                        <img
-                                          src={previewImage || editedProduct.imageUrl}
-                                          alt="Preview"
-                                          className="w-32 h-32 object-cover rounded-lg border-2 border-gray-200"
-                                          onError={(e) => {
-                                            e.target.onerror = null;
-                                            e.target.src = 'path_to_default_image.jpg';
-                                          }}
-                                        />
-                                        {isEditing && (
-                                          <button
-                                            onClick={handleRemoveImage}
-                                            className="absolute -top-2 -right-2 bg-white rounded-full shadow-lg p-1 hover:bg-red-50 transition-colors duration-200 ease-in-out border-2 border-gray-200 group"
-                                            title="Xóa ảnh"
-                                          >
-                                            <FaTimesCircle className="h-4 w-4 text-gray-400 group-hover:text-red-500 transition-colors duration-200 ease-in-out" />
-                                          </button>
-                                        )}
-                                      </div>
+                                        <div className="relative inline-block">
+                                            <img
+                                                src={previewImage || editedProduct.imageUrl}
+                                                alt="Preview"
+                                                className="w-32 h-32 object-cover rounded-lg border-2 border-gray-200"
+                                                onError={(e) => {
+                                                    e.target.onerror = null;
+                                                    e.target.src = 'path_to_default_image.jpg';
+                                                }}
+                                            />
+                                            {isEditing && (
+                                                <button
+                                                    onClick={handleRemoveImage}
+                                                    className="absolute -top-2 -right-2 bg-white rounded-full shadow-lg p-1 hover:bg-red-50 transition-colors duration-200 ease-in-out border-2 border-gray-200 group"
+                                                    title="Xóa ảnh"
+                                                >
+                                                    <FaTimesCircle className="h-4 w-4 text-gray-400 group-hover:text-red-500 transition-colors duration-200 ease-in-out" />
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
-                                  )}
+                                )}
                             </div>
                         </div>
                     </div>
@@ -749,19 +782,19 @@ const DetailProductPage = () => {
                             <TableSearch
                                 value={tableSearchQuery}
                                 onChange={setTableSearchQuery}
-                                onSearch={() => {}}
+                                onSearch={() => { }}
                                 placeholder="Tìm kiếm trong danh sách"
                             />
                         </div>
 
-                        <Table 
-                            data={getTableData()} 
-                            columnsConfig={columnsConfig} 
+                        <Table
+                            data={getTableData()}
+                            columnsConfig={columnsConfig}
                             enableSelection={false}
                         />
 
                         {editedProduct?.materials?.length > 0 && (
-                            <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
+                            <div className="flex items-center justify-between border-t border-blue-gray-50 pt-4 pb-2">
                                 <div className="flex items-center gap-2">
                                     <Typography variant="small" color="blue-gray" className="font-normal">
                                         Trang {currentPage + 1} / {Math.ceil(getFilteredMaterials().length / pageSize)} •{" "}
@@ -790,46 +823,89 @@ const DetailProductPage = () => {
                         )}
 
                         {isEditing && (
-                            <div className="flex gap-2 mb-4">
-                                <Button
+                            <div className="flex gap-2 mb-4 h-8">
+                                <MuiButton
+                                    size="small"
                                     variant="outlined"
                                     onClick={handleAddRow}
-                                    className="flex items-center gap-2"
                                 >
-                                    <FaPlus /> Thêm dòng
-                                </Button>
-                                <Button
+                                    <div className='flex items-center gap-2'>
+                                        <FaPlus className="h-4 w-4" />
+                                        <span>Thêm dòng</span>
+                                    </div>
+                                </MuiButton>
+                                <MuiButton
+                                    size="small"
                                     variant="outlined"
-                                    color="red"
+                                    color="error"
                                     onClick={handleRemoveAllRows}
-                                    className="flex items-center gap-2"
                                 >
-                                    <FaTrash /> Xóa hết dòng
+                                    <div className='flex items-center gap-2'>
+                                        <FaTrash className="h-4 w-4" />
+                                        <span>Xóa hết dòng</span>
+                                    </div>
+                                </MuiButton>
+                            </div>
+                        )}
+                    </div>
+                    <Divider sx={{ mt: 2 }} />
+                    <div className="flex justify-between my-4">
+                        <MuiButton
+                            color="info"
+                            size="medium"
+                            variant="outlined"
+                            sx={{
+                                color: '#616161',           // text color
+                                borderColor: '#9e9e9e',     // border
+                                '&:hover': {
+                                    backgroundColor: '#f5f5f5',
+                                    borderColor: '#757575',
+                                },
+                            }}
+                            onClick={() => navigate("/user/materials")}
+                            className="flex items-center gap-2"
+                        >
+                            <FaArrowLeft className="h-3 w-3" /> Quay lại
+                        </MuiButton>
+                        {!isEditing ? (
+                            <MuiButton
+                                variant="contained"
+                                size="medium"
+                                onClick={handleEdit}
+                                sx={{
+                                    boxShadow: 'none',
+                                    '&:hover': { boxShadow: 'none' }
+                                }}
+                            >
+                                <div className='flex items-center gap-2'>
+                                    <FaEdit className="h-4 w-4" />
+                                    <span>Chỉnh sửa</span>
+                                </div>
+                            </MuiButton>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <MuiButton
+                                    size="medium"
+                                    color="error"
+                                    variant="outlined"
+                                    onClick={handleCancel}
+                                >
+                                    Hủy
+                                </MuiButton>
+                                <Button
+                                    size="lg"
+                                    color="white"
+                                    variant="text"
+                                    className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                                    ripple={true}
+                                    onClick={handleSave}
+                                    disabled={loading}
+                                >
+                                    Lưu
                                 </Button>
                             </div>
                         )}
                     </div>
-                    {isEditing && (
-                        <div className="flex justify-end gap-2 mt-4">
-                            <Button
-                                variant="text"
-                                color="gray"
-                                onClick={handleCancel}
-                                className="flex items-center gap-2"
-                            >
-                                <FaTimes /> Hủy
-                            </Button>
-                            <Button
-                                variant="gradient"
-                                color="green"
-                                onClick={handleSave}
-                                disabled={loading}
-                                className="flex items-center gap-2"
-                            >
-                                <FaSave /> {loading ? "Đang xử lý..." : "Lưu"}
-                            </Button>
-                        </div>
-                    )}
                 </CardBody>
             </Card>
         </div>

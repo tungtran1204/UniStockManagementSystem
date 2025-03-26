@@ -9,7 +9,7 @@ const authHeader = () => {
 export const getPurchaseRequests = async (page = 0, size = 10) => {
   try {
     const response = await axios.get(`${API_URL}`, {
-      params: { 
+      params: {
         page: page,
         size: size,
         sort: "createdDate,desc" // Thêm sort để tránh lỗi
@@ -20,7 +20,7 @@ export const getPurchaseRequests = async (page = 0, size = 10) => {
       },
       withCredentials: true, // Thêm withCredentials
     });
-    
+
     if (response.data && response.data.content) {
       return {
         ...response.data,
@@ -49,9 +49,8 @@ export const getPurchaseRequests = async (page = 0, size = 10) => {
 const mapStatusToVietnamese = (status) => {
   const statusMap = {
     PENDING: "Chờ duyệt",
-    APPROVED: "Đã duyệt",
-    REJECTED: "Từ chối",
-    CANCELLED: "Đã hủy",
+    CONFIRMED: "Đã duyệt",
+    CANCELLED: "Từ chối",
   };
   return statusMap[status] || status;
 };
@@ -81,17 +80,17 @@ export const createPurchaseRequest = async (requestData) => {
   }
 };
 
-export const togglePurchaseRequestStatus = async (requestId, newStatus) => {
+export const updatePurchaseRequestStatus = async (purchaseRequestId, newStatus) => {
   try {
-    const response = await axios.patch(
-      `${API_URL}/${requestId}/status`,
-      { status: newStatus },
-      { headers: authHeader() }
-    );
-    console.log("✅ [togglePurchaseRequestStatus] API Response:", response.data);
+    const response = await axios.put(`${API_URL}/${purchaseRequestId}/status?status=${newStatus}`, null, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        "Content-Type": "application/json",
+      },
+    });
     return response.data;
   } catch (error) {
-    console.error("❌ [togglePurchaseRequestStatus] Error:", error);
+    console.error("Lỗi khi cập nhật trạng thái yêu cầu:", error);
     throw error;
   }
 };
@@ -116,14 +115,29 @@ export const createPurchaseRequestFromSaleOrder = async (saleOrderId) => {
   }
 };
 
-export const getPurchaseRequestById = async (requestId) => {
+
+export const getPurchaseRequestById = async (purchaseRequestId) => {
   try {
-    const response = await axios.get(`${API_URL}/${requestId}`, {
-      headers: authHeader(),
+    const response = await axios.get(`${API_URL}/${purchaseRequestId}`, {
+      headers: {
+        ...authHeader(),
+        "Content-Type": "application/json",
+      },
+      withCredentials: true,
     });
-    return response.data;
+
+    // Ánh xạ dữ liệu trả về để đồng bộ với các hàm khác
+    const data = response.data;
+    return {
+      ...data,
+      status: mapStatusToVietnamese(data.status), // Ánh xạ trạng thái sang tiếng Việt
+      purchaseRequestDetails: data.purchaseRequestDetails.map((detail) => ({
+        ...detail,
+        partnerName: detail.partnerName || "Không xác định", // Đảm bảo partnerName không bị undefined
+      })),
+    };
   } catch (error) {
-    console.error("❌ Lỗi lấy chi tiết yêu cầu mua:", error);
+    console.error("❌ [getPurchaseRequestById] Error:", error.response?.data || error.message);
     throw error;
   }
 };

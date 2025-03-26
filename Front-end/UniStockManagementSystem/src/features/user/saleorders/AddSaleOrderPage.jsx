@@ -11,12 +11,16 @@ import {
   Typography,
 } from "@material-tailwind/react";
 import Select, { components } from "react-select";
+import { TextField, Button as MuiButton } from '@mui/material';
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 import { getPartnersByType } from "@/features/user/partner/partnerService";
 import { getProducts } from "./saleOrdersService";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import "dayjs/locale/vi"; // Import Tiếng Việt
 import useSaleOrder from "./useSaleOrder";
 import ModalAddCustomer from "./ModalAddCustomer";
 import PageHeader from '@/components/PageHeader';
@@ -350,14 +354,31 @@ const AddSaleOrderPage = () => {
           <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-6">
             <div className="flex flex-col gap-4">
               <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                <Typography variant="medium" className="mb-1 text-black">
                   Mã phiếu
                 </Typography>
-                <Input label="Mã phiếu" value={orderCode} disabled className="text-sm" />
+                <TextField
+                  fullWidth
+                  size="small"
+                  hiddenLabel
+                  placeholder="Mã phiếu"
+                  color="success"
+                  value={orderCode}
+                  disabled
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
+                />
               </div>
               <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                <Typography variant="medium" className="mb-1 text-black">
                   Mã khách hàng
+                  <span className="text-red-500"> *</span>
                 </Typography>
                 <Select
                   ref={selectRef}
@@ -377,27 +398,58 @@ const AddSaleOrderPage = () => {
                 )}
               </div>
               <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                <Typography variant="medium" className="mb-1 text-black">
                   Địa chỉ
+                  <span className="text-red-500"> *</span>
                 </Typography>
-                <Input label="Địa chỉ" value={address} disabled className="text-sm" />
+                <TextField
+                  fullWidth
+                  size="small"
+                  hiddenLabel
+                  placeholder="Địa chỉ"
+                  color="success"
+                  value={address}
+                  disabled
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
+                />
               </div>
               <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                <Typography variant="medium" className="mb-1 text-black">
                   Người liên hệ
+                  <span className="text-red-500"> *</span>
                 </Typography>
-                <Input
+                <TextField
+                  fullWidth
+                  size="small"
+                  hiddenLabel
+                  placeholder="Người liên hệ"
+                  color="success"
                   disabled
                   value={contactName}
                   onChange={(e) => setContactName(e.target.value)}
-                  className="disabled:opacity-100 disabled:font-normal disabled:text-black text-sm"
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
                 />
               </div>
             </div>
             <div className="flex flex-col gap-4">
               <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                <Typography variant="medium" className="mb-1 text-black">
                   Ngày lập phiếu
+                  <span className="text-red-500"> *</span>
                 </Typography>
                 <Input
                   type="date"
@@ -407,26 +459,74 @@ const AddSaleOrderPage = () => {
                 />
               </div>
               <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                <Typography variant="medium" className="mb-1 text-black">
                   Tên khách hàng
+                  <span className="text-red-500"> *</span>
                 </Typography>
-                <Input label="Tên khách hàng" value={customerName} disabled className="text-sm" />
+                <TextField
+                  fullWidth
+                  size="small"
+                  hiddenLabel
+                  placeholder="Tên khách hàng"
+                  color="success"
+                  disabled
+                  value={customerName}
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
+                />
               </div>
               <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                <Typography variant="medium" className="mb-1 text-black">
                   Số điện thoại
+                  <span className="text-red-500"> *</span>
                 </Typography>
-                <Input label="Số điện thoại" value={phoneNumber} disabled className="text-sm" />
+                <TextField
+                  fullWidth
+                  size="small"
+                  hiddenLabel
+                  placeholder="Số điện thoại"
+                  color="success"
+                  disabled
+                  value={phoneNumber}
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
+                />
               </div>
               <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                <Typography variant="medium" className="mb-1 text-black">
                   Diễn giải
+                  <span className="text-red-500"> *</span>
                 </Typography>
-                <Textarea
+                <TextField
+                  fullWidth
+                  size="small"
+                  hiddenLabel
                   placeholder="Diễn giải"
+                  color="success"
+                  multiline
+                  rows={4}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="text-sm"
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
                 />
               </div>
             </div>
@@ -603,7 +703,7 @@ const AddSaleOrderPage = () => {
                 previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                 nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                 breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-                activeClassName="bg-blue-500 text-white border-blue-500 hover:bg-blue-600"
+                activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
                 forcePage={currentPage}
                 disabledClassName="opacity-50 cursor-not-allowed"
               />
@@ -611,18 +711,28 @@ const AddSaleOrderPage = () => {
           )}
 
           {/* Nút thêm / xóa dòng */}
-          <div className="flex gap-2 mb-4">
-            <Button variant="outlined" onClick={handleAddRow} className="flex items-center gap-2">
-              <FaPlus /> Thêm dòng
-            </Button>
-            <Button
+          <div className="flex gap-2 mb-4 h-8">
+            <MuiButton
+              size="small"
               variant="outlined"
-              color="red"
-              onClick={handleRemoveAllRows}
-              className="flex items-center gap-2"
+              onClick={handleAddRow}
             >
-              <FaTrash /> Xóa hết dòng
-            </Button>
+              <div className='flex items-center gap-2'>
+                <FaPlus className="h-4 w-4" />
+                <span>Thêm dòng</span>
+              </div>
+            </MuiButton>
+            <MuiButton
+              size="small"
+              variant="outlined"
+              color="error"
+              onClick={handleRemoveAllRows}
+            >
+              <div className='flex items-center gap-2'>
+                <FaTrash className="h-4 w-4" />
+                <span>Xóa hết dòng</span>
+              </div>
+            </MuiButton>
           </div>
 
           {/* Thông báo lỗi chung (nếu có) và nút Lưu / Hủy */}
@@ -632,12 +742,24 @@ const AddSaleOrderPage = () => {
                 {globalError}
               </Typography>
             )}
-            <div className="flex justify-end gap-2">
-              <Button variant="text" color="gray" onClick={handleCancel} className="flex items-center gap-2">
-                <FaTimes /> Hủy
-              </Button>
-              <Button variant="gradient" color="green" onClick={handleSaveOrder} className="flex items-center gap-2">
-                <FaSave /> Lưu
+            <div className="flex items-center justify-end gap-2 pb-2">
+              <MuiButton
+                size="medium"
+                color="error"
+                variant="outlined"
+                onClick={handleCancel}
+              >
+                Hủy
+              </MuiButton>
+              <Button
+                size="lg"
+                color="white"
+                variant="text"
+                className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                ripple={true}
+                onClick={handleSaveOrder}
+              >
+                Lưu
               </Button>
             </div>
           </div>
