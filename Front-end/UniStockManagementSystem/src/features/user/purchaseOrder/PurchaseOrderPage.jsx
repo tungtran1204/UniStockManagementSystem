@@ -121,31 +121,31 @@ const PurchaseOrderPage = () => {
       }
     });
 
-    const getStatusLabel = (statusCode) => {
-      const statusMap = {
-        PENDING: "Chờ nhận",
-        IN_PROGRESS: "Đã nhập một phần",
-        COMPLETED: "Hoàn thành",
-        CANCELED: "Hủy",
-      };
-      return statusMap[statusCode] || "Không xác định";
+  const getStatusLabel = (statusCode) => {
+    const statusMap = {
+      PENDING: "Chờ nhận",
+      IN_PROGRESS: "Đã nhập một phần",
+      COMPLETED: "Hoàn thành",
+      CANCELED: "Hủy",
     };
-    
-    const getStatusClass = (statusCode) => {
-      switch (statusCode) {
-        case "COMPLETED":
-          return "bg-green-100 text-green-800";
-        case "IN_PROGRESS":
-          return "bg-yellow-100 text-yellow-800";
-        case "PENDING":
-          return "bg-blue-100 text-blue-800";
-        case "CANCELED":
-          return "bg-red-100 text-red-800";
-        default:
-          return "bg-gray-100 text-gray-800";
-      }
-    };
-    
+    return statusMap[statusCode] || "Không xác định";
+  };
+
+  const getStatusClass = (statusCode) => {
+    switch (statusCode) {
+      case "COMPLETED":
+        return "bg-green-100 text-green-800";
+      case "IN_PROGRESS":
+        return "bg-yellow-100 text-yellow-800";
+      case "PENDING":
+        return "bg-blue-100 text-blue-800";
+      case "CANCELED":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
 
   const handlePageChange = (selectedItem) => {
     setCurrentPage(selectedItem.selected);
@@ -218,7 +218,7 @@ const PurchaseOrderPage = () => {
           </div>
         );
       },
-    },   
+    },
     {
       field: 'actions',
       headerName: 'Hành động',
@@ -237,14 +237,16 @@ const PurchaseOrderPage = () => {
           </Tooltip>
 
           {/* Nút Nhập kho */}
-          <Tooltip content="Nhập kho">
-            <button
-              className="p-1.5 rounded-full bg-green-500 hover:bg-green-600 text-white"
-              onClick={() => handleCreateReceipt(params.row)} // Fix: Pass the row data
-            >
-              <InboxArrowDownIcon className="h-5 w-5" />
-            </button>
-          </Tooltip>
+          {params.row.status !== "COMPLETED" && (
+            <Tooltip content="Nhập kho">
+              <button
+                className="p-1.5 rounded-full bg-green-500 hover:bg-green-600 text-white"
+                onClick={() => handleCreateReceipt(params.row)}
+              >
+                <InboxArrowDownIcon className="h-5 w-5" />
+              </button>
+            </Tooltip>
+          )}
         </div>
       ),
     },
