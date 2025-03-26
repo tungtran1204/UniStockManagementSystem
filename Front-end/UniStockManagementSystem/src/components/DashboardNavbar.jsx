@@ -52,49 +52,54 @@ export function DashboardNavbar() {
     >
       <div className="flex flex-col-reverse justify-between gap-6 md:flex-row md:items-center">
         <div className="capitalize flex items-center gap-3">
-        <IconButton
+          <IconButton
             variant="text"
             color="blue-gray"
-            
             onClick={() => setOpenSidenav(dispatch, !openSidenav)}
           >
             <Bars3Icon strokeWidth={3} className="h-6 w-6 text-blue-gray-500" />
           </IconButton>
           <div>
             <Breadcrumbs
-            className={`bg-transparent p-0 transition-all ${
-              fixedNavbar ? "mt-1" : ""
-            }`}
-          >
-            <Link to={`/${layout}`}>
-              <Typography
-                variant="small"
-                color="blue-gray"
-                className="font-normal opacity-50 transition-all hover:text-blue-500 hover:opacity-100"
-              >
-                {layout}
-              </Typography>
-            </Link>
-            <Typography
-              variant="small"
-              color="blue-gray"
-              className="font-normal"
+              className={`bg-transparent p-0 transition-all ${
+                fixedNavbar ? "mt-1" : ""
+              }`}
             >
+              <Link to={`/${layout}`}>
+                <Typography
+                  variant="small"
+                  color="blue-gray"
+                  className="font-normal opacity-50 transition-all hover:text-blue-500 hover:opacity-100"
+                >
+                  {layout}
+                </Typography>
+              </Link>
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                {page}
+              </Typography>
+            </Breadcrumbs>
+            <Typography variant="h6" color="blue-gray">
               {page}
             </Typography>
-          </Breadcrumbs>
-          
-          <Typography variant="h6" color="blue-gray">
-            {page}
-          </Typography>
           </div>
         </div>
         <div className="flex items-center">
-          
           {user ? (
             <>
+              {/* Hiển thị avatar người dùng dựa vào user.userDetail.profilePicture nếu có */}
+              <Avatar
+                src={
+                  user.userDetail && user.userDetail.profilePicture
+                    ? user.userDetail.profilePicture
+                    : "/img/default-avatar.png"
+                }
+                alt={user.email}
+                size="sm"
+                variant="circular"
+                className="mr-2"
+              />
               <Typography variant="small" color="blue-gray" className="mr-4">
-                {user.fullname}
+                {user.fullname || user.username}
               </Typography>
               <Button
                 variant="text"
@@ -115,11 +120,7 @@ export function DashboardNavbar() {
                 <UserCircleIcon className="h-5 w-5 text-blue-gray-500" />
                 Log In
               </Button>
-              <IconButton
-                variant="text"
-                color="blue-gray"
-                className="grid xl:hidden"
-              >
+              <IconButton variant="text" color="blue-gray" className="grid xl:hidden">
                 <UserCircleIcon className="h-5 w-5 text-blue-gray-500" />
               </IconButton>
             </Link>
@@ -139,11 +140,7 @@ export function DashboardNavbar() {
                   variant="circular"
                 />
                 <div>
-                  <Typography
-                    variant="small"
-                    color="blue-gray"
-                    className="mb-1 font-normal"
-                  >
+                  <Typography variant="small" color="blue-gray" className="mb-1 font-normal">
                     <strong>New message</strong> from Laur
                   </Typography>
                   <Typography
@@ -163,11 +160,7 @@ export function DashboardNavbar() {
                   variant="circular"
                 />
                 <div>
-                  <Typography
-                    variant="small"
-                    color="blue-gray"
-                    className="mb-1 font-normal"
-                  >
+                  <Typography variant="small" color="blue-gray" className="mb-1 font-normal">
                     <strong>New album</strong> by Travis Scott
                   </Typography>
                   <Typography
@@ -184,11 +177,7 @@ export function DashboardNavbar() {
                   <CreditCardIcon className="h-4 w-4 text-white" />
                 </div>
                 <div>
-                  <Typography
-                    variant="small"
-                    color="blue-gray"
-                    className="mb-1 font-normal"
-                  >
+                  <Typography variant="small" color="blue-gray" className="mb-1 font-normal">
                     Payment successfully completed
                   </Typography>
                   <Typography

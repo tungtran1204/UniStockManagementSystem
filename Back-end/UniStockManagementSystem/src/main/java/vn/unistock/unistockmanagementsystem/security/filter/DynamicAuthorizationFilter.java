@@ -31,7 +31,10 @@ public class DynamicAuthorizationFilter extends OncePerRequestFilter {
         // 1) Lấy thông tin Authentication từ SecurityContext
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (request.getRequestURI().equals("/api/unistock/auth/me")) {
+        if (request.getRequestURI().equals("/api/unistock/auth/me")
+                || request.getRequestURI().equals("/api/unistock/profile")
+                || request.getRequestURI().equals("/api/unistock/profile/change-password")
+                || request.getRequestURI().equals("/api/unistock/profile/avatar")) {
             filterChain.doFilter(request, response);
             return;
         }
