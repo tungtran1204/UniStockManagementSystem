@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Data
 public class PurchaseRequestDetailDTO {
+    private Long purchaseRequestDetailId;
     private Long materialId;
     private String materialCode;
     private String materialName;

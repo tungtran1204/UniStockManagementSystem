@@ -8,10 +8,9 @@ import {
   Tooltip,
   Input,
 } from "@material-tailwind/react";
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import useSaleOrder from "./useSaleOrder";
 import ReactPaginate from "react-paginate";
-import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ArrowRightIcon, ArrowLeftIcon, EyeIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
@@ -85,11 +84,11 @@ const SaleOrdersPage = () => {
       minWidth: 100,
       renderCell: (params) => (
         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-          <Tooltip content="Chỉnh sửa">
+          <Tooltip content="Xem chi tiết">
             <button className="p-1 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
               onClick={() => handleEditOrder(params.row)}
             >
-              <VisibilityIcon className="h-3 w-3" />
+              <EyeIcon className="h-5 w-5" />
             </button>
           </Tooltip>
         </div>

@@ -1,4 +1,4 @@
-import { FaSave, FaTimes, FaEdit, FaPlus, FaTrash, FaEye, FaCheck } from "react-icons/fa";
+import { FaSave, FaArrowLeft, FaEdit, FaPlus, FaTrash, FaEye, FaCheck } from "react-icons/fa";
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -9,12 +9,11 @@ import {
   Textarea,
   Typography,
 } from "@material-tailwind/react";
+import { TextField, Button as MuiButton } from '@mui/material';
 import Select, { components } from "react-select";
 import dayjs from "dayjs";
-
 import useSaleOrder from "./useSaleOrder";
-import { getPartnersByType } from "@/features/user/partner/partnerService";
-import { createPurchaseRequestFromSaleOrder } from "@/features/user/purchaseRequest/PurchaseRequestService";
+import { getPartnersByType, getPartnersByMaterial } from "@/features/user/partner/partnerService";
 import {
   getProducts,
   getSaleOrderById,
@@ -258,6 +257,7 @@ const EditSaleOrderPage = () => {
     setMode(newMode);
   };
 
+  // Thay thế logic chỉnh sửa từ phiên bản trên main
   const handleEdit = () => {
     if (!originalData) return;
     handleSetMode(MODE_EDIT);
@@ -360,10 +360,6 @@ const EditSaleOrderPage = () => {
     } else {
       navigate("/user/sale-orders");
     }
-  };
-
-  const handleXacNhan = () => {
-    // Ở đây nếu cần có hành động khác, bạn có thể xử lý thêm.
   };
 
   const handleCustomerChange = (selectedOption) => {
@@ -482,6 +478,7 @@ const EditSaleOrderPage = () => {
     setGlobalError("");
   };
 
+  // Giữ nguyên logic tạo yêu cầu mua vật tư từ phiên bản hiện tại của bạn
   const handleCreatePurchaseRequest = async () => {
     if (!orderId) {
       alert("Không tìm thấy đơn hàng để tạo yêu cầu mua vật tư!");
@@ -489,16 +486,64 @@ const EditSaleOrderPage = () => {
     }
 
     try {
-      const response = await createPurchaseRequestFromSaleOrder(orderId);
-      alert("Tạo yêu cầu mua vật tư thành công!");
-      console.log("Chi tiết yêu cầu mua vật tư:", response);
-      navigate("/user/purchase-request"); 
+      const materialRequirementsPromises = items.map(async (item) => {
+        if (item.productId && item.produceQuantity > 0) {
+          const materials = await getProductMaterialsByProduct(item.productId);
+          return materials.map((mat) => ({
+            id: `temp-${mat.materialId}-${item.productId}`,
+            materialId: mat.materialId,
+            materialCode: mat.materialCode,
+            materialName: mat.materialName,
+            unitName: mat.unitName,
+            quantity: mat.quantity * item.produceQuantity,
+          }));
+        }
+        return [];
+      });
+
+      const materialRequirements = (await Promise.all(materialRequirementsPromises)).flat();
+
+      if (materialRequirements.length === 0) {
+        alert("Không có vật tư nào cần mua từ đơn hàng này!");
+        return;
+      }
+
+      const itemsWithSuppliers = await Promise.all(
+        materialRequirements.map(async (item) => {
+          const suppliers = await getPartnersByMaterial(item.materialId);
+          const mappedSuppliers = suppliers.map((supplier) => ({
+            value: supplier.partnerId,
+            label: supplier.partnerName, // Chỉ hiển thị partnerName
+            name: supplier.partnerName,
+            code: supplier.partnerCode || "",
+          }));
+
+          const defaultSupplier = mappedSuppliers.length === 1 ? mappedSuppliers[0] : null;
+
+          return {
+            ...item,
+            supplierId: defaultSupplier ? defaultSupplier.value : "",
+            supplierName: defaultSupplier ? defaultSupplier.name : "", // Chỉ lưu partnerName
+            suppliers: mappedSuppliers,
+          };
+        })
+      );
+
+      navigate("/user/purchase-request/add", {
+        state: {
+          fromSaleOrder: true,
+          saleOrderId: orderId,
+          saleOrderCode: orderCode,
+          initialItems: itemsWithSuppliers,
+        },
+      });
     } catch (error) {
-      alert("Lỗi khi tạo yêu cầu mua vật tư!");
+      console.error("Lỗi khi chuẩn bị dữ liệu yêu cầu mua vật tư:", error);
+      alert("Có lỗi xảy ra khi chuẩn bị dữ liệu yêu cầu mua vật tư!");
     }
   };
 
-
+  // Thay thế logic lưu đơn hàng từ phiên bản trên main
   const handleSaveOrder = async () => {
     let hasError = false;
     if (!customerCode) {
@@ -575,6 +620,7 @@ const EditSaleOrderPage = () => {
     }
   };
 
+  // Thay thế logic render bảng sản phẩm từ phiên bản trên main
   const renderTableRows = () => {
     if (items.length === 0) {
       return (
@@ -952,9 +998,23 @@ const EditSaleOrderPage = () => {
             <div>
               {mode === MODE_VIEW && (
                 <div className="flex justify-end mb-4">
-                  <Button variant="outlined" onClick={handleXemDinhMuc} className="flex items-center gap-2">
-                    <FaEye /> Xem định mức
-                  </Button>
+                  <MuiButton
+                    color="info"
+                    size="medium"
+                    variant="outlined"
+                    sx={{
+                      color: '#616161',           // text color
+                      borderColor: '#9e9e9e',     // border
+                      '&:hover': {
+                        backgroundColor: '#f5f5f5',
+                        borderColor: '#757575',
+                      },
+                    }}
+                    onClick={handleXemDinhMuc}
+                    className="flex items-center gap-2"
+                  >
+                    <FaEye className="h-3 w-3" /> Xem định mức
+                  </MuiButton>
                 </div>
               )}
               <div className="border border-gray-200 rounded mb-4 overflow-x-auto">
@@ -982,7 +1042,7 @@ const EditSaleOrderPage = () => {
                   <tbody>{renderTableRows()}</tbody>
                 </table>
               </div>
-              {mode === MODE_EDIT && (
+              {mode === MODE_EDIT && activeTab === "products" && (
                 <div className="flex gap-2 mb-4">
                   <Button variant="outlined" onClick={handleAddRow} className="flex items-center gap-2">
                     <FaPlus /> Thêm dòng
@@ -1037,9 +1097,85 @@ const EditSaleOrderPage = () => {
                 {globalError}
               </Typography>
             )}
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-between mt-2">
+              <MuiButton
+                color="info"
+                size="medium"
+                variant="outlined"
+                sx={{
+                  color: '#616161',           // text color
+                  borderColor: '#9e9e9e',     // border
+                  '&:hover': {
+                    backgroundColor: '#f5f5f5',
+                    borderColor: '#757575',
+                  },
+                }}
+                onClick={handleCancel}
+                className="flex items-center gap-2"
+              >
+                <FaArrowLeft className="h-3 w-3" /> Quay lại
+              </MuiButton>
+
+              {mode === MODE_VIEW && activeTab === "products" && (
+                <MuiButton
+                  variant="contained"
+                  size="medium"
+                  onClick={handleEdit}
+                  sx={{
+                    boxShadow: 'none',
+                    '&:hover': { boxShadow: 'none' }
+                  }}
+                >
+                  <div className='flex items-center gap-2'>
+                    <FaEdit className="h-4 w-4" />
+                    <span>Chỉnh sửa</span>
+                  </div>
+                </MuiButton>
+              )}
+
+              {mode === MODE_EDIT && (
+                <div className="flex items-center gap-2">
+                  <MuiButton
+                    size="medium"
+                    color="error"
+                    variant="outlined"
+                    onClick={handleCancel}
+                  >
+                    Hủy
+                  </MuiButton>
+                  <Button
+                    size="lg"
+                    color="white"
+                    variant="text"
+                    className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                    ripple={true}
+                    onClick={handleSaveOrder}
+                  >
+                    Lưu
+                  </Button>
+                </div>
+              )}
+
+              {mode === MODE_DINHMUC && (
+                <Button
+                  size="lg"
+                  color="white"
+                  variant="text"
+                  className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                  ripple={true}
+                  onClick={handleCreatePurchaseRequest}
+                >
+                  <div className='flex items-center gap-2'>
+                    <FaCheck />
+                    <span>Tạo yêu cầu mua vật tư</span>
+                  </div>
+                </Button>
+              )}
+            </div>
+
+            {/* <div className="flex justify-end gap-2">
               <Button variant="text" color="gray" onClick={handleCancel} className="flex items-center gap-2">
-                <FaTimes /> {mode === MODE_EDIT ? "Hủy" : "Quay lại"}
+                {mode === MODE_EDIT ? "Hủy" : "Quay lại"}
               </Button>
               {mode === MODE_VIEW && activeTab === "products" && (
                 <Button variant="gradient" color="blue" onClick={handleEdit} className="flex items-center gap-2">
@@ -1056,7 +1192,7 @@ const EditSaleOrderPage = () => {
                   <FaCheck /> Tạo yêu cầu mua vật tư
                 </Button>
               )}
-            </div>
+            </div> */}
           </div>
         </CardBody>
       </Card>
@@ -1064,7 +1200,7 @@ const EditSaleOrderPage = () => {
       {isCreatePartnerPopupOpen && (
         <ModalAddCustomer
           onClose={() => setIsCreatePartnerPopupOpen(false)}
-          onSuccess={(newPartner) => {
+          onSuccess={() => {
             setIsCreatePartnerPopupOpen(false);
             fetchCustomers();
           }}

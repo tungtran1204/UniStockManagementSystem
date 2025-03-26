@@ -9,6 +9,7 @@ import {
     Tooltip,
     Typography,
 } from "@material-tailwind/react";
+import { TextField, Button as MuiButton } from '@mui/material';
 import { FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa";
 import { checkProductCodeExists, createProduct, fetchUnits, fetchProductTypes } from "./productService";
 import { checkMaterialCodeExists } from "../materials/materialService";
@@ -18,6 +19,7 @@ import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from "@/components/TableSearch";
+import ImageUploadBox from '@/components/ImageUploadBox';
 import Table from "@/components/Table";
 
 const customStyles = {
@@ -435,17 +437,17 @@ const AddProductPage = () => {
     const handleQuantityChange = (index, value) => {
         // Chuyển đổi value thành số và đảm bảo giá trị hợp lệ
         const numValue = value === '' ? '' : Number(value);
-        
+
         const updatedMaterials = [...productMaterials];
         const actualIndex = index; // Không cần tính toán với currentPage vì index đã đúng
-    
+
         updatedMaterials[actualIndex] = {
             ...updatedMaterials[actualIndex],
             quantity: numValue
         };
-        
+
         setProductMaterials(updatedMaterials);
-    
+
         // Validate số lượng
         if (!numValue || numValue <= 0) {
             setQuantityErrors(prev => ({
@@ -609,302 +611,317 @@ const AddProductPage = () => {
     ];
 
 
-const data = productMaterials.map((item, index) => ({
-    id: index + 1,  // DataGrid cần `id`
-    index: index + 1,
-    materialId: item.materialId,
-    materialCode: item.materialCode,
-    materialName: item.materialName,
-    unitName: item.unitName,
-    quantity: item.quantity,
-}));
+    const data = productMaterials.map((item, index) => ({
+        id: index + 1,  // DataGrid cần `id`
+        index: index + 1,
+        materialId: item.materialId,
+        materialCode: item.materialCode,
+        materialName: item.materialName,
+        unitName: item.unitName,
+        quantity: item.quantity,
+    }));
 
 
-return (
-    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
-        <Card className="bg-gray-50 p-7 rounded-none shadow-none">
-            <CardBody className="pb-2 bg-white rounded-xl">
-                <PageHeader
-                    title={"Tạo sản phẩm mới"}
-                    addButtonLabel=""
-                    onAdd={() => { }}
-                    onImport={() => {/* Xử lý import nếu có */ }}
-                    onExport={() => {/* Xử lý export file ở đây nếu có */ }}
-                    showAdd={false}
-                    showImport={false} // Ẩn nút import nếu không dùng
-                    showExport={false} // Ẩn xuất file nếu không dùng
-                />
-                {errors.message && (
-                    <Typography className="text-red-500 mb-4">{errors.message}</Typography>
-                )}
+    return (
+        <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+            <Card className="bg-gray-50 p-7 rounded-none shadow-none">
+                <CardBody className="pb-2 bg-white rounded-xl">
+                    <PageHeader
+                        title={"Tạo sản phẩm mới"}
+                        addButtonLabel=""
+                        onAdd={() => { }}
+                        onImport={() => {/* Xử lý import nếu có */ }}
+                        onExport={() => {/* Xử lý export file ở đây nếu có */ }}
+                        showAdd={false}
+                        showImport={false} // Ẩn nút import nếu không dùng
+                        showExport={false} // Ẩn xuất file nếu không dùng
+                    />
+                    {errors.message && (
+                        <Typography className="text-red-500 mb-4">{errors.message}</Typography>
+                    )}
 
-                <div className="grid grid-cols-2 gap-x-12 gap-y-4">
-                    <div className="flex flex-col gap-4">
-                        <div>
-                            <Typography variant="small" className="mb-2 text-gray-900 font-bold">
-                                Mã sản phẩm *
-                            </Typography>
-                            <Input
-                                type="text"
-                                value={newProduct.productCode || ""}
-                                onChange={(e) => handleCheckProductCode(e.target.value)}
-                                className={`w-full ${errors.productCode ||
-                                    productCodeError ||
-                                    (validationErrors.productCode && !isFieldValid(newProduct.productCode))
-                                    ? "border-red-500"
-                                    : ""
-                                    }`}
-                            />
-                            {(productCodeError || validationErrors.productCode || errors.productCode) && (
-                                <Typography className="text-xs text-red-500 mt-1">
-                                    {productCodeError || validationErrors.productCode || errors.productCode}
+                    <div className="grid grid-cols-2 gap-x-12 gap-y-4">
+                        <div className="flex flex-col gap-4">
+                            <div>
+                                <Typography variant="medium" className="mb-1 text-black">
+                                    Mã sản phẩm
+                                    <span className="text-red-500"> *</span>
                                 </Typography>
-                            )}
-                        </div>
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    hiddenLabel
+                                    placeholder="Mã sản phẩm"
+                                    color="success"
+                                    value={newProduct.productCode || ""}
+                                    onChange={(e) => handleCheckProductCode(e.target.value)}
+                                    error={Boolean(
+                                        errors.productCode ||
+                                        productCodeError ||
+                                        (validationErrors.productCode && !isFieldValid(newProduct.productCode))
+                                    )}
+                                />
+                                {(productCodeError || validationErrors.productCode || errors.productCode) && (
+                                    <Typography color="red" className="text-xs text-start mt-1">
+                                        {productCodeError || validationErrors.productCode || errors.productCode}
+                                    </Typography>
+                                )}
+                            </div>
 
-                        <div>
-                            <Typography variant="small" className="mb-2 text-gray-900 font-bold">
-                                Đơn vị *
-                            </Typography>
-                            <Select
-                                placeholder="Chọn đơn vị"
-                                options={units.map((unit) => ({
-                                    value: unit.unitId.toString(),
-                                    label: unit.unitName,
-                                }))}
-                                styles={customStyles}
-                                value={
-                                    units
-                                        .map((unit) => ({
-                                            value: unit.unitId.toString(),
-                                            label: unit.unitName,
-                                        }))
-                                        .find((option) => option.value === newProduct.unitId?.toString()) || null
-                                }
-                                onChange={handleUnitChange}
-                            />
-                            {validationErrors.unitId && (
-                                <Typography className="text-xs text-red-500 mt-1">
-                                    {validationErrors.unitId}
+                            <div>
+                                <Typography variant="medium" className="mb-1 text-black">
+                                    Đơn vị
+                                    <span className="text-red-500"> *</span>
                                 </Typography>
-                            )}
-                        </div>
+                                <Select
+                                    placeholder="Chọn đơn vị"
+                                    options={units.map((unit) => ({
+                                        value: unit.unitId.toString(),
+                                        label: unit.unitName,
+                                    }))}
+                                    styles={customStyles}
+                                    value={
+                                        units
+                                            .map((unit) => ({
+                                                value: unit.unitId.toString(),
+                                                label: unit.unitName,
+                                            }))
+                                            .find((option) => option.value === newProduct.unitId?.toString()) || null
+                                    }
+                                    onChange={handleUnitChange}
+                                />
+                                {validationErrors.unitId && (
+                                    <Typography className="text-xs text-red-500 mt-1">
+                                        {validationErrors.unitId}
+                                    </Typography>
+                                )}
+                            </div>
 
-                        <div>
-                            <Typography variant="small" className="mb-2 text-gray-900 font-bold">
-                                Mô tả
-                            </Typography>
-                            <Input
-                                type="text"
-                                value={newProduct.description || ""}
-                                onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-4">
-                        <div>
-                            <Typography variant="small" className="mb-2 text-gray-900 font-bold">
-                                Tên sản phẩm *
-                            </Typography>
-                            <Input
-                                type="text"
-                                value={newProduct.productName || ""}
-                                onChange={(e) => handleInputChange("productName", e.target.value)}
-                                className={`w-full ${errors.productName ||
-                                    (validationErrors.productName && !isFieldValid(newProduct.productName))
-                                    ? "border-red-500"
-                                    : ""
-                                    }`}
-                            />
-                            {(validationErrors.productName || errors.productName) && (
-                                <Typography className="text-xs text-red-500 mt-1">
-                                    {validationErrors.productName || errors.productName}
+                            <div>
+                                <Typography variant="medium" className="mb-1 text-black">
+                                    Mô tả
                                 </Typography>
-                            )}
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    hiddenLabel
+                                    placeholder="Mô tả"
+                                    multiline
+                                    rows={4}
+                                    color="success"
+                                    value={newProduct.description || ""}
+                                    onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                                />
+                            </div>
                         </div>
 
-                        <div>
-                            <Typography variant="small" className="mb-2 text-gray-900 font-bold">
-                                Dòng sản phẩm *
-                            </Typography>
-                            <Select
-                                placeholder="Chọn dòng sản phẩm"
-                                options={productTypes.map((type) => ({
-                                    value: type.typeId.toString(),
-                                    label: type.typeName,
-                                }))}
-                                styles={customStyles}
-                                value={
-                                    productTypes
-                                        .map((type) => ({
-                                            value: type.typeId.toString(),
-                                            label: type.typeName,
-                                        }))
-                                        .find((option) => option.value === newProduct.productTypeId?.toString()) || null
-                                }
-                                onChange={handleProductTypeChange}
-                            />
-                            {validationErrors.productTypeId && (
-                                <Typography className="text-xs text-red-500 mt-1">
-                                    {validationErrors.productTypeId}
+                        <div className="flex flex-col gap-4">
+                            <div>
+                                <Typography variant="medium" className="mb-1 text-black">
+                                    Tên sản phẩm
+                                    <span className="text-red-500"> *</span>
                                 </Typography>
-                            )}
-                        </div>
+                                <TextField
+                                    fullWidth
+                                    size="small"
+                                    hiddenLabel
+                                    placeholder="Tên nguyên vật liệu"
+                                    color="success"
+                                    value={newProduct.productName || ""}
+                                    onChange={(e) => handleInputChange("productName", e.target.value)}
+                                    error={Boolean(errors.productName ||
+                                        (validationErrors.productName && !isFieldValid(newProduct.productName)))}
+                                />
+                                {(validationErrors.productName || errors.productName) && (
+                                    <Typography color="red" className="text-xs text-start mt-1">
+                                        {validationErrors.productName || errors.productName}
+                                    </Typography>
+                                )}
+                            </div>
 
-                        <div>
-                            <Typography variant="small" className="mb-2 text-gray-900 font-bold">
-                                Hình ảnh sản phẩm
-                            </Typography>
-                            <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => {
-                                    const file = e.target.files[0];
-                                    if (file) {
-                                        if (file.size > 5 * 1024 * 1024) {
-                                            alert("Kích thước file không được vượt quá 5MB");
-                                            e.target.value = "";
-                                            return;
-                                        }
-                                        // Tạo preview URL và lưu vào state
-                                        const previewUrl = URL.createObjectURL(file);
-                                        setPreviewImage(previewUrl);
+                            <div>
+                                <Typography variant="medium" className="mb-1 text-black">
+                                    Dòng sản phẩm
+                                    <span className="text-red-500"> *</span>
+                                </Typography>
+                                <Select
+                                    placeholder="Chọn dòng sản phẩm"
+                                    options={productTypes.map((type) => ({
+                                        value: type.typeId.toString(),
+                                        label: type.typeName,
+                                    }))}
+                                    styles={customStyles}
+                                    value={
+                                        productTypes
+                                            .map((type) => ({
+                                                value: type.typeId.toString(),
+                                                label: type.typeName,
+                                            }))
+                                            .find((option) => option.value === newProduct.productTypeId?.toString()) || null
+                                    }
+                                    onChange={handleProductTypeChange}
+                                />
+                                {validationErrors.productTypeId && (
+                                    <Typography className="text-xs text-red-500 mt-1">
+                                        {validationErrors.productTypeId}
+                                    </Typography>
+                                )}
+                            </div>
+
+                            <div>
+                                <Typography variant="medium" className="mb-1 text-black">
+                                    Hình ảnh sản phẩm
+                                </Typography>
+                                <ImageUploadBox
+                                    onFileSelect={(file) => {
+                                        const imageUrl = URL.createObjectURL(file);
+                                        setPreviewImage(imageUrl);
                                         setNewProduct((prev) => ({
                                             ...prev,
                                             image: file
                                         }));
-                                    }
-                                }}
-                            />
-                            {/* Hiển thị ảnh preview */}
-                            {previewImage && (
-                                <div className="mt-2 relative">
-                                    <img
-                                        src={previewImage}
-                                        alt="Preview"
-                                        className="w-32 h-32 object-cover rounded-lg"
-                                        onError={(e) => {
-                                            e.target.onerror = null;
-                                            e.target.src = 'path_to_default_image.jpg';
-                                        }}
-                                    />
-                                </div>
-                            )}
+                                    }}
+                                />
+                                {/* Hiển thị ảnh preview */}
+                                {previewImage && (
+                                    <div className="mt-2 relative">
+                                        <img
+                                            src={previewImage}
+                                            alt="Preview"
+                                            className="w-32 h-32 object-cover rounded-lg"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = 'path_to_default_image.jpg';
+                                            }}
+                                        />
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="mt-8">
-                    <Typography variant="h6" color="blue-gray" className="mb-4">
-                        Định mức nguyên vật liệu
-                    </Typography>
-
-                    <div className="flex items-center justify-between gap-4 mb-4">
-                        <div className="flex items-center gap-2">
-                            <Typography variant="small" color="blue-gray" className="font-normal">
-                                Hiển thị
-                            </Typography>
-                            <select
-                                value={pageSize}
-                                onChange={(e) => {
-                                    setPageSize(Number(e.target.value));
-                                    setCurrentPage(0);
-                                }}
-                                className="border rounded px-2 py-1"
-                            >
-                                {[5, 10, 20, 50].map(size => (
-                                    <option key={size} value={size}>{size}</option>
-                                ))}
-                            </select>
-                            <Typography variant="small" color="blue-gray" className="font-normal">
-                                bản ghi mỗi trang
-                            </Typography>
-                        </div>
-
-                        <TableSearch
-                            value={tableSearchQuery}
-                            onChange={setTableSearchQuery}
-                            onSearch={() => { }}
-                            placeholder="Tìm kiếm trong danh sách"
-                        />
-                    </div>
-
-                    {billOfMaterialsError && (
-                        <Typography className="text-xs text-red-500 mb-2">
-                            {billOfMaterialsError}
+                    <div className="mt-8">
+                        <Typography variant="h6" color="blue-gray" className="mb-4">
+                            Định mức nguyên vật liệu
                         </Typography>
-                    )}
 
-                    <Table data={data} columnsConfig={columnsConfig} enableSelection={false} />
-
-                    {filteredTableMaterials.length > 0 && (
-                        <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
+                        <div className="flex items-center justify-between gap-4 mb-4">
                             <div className="flex items-center gap-2">
                                 <Typography variant="small" color="blue-gray" className="font-normal">
-                                    Trang {currentPage + 1} / {Math.ceil(filteredTableMaterials.length / pageSize)} •{" "}
-                                    {filteredTableMaterials.length} bản ghi
+                                    Hiển thị
+                                </Typography>
+                                <select
+                                    value={pageSize}
+                                    onChange={(e) => {
+                                        setPageSize(Number(e.target.value));
+                                        setCurrentPage(0);
+                                    }}
+                                    className="border rounded px-2 py-1"
+                                >
+                                    {[5, 10, 20, 50].map(size => (
+                                        <option key={size} value={size}>{size}</option>
+                                    ))}
+                                </select>
+                                <Typography variant="small" color="blue-gray" className="font-normal">
+                                    bản ghi mỗi trang
                                 </Typography>
                             </div>
-                            <ReactPaginate
-                                previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
-                                nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
-                                breakLabel="..."
-                                pageCount={Math.ceil(filteredTableMaterials.length / pageSize)}
-                                marginPagesDisplayed={2}
-                                pageRangeDisplayed={5}
-                                onPageChange={handlePageChange}
-                                containerClassName="flex items-center gap-1"
-                                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-                                pageLinkClassName="flex items-center justify-center w-full h-full"
-                                previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-                                nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-                                breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-                                activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
-                                forcePage={currentPage}
-                                disabledClassName="opacity-50 cursor-not-allowed"
+
+                            <TableSearch
+                                value={tableSearchQuery}
+                                onChange={setTableSearchQuery}
+                                onSearch={() => { }}
+                                placeholder="Tìm kiếm trong danh sách"
                             />
                         </div>
-                    )}
 
-                    <div className="flex gap-2 mb-4">
-                        <Button variant="outlined" onClick={handleAddRow} className="flex items-center gap-2">
-                            <FaPlus /> Thêm dòng
-                        </Button>
-                        <Button
+                        {billOfMaterialsError && (
+                            <Typography className="text-xs text-red-500 mb-2">
+                                {billOfMaterialsError}
+                            </Typography>
+                        )}
+
+                        <Table data={data} columnsConfig={columnsConfig} enableSelection={false} />
+
+                        {filteredTableMaterials.length > 0 && (
+                            <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
+                                <div className="flex items-center gap-2">
+                                    <Typography variant="small" color="blue-gray" className="font-normal">
+                                        Trang {currentPage + 1} / {Math.ceil(filteredTableMaterials.length / pageSize)} •{" "}
+                                        {filteredTableMaterials.length} bản ghi
+                                    </Typography>
+                                </div>
+                                <ReactPaginate
+                                    previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
+                                    nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
+                                    breakLabel="..."
+                                    pageCount={Math.ceil(filteredTableMaterials.length / pageSize)}
+                                    marginPagesDisplayed={2}
+                                    pageRangeDisplayed={5}
+                                    onPageChange={handlePageChange}
+                                    containerClassName="flex items-center gap-1"
+                                    pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                                    pageLinkClassName="flex items-center justify-center w-full h-full"
+                                    previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                                    nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                                    breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
+                                    activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
+                                    forcePage={currentPage}
+                                    disabledClassName="opacity-50 cursor-not-allowed"
+                                />
+                            </div>
+                        )}
+
+                        <div className="flex gap-2 my-4 h-8">
+                            <MuiButton
+                                size="small"
+                                variant="outlined"
+                                onClick={handleAddRow}
+                            >
+                                <div className='flex items-center gap-2'>
+                                    <FaPlus className="h-4 w-4" />
+                                    <span>Thêm dòng</span>
+                                </div>
+                            </MuiButton>
+                            <MuiButton
+                                size="small"
+                                variant="outlined"
+                                color="error"
+                                onClick={handleRemoveAllRows}
+                            >
+                                <div className='flex items-center gap-2'>
+                                    <FaTrash className="h-4 w-4" />
+                                    <span>Xóa hết dòng</span>
+                                </div>
+                            </MuiButton>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 my-4">
+                        <MuiButton
+                            size="medium"
+                            color="error"
                             variant="outlined"
-                            color="red"
-                            onClick={handleRemoveAllRows}
-                            className="flex items-center gap-2"
+                            onClick={() => navigate("/user/products")}
                         >
-                            <FaTrash /> Xóa hết dòng
+                            Hủy
+                        </MuiButton>
+                        <Button
+                            size="lg"
+                            color="white"
+                            variant="text"
+                            className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-2 rounded-[4px] transition-all duration-200 ease-in-out"
+                            ripple={true}
+                            onClick={handleCreateProduct}
+                            disabled={isCreateDisabled()}
+                        >
+                            Lưu
                         </Button>
                     </div>
-                </div>
-
-                <div className="flex justify-end gap-2 mt-4">
-                    <Button
-                        variant="text"
-                        color="gray"
-                        onClick={() => navigate("/user/products")}
-                        className="flex items-center gap-2"
-                    >
-                        <FaTimes /> Hủy
-                    </Button>
-                    <Button
-                        variant="gradient"
-                        color="green"
-                        onClick={handleCreateProduct}
-                        disabled={isCreateDisabled()}
-                        className="flex items-center gap-2"
-                    >
-                        <FaSave /> {loading ? "Đang xử lý..." : "Lưu"}
-                    </Button>
-                </div>
-            </CardBody>
-        </Card>
-    </div>
-);
+                </CardBody>
+            </Card>
+        </div>
+    );
 };
 
 export default AddProductPage;

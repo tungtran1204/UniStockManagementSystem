@@ -13,6 +13,7 @@ import { Navigate } from "react-router-dom";
 import UserPage from "@/features/admin/users/UserPage";
 import RolePage from "@/features/admin/roles/RolePage";
 import UnauthorizedPage from "@/components/UnauthorizedPage";
+import ProfilePage from "@/features/profile/ProfilePage";
 import NotFoundPage from "@/components/NotFoundPage";
 import AdminDashboard from "@/features/admin/dashboard/AdminDashboard";
 import WarehousePage from "@/features/user/warehouse/WarehousePage";
@@ -39,11 +40,13 @@ import AddMaterialPage from "@/features/user/materials/AddMaterialPage";
 import DetailMaterialPage from "@/features/user/materials/DetailMaterialPage";
 import ViewReceiptNote from "../features/user/receiptNote/ViewReceiptNote";
 import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
+import DetailPurchaseRequestPage from "../features/user/purchaseRequest/DetailPurchaseRequestPage";
 import AddReceiptNoteManually from "../features/user/receiptNote/AddReceiptNoteManually";
 import ForgotPassword from "../features/auth/reset_password/ConfirmEmailPage";
 import ResetPassword from "../features/auth/reset_password/ResetPasswordPage";
 import LoginPage from "../features/auth/login/LoginPage";
 import ConfirmOTPPage from "../features/auth/reset_password/ConfirmOTPPage";
+
 const icon = { className: "w-5 h-5 text-inherit" };
 
 export const routes = [
@@ -104,29 +107,6 @@ export const routes = [
       },
       {
         icon: <UserCircleIcon {...icon} />,
-        name: "Xuất nhập kho",
-        path: "/user/receiptNote",
-        roles: ["USER"],
-        element: <Navigate to="/user" replace />,
-        subPages: [
-          {
-            icon: <Bars3BottomRightIcon {...icon} />,
-            name: "Nhập kho",
-            path: "/user/receiptNote",
-            element: <ReceiptNotePage />,
-            roles: ["USER"],
-          },
-          {
-            icon: <Bars3BottomRightIcon {...icon} />,
-            name: "Xuất kho",
-            path: "/user/issueNote",
-            element: <IssueNotePage />,
-            roles: ["USER"],
-          },
-        ],
-      },
-      {
-        icon: <UserCircleIcon {...icon} />,
         name: "Mua hàng",
         path: "/user/purchaseOrder",
         roles: ["USER"],
@@ -144,6 +124,29 @@ export const routes = [
             name: "Đơn mua hàng",
             path: "/user/purchaseOrder",
             element: <PurchaseOrderPage />,
+            roles: ["USER"],
+          },
+        ],
+      },
+      {
+        icon: <UserCircleIcon {...icon} />,
+        name: "Xuất nhập kho",
+        path: "/user/receiptNote",
+        roles: ["USER"],
+        element: <Navigate to="/user" replace />,
+        subPages: [
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Nhập kho",
+            path: "/user/receiptNote",
+            element: <ReceiptNotePage />,
+            roles: ["USER"],
+          },
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Xuất kho",
+            path: "/user/issueNote",
+            element: <IssueNotePage />,
             roles: ["USER"],
           },
         ],
@@ -173,7 +176,7 @@ export const routes = [
             icon: <Bars3BottomRightIcon {...icon} />,
             name: "Dòng sản phẩm",
             path: "/user/products-types",
-            element: <ProductTypePage/>,
+            element: <ProductTypePage />,
             roles: ["USER"],
           },
         ],
@@ -203,7 +206,7 @@ export const routes = [
             icon: <Bars3BottomRightIcon {...icon} />,
             name: "Đối tác",
             path: "/user/partner/list", // Relative path
-            element: <PartnerPage />, 
+            element: <PartnerPage />,
             roles: ["USER"],
           },
         ],
@@ -247,6 +250,11 @@ export const routes = [
       {
         path: "*",
         element: <NotFoundPage />,
+      },
+      {
+        path: "/profile",
+        name: "Tài khoản",
+        element: <ProfilePage />,
       },
       {
         icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
@@ -312,6 +320,11 @@ export const routes = [
       {
         path: "/user/materials/:id",
         element: <DetailMaterialPage />,
+        roles: ["USER"],
+      },
+      {
+        path: "/user/purchase-request/:id",
+        element: <DetailPurchaseRequestPage />,
         roles: ["USER"],
       },
       {

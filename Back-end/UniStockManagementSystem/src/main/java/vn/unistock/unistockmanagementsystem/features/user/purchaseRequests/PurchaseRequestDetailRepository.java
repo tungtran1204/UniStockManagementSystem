@@ -8,5 +8,6 @@ import java.util.List;
 
 public interface PurchaseRequestDetailRepository extends JpaRepository<PurchaseRequestDetail, Long> {
 
+    void deleteByPurchaseRequest(PurchaseRequest request);
     List<PurchaseRequestDetail> findAllByPurchaseRequest(PurchaseRequest purchaseRequest);
 }

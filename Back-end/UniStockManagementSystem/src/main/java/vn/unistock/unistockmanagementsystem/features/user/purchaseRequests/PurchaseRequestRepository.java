@@ -8,11 +8,12 @@ import vn.unistock.unistockmanagementsystem.entities.PurchaseRequest;
 import java.util.Optional;
 
 public interface PurchaseRequestRepository extends JpaRepository<PurchaseRequest, Long> {
-    boolean existsByPurchaseRequestCode(String purchaseRequestCode);
     @Query("SELECT MAX(pr.purchaseRequestId) FROM PurchaseRequest pr")
     Long findMaxPurchaseRequestId();
 
-    @Query("SELECT pr FROM PurchaseRequest pr JOIN FETCH pr.purchaseRequestDetails prd JOIN FETCH prd.material m JOIN FETCH m.unit JOIN FETCH prd.partner WHERE pr.purchaseRequestId = :id")
-    PurchaseRequest findByIdWithDetails(@Param("id") Long id);
+    boolean existsBySalesOrder_OrderId(Long orderId);
+
+    @Query("SELECT pr FROM PurchaseRequest pr LEFT JOIN FETCH pr.purchaseRequestDetails WHERE pr.purchaseRequestId = :id")
+    Optional<PurchaseRequest> findByIdWithDetails(@Param("id") Long id);
 
 }
