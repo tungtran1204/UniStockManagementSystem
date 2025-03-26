@@ -52,6 +52,7 @@ const PurchaseOrderPage = () => {
           orderId: orderId,
           nextCode: nextCode,
           saleOrderCode,
+          category: "Vật tư mua bán"
         }
       });
     } catch (error) {
