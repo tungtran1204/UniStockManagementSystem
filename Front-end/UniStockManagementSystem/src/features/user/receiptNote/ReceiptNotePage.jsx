@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { Button, Card, CardHeader, CardBody, Typography, Tooltip } from "@material-tailwind/react";
 import { FaEdit, FaEye } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa";
 import { ArrowRightIcon, ArrowLeftIcon, EyeIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
@@ -195,16 +196,26 @@ const ReceiptNotePage = () => {
             customButtons={
               <Menu>
                 <MenuHandler>
-                  <Button color="green" size="sm">Thêm phiếu nhập</Button>
+                  <Button
+                    size="sm"
+                    color="white"
+                    variant="text"
+                    className="flex items-center gap-2 bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 ease-in-out"
+                  >
+                    <FaPlus className="h-4 w-4" />Thêm phiếu nhập
+                  </Button>
+                  {/* <FaPlus color="green" size="sm">Thêm phiếu nhập</FaPlus> */}
                 </MenuHandler>
                 <MenuList>
-                  <MenuItem onClick={() => navigate("/user/receiptNote/add")}>Từ đơn mua hàng</MenuItem>
-                  <MenuItem onClick={() => navigate("/user/receiptNote/manual")}>Nhập kho thủ công</MenuItem>
+                  <MenuItem onClick={() => navigate("/user/purchaseOrder")}>Nhập từ đơn mua hàng</MenuItem>
+                  <MenuItem onClick={() => navigate("/user/issueNote")}>Nhập hàng hóa gia công</MenuItem>
+                  <MenuItem onClick={() => navigate("/user/receiptNote/manual")}>Nhập thành phẩm sản xuất</MenuItem>
+                  <MenuItem onClick={() => navigate("/user/receiptNote/manual")}>Nhập hàng bán trả lại</MenuItem>
                 </MenuList>
               </Menu>
             }
           />
-      <div className="py-2 flex items-center justify-between gap-2">
+          <div className="py-2 flex items-center justify-between gap-2">
             {/* Items per page */}
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-light">

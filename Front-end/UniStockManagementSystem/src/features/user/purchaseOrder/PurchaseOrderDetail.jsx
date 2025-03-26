@@ -26,7 +26,7 @@ const PurchaseOrderDetail = () => {
   const getStatusLabel = (statusCode) => {
     const statusMap = {
       PENDING: "Chờ nhận",
-      IN_PROGRESS: "Chưa hoàn thành",
+      IN_PROGRESS: "Đã nhập một phần",
       COMPLETED: "Hoàn thành",
       CANCELED: "Hủy",
     };

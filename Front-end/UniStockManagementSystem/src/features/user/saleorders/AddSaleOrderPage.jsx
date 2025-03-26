@@ -641,7 +641,8 @@ const AddSaleOrderPage = () => {
                       </td>
                       <td className="px-4 py-2 text-sm">
                         <Input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           className="w-16 text-sm"
                           value={item.quantity}
                           onChange={(e) => handleQuantityChange(item.id, e.target.value)}
