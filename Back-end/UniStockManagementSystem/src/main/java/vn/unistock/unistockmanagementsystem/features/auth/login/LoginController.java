@@ -86,16 +86,24 @@ public class LoginController {
                 .map(Permission::getPermissionName)
                 .collect(Collectors.toList());
 
-        // Tạo MeDTO
+        // Lấy avatar từ UserDetail (nếu có)
+        String avatar = null;
+        if (user.getUserDetail() != null) {
+            avatar = user.getUserDetail().getProfilePicture();
+        }
+
+        // Tạo MeDTO với avatar
         MeDTO meDto = new MeDTO(
                 user.getUserId(),
                 user.getEmail(),
                 user.getUsername(),
                 roles,
-                permissions
+                permissions,
+                avatar
         );
 
         return ResponseEntity.ok(meDto);
     }
+
 
 }
