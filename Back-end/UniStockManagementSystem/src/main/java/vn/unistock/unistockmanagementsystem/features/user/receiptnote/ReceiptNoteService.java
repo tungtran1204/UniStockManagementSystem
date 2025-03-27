@@ -169,7 +169,8 @@ public class ReceiptNoteService {
                 List<PurchaseOrderDetail> poDetails = purchaseOrderDetailRepository.findByPurchaseOrderPoId(grnDto.getPoId());
 
                 boolean allReceived = poDetails.stream()
-                        .allMatch(detail -> detail.getRemainingQuantity() == 0);
+                        .allMatch(detail -> detail.getOrderedQuantity() - detail.getReceivedQuantity() <= 0);
+
 
                 PurchaseOrder po = poDetails.get(0).getPurchaseOrder(); // đã load ở trên
 
