@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { Button, Card, CardHeader, CardBody, Typography, Tooltip } from "@material-tailwind/react";
-import { FaEdit, FaEye } from "react-icons/fa";
-import { FaPlus } from "react-icons/fa";
+import { FaPlus, FaEye } from "react-icons/fa";
 import { ArrowRightIcon, ArrowLeftIcon, EyeIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
@@ -194,23 +193,34 @@ const ReceiptNotePage = () => {
             title="Danh sách phiếu nhập kho"
             showAdd={false}
             customButtons={
-              <Menu>
+              <Menu placement="bottom-end">
                 <MenuHandler>
                   <Button
                     size="sm"
                     color="white"
-                    variant="text"
-                    className="flex items-center gap-2 bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 ease-in-out"
+                    className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none hover:shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                    variant="contained"
+                    ripple={true}
                   >
-                    <FaPlus className="h-4 w-4" />Thêm phiếu nhập
+                    <div className='flex items-center gap-2'>
+                      <FaPlus className="h-4 w-4" />
+                      <span>Thêm Phiếu Nhập</span>
+                    </div>
                   </Button>
-                  {/* <FaPlus color="green" size="sm">Thêm phiếu nhập</FaPlus> */}
                 </MenuHandler>
                 <MenuList>
-                  <MenuItem onClick={() => navigate("/user/purchaseOrder")}>Nhập từ đơn mua hàng</MenuItem>
-                  <MenuItem onClick={() => navigate("/user/issueNote")}>Nhập hàng hóa gia công</MenuItem>
-                  <MenuItem onClick={() => navigate("/user/receiptNote/manual")}>Nhập thành phẩm sản xuất</MenuItem>
-                  <MenuItem onClick={() => navigate("/user/receiptNote/manual")}>Nhập hàng bán trả lại</MenuItem>
+                  <MenuItem
+                    className="hover:bg-green-900/10 rounded-[4px]"
+                    onClick={() => navigate("/user/receiptNote/add")}
+                  >
+                    <span className="text-gray-700 hover:text-green-900">Nhập từ đơn mua hàng</span>
+                  </MenuItem>
+                  <MenuItem
+                    className="hover:bg-green-900/10 rounded-[4px]"
+                    onClick={() => navigate("/user/receiptNote/manual")}
+                  >
+                    <span className="text-gray-700 hover:text-green-900">Nhập kho thủ công</span>
+                  </MenuItem>
                 </MenuList>
               </Menu>
             }
