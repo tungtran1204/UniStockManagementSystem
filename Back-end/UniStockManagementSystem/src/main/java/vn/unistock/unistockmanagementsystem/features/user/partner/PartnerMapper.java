@@ -17,6 +17,7 @@ public interface PartnerMapper {
 
     @Mapping(source = "partnerId", target = "partnerId")
     @Mapping(source = "partnerName", target = "partnerName")
+    @Mapping(source = "contactName", target = "contactName")
     @Mapping(source = "address", target = "address")
     @Mapping(source = "phone", target = "phone")
     @Mapping(source = "email", target = "email")

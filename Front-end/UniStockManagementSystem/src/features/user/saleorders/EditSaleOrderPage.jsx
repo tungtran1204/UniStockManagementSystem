@@ -10,6 +10,7 @@ import {
   Typography,
 } from "@material-tailwind/react";
 import { TextField, Button as MuiButton } from '@mui/material';
+import { Tab, Tabs } from '@mui/material';
 import Select, { components } from "react-select";
 import dayjs from "dayjs";
 import useSaleOrder from "./useSaleOrder";
@@ -878,18 +879,15 @@ const EditSaleOrderPage = () => {
 
           {/* Tab header */}
           <div className="mb-4 flex border-b">
-            <button
-              onClick={() => setActiveTab("info")}
-              className={`py-2 px-4 ${activeTab === "info" ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
+            <Tabs
+              value={activeTab}
+              onChange={(e, newValue) => setActiveTab(newValue)}
+              textColor="primary"
+              indicatorColor="primary"
             >
-              Thông tin đơn hàng
-            </button>
-            <button
-              onClick={() => setActiveTab("products")}
-              className={`py-2 px-4 ${activeTab === "products" ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
-            >
-              Danh sách sản phẩm
-            </button>
+              <Tab label="Thông tin đơn hàng" value="info" />
+              <Tab label="Danh sách sản phẩm" value="products" />
+            </Tabs>
           </div>
 
           {activeTab === "info" && (

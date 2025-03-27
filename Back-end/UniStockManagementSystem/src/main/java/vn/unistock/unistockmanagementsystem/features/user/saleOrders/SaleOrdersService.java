@@ -21,7 +21,6 @@ public class SaleOrdersService {
     private final SaleOrdersMapper saleOrdersMapper;
     private final PartnerRepository partnerRepository;
     private final ProductsRepository productsRepository;
-    private PurchaseOrderRepository purchaseOrderRepository;
 
     public SaleOrdersService(SaleOrdersRepository saleOrdersRepository,
                              SaleOrdersMapper saleOrdersMapper,
