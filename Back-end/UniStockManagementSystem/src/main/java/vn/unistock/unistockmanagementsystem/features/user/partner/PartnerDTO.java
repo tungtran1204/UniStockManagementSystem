@@ -17,6 +17,7 @@ import java.util.Set;
 public class PartnerDTO {
     private Long partnerId;
     private String partnerName;
+    private String contactName;
     private String address;
     private String phone;
     private String email;

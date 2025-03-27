@@ -2,6 +2,7 @@ import { FaSave, FaTimes, FaEdit, FaFileExport } from "react-icons/fa";
 import { getPurchaseOrderById } from "./purchaseOrderService";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Tab, Tabs } from '@mui/material';
 import {
   Card,
   Button,
@@ -79,18 +80,15 @@ const PurchaseOrderDetail = () => {
         />
 
         <div className="mb-4 flex border-b">
-          <button
-            onClick={() => setActiveTab("orderInfo")}
-            className={`py-2 px-4 ${activeTab === "orderInfo" ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
+          <Tabs
+            value={activeTab}
+            onChange={(e, newValue) => setActiveTab(newValue)}
+            textColor="primary"
+            indicatorColor="primary"
           >
-            Thông tin đơn hàng
-          </button>
-          <button
-            onClick={() => setActiveTab("productList")}
-            className={`py-2 px-4 ${activeTab === "productList" ? "border-b-2 border-blue-500 text-blue-500" : "text-gray-500"}`}
-          >
-            Danh sách sản phẩm
-          </button>
+            <Tab label="Thông tin đơn hàng" value="orderInfo" />
+            <Tab label="Danh sách sản phẩm" value="productList" />
+          </Tabs>
         </div>
         {activeTab === "orderInfo" && (
 
@@ -124,7 +122,7 @@ const PurchaseOrderDetail = () => {
                     icon={<i className="fas fa-calendar" />}
                   />
                 </div>
-                
+
               </div>
             </div>
 
@@ -199,19 +197,19 @@ const PurchaseOrderDetail = () => {
               </div>
             )}
           </div>
-        )}         
-      <div className="mt-6 border-t pt-4 flex justify-between">
-        <Button
-          size="sm"
-          color="red"
-          variant="text"
-          onClick={() => navigate("/user/purchaseOrder")}
-          className="mr-4"
-        >
-          Quay lại danh sách
-        </Button>
-      </div>
-    </Card>
+        )}
+        <div className="mt-6 border-t pt-4 flex justify-between">
+          <Button
+            size="sm"
+            color="red"
+            variant="text"
+            onClick={() => navigate("/user/purchaseOrder")}
+            className="mr-4"
+          >
+            Quay lại danh sách
+          </Button>
+        </div>
+      </Card>
     </div >
   );
 };
