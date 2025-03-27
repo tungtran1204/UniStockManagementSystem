@@ -47,6 +47,7 @@ public class PartnerService {
         // Tạo mới Partner
         Partner partner = Partner.builder()
                 .partnerName(partnerDTO.getPartnerName())
+                .contactName(partnerDTO.getContactName())
                 .address(partnerDTO.getAddress())
                 .phone(partnerDTO.getPhone())
                 .email(partnerDTO.getEmail())
