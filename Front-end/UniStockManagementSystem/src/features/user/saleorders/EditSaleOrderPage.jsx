@@ -13,10 +13,8 @@ import { TextField, Button as MuiButton } from '@mui/material';
 import { Tab, Tabs } from '@mui/material';
 import Select, { components } from "react-select";
 import dayjs from "dayjs";
-
 import useSaleOrder from "./useSaleOrder";
-import { getPartnersByType } from "@/features/user/partner/partnerService";
-import { createPurchaseRequestFromSaleOrder } from "@/features/user/purchaseRequest/PurchaseRequestService";
+import { getPartnersByType, getPartnersByMaterial } from "@/features/user/partner/partnerService";
 import {
   getProducts,
   getSaleOrderById,
@@ -260,6 +258,7 @@ const EditSaleOrderPage = () => {
     setMode(newMode);
   };
 
+  // Thay thế logic chỉnh sửa từ phiên bản trên main
   const handleEdit = () => {
     if (!originalData) return;
     handleSetMode(MODE_EDIT);
@@ -362,10 +361,6 @@ const EditSaleOrderPage = () => {
     } else {
       navigate("/user/sale-orders");
     }
-  };
-
-  const handleXacNhan = () => {
-    // Ở đây nếu cần có hành động khác, bạn có thể xử lý thêm.
   };
 
   const handleCustomerChange = (selectedOption) => {
@@ -484,6 +479,7 @@ const EditSaleOrderPage = () => {
     setGlobalError("");
   };
 
+  // Giữ nguyên logic tạo yêu cầu mua vật tư từ phiên bản hiện tại của bạn
   const handleCreatePurchaseRequest = async () => {
     if (!orderId) {
       alert("Không tìm thấy đơn hàng để tạo yêu cầu mua vật tư!");
@@ -491,16 +487,64 @@ const EditSaleOrderPage = () => {
     }
 
     try {
-      const response = await createPurchaseRequestFromSaleOrder(orderId);
-      alert("Tạo yêu cầu mua vật tư thành công!");
-      console.log("Chi tiết yêu cầu mua vật tư:", response);
-      navigate("/user/purchase-request");
+      const materialRequirementsPromises = items.map(async (item) => {
+        if (item.productId && item.produceQuantity > 0) {
+          const materials = await getProductMaterialsByProduct(item.productId);
+          return materials.map((mat) => ({
+            id: `temp-${mat.materialId}-${item.productId}`,
+            materialId: mat.materialId,
+            materialCode: mat.materialCode,
+            materialName: mat.materialName,
+            unitName: mat.unitName,
+            quantity: mat.quantity * item.produceQuantity,
+          }));
+        }
+        return [];
+      });
+
+      const materialRequirements = (await Promise.all(materialRequirementsPromises)).flat();
+
+      if (materialRequirements.length === 0) {
+        alert("Không có vật tư nào cần mua từ đơn hàng này!");
+        return;
+      }
+
+      const itemsWithSuppliers = await Promise.all(
+        materialRequirements.map(async (item) => {
+          const suppliers = await getPartnersByMaterial(item.materialId);
+          const mappedSuppliers = suppliers.map((supplier) => ({
+            value: supplier.partnerId,
+            label: supplier.partnerName, // Chỉ hiển thị partnerName
+            name: supplier.partnerName,
+            code: supplier.partnerCode || "",
+          }));
+
+          const defaultSupplier = mappedSuppliers.length === 1 ? mappedSuppliers[0] : null;
+
+          return {
+            ...item,
+            supplierId: defaultSupplier ? defaultSupplier.value : "",
+            supplierName: defaultSupplier ? defaultSupplier.name : "", // Chỉ lưu partnerName
+            suppliers: mappedSuppliers,
+          };
+        })
+      );
+
+      navigate("/user/purchase-request/add", {
+        state: {
+          fromSaleOrder: true,
+          saleOrderId: orderId,
+          saleOrderCode: orderCode,
+          initialItems: itemsWithSuppliers,
+        },
+      });
     } catch (error) {
-      alert("Lỗi khi tạo yêu cầu mua vật tư!");
+      console.error("Lỗi khi chuẩn bị dữ liệu yêu cầu mua vật tư:", error);
+      alert("Có lỗi xảy ra khi chuẩn bị dữ liệu yêu cầu mua vật tư!");
     }
   };
 
-
+  // Thay thế logic lưu đơn hàng từ phiên bản trên main
   const handleSaveOrder = async () => {
     let hasError = false;
     if (!customerCode) {
@@ -577,6 +621,7 @@ const EditSaleOrderPage = () => {
     }
   };
 
+  // Thay thế logic render bảng sản phẩm từ phiên bản trên main
   const renderTableRows = () => {
     if (items.length === 0) {
       return (
@@ -995,29 +1040,14 @@ const EditSaleOrderPage = () => {
                   <tbody>{renderTableRows()}</tbody>
                 </table>
               </div>
-              {mode === MODE_EDIT && (
-                <div className="flex gap-2 mb-4 h-8">
-                  <MuiButton
-                    size="small"
-                    variant="outlined"
-                    onClick={handleAddRow}
-                  >
-                    <div className='flex items-center gap-2'>
-                      <FaPlus className="h-4 w-4" />
-                      <span>Thêm dòng</span>
-                    </div>
-                  </MuiButton>
-                  <MuiButton
-                    size="small"
-                    variant="outlined"
-                    color="error"
-                    onClick={handleRemoveAllRows}
-                  >
-                    <div className='flex items-center gap-2'>
-                      <FaTrash className="h-4 w-4" />
-                      <span>Xóa hết dòng</span>
-                    </div>
-                  </MuiButton>
+              {mode === MODE_EDIT && activeTab === "products" && (
+                <div className="flex gap-2 mb-4">
+                  <Button variant="outlined" onClick={handleAddRow} className="flex items-center gap-2">
+                    <FaPlus /> Thêm dòng
+                  </Button>
+                  <Button variant="outlined" color="red" onClick={handleRemoveAllRows} className="flex items-center gap-2">
+                    <FaTrash /> Xóa hết dòng
+                  </Button>
                 </div>
               )}
               {/* Bảng định mức nguyên vật liệu sẽ xuất hiện ngay bên dưới bảng sản phẩm khi đã xem định mức */}
@@ -1168,7 +1198,7 @@ const EditSaleOrderPage = () => {
       {isCreatePartnerPopupOpen && (
         <ModalAddCustomer
           onClose={() => setIsCreatePartnerPopupOpen(false)}
-          onSuccess={(newPartner) => {
+          onSuccess={() => {
             setIsCreatePartnerPopupOpen(false);
             fetchCustomers();
           }}

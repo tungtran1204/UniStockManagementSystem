@@ -18,6 +18,7 @@ import vn.unistock.unistockmanagementsystem.features.admin.user.UserRepository;
 import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryRepository;
 import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.products.ProductsRepository;
+import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderDetailRepository;
 import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderRepository;
 import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderService;
 import vn.unistock.unistockmanagementsystem.features.user.units.UnitRepository;
@@ -49,6 +50,7 @@ public class ReceiptNoteService {
     @Autowired private PurchaseOrderRepository purchaseOrderRepository;
     @Autowired private PurchaseOrderService purchaseOrderService;
     @Autowired private ReceiptNoteDetailViewMapper detailViewMapper;
+    @Autowired private PurchaseOrderDetailRepository purchaseOrderDetailRepository;
 
     public Page<ReceiptNoteDTO> getAllReceiptNote(Pageable page) {
         Page<GoodReceiptNote> notes = receiptNoteRepository.findAll(page);
@@ -85,72 +87,101 @@ public class ReceiptNoteService {
         if (auth == null || !auth.isAuthenticated()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
         }
-        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
-        User currentUser = userDetails.getUser();
 
-        GoodReceiptNote grn = GoodReceiptNote.builder()
-                .grnCode(grnDto.getGrnCode())
-                .description(grnDto.getDescription())
-                .category(grnDto.getCategory())
-                .receiptDate(grnDto.getReceiptDate())
-                .createdBy(currentUser)
-                .details(new ArrayList<>())
-                .build();
+        try {
+            CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+            User currentUser = userDetails.getUser();
 
-        boolean hasSaleOrder = false;
-        if (grnDto.getPoId() != null) {
-            PurchaseOrder po = purchaseOrderRepository.findById(grnDto.getPoId())
-                    .orElseThrow(() -> new RuntimeException("Purchase order not found with ID: " + grnDto.getPoId()));
-            grn.setPurchaseOrder(po);
-            try {
-                purchaseOrderService.getSaleOrderFromPurchaseOrder(po.getPoId());
-                hasSaleOrder = true;
-            } catch (Exception ignored) {
-                hasSaleOrder = false;
-            }
-        }
-
-        grn = receiptNoteRepository.save(grn);
-
-        List<GoodReceiptDetail> details = new ArrayList<>();
-        details.forEach(d -> System.out.println("Saving detail: " + d));
-        for (ReceiptNoteDetailDTO detailDto : grnDto.getDetails()) {
-            if (detailDto.getWarehouseId() == null) {
-                throw new RuntimeException("warehouseId is required");
-            }
-            Warehouse warehouse = warehouseRepository.findById(detailDto.getWarehouseId())
-                    .orElseThrow(() -> new RuntimeException("Warehouse not found with ID: " + detailDto.getWarehouseId()));
-
-            GoodReceiptDetail detail = GoodReceiptDetail.builder()
-                    .warehouse(warehouse)
-                    .quantity(detailDto.getQuantity())
-                    .goodReceiptNote(grn)
+            GoodReceiptNote grn = GoodReceiptNote.builder()
+                    .grnCode(grnDto.getGrnCode())
+                    .description(grnDto.getDescription())
+                    .category(grnDto.getCategory())
+                    .receiptDate(grnDto.getReceiptDate())
+                    .createdBy(currentUser)
+                    .details(new ArrayList<>())
                     .build();
 
-            if (detailDto.getUnitId() != null) {
-                Unit unit = unitRepository.findById(detailDto.getUnitId())
-                        .orElseThrow(() -> new RuntimeException("Unit not found with ID: " + detailDto.getUnitId()));
-                detail.setUnit(unit);
+            boolean hasSaleOrder = false;
+            if (grnDto.getPoId() != null) {
+                PurchaseOrder po = purchaseOrderRepository.findById(grnDto.getPoId())
+                        .orElseThrow(() -> new RuntimeException("Purchase order not found with ID: " + grnDto.getPoId()));
+                grn.setPurchaseOrder(po);
+                try {
+                    purchaseOrderService.getSaleOrderFromPurchaseOrder(po.getPoId());
+                    hasSaleOrder = true;
+                } catch (Exception ignored) {}
             }
 
-            if (detailDto.getMaterialId() != null) {
-                Material material = materialRepository.findById(detailDto.getMaterialId())
-                        .orElseThrow(() -> new RuntimeException("Material not found with ID: " + detailDto.getMaterialId()));
-                detail.setMaterial(material);
-                if (detail.getUnit() == null) detail.setUnit(material.getUnit());
-                updateInventoryAndTransaction(warehouse, material, null, detailDto.getQuantity(), hasSaleOrder, grn);
-            } else if (detailDto.getProductId() != null) {
-                Product product = productRepository.findById(detailDto.getProductId())
-                        .orElseThrow(() -> new RuntimeException("Product not found with ID: " + detailDto.getProductId()));
-                detail.setProduct(product);
-                if (detail.getUnit() == null) detail.setUnit(product.getUnit());
-                updateInventoryAndTransaction(warehouse, null, product, detailDto.getQuantity(), hasSaleOrder, grn);
+            grn = receiptNoteRepository.save(grn);
+            List<GoodReceiptDetail> details = new ArrayList<>();
+
+            for (ReceiptNoteDetailDTO detailDto : grnDto.getDetails()) {
+                logger.info("⏳ Processing detail: {}", detailDto);
+
+                if (detailDto.getWarehouseId() == null) {
+                    throw new RuntimeException("warehouseId is required");
+                }
+
+                Warehouse warehouse = warehouseRepository.findById(detailDto.getWarehouseId())
+                        .orElseThrow(() -> new RuntimeException("Warehouse not found with ID: " + detailDto.getWarehouseId()));
+
+                GoodReceiptDetail detail = GoodReceiptDetail.builder()
+                        .warehouse(warehouse)
+                        .quantity(detailDto.getQuantity())
+                        .goodReceiptNote(grn)
+                        .build();
+
+                if (detailDto.getUnitId() != null) {
+                    Unit unit = unitRepository.findById(detailDto.getUnitId())
+                            .orElseThrow(() -> new RuntimeException("Unit not found with ID: " + detailDto.getUnitId()));
+                    detail.setUnit(unit);
+                }
+
+                if (detailDto.getMaterialId() != null) {
+                    Material material = materialRepository.findById(detailDto.getMaterialId())
+                            .orElseThrow(() -> new RuntimeException("Material not found with ID: " + detailDto.getMaterialId()));
+                    detail.setMaterial(material);
+                    if (detail.getUnit() == null) detail.setUnit(material.getUnit());
+                    updateInventoryAndTransaction(warehouse, material, null, detailDto.getQuantity(), hasSaleOrder, grn);
+
+                    // ✅ Cập nhật PO Detail
+                    if (grnDto.getPoId() != null) {
+                        PurchaseOrderDetail pod = purchaseOrderDetailRepository.findByPurchaseOrderPoId(grnDto.getPoId()).stream()
+                                .filter(d -> d.getMaterial().getMaterialId().equals(detailDto.getMaterialId()))
+                                .findFirst()
+                                .orElseThrow(() -> new RuntimeException("Không tìm thấy dòng đơn hàng ứng với vật tư ID: " + detailDto.getMaterialId()));
+                        pod.setReceivedQuantity(pod.getReceivedQuantity() + detailDto.getQuantity().intValue());
+                        purchaseOrderDetailRepository.save(pod);
+                    }
+
+                } else if (detailDto.getProductId() != null) {
+                    Product product = productRepository.findById(detailDto.getProductId())
+                            .orElseThrow(() -> new RuntimeException("Product not found with ID: " + detailDto.getProductId()));
+                    detail.setProduct(product);
+                    if (detail.getUnit() == null) detail.setUnit(product.getUnit());
+                    updateInventoryAndTransaction(warehouse, null, product, detailDto.getQuantity(), hasSaleOrder, grn);
+                }
+
+                details.add(detail);
             }
-            details.add(detail);
+            goodReceiptDetailRepository.saveAll(details);
+            if (grnDto.getPoId() != null) {
+                List<PurchaseOrderDetail> poDetails = purchaseOrderDetailRepository.findByPurchaseOrderPoId(grnDto.getPoId());
+
+                boolean allReceived = poDetails.stream()
+                        .allMatch(detail -> detail.getRemainingQuantity() == 0);
+
+                PurchaseOrder po = poDetails.get(0).getPurchaseOrder(); // đã load ở trên
+
+                po.setStatus(allReceived ? PurchaseOrder.OrderStatus.COMPLETED : PurchaseOrder.OrderStatus.IN_PROGRESS);
+                purchaseOrderRepository.save(po);
+            }
+            return receiptNoteMapper.toDTO(grn);
+
+        } catch (Exception e) {
+            logger.error("❌ Lỗi khi tạo phiếu nhập kho: {}", e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi khi lưu phiếu nhập: " + e.getMessage());
         }
-        goodReceiptDetailRepository.saveAll(details);
-        grn.setDetails(details);
-        return receiptNoteMapper.toDTO(grn);
     }
 
     private void updateInventoryAndTransaction(Warehouse warehouse, Material material, Product product, Double quantity, boolean hasSaleOrder, GoodReceiptNote grn) {

@@ -1,20 +1,25 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     Card,
-    CardHeader,
     CardBody,
     Typography,
     Button,
     Tooltip,
     Input,
+    Dialog,
+    DialogHeader,
+    DialogBody,
+    DialogFooter,
+    Select,
+    Option,
 } from "@material-tailwind/react";
 import { BiCartAdd } from "react-icons/bi";
 import { EyeIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
-import { ArrowRightIcon, ArrowLeftIcon, KeyIcon } from "@heroicons/react/24/outline";
+import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
 import usePurchaseRequest from "./usePurchaseRequest";
-import usePurchaseOrder from "../purchaseOrder/usePurchaseOrder";
+import { updatePurchaseRequestStatus } from "./PurchaseRequestService";
 import { useNavigate } from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
@@ -27,19 +32,34 @@ const PurchaseRequestPage = () => {
         totalElements,
         fetchPurchaseRequests,
         getNextCode,
-        getPurchaseRequestById,
+        togglePurchaseRequestStatus,
     } = usePurchaseRequest();
 
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
-    const { createOrdersFromRequest } = usePurchaseOrder();
+    const [activeDropdown, setActiveDropdown] = useState(null); // Trạng thái để theo dõi dropdown đang mở
 
     const navigate = useNavigate();
+    const dropdownRef = useRef(null);
 
     useEffect(() => {
         fetchPurchaseRequests(currentPage, pageSize, searchTerm);
     }, [currentPage, pageSize, searchTerm]);
+
+    // Thêm useEffect để xử lý click outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setActiveDropdown(null);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     const handlePageChange = (selectedItem) => {
         setCurrentPage(selectedItem.selected);
@@ -60,43 +80,40 @@ const PurchaseRequestPage = () => {
         setCurrentPage(0);
     };
 
-    const handleCreatePurchaseOrder = async (requestId) => {
-        const confirm = window.confirm("Bạn có muốn tạo đơn mua hàng cho yêu cầu này không?");
-        if (!confirm) return;
+    const handleStatusClick = (id) => {
+        setActiveDropdown(activeDropdown === id ? null : id); // Toggle dropdown
+    };
 
-        try {
-            const selectedRequest = await getPurchaseRequestById(requestId);
-            console.log("📦 Chi tiết yêu cầu mua vật tư:", selectedRequest);
-            if (!selectedRequest || !selectedRequest.purchaseRequestDetails) {
-                throw new Error("Yêu cầu mua không có vật tư nào");
+    const handleStatusChange = async (id, newStatus) => {
+        await togglePurchaseRequestStatus(id, newStatus);
+        setActiveDropdown(null); // Đóng dropdown sau khi chọn
+    };
+
+    const handleStatusConfirm = async (id, currentStatus) => {
+        if (currentStatus !== "Chờ duyệt") return;
+
+        if (window.confirm("Bạn có muốn duyệt yêu cầu mua vật tư này không?")) {
+            try {
+                await togglePurchaseRequestStatus(id, "Đã duyệt");
+                await fetchPurchaseRequests(currentPage, pageSize, searchTerm);
+            } catch (error) {
+                console.error("Lỗi khi cập nhật trạng thái:", error);
+                alert("Có lỗi xảy ra khi duyệt yêu cầu");
             }
-
-            const payload = {
-                items: selectedRequest.purchaseRequestDetails.map((item) => ({
-                    materialId: item.materialId,
-                    materialCode: item.materialCode,
-                    materialName: item.materialName,
-                    supplierId: item.partnerId,
-                    supplierName: item.partnerName,
-                    unit: item.unitName,
-                    quantity: item.quantity,
-                })),
-            };
-
-
-            const response = await createOrdersFromRequest(payload);
-            alert(`Đã tạo ${response.orders.length} đơn hàng thành công.`);
-            navigate("/user/purchaseOrder");
-        } catch (error) {
-            console.error("Lỗi tạo đơn hàng:", error);
-            alert("Không thể tạo đơn mua hàng. Vui lòng thử lại.");
         }
     };
 
     const columnsConfig = [
         { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
         { field: 'purchaseRequestCode', headerName: 'Mã yêu cầu', flex: 1.5, minWidth: 150, editable: false },
-        { field: 'purchaseOrderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false, renderCell: (params) => params.value || "Chưa có" },
+        {
+            field: 'purchaseOrderCode',
+            headerName: 'Mã đơn hàng',
+            flex: 1.5,
+            minWidth: 150,
+            editable: false,
+            renderCell: (params) => params.value || "Không có"
+        },
         {
             field: 'createdDate',
             headerName: 'Ngày tạo yêu cầu',
@@ -111,12 +128,24 @@ const PurchaseRequestPage = () => {
             flex: 1.5,
             minWidth: 200,
             renderCell: (params) => (
-                <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                    ${params.value === 'Đã duyệt'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`
-                }>
+                <div
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer transition-all duration-200
+                        ${params.value === 'Đã duyệt'
+                            ? 'bg-green-100 text-green-800'
+                            : params.value === 'Từ chối'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                        }`}
+                    onClick={() => handleStatusConfirm(params.row.id, params.value)}
+                >
+                    <span className={`h-2 w-2 rounded-full
+                        ${params.value === 'Đã duyệt'
+                            ? 'bg-green-600'
+                            : params.value === 'Từ chối'
+                                ? 'bg-red-600'
+                                : 'bg-yellow-600'
+                        }`}
+                    />
                     {params.value}
                 </div>
             ),
@@ -129,9 +158,9 @@ const PurchaseRequestPage = () => {
             renderCell: (params) => (
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
                     <Tooltip content="Xem chi tiết">
-                        <button 
+                        <button
                             className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-                            onClick={() => navigate(`/user/purchase-request/edit/${params.id}`)}
+                            onClick={() => navigate(`/user/purchase-request/${params.id}`)}
                         >
                             <EyeIcon className="h-5 w-5" />
                         </button>
@@ -157,7 +186,7 @@ const PurchaseRequestPage = () => {
         id: request.id,
         index: (currentPage * pageSize) + index + 1,
         purchaseRequestCode: request.purchaseRequestCode,
-        purchaseOrderCode: request.saleOrderCode || "Chưa có",
+        purchaseOrderCode: request.saleOrderCode || "Không có",
         createdDate: request.createdDate,
         status: request.status,
     }));
@@ -207,7 +236,7 @@ const PurchaseRequestPage = () => {
                     <Table
                         data={data}
                         columnsConfig={columnsConfig}
-                        enableSelection={true}
+                        enableSelection={false}
                     />
 
                     <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">

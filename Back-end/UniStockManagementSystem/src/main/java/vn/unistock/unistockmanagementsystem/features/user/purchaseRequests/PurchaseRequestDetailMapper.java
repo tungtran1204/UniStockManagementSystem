@@ -8,6 +8,7 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface PurchaseRequestDetailMapper {
+    @Mapping(source = "purchaseRequestDetailId", target = "purchaseRequestDetailId") // Thêm ánh xạ cho ID
     @Mapping(source = "material.materialId", target = "materialId")
     @Mapping(source = "material.materialCode", target = "materialCode")
     @Mapping(source = "material.materialName", target = "materialName")
@@ -19,6 +20,7 @@ public interface PurchaseRequestDetailMapper {
 
     List<PurchaseRequestDetailDTO> toDTOList(List<PurchaseRequestDetail> entities);
 
+    @Mapping(source = "purchaseRequestDetailId", target = "purchaseRequestDetailId") // Thêm ánh xạ cho ID
     @Mapping(source = "materialId", target = "material.materialId")
     @Mapping(source = "partnerId", target = "partner.partnerId")
     @Mapping(source = "quantity", target = "quantity")

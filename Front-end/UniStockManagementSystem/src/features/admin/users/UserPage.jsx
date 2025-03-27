@@ -86,11 +86,12 @@ const UserPage = () => {
       renderCell: (params) => (
         <div className="flex items-center gap-4 py-3">
           <Avatar
-            src={params.row.profilePicture || "/img/bruce-mars.jpeg"}
-            alt={params.row.email}
-            size="sm"
-            variant="rounded"
-          />
+  src={(params.row.userDetail && params.row.userDetail.profilePicture) || "/img/bruce-mars.jpeg"}
+  alt={params.row.email}
+  size="sm"
+  variant="rounded"
+/>
+
           <div>
             <Typography variant="small" color="blue-gray" className="font-semibold">
               {params.row.username}
