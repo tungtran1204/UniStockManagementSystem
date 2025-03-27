@@ -8,7 +8,6 @@ import {
     Tooltip,
     Input,
 } from "@material-tailwind/react";
-import { BiCartAdd } from "react-icons/bi";
 import { BiSolidEdit, BiCartAdd } from "react-icons/bi";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon, KeyIcon } from "@heroicons/react/24/outline";
