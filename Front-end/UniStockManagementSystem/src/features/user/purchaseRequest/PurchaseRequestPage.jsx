@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
     Card,
     CardHeader,
-    CardHeader,
     CardBody,
     Typography,
     Button,
@@ -12,16 +11,13 @@ import {
 import { BiSolidEdit, BiCartAdd } from "react-icons/bi";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon, KeyIcon } from "@heroicons/react/24/outline";
-import { ArrowRightIcon, ArrowLeftIcon, KeyIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
 import usePurchaseRequest from "./usePurchaseRequest";
-import usePurchaseOrder from "../purchaseOrder/usePurchaseOrder";
 import usePurchaseOrder from "../purchaseOrder/usePurchaseOrder";
 import { useNavigate } from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
-import { getPurchaseRequestById } from "./PurchaseRequestService";
 import { getPurchaseRequestById } from "./PurchaseRequestService";
 
 const PurchaseRequestPage = () => {
