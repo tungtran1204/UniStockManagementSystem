@@ -3,6 +3,7 @@ package vn.unistock.unistockmanagementsystem.features.user.saleOrders;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,10 +37,11 @@ public class SaleOrdersService {
      * Lấy danh sách tất cả đơn hàng
      */
     public Page<SaleOrdersDTO> getAllOrders(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<SalesOrder> salesOrderPage = saleOrdersRepository.findAll(pageable);
         return salesOrderPage.map(saleOrdersMapper::toDTO);
     }
+
 
     public String getNextOrderCode() {
         Long maxId = saleOrdersRepository.findMaxOrderId(); // SELECT MAX(order_id)
