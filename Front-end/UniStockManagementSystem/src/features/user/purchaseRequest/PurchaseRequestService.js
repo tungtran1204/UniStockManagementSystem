@@ -80,20 +80,30 @@ export const createPurchaseRequest = async (requestData) => {
   }
 };
 
-export const updatePurchaseRequestStatus = async (purchaseRequestId, newStatus) => {
+export const updatePurchaseRequestStatus = async (purchaseRequestId, newStatus, rejectionReason = null) => {
   try {
-    const response = await axios.put(`${API_URL}/${purchaseRequestId}/status?status=${newStatus}`, null, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-        "Content-Type": "application/json",
+    const response = await axios.put(
+      `${API_URL}/${purchaseRequestId}/status`,
+      {
+        status: newStatus,
+        rejectionReason: rejectionReason
       },
-    });
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     console.error("Lỗi khi cập nhật trạng thái yêu cầu:", error);
     throw error;
   }
 };
+
+
+
 
 export const createPurchaseRequestFromSaleOrder = async (saleOrderId) => {
   try {
@@ -116,28 +126,34 @@ export const createPurchaseRequestFromSaleOrder = async (saleOrderId) => {
 };
 
 
-export const getPurchaseRequestById = async (purchaseRequestId) => {
+export const getPurchaseRequestById = async (id) => {
   try {
-    const response = await axios.get(`${API_URL}/${purchaseRequestId}`, {
+    const response = await axios.get(`${API_URL}/${id}`, {
       headers: {
         ...authHeader(),
         "Content-Type": "application/json",
       },
       withCredentials: true,
     });
-
-    // Ánh xạ dữ liệu trả về để đồng bộ với các hàm khác
-    const data = response.data;
-    return {
-      ...data,
-      status: mapStatusToVietnamese(data.status), // Ánh xạ trạng thái sang tiếng Việt
-      purchaseRequestDetails: data.purchaseRequestDetails.map((detail) => ({
-        ...detail,
-        partnerName: detail.partnerName || "Không xác định", // Đảm bảo partnerName không bị undefined
-      })),
-    };
+    return response.data; // Trả về dữ liệu gốc, không ánh xạ status
   } catch (error) {
     console.error("❌ [getPurchaseRequestById] Error:", error.response?.data || error.message);
     throw error;
+  }
+};
+
+export const canCreatePurchaseRequest = async (orderId) => {
+  try {
+    const response = await axios.get(`${API_URL}/can-create-purchase-request/${orderId}`, {
+      headers: {
+        ...authHeader(),
+        "Content-Type": "application/json",
+      },
+      withCredentials: true,
+    });
+    return response.data; // Trả về true hoặc false
+  } catch (error) {
+    console.error("❌ [canCreatePurchaseRequest] Error:", error.response?.data || error.message);
+    return false; // Mặc định trả về false nếu có lỗi
   }
 };
