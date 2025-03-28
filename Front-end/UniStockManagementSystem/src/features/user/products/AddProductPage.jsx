@@ -733,7 +733,7 @@ const AddProductPage = () => {
                                     fullWidth
                                     size="small"
                                     hiddenLabel
-                                    placeholder="Tên nguyên vật liệu"
+                                    placeholder="Tên sản phẩm"
                                     color="success"
                                     value={newProduct.productName || ""}
                                     onChange={(e) => handleInputChange("productName", e.target.value)}

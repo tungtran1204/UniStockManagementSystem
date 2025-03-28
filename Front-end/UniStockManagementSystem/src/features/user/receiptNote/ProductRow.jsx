@@ -133,7 +133,7 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
                 inputMode="numeric"
                 value={quantity}
                 onChange={handleQuantityChange}
-                className={`!border-t-blue-gray-200 focus:!border-t-gray-900 ${quantityError ? "border-red-500" : ""}`}
+                className={`!border-t-blue-gray-200 focus:!border-t-gray-900 ${quantityError ? "border-red-t-500" : ""}`}
                 labelProps={{
                   className: "before:content-none after:content-none",
                 }}
