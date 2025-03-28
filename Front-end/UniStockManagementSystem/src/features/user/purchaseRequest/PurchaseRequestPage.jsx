@@ -8,7 +8,8 @@ import {
     Tooltip,
     Input,
 } from "@material-tailwind/react";
-import { BiSolidEdit, BiCartAdd } from "react-icons/bi";
+import { BiCartAdd } from "react-icons/bi";
+import { EyeIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon, KeyIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";

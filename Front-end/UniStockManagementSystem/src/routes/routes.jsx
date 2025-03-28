@@ -27,7 +27,7 @@ import ReceiptNotePage from "../features/user/receiptNote/ReceiptNotePage";
 import AddSaleOrderPage from "../features/user/saleorders/AddSaleOrderPage";
 import AddReceiptNote from "../features/user/receiptNote/AddReceiptNote";
 import IssueNotePage from "../features/user/issueNote/IssueNotePage";
-import AddIssueNote from "../features/user/receiptNote/AddReceiptNote";
+import AddIssueNote from "../features/user/issueNote/AddIssueNote";
 import PurchaseOrderPage from "../features/user/purchaseOrder/PurchaseOrderPage";
 import AddProductPage from "@/features/user/products/AddProductPage";
 import DetailProductPage from "@/features/user/products/DetailProductPage";
