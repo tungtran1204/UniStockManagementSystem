@@ -25,7 +25,7 @@ const ImageUploadBox = ({ onFileSelect }) => {
 
     return (
         <div
-            className="w-full h-32 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 text-gray text-sm text-center cursor-pointer hover:border-gray-400 transition"
+            className="w-full h-28 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 text-gray text-sm text-center cursor-pointer hover:border-gray-400 transition"
             onClick={() => inputRef.current.click()}
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
