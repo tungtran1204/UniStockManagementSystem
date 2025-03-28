@@ -9,8 +9,9 @@ import {
     Button,
     IconButton,
 } from "@material-tailwind/react";
-import { TextField, Button as MuiButton, Divider } from "@mui/material";
+import { TextField, Button as MuiButton, Divider, FormControl, OutlinedInput, IconButton as MuiIconButton } from "@mui/material";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const ChangePasswordModal = ({ open, onClose, onSave }) => {
     const [currentPassword, setCurrentPassword] = useState("");
@@ -20,6 +21,10 @@ const ChangePasswordModal = ({ open, onClose, onSave }) => {
     const [errorCurrentPassword, setErrorCurrentPassword] = useState("");
     const [errorNewPassword, setErrorNewPassword] = useState("");
     const [errorConfirmPassword, setErrorConfirmPassword] = useState("");
+
+    const [showCurrentPassword, setShowCurrentPassword] = React.useState(false);
+    const [showNewPassword, setShowNewPassword] = React.useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
     const validatePassword = () => {
         let isValid = true;
@@ -75,26 +80,35 @@ const ChangePasswordModal = ({ open, onClose, onSave }) => {
             </DialogHeader>
             <Divider variant="middle" />
             <DialogBody className="space-y-4 pb-6 pt-4">
-                <div>
+                <div className="relative">
                     <Typography variant="medium" className="text-black">
                         Mật khẩu hiện tại
                         <span className="text-red-500"> *</span>
                     </Typography>
-                    <TextField
-                        fullWidth
-                        size="small"
-                        type="password"
-                        hiddenLabel
-                        placeholder="Mật khẩu hiện tại"
-                        variant="outlined"
-                        color="success"
-                        value={currentPassword}
-                        onChange={(e) => {
-                            setCurrentPassword(e.target.value);
-                            setErrorCurrentPassword("");
-                        }}
-                        error={Boolean(errorCurrentPassword)}
-                    />
+                    <div className="relative">
+                        <TextField
+                            fullWidth
+                            size="small"
+                            type={showCurrentPassword ? 'text' : 'password'}
+                            hiddenLabel
+                            placeholder="Mật khẩu hiện tại"
+                            variant="outlined"
+                            color="success"
+                            value={currentPassword}
+                            onChange={(e) => {
+                                setCurrentPassword(e.target.value);
+                                setErrorCurrentPassword("");
+                            }}
+                            error={Boolean(errorCurrentPassword)}
+                        />
+                        <button
+                            type="button"
+                            className="absolute inset-y-0 right-3 flex items-center text-gray-600"
+                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        >
+                            {showCurrentPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                        </button>
+                    </div>
                     {errorCurrentPassword &&
                         <Typography color="red" className="text-xs text-start mt-1">
                             {errorCurrentPassword}
@@ -102,26 +116,35 @@ const ChangePasswordModal = ({ open, onClose, onSave }) => {
                     }
                 </div>
 
-                <div>
+                <div className="relative">
                     <Typography variant="medium" className="text-black">
                         Mật khẩu mới
                         <span className="text-red-500"> *</span>
                     </Typography>
-                    <TextField
-                        fullWidth
-                        size="small"
-                        type="password"
-                        hiddenLabel
-                        placeholder="Mật khẩu mới"
-                        variant="outlined"
-                        color="success"
-                        value={newPassword}
-                        onChange={(e) => {
-                            setNewPassword(e.target.value);
-                            setErrorNewPassword("")
-                        }}
-                        error={Boolean(errorNewPassword)}
-                    />
+                    <div className="relative">
+                        <TextField
+                            fullWidth
+                            size="small"
+                            type={showNewPassword ? 'text' : 'password'}
+                            hiddenLabel
+                            placeholder="Mật khẩu mới"
+                            variant="outlined"
+                            color="success"
+                            value={newPassword}
+                            onChange={(e) => {
+                                setNewPassword(e.target.value);
+                                setErrorNewPassword("")
+                            }}
+                            error={Boolean(errorNewPassword)}
+                        />
+                        <button
+                            type="button"
+                            className="absolute inset-y-0 right-3 flex items-center text-gray-600"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                        >
+                            {showNewPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                        </button>
+                    </div>
                     {errorNewPassword &&
                         <Typography color="red" className="text-xs text-start mt-1">
                             {errorNewPassword}
@@ -129,26 +152,35 @@ const ChangePasswordModal = ({ open, onClose, onSave }) => {
                     }
                 </div>
 
-                <div>
+                <div className="relative">
                     <Typography variant="medium" className="text-black">
                         Nhập lại mật khẩu mới
                         <span className="text-red-500"> *</span>
                     </Typography>
-                    <TextField
-                        fullWidth
-                        size="small"
-                        type="password"
-                        hiddenLabel
-                        placeholder="Nhập lại mật khẩu mới"
-                        variant="outlined"
-                        color="success"
-                        value={confirmPassword}
-                        onChange={(e) => {
-                            setConfirmPassword(e.target.value);
-                            setErrorConfirmPassword("")
-                        }}
-                        error={Boolean(errorConfirmPassword)}
-                    />
+                    <div className="relative">
+                        <TextField
+                            fullWidth
+                            size="small"
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            hiddenLabel
+                            placeholder="Nhập lại mật khẩu mới"
+                            variant="outlined"
+                            color="success"
+                            value={confirmPassword}
+                            onChange={(e) => {
+                                setConfirmPassword(e.target.value);
+                                setErrorConfirmPassword("")
+                            }}
+                            error={Boolean(errorConfirmPassword)}
+                        />
+                        <button
+                            type="button"
+                            className="absolute inset-y-0 right-3 flex items-center text-gray-600"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        >
+                            {showConfirmPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                        </button>
+                    </div>
                     {errorConfirmPassword &&
                         <Typography color="red" className="text-xs text-start mt-1">
                             {errorConfirmPassword}
