@@ -11,8 +11,10 @@ import {
 } from "@material-tailwind/react";
 import { FaTimes } from "react-icons/fa";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { CheckIcon } from "@heroicons/react/24/solid";
 import ReactPaginate from "react-paginate";
-import { getPurchaseRequestById } from "./PurchaseRequestService";
+import { getPurchaseRequestById, updatePurchaseRequestStatus } from "./PurchaseRequestService";
+import RejectPurchaseRequestModal from "./RejectPurchaseRequestModal";
 
 const DetailPurchaseRequestPage = () => {
     const { id } = useParams();
@@ -23,29 +25,59 @@ const DetailPurchaseRequestPage = () => {
     const [error, setError] = useState("");
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize] = useState(5);
+    const [showRejectModal, setShowRejectModal] = useState(false);
 
     const statusLabels = {
-        PENDING: "Chờ xác nhận",
-        CONFIRMED: "Xác nhận",
-        CANCELLED: "Hủy",
+        PENDING: "Chờ duyệt",
+        CONFIRMED: "Đã duyệt",
+        CANCELLED: "Từ chối",
         FINISHED: "Đã hoàn thành",
     };
 
     useEffect(() => {
-        const fetchPurchaseRequest = async () => {
-            setLoading(true);
-            try {
-                const data = await getPurchaseRequestById(id);
-                setPurchaseRequest(data);
-            } catch (error) {
-                const errorMessage = error.response?.data?.message || "Không thể tải thông tin yêu cầu mua vật tư. Vui lòng thử lại!";
-                setError(errorMessage);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchPurchaseRequest();
     }, [id]);
+
+    const fetchPurchaseRequest = async () => {
+        setLoading(true);
+        try {
+            const data = await getPurchaseRequestById(id);
+            console.log("PurchaseRequest data:", data);
+            console.log("PurchaseRequest status:", data.status);
+            setPurchaseRequest(data);
+            console.log("State updated - purchaseRequest:", data);
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || "Không thể tải thông tin yêu cầu mua vật tư. Vui lòng thử lại!";
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleReject = async (reason) => {
+        console.log("🛑 Lý do từ chối:", reason);
+        try {
+            await updatePurchaseRequestStatus(id, "CANCELLED", reason);
+            await fetchPurchaseRequest();
+        } catch (error) {
+            console.error("Lỗi từ chối yêu cầu:", error);
+            alert("Không thể từ chối yêu cầu. Vui lòng thử lại.");
+        }
+    };
+
+    const handleApprove = async () => {
+        const confirmed = window.confirm("Bạn có chắc chắn muốn duyệt yêu cầu mua vật tư này không?");
+        if (!confirmed) return;
+
+        try {
+            await updatePurchaseRequestStatus(id, "CONFIRMED");
+            alert("✅ Đã duyệt yêu cầu mua vật tư thành công.");
+            navigate("/user/purchase-request");
+        } catch (error) {
+            console.error("Lỗi duyệt yêu cầu:", error);
+            alert("❌ Không thể duyệt yêu cầu. Vui lòng thử lại.");
+        }
+    };
 
     const handleCancel = () => {
         navigate("/user/purchase-request");
@@ -62,17 +94,9 @@ const DetailPurchaseRequestPage = () => {
         setCurrentPage(selectedItem.selected);
     };
 
-    if (loading) {
-        return <Typography>Đang tải...</Typography>;
-    }
-
-    if (error) {
-        return <Typography className="text-red-500">{error}</Typography>;
-    }
-
-    if (!purchaseRequest) {
-        return <Typography>Không tìm thấy yêu cầu mua vật tư.</Typography>;
-    }
+    if (loading) return <Typography>Đang tải...</Typography>;
+    if (error) return <Typography className="text-red-500">{error}</Typography>;
+    if (!purchaseRequest) return <Typography>Không tìm thấy yêu cầu mua vật tư.</Typography>;
 
     return (
         <div className="mt-12 mb-8 flex flex-col gap-12">
@@ -105,7 +129,7 @@ const DetailPurchaseRequestPage = () => {
                                     label="Diễn giải"
                                     value={purchaseRequest.notes || "Không có diễn giải"}
                                     disabled
-                                    className="text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
+                                    className="h-[186px] text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
                                 />
                             </div>
                         </div>
@@ -131,6 +155,18 @@ const DetailPurchaseRequestPage = () => {
                                     className="text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
                                 />
                             </div>
+                            {purchaseRequest.status === "CANCELLED" && (
+                                <div>
+                                    <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                                        Lý do hủy
+                                    </Typography>
+                                    <Textarea
+                                        value={purchaseRequest.rejectionReason?.trim() ? purchaseRequest.rejectionReason : "Không có"}
+                                        disabled
+                                        className="text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -141,13 +177,7 @@ const DetailPurchaseRequestPage = () => {
                                     {["STT", "Mã vật tư", "Tên vật tư", "Nhà cung cấp", "Đơn vị", "Số lượng"].map((head) => (
                                         <th
                                             key={head}
-                                            className={`px-2 py-2 text-sm font-semibold text-gray-600 border-r last:border-r-0 ${head === "STT" ? "w-10" :
-                                                    head === "Mã vật tư" ? "w-56" :
-                                                        head === "Tên vật tư" ? "w-48" :
-                                                            head === "Nhà cung cấp" ? "w-56" :
-                                                                head === "Đơn vị" ? "w-10" :
-                                                                    head === "Số lượng" ? "w-10" : ""
-                                                }`}
+                                            className={`px-2 py-2 text-sm font-semibold text-gray-600 border-r last:border-r-0`}
                                         >
                                             {head}
                                         </th>
@@ -158,49 +188,14 @@ const DetailPurchaseRequestPage = () => {
                                 {getPaginatedData().length > 0 ? (
                                     getPaginatedData().map((item, index) => (
                                         <tr key={item.purchaseRequestDetailId} className="border-b last:border-b-0 hover:bg-gray-50">
-                                            <td className="px-2 py-2 text-sm text-gray-700 w-10 border-r">
+                                            <td className="px-2 py-2 text-sm text-gray-700 border-r">
                                                 {currentPage * pageSize + index + 1}
                                             </td>
-                                            <td className="px-2 py-2 text-sm w-56 border-r">
-                                                <Input
-                                                    variant="standard"
-                                                    value={item.materialCode || ""}
-                                                    disabled
-                                                    className="w-56 text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
-                                                />
-                                            </td>
-                                            <td className="px-2 py-2 text-sm w-48 border-r">
-                                                <Input
-                                                    variant="standard"
-                                                    value={item.materialName || ""}
-                                                    disabled
-                                                    className="w-48 text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
-                                                />
-                                            </td>
-                                            <td className="px-2 py-2 text-sm w-56 border-r">
-                                                <Input
-                                                    variant="standard"
-                                                    value={item.partnerName || ""}
-                                                    disabled
-                                                    className="w-56 text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
-                                                />
-                                            </td>
-                                            <td className="px-2 py-2 text-sm w-10 border-r">
-                                                <Input
-                                                    variant="standard"
-                                                    value={item.unitName || ""}
-                                                    disabled
-                                                    className="w-10 text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
-                                                />
-                                            </td>
-                                            <td className="px-2 py-2 text-sm w-10 border-r">
-                                                <Input
-                                                    variant="standard"
-                                                    value={item.quantity || ""}
-                                                    disabled
-                                                    className="w-10 text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
-                                                />
-                                            </td>
+                                            <td className="px-2 py-2 text-sm border-r">{item.materialCode}</td>
+                                            <td className="px-2 py-2 text-sm border-r">{item.materialName}</td>
+                                            <td className="px-2 py-2 text-sm border-r">{item.partnerName}</td>
+                                            <td className="px-2 py-2 text-sm border-r">{item.unitName}</td>
+                                            <td className="px-2 py-2 text-sm border-r">{item.quantity}</td>
                                         </tr>
                                     ))
                                 ) : (
@@ -212,14 +207,11 @@ const DetailPurchaseRequestPage = () => {
                                 )}
                             </tbody>
                         </table>
-
                         {purchaseRequest.purchaseRequestDetails && purchaseRequest.purchaseRequestDetails.length > 0 && (
                             <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
-                                <div className="flex items-center gap-2">
-                                    <Typography variant="small" color="blue-gray" className="font-normal">
-                                        Trang {currentPage + 1} / {Math.ceil(purchaseRequest.purchaseRequestDetails.length / pageSize)} • {purchaseRequest.purchaseRequestDetails.length} dòng
-                                    </Typography>
-                                </div>
+                                <Typography variant="small" color="blue-gray" className="font-normal">
+                                    Trang {currentPage + 1} / {Math.ceil(purchaseRequest.purchaseRequestDetails.length / pageSize)} • {purchaseRequest.purchaseRequestDetails.length} dòng
+                                </Typography>
                                 <ReactPaginate
                                     previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
                                     nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
@@ -243,14 +235,48 @@ const DetailPurchaseRequestPage = () => {
                     </div>
 
                     <div className="flex justify-end gap-2">
+                        {console.log("Checking status for buttons:", purchaseRequest.status)}
+                        {purchaseRequest.status?.toUpperCase() === "PENDING" && (
+                            <>
+                                <Button
+                                    variant="outlined"
+                                    color="green"
+                                    onClick={handleApprove}
+                                    className="flex items-center gap-2"
+                                >
+                                    <CheckIcon className="h-4 w-4" />
+                                    Duyệt yêu cầu
+                                </Button>
+
+                                <Button
+                                    variant="outlined"
+                                    color="red"
+                                    onClick={() => {
+                                        console.log("Nút Từ chối yêu cầu được nhấn");
+                                        setShowRejectModal(true);
+                                        console.log("showRejectModal sau khi set:", true);
+                                    }}
+                                    className="flex items-center gap-2"
+                                >
+                                    <FaTimes className="h-4 w-4" />
+                                    Từ chối yêu cầu
+                                </Button>
+                            </>
+                        )}
                         <Button variant="text" color="gray" onClick={handleCancel} className="flex items-center gap-2">
                             <FaTimes /> Quay lại
                         </Button>
                     </div>
                 </CardBody>
             </Card>
+
+            <RejectPurchaseRequestModal
+                show={showRejectModal}
+                handleClose={() => setShowRejectModal(false)}
+                onConfirm={handleReject}
+            />
         </div>
     );
 };
 
-export default DetailPurchaseRequestPage; 
+export default DetailPurchaseRequestPage;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
     Card,
     CardHeader,
+    CardHeader,
     CardBody,
     Typography,
     Button,
@@ -11,13 +12,16 @@ import {
 import { BiSolidEdit, BiCartAdd } from "react-icons/bi";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon, KeyIcon } from "@heroicons/react/24/outline";
+import { ArrowRightIcon, ArrowLeftIcon, KeyIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
 import usePurchaseRequest from "./usePurchaseRequest";
+import usePurchaseOrder from "../purchaseOrder/usePurchaseOrder";
 import usePurchaseOrder from "../purchaseOrder/usePurchaseOrder";
 import { useNavigate } from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
+import { getPurchaseRequestById } from "./PurchaseRequestService";
 import { getPurchaseRequestById } from "./PurchaseRequestService";
 
 const PurchaseRequestPage = () => {
@@ -113,12 +117,25 @@ const PurchaseRequestPage = () => {
                 <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                     ${params.value === 'Đã duyệt'
                         ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
+                        : params.value === 'Từ chối'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
                     }`
                 }>
                     {params.value}
                 </div>
             ),
+        },
+        {
+            field: 'rejectionReason',
+            headerName: 'Lý do hủy',
+            flex: 2,
+            minWidth: 220,
+            renderCell: (params) => {
+                if (params.row.status !== 'Từ chối') return '';
+                if (!params.value) return 'Không có';
+                return params.value.startsWith('Khác') ? 'Khác' : params.value;
+            },
         },
         {
             field: 'actions',
@@ -127,7 +144,7 @@ const PurchaseRequestPage = () => {
             minWidth: 50,
             renderCell: (params) => (
                 <div className="flex gap-2 justify-center items-center w-full">
-                    <Tooltip content="Chỉnh sửa">
+                    <Tooltip content="Chi tiết">
                         <button
                             className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
                             onClick={() => navigate(`/user/purchase-request/edit/${params.id}`)}
@@ -152,6 +169,7 @@ const PurchaseRequestPage = () => {
         },
     ];
 
+
     const data = purchaseRequests.map((request, index) => ({
         id: request.id,
         index: (currentPage * pageSize) + index + 1,
@@ -159,6 +177,7 @@ const PurchaseRequestPage = () => {
         purchaseOrderCode: request.saleOrderCode || "Chưa có",
         createdDate: request.createdDate,
         status: request.status,
+        rejectionReason: request.rejectionReason,
     }));
 
     return (

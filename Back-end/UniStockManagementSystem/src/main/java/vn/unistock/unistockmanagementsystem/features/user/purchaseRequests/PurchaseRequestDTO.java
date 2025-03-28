@@ -12,7 +12,10 @@ public class PurchaseRequestDTO {
     private String notes;
     private LocalDateTime createdDate;
     private String status;
+    private String rejectionReason;
+
     private Long saleOrderId;
     private String saleOrderCode;
+
     private List<PurchaseRequestDetailDTO> purchaseRequestDetails;
 }
