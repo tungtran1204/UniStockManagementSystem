@@ -96,7 +96,7 @@ const PurchaseRequestPage = () => {
     const columnsConfig = [
         { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
         { field: 'purchaseRequestCode', headerName: 'Mã yêu cầu', flex: 1.5, minWidth: 150, editable: false },
-        { field: 'purchaseOrderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false },
+        { field: 'purchaseOrderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false, renderCell: (params) => params.value || "Chưa có" },
         {
             field: 'createdDate',
             headerName: 'Ngày tạo yêu cầu',
@@ -144,12 +144,13 @@ const PurchaseRequestPage = () => {
                     <Tooltip content="Chi tiết">
                         <button
                             className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-                            onClick={() => navigate(`/user/purchase-request/${params.id}`)}
+                            onClick={() => navigate(`/user/purchase-request/edit/${params.id}`)}
                         >
                             <BiSolidEdit className="h-5 w-5" />
                         </button>
                     </Tooltip>
 
+                    {/* Nút tạo đơn hàng nếu đã duyệt */}
                     {params.row.status === 'Đã duyệt' && (
                         <Tooltip content="Tạo đơn mua hàng">
                             <button
@@ -221,7 +222,7 @@ const PurchaseRequestPage = () => {
                     <Table
                         data={data}
                         columnsConfig={columnsConfig}
-                        enableSelection={false}
+                        enableSelection={true}
                     />
 
                     <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">

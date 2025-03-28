@@ -79,7 +79,6 @@ const ReceiptNotePage = () => {
     }
   }, [receiptNotes, getUserById, getPurchaseOrderById]);
 
-
   // Handle page change
   const handlePageChange = (selectedPage) => {
     setCurrentPage(selectedPage);
@@ -130,7 +129,7 @@ const ReceiptNotePage = () => {
       editable: false,
       renderCell: (params) => {
         const { id, type } = params.value || {};
-        const label = purchaseOrders[id] || "N/A";
+        const label = purchaseOrders[id] || " - ";
 
         const getPathByType = (type, id) => {
           switch (type) {
@@ -211,15 +210,27 @@ const ReceiptNotePage = () => {
                 <MenuList>
                   <MenuItem
                     className="hover:bg-green-900/10 rounded-[4px]"
-                    onClick={() => navigate("/user/receiptNote/add")}
+                    onClick={() => navigate("/user/purchaseOrder")}
                   >
-                    <span className="text-gray-700 hover:text-green-900">Nhập từ đơn mua hàng</span>
+                    <span className="text-gray-700 hover:text-green-900">Vật tư mua bán</span>
                   </MenuItem>
                   <MenuItem
                     className="hover:bg-green-900/10 rounded-[4px]"
-                    onClick={() => navigate("/user/receiptNote/manual")}
+                    onClick={() => navigate("/user/receiptNote/manual", { state: { category: "Thành phẩm sản xuất" } })}
                   >
-                    <span className="text-gray-700 hover:text-green-900">Nhập kho thủ công</span>
+                    <span className="text-gray-700 hover:text-green-900">Thành phẩm sản xuất</span>
+                  </MenuItem>
+                  <MenuItem
+                    className="hover:bg-green-900/10 rounded-[4px]"
+                    onClick={() => navigate("/user/issueNote")}
+                  >
+                    <span className="text-gray-700 hover:text-green-900">Hàng hóa gia công</span>
+                  </MenuItem>
+                  <MenuItem
+                    className="hover:bg-green-900/10 rounded-[4px]"
+                    onClick={() => navigate("/user/receiptNote/manual", { state: { category: "Hàng hóa trả lại" } })}
+                  >
+                    <span className="text-gray-700 hover:text-green-900">Hàng hóa trả lại</span>
                   </MenuItem>
                 </MenuList>
               </Menu>
