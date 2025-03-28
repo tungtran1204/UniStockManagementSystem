@@ -6,71 +6,89 @@ import {
 } from "@material-tailwind/react";
 
 // Hàm kiểm tra số lượng nhập hợp lệ
-const isValidQuantity = (inputQty, remainingQty) => {
-  if (!inputQty || isNaN(inputQty)) return false;
-  const numInputQty = parseInt(inputQty, 10);
-  const numRemainingQty = parseInt(remainingQty, 10);
-  const minAllowed = 1;
-  const maxAllowed = Math.floor(numRemainingQty * 1.01);
-  return numInputQty >= minAllowed && numInputQty <= maxAllowed;
+const isValidQuantity = (inputQty, orderedQty, receivedQty) => {
+  const remaining = orderedQty - receivedQty;
+  if (remaining <= 0) return false; // Đã nhập đủ hoặc dư
+  const maxAllowed = Math.floor(remaining * 1.01);
+  const qty = parseInt(inputQty, 10) || 0;
+  return qty >= 1 && qty <= maxAllowed;
 };
 
 const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage, pageSize, onDataChange }) => {
   const [warehouse, setWarehouse] = useState(defaultWarehouseCode || '');
-  const [quantity, setQuantity] = useState(item.orderedQuantity || '');
+  const [quantity, setQuantity] = useState('');
+  const [quantityError, setQuantityError] = useState('');
+  const [remainingQuantity, setRemainingQuantity] = useState(
+    Math.max(0, item.orderedQuantity - item.receivedQuantity)
+  );
+
   useEffect(() => {
     setWarehouse(defaultWarehouseCode);
   }, [defaultWarehouseCode]);
-  const [quantityError, setQuantityError] = useState('');
-  const [remainingQuantity, setRemainingQuantity] = useState(
-    Math.max(0, item.orderedQuantity - (item.orderedQuantity || 0))
-  );
 
-  // Cập nhật số lượng còn lại dựa trên số lượng nhập
   const updateRemainingQuantity = (inputQty) => {
     const numInputQty = parseInt(inputQty, 10) || 0;
-    const numOrderedQty = parseInt(item.orderedQuantity, 10) || 0;
-
-    const newRemainingQty = Math.max(0, numOrderedQty - numInputQty);
-    setRemainingQuantity(newRemainingQty);
-    return newRemainingQty;
+    const remaining = Math.max(0, item.orderedQuantity - item.receivedQuantity - numInputQty);
+    setRemainingQuantity(remaining);
+    return remaining;
   };
 
-  // Xử lý thay đổi kho
   const handleWarehouseChange = (value) => {
     setWarehouse(value);
     const warehouseObj = warehouses.find(w => w.warehouseCode === value);
     const warehouseId = warehouseObj ? warehouseObj.warehouseId : null;
-    onDataChange(item.id, { warehouse: value, warehouseId, quantity, error: quantityError });
+
+    const itemKey = item.materialId || item.productId;
+    onDataChange(itemKey, {
+      warehouse: value,
+      warehouseId,
+      quantity,
+      orderedQuantity: item.orderedQuantity,
+      receivedQuantity: item.receivedQuantity,
+      remainingQuantity,
+      error: quantityError
+    });
   };
 
-  // Xử lý thay đổi số lượng nhập
   const handleQuantityChange = (e) => {
-    const inputValue = e.target.value;
+    const value = e.target.value;
 
-    if (inputValue === '' || /^\d+$/.test(inputValue)) {
-      setQuantity(inputValue);
+    if (value === '' || /^\d+$/.test(value)) {
+      setQuantity(value);
+      const ordered = item.orderedQuantity || 0;
+      const received = item.receivedQuantity || 0;
+      const remaining = ordered - received;
 
       let error = '';
-      if (inputValue === '') {
+      if (remaining <= 0) {
+        error = 'Đã nhập đủ số lượng';
+      } else if (value === '') {
         error = 'Số lượng nhập không được để trống';
-      } else if (!isValidQuantity(inputValue, remainingQuantity)) {
-        error = "Số lượng phải hợp lệ và không hơn 1% lượng cần nhập";
+      } else if (!isValidQuantity(value, ordered, received)) {
+        const max = Math.floor((ordered - received) * 1.01);
+        error = `Số lượng phải từ 1 đến tối đa ${max}`;
       }
+
       setQuantityError(error);
+      const remainingQty = updateRemainingQuantity(value);
 
-      // Cập nhật số lượng còn lại mới
-      const newRemainingQty = updateRemainingQuantity(inputValue);
+      const itemKey = item.materialId || item.productId;
+      const warehouseObj = warehouses.find(w => w.warehouseCode === warehouse);
+      const warehouseId = warehouseObj ? warehouseObj.warehouseId : null;
 
-      // Thông báo sự thay đổi lên component cha
-      onDataChange(item.id, {
+      onDataChange(itemKey, {
         warehouse,
-        quantity: inputValue,
-        remainingQuantity: newRemainingQty,
+        warehouseId,
+        quantity: value,
+        orderedQuantity: ordered,
+        receivedQuantity: received,
+        remainingQuantity: remainingQty,
         error
       });
     }
   };
+
+  const isFullyReceived = (item.orderedQuantity - item.receivedQuantity) <= 0;
 
   return (
     <tr>
@@ -78,41 +96,55 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
       <td className="p-2 border">{item.materialCode || item.productCode}</td>
       <td className="p-2 border">{item.materialName || item.productName}</td>
       <td className="p-2 border text-center">{item.unit}</td>
-      <td className="p-2 border">
-        <Select
-          value={warehouse}
-          onChange={(value) => handleWarehouseChange(value)}
-          className="!border-t-blue-gray-200 focus:!border-t-gray-900 min-w-[150px]"
-          labelProps={{
-            className: "before:content-none after:content-none",
-          }}
-        >
-          {warehouses.map((warehouse) => (
-            <Option key={warehouse.warehouseId} value={warehouse.warehouseCode}>
-              {warehouse.warehouseCode} - {warehouse.warehouseName}
-            </Option>
-          ))}
-        </Select>
-      </td>
-      <td className="p-2 border text-center">{item.orderedQuantity}</td>
-      <td className="p-2 border text-center">{remainingQuantity}</td>
-      <td className="p-2 border">
-        <div>
-          <Input
-            type="text"
-            inputMode="numeric"
-            value={quantity}
-            onChange={handleQuantityChange}
-            className={`!border-t-blue-gray-200 focus:!border-t-gray-900 ${quantityError ? "border-red-500" : ""}`}
-            labelProps={{
-              className: "before:content-none after:content-none",
-            }}
-          />
-          {quantityError && (
-            <p className="text-red-500 text-xs mt-1">{quantityError}</p>
-          )}
-        </div>
-      </td>
+
+      {isFullyReceived ? (
+        <>
+          <td className="p-2 border text-center text-gray-400" colSpan={2}>
+            Đã nhập đủ
+          </td>
+          <td className="p-2 border text-center">{item.receivedQuantity}</td>
+          <td className="p-2 border text-center">0</td>
+        </>
+      ) : (
+        <>
+          <td className="p-2 border">
+            <Select
+              value={warehouse}
+              onChange={(value) => handleWarehouseChange(value)}
+              className="!border-t-blue-gray-200 focus:!border-t-gray-900 min-w-[150px]"
+              labelProps={{
+                className: "before:content-none after:content-none",
+              }}
+            >
+              {warehouses.map((warehouse) => (
+                <Option key={warehouse.warehouseId} value={warehouse.warehouseCode}>
+                  {warehouse.warehouseCode} - {warehouse.warehouseName}
+                </Option>
+              ))}
+            </Select>
+          </td>
+          <td className="p-2 border text-center">{item.orderedQuantity}</td>
+          <td className="p-2 border text-center">{item.receivedQuantity}</td>
+          <td className="p-2 border text-center">{remainingQuantity}</td>
+          <td className="p-2 border">
+            <div>
+              <Input
+                type="text"
+                inputMode="numeric"
+                value={quantity}
+                onChange={handleQuantityChange}
+                className={`!border-t-blue-gray-200 focus:!border-t-gray-900 ${quantityError ? "border-red-t-500" : ""}`}
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
+              />
+              {quantityError && (
+                <p className="text-red-500 text-xs mt-1">{quantityError}</p>
+              )}
+            </div>
+          </td>
+        </>
+      )}
     </tr>
   );
 };

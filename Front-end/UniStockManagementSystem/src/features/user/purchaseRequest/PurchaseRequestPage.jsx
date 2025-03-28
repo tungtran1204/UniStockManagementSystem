@@ -8,7 +8,7 @@ import {
     Tooltip,
     Input,
 } from "@material-tailwind/react";
-import { BiCartAdd } from "react-icons/bi";
+import { BiCartAdd, BiSolidEdit } from "react-icons/bi"; // Đảm bảo import BiSolidEdit từ react-icons/bi
 import { EyeIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon, KeyIcon } from "@heroicons/react/24/outline";
@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
+import { getPurchaseRequestById } from "./PurchaseRequestService";
 
 const PurchaseRequestPage = () => {
     const {
@@ -27,7 +28,6 @@ const PurchaseRequestPage = () => {
         totalElements,
         fetchPurchaseRequests,
         getNextCode,
-        getPurchaseRequestById,
     } = usePurchaseRequest();
 
     const [searchTerm, setSearchTerm] = useState("");
@@ -114,7 +114,9 @@ const PurchaseRequestPage = () => {
                 <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                     ${params.value === 'Đã duyệt'
                         ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
+                        : params.value === 'Từ chối'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
                     }`
                 }>
                     {params.value}
@@ -122,23 +124,34 @@ const PurchaseRequestPage = () => {
             ),
         },
         {
+            field: 'rejectionReason',
+            headerName: 'Lý do hủy',
+            flex: 2,
+            minWidth: 220,
+            renderCell: (params) => {
+                if (params.row.status !== 'Từ chối') return '';
+                if (!params.value) return 'Không có';
+                return params.value.startsWith('Khác') ? 'Khác' : params.value;
+            },
+        },
+        {
             field: 'actions',
             headerName: 'Hành động',
             flex: 0.5,
             minWidth: 50,
             renderCell: (params) => (
-                <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                    <Tooltip content="Xem chi tiết">
-                        <button 
+                <div className="flex gap-2 justify-center items-center w-full">
+                    <Tooltip content="Chi tiết">
+                        <button
                             className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-                            onClick={() => navigate(`/user/purchase-request/edit/${params.id}`)}
+                            onClick={() => navigate(`/user/purchase-request/${params.id}`)}
                         >
-                            <EyeIcon className="h-5 w-5" />
+                            <BiSolidEdit className="h-5 w-5" />
                         </button>
                     </Tooltip>
 
                     {/* Nút tạo đơn hàng nếu đã duyệt */}
-                    {params.row.status === 'CONFIRMED' && (
+                    {params.row.status === 'Đã duyệt' && (
                         <Tooltip content="Tạo đơn mua hàng">
                             <button
                                 className="p-1.5 rounded-full bg-green-500 hover:bg-green-600 text-white"
@@ -153,6 +166,7 @@ const PurchaseRequestPage = () => {
         },
     ];
 
+
     const data = purchaseRequests.map((request, index) => ({
         id: request.id,
         index: (currentPage * pageSize) + index + 1,
@@ -160,6 +174,7 @@ const PurchaseRequestPage = () => {
         purchaseOrderCode: request.saleOrderCode || "Chưa có",
         createdDate: request.createdDate,
         status: request.status,
+        rejectionReason: request.rejectionReason,
     }));
 
     return (
@@ -207,7 +222,6 @@ const PurchaseRequestPage = () => {
                     <Table
                         data={data}
                         columnsConfig={columnsConfig}
-                        enableSelection={true}
                     />
 
                     <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">

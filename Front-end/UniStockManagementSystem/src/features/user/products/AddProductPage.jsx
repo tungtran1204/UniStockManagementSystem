@@ -34,6 +34,7 @@ const customStyles = {
     }),
     menuList: (provided) => ({
         ...provided,
+        maxHeight: '300px', // Tăng chiều cao tối đa của dropdown
     }),
     option: (provided, state) => ({
         ...provided,
@@ -126,6 +127,9 @@ const AddProductPage = () => {
                 {
                     headers,
                     withCredentials: true,
+                    params: {
+                        size: 1000
+                    }
                 }
             );
             if (response.data && Array.isArray(response.data.content)) {
@@ -510,6 +514,10 @@ const AddProductPage = () => {
                             ...provided,
                             zIndex: 9999 // Đảm bảo dropdown hiển thị phía trên các phần tử khác
                         }),
+                        menuList: (base) => ({
+                            ...base,
+                            maxHeight: '300px', // Tăng chiều cao tối đa của dropdown
+                        }),
                         menuPortal: (base) => ({
                             ...base,
                             zIndex: 9999
@@ -725,7 +733,7 @@ const AddProductPage = () => {
                                     fullWidth
                                     size="small"
                                     hiddenLabel
-                                    placeholder="Tên nguyên vật liệu"
+                                    placeholder="Tên sản phẩm"
                                     color="success"
                                     value={newProduct.productName || ""}
                                     onChange={(e) => handleInputChange("productName", e.target.value)}

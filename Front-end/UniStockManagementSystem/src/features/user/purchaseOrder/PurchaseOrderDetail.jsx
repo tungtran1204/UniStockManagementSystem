@@ -3,6 +3,8 @@ import { getPurchaseOrderById } from "./purchaseOrderService";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Tab, Tabs } from '@mui/material';
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 import {
   Card,
   Button,
@@ -22,12 +24,11 @@ const PurchaseOrderDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("orderInfo");
-  // Add this line at the top with other state
 
   const getStatusLabel = (statusCode) => {
     const statusMap = {
       PENDING: "Chờ nhận",
-      IN_PROGRESS: "Chưa hoàn thành",
+      IN_PROGRESS: "Đã nhập một phần",
       COMPLETED: "Hoàn thành",
       CANCELED: "Hủy",
     };
@@ -67,6 +68,67 @@ const PurchaseOrderDetail = () => {
 
   const items = order?.details || [];
 
+  const exportToExcelFromTemplate = async () => {
+    try {
+      const response = await fetch("/templates/MAU_DON_DAT_HANG.xlsx"); // File đặt trong public/templates
+      const arrayBuffer = await response.arrayBuffer();
+
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(arrayBuffer);
+      const sheet = workbook.getWorksheet(3); // Sheet
+
+      // --- Ghi thông tin đơn hàng ---
+      sheet.getCell("B7").value = order.poCode || "";
+      sheet.getCell("B6").value = new Date(order.orderDate).toLocaleDateString("vi-VN");
+      sheet.getCell("B9").value = order.supplierName || "";
+      sheet.getCell("B11").value = order.supplierContactName || "";
+      sheet.getCell("B12").value = order.supplierPhone || "";
+      sheet.getCell("B10").value = order.supplierAddress || "";
+
+      const templateRow = sheet.getRow(21);
+      const startRow = 21;
+      const items = order.details;
+      
+      // ⚠️ Chèn số dòng trống bên dưới dòng template (tránh đè dòng thanh toán & chữ ký)
+      if (items.length > 1) {
+        sheet.spliceRows(startRow + 1, 0, ...Array(items.length - 1).fill([]));
+      }
+      
+      items.forEach((item, index) => {
+        const targetRow = sheet.getRow(startRow + index);
+      
+        // Sao chép định dạng từ dòng mẫu
+        templateRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+          const targetCell = targetRow.getCell(colNumber);
+          targetCell.style = { ...cell.style };
+          targetCell.border = cell.border;
+          targetCell.alignment = cell.alignment;
+          targetCell.font = cell.font;
+          targetCell.fill = cell.fill;
+        });
+      
+        // Ghi dữ liệu
+        targetRow.getCell(1).value = index + 1;
+        targetRow.getCell(2).value = item.materialName;
+        targetRow.getCell(3).value = item.orderedQuantity;
+        targetRow.getCell(4).value = item.unit;
+        targetRow.commit();
+      });
+      
+
+
+      // --- Xuất file ---
+      const buffer = await workbook.xlsx.writeBuffer();
+      saveAs(new Blob([buffer]), `DonDatHang_${order.poCode}.xlsx`);
+    } catch (err) {
+      console.error("Lỗi xuất file:", err);
+      alert("Có lỗi xảy ra khi xuất Excel");
+    }
+  };
+
+
+
+
   return (
     <div className="mb-8 flex flex-col gap-12">
       <Card className="bg-white p-8 shadow-md rounded-lg">
@@ -74,7 +136,7 @@ const PurchaseOrderDetail = () => {
           title={`Đơn đặt hàng ${order?.poCode || ""}`}
           showAdd={false}
           onImport={() => {/* Xử lý import nếu có */ }}
-          onExport={() => {/* Xử lý export file ở đây nếu có */ }}
+          onExport={exportToExcelFromTemplate}
           showImport={false} // Ẩn nút import nếu không dùng
           showExport={true} // Ẩn xuất file nếu không dùng
         />

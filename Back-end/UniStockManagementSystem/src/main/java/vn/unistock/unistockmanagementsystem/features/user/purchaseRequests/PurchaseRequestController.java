@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,10 +30,11 @@ public class PurchaseRequestController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         logger.info("Fetching purchase requests - Page: {}, Size: {}", page, size);
-        PageRequest pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<PurchaseRequestDTO> requests = purchaseRequestService.getAllPurchaseRequests(pageable);
         return ResponseEntity.ok(requests);
     }
+
 
     @GetMapping("/next-code")
     public ResponseEntity<String> getNextRequestCode() {
@@ -55,23 +58,29 @@ public class PurchaseRequestController {
         return ResponseEntity.ok(response);
     }
 
-    @PatchMapping("/{purchaseRequestId}/status")
-    public ResponseEntity<PurchaseRequestDTO> updatePurchaseRequestStatus(
+    @PutMapping("/{purchaseRequestId}/status")
+    public ResponseEntity<PurchaseRequestDTO> updateStatus(
             @PathVariable Long purchaseRequestId,
-            @RequestBody Map<String, String> statusRequest) {
-        logger.info("Updating status of purchase request ID: {}", purchaseRequestId);
-        String newStatus = statusRequest.get("status");
-        if (newStatus == null || newStatus.isEmpty()) {
-            throw new IllegalArgumentException("Trạng thái không được để trống");
-        }
-        PurchaseRequestDTO updatedRequest = purchaseRequestService.updatePurchaseRequestStatus(purchaseRequestId, newStatus);
+            @RequestBody UpdateStatusRequest request) {
+        PurchaseRequestDTO updatedRequest =
+                purchaseRequestService.updatePurchaseRequestStatus(purchaseRequestId, request.getStatus(), request.getRejectionReason());
         return ResponseEntity.ok(updatedRequest);
     }
+
+
+
 
     @PostMapping("/sale-order/{saleOrderId}")
     public ResponseEntity<PurchaseRequestDTO> createFromSaleOrder(@PathVariable Long saleOrderId) {
         PurchaseRequestDTO purchaseRequestDTO = purchaseRequestService.createFromSaleOrder(saleOrderId);
         return ResponseEntity.status(HttpStatus.CREATED).body(purchaseRequestDTO);
+    }
+
+
+    @GetMapping("/can-create-purchase-request/{orderId}")
+    public ResponseEntity<Boolean> canCreatePurchaseRequest(@PathVariable Long orderId) {
+        boolean canCreate = purchaseRequestService.canCreatePurchaseRequest(orderId);
+        return ResponseEntity.ok(canCreate);
     }
 
 }

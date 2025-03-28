@@ -455,7 +455,10 @@ const AddSaleOrderPage = () => {
                   type="date"
                   value={orderDate}
                   onChange={(e) => setOrderDate(e.target.value)}
-                  className="text-sm"
+                  className="!border-t-blue-gray-200 focus:!border-t-gray-900"
+                  labelProps={{
+                    className: "before:content-none after:content-none",
+                  }}
                 />
               </div>
               <div>
@@ -641,8 +644,12 @@ const AddSaleOrderPage = () => {
                       </td>
                       <td className="px-4 py-2 text-sm">
                         <Input
-                          type="number"
-                          className="w-16 text-sm"
+                          type="text"
+                          inputMode="numeric"
+                          className="!border-t-blue-gray-200 focus:!border-t-gray-900"
+                          labelProps={{
+                            className: "before:content-none after:content-none",
+                          }}
                           value={item.quantity}
                           onChange={(e) => handleQuantityChange(item.id, e.target.value)}
                         />

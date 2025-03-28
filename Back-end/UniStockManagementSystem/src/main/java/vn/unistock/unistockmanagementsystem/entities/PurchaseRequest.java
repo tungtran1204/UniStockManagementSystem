@@ -26,6 +26,7 @@ public class PurchaseRequest {
     @JoinColumn(name = "order_id", nullable = true)
     private SalesOrder salesOrder;
 
+
     @Column(nullable = false)
     private LocalDateTime createdDate;
 
@@ -52,6 +53,9 @@ public class PurchaseRequest {
 
     @Column(columnDefinition = "TEXT")
     private String notes;
+
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
 
     @OneToMany(mappedBy = "purchaseRequest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<PurchaseRequestDetail> purchaseRequestDetails = new ArrayList<>();
