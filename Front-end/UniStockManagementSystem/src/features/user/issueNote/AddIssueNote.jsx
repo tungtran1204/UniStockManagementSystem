@@ -320,7 +320,7 @@ const AddReceiptNote = () => {
             </div>
             {/* Check phân loại, chứng từ tham chiếu sẽ hiển thị theo phân loại 
             (VD: category === "Bán hàng" => Các option sẽ là các đơn bán hàng) */}
-            {category === "Bán hàng" || category === "Trả lại hàng mua" && (
+            {(category === "Bán hàng" || category === "Trả lại hàng mua") && (
               <div>
                 <Typography className="mb-1 text-black">
                   Tham chiếu chứng từ gốc
