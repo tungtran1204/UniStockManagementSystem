@@ -8,7 +8,8 @@ import {
     Tooltip,
     Input,
 } from "@material-tailwind/react";
-import { BiSolidEdit, BiCartAdd } from "react-icons/bi";
+import { BiCartAdd, BiSolidEdit } from "react-icons/bi"; // Đảm bảo import BiSolidEdit từ react-icons/bi
+import { EyeIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon, KeyIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
@@ -221,7 +222,6 @@ const PurchaseRequestPage = () => {
                     <Table
                         data={data}
                         columnsConfig={columnsConfig}
-                        enableSelection={true}
                     />
 
                     <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
