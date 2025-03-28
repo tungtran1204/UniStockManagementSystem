@@ -9,7 +9,7 @@ import {
 } from "@material-tailwind/react";
 import { useNavigate, useLocation } from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
-import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import { getWarehouseList } from "../warehouse/warehouseService";
 import { getProducts } from "../saleorders/saleOrdersService";
 import { createReceiptNote, uploadPaperEvidence as uploadPaperEvidenceService, getNextCode } from "./receiptNoteService";
@@ -93,7 +93,7 @@ const AddReceiptNoteManually = () => {
   }, [location.state]);
 
   const handleAddRow = () => {
-    setItems(prev => [...prev, { id: nextId, product: null, quantity: 0, warehouse: "" }]);
+    setItems(prev => [...prev, { id: nextId, product: null, quantity: 1, warehouse: "" }]);
     setNextId(id => id + 1);
   };
 
@@ -424,7 +424,7 @@ const AddReceiptNoteManually = () => {
             <table className="w-full text-left min-w-max border-collapse">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  {['STT', 'Sản phẩm', 'Kho', 'Số lượng', 'Đơn vị', 'Hành động'].map((head) => (
+                  {['STT', 'Hàng hóa', 'Kho lưu hàng', 'Số lượng nhập kho', 'Đơn vị', 'Hành động'].map((head) => (
                     <th
                       key={head}
                       className="px-4 py-2 text-sm font-semibold text-gray-600 border-r last:border-r-0"
@@ -447,44 +447,56 @@ const AddReceiptNoteManually = () => {
                           isSearchable
                           options={products}
                           styles={customStyles}
-                          className="w-72"
+                          className="w-full border px-2 py-1 rounded text-sm"
                           value={item.product}
                           onChange={(value) => handleChange(item.id, 'product', value)}
                         />
                       </td>
                       <td className="px-4 py-2 text-sm border-r">
-                        <select
+                        <Select
+                          placeholder="Chọn kho"
+                          isSearchable
+                          options={warehouses.map(w => ({
+                            value: w.warehouseCode,
+                            label: `${w.warehouseCode} - ${w.warehouseName}`
+                          }))}
+                          styles={customStyles}
                           className="w-full border px-2 py-1 rounded text-sm"
-                          value={item.warehouse}
-                          onChange={(e) => handleChange(item.id, 'warehouse', e.target.value)}
-                        >
-                          <option value="">-- Chọn kho --</option>
-                          {warehouses.map((w) => (
-                            <option key={w.warehouseId} value={w.warehouseCode}>
-                              {w.warehouseCode} - {w.warehouseName}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-2 text-sm border-r">
-                        <Input
-                          type="text"
-                          inputMode="numeric"
-                          value={item.quantity}
-                          onChange={(e) => handleChange(item.id, 'quantity', e.target.value)}
-                          min={1}
-                          className="!border-t-blue-gray-200 focus:!border-t-gray-900"
-                          labelProps={{
-                            className: "before:content-none after:content-none",
-                          }}
+                          value={warehouses.find(w => w.warehouseCode === item.warehouse) ? {
+                            value: item.warehouse,
+                            label: `${item.warehouse} - ${warehouses.find(w => w.warehouseCode === item.warehouse)?.warehouseName}`
+                          } : null}
+                          onChange={(option) => handleChange(item.id, 'warehouse', option?.value || '')}
                         />
                       </td>
-                      <td className="px-4 py-2 text-sm text-center border-r">
+                      <td className="px-4 py-2 text-sm border-r">
+                        <div>
+                          <Input
+                            type="text"
+                            inputMode="numeric"
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === '' || /^\d+$/.test(value)) {
+                                handleChange(item.id, 'quantity', value);
+                              }
+                            }}
+                            className={`!border-t-blue-gray-200 focus:!border-t-gray-900 ${item.quantity < 1 || item.quantity > 1000 ? "border-red-t-500" : ""}`}
+                            labelProps={{
+                              className: "before:content-none after:content-none",
+                            }}
+                          />
+                          {((item.quantity === '' || item.quantity === undefined || item.quantity < 1 || item.quantity > 1000)) && (
+                            <p className="text-red-500 text-xs mt-1">Số lượng không hợp lệ</p>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 text-sm border-r">
                         {item.product?.unitName || ''}
                       </td>
                       <td className="px-4 py-2 text-sm text-center">
-                        <Button variant="text" color="red" size="sm" onClick={() => handleRemoveRow(item.id)}>
-                          <FaTrash />
+                        <Button variant="text" color="red" size="5px" onClick={() => handleRemoveRow(item.id)}>
+                          <XCircleIcon className="h-6 w-6 mr-1" />
                         </Button>
                       </td>
                     </tr>
