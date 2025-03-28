@@ -143,7 +143,7 @@ const PurchaseRequestPage = () => {
                     <Tooltip content="Chi tiết">
                         <button
                             className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-                            onClick={() => navigate(`/user/purchase-request/edit/${params.id}`)}
+                            onClick={() => navigate(`/user/purchase-request/${params.id}`)}
                         >
                             <BiSolidEdit className="h-5 w-5" />
                         </button>
