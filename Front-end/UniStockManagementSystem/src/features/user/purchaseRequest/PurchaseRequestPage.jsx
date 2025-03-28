@@ -8,7 +8,7 @@ import {
     Tooltip,
     Input,
 } from "@material-tailwind/react";
-import { BiCartAdd, BiSolidEdit } from "react-icons/bi";
+import { BiCartAdd, BiSolidEdit } from "react-icons/bi"; // Đảm bảo import BiSolidEdit từ react-icons/bi
 import { EyeIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon, KeyIcon } from "@heroicons/react/24/outline";
@@ -144,7 +144,7 @@ const PurchaseRequestPage = () => {
                     <Tooltip content="Chi tiết">
                         <button
                             className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-                            onClick={() => navigate(`/user/purchase-request/edit/${params.id}`)}
+                            onClick={() => navigate(`/user/purchase-request/${params.id}`)}
                         >
                             <BiSolidEdit className="h-5 w-5" />
                         </button>
@@ -222,7 +222,6 @@ const PurchaseRequestPage = () => {
                     <Table
                         data={data}
                         columnsConfig={columnsConfig}
-                        enableSelection={true}
                     />
 
                     <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
