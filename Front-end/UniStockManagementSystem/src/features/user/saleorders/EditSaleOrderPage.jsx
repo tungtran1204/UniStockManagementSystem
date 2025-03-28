@@ -22,6 +22,7 @@ import {
 } from "./saleOrdersService";
 import ModalAddCustomer from "./ModalAddCustomer";
 import PageHeader from "@/components/PageHeader";
+import { canCreatePurchaseRequest } from "@/features/user/purchaseRequest/PurchaseRequestService"
 
 // ------------------ 3 MODE ------------------
 const MODE_VIEW = "view";
@@ -130,6 +131,28 @@ const EditSaleOrderPage = () => {
 
   // State lưu kết quả định mức nguyên vật liệu (tính theo: material của 1 product * số product cần SX)
   const [materialRequirements, setMaterialRequirements] = useState([]);
+
+  // Thêm state để lưu kết quả kiểm tra khả năng tạo PurchaseRequest
+  const [canCreatePurchaseRequestState, setCanCreatePurchaseRequestState] = useState(false);
+
+  // Gọi API từ service để kiểm tra khả năng tạo PurchaseRequest
+  useEffect(() => {
+    const checkCanCreatePurchaseRequest = async () => {
+      if (orderId) {
+        try {
+          const canCreate = await canCreatePurchaseRequest(orderId);
+          setCanCreatePurchaseRequestState(canCreate);
+        } catch (error) {
+          console.error("Lỗi khi kiểm tra khả năng tạo yêu cầu mua vật tư:", error);
+          setCanCreatePurchaseRequestState(false); // Mặc định ẩn nút nếu có lỗi
+          setGlobalError("Không thể kiểm tra trạng thái yêu cầu mua vật tư. Vui lòng thử lại sau.");
+        }
+      }
+    };
+
+    checkCanCreatePurchaseRequest();
+  }, [orderId]);
+
 
   // ========== Lấy đơn hàng ==========
   useEffect(() => {
@@ -1103,8 +1126,8 @@ const EditSaleOrderPage = () => {
                 size="medium"
                 variant="outlined"
                 sx={{
-                  color: '#616161',           // text color
-                  borderColor: '#9e9e9e',     // border
+                  color: '#616161',
+                  borderColor: '#9e9e9e',
                   '&:hover': {
                     backgroundColor: '#f5f5f5',
                     borderColor: '#757575',
@@ -1116,7 +1139,7 @@ const EditSaleOrderPage = () => {
                 <FaArrowLeft className="h-3 w-3" /> Quay lại
               </MuiButton>
 
-              {mode === MODE_VIEW && activeTab === "products" && (
+              {mode === MODE_VIEW && activeTab === "products" && canCreatePurchaseRequestState && (
                 <MuiButton
                   variant="contained"
                   size="medium"
@@ -1132,6 +1155,7 @@ const EditSaleOrderPage = () => {
                   </div>
                 </MuiButton>
               )}
+
 
               {mode === MODE_EDIT && (
                 <div className="flex items-center gap-2">
@@ -1156,7 +1180,7 @@ const EditSaleOrderPage = () => {
                 </div>
               )}
 
-              {mode === MODE_DINHMUC && (
+              {canCreatePurchaseRequestState && mode === MODE_DINHMUC && (
                 <Button
                   size="lg"
                   color="white"
@@ -1165,7 +1189,7 @@ const EditSaleOrderPage = () => {
                   ripple={true}
                   onClick={handleCreatePurchaseRequest}
                 >
-                  <div className='flex items-center gap-2'>
+                  <div className="flex items-center gap-2">
                     <FaCheck />
                     <span>Tạo yêu cầu mua vật tư</span>
                   </div>

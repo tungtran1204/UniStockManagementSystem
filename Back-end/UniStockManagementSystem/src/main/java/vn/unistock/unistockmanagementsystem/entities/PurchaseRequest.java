@@ -22,10 +22,9 @@ public class PurchaseRequest {
     @Column(nullable = false, unique = true)
     private String purchaseRequestCode;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = true, unique = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = true)
     private SalesOrder salesOrder;
-
 
 
     @Column(nullable = false)
@@ -54,6 +53,9 @@ public class PurchaseRequest {
 
     @Column(columnDefinition = "TEXT")
     private String notes;
+
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
 
     @OneToMany(mappedBy = "purchaseRequest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<PurchaseRequestDetail> purchaseRequestDetails = new ArrayList<>();

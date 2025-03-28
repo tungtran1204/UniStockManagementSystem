@@ -1,3 +1,4 @@
+/*
 
 package vn.unistock.unistockmanagementsystem.utils;
 
@@ -109,3 +110,4 @@ public class DataInitializer implements CommandLineRunner {
 
 }
 
+*/

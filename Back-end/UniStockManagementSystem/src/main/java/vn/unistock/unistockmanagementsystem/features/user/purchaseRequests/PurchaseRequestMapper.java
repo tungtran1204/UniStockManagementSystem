@@ -12,6 +12,7 @@ public interface PurchaseRequestMapper {
     @Mapping(source = "createdDate", target = "createdDate")
     @Mapping(source = "notes", target = "notes")
     @Mapping(source = "status", target = "status")
+    @Mapping(source = "rejectionReason", target = "rejectionReason") // 🆕
     @Mapping(source = "salesOrder.orderId", target = "saleOrderId")
     @Mapping(source = "salesOrder.orderCode", target = "saleOrderCode")
     @Mapping(source = "purchaseRequestDetails", target = "purchaseRequestDetails")
@@ -22,7 +23,8 @@ public interface PurchaseRequestMapper {
     @Mapping(source = "createdDate", target = "createdDate")
     @Mapping(source = "notes", target = "notes")
     @Mapping(source = "status", target = "status")
+    @Mapping(source = "rejectionReason", target = "rejectionReason") // 🆕
     @Mapping(source = "purchaseRequestDetails", target = "purchaseRequestDetails")
-    @Mapping(source = "saleOrderId", target = "salesOrder.orderId")
     PurchaseRequest toEntity(PurchaseRequestDTO dto);
 }
+
