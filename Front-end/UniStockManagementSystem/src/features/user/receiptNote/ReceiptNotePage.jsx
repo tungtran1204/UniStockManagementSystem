@@ -129,7 +129,7 @@ const ReceiptNotePage = () => {
       editable: false,
       renderCell: (params) => {
         const { id, type } = params.value || {};
-        const label = purchaseOrders[id] || "N/A";
+        const label = purchaseOrders[id] || " - ";
 
         const getPathByType = (type, id) => {
           switch (type) {

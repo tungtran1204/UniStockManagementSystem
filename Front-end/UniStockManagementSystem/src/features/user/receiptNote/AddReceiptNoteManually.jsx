@@ -102,8 +102,21 @@ const AddReceiptNoteManually = () => {
   };
 
   const handleChange = (id, field, value) => {
-    setItems(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+    setItems(prev => prev.map(item => {
+      if (item.id === id) {
+        let updated = { ...item, [field]: value };
+  
+        if (field === 'product' && !item.warehouse && category) {
+          const defaultWarehouse = getDefaultWarehouse(category);
+          updated.warehouse = defaultWarehouse;
+        }
+  
+        return updated;
+      }
+      return item;
+    }));
   };
+  
   useEffect(() => {
     const fetchWarehouses = async () => {
       try {
@@ -142,40 +155,19 @@ const AddReceiptNoteManually = () => {
   };
 
   // Xử lý khi loại nhập kho thay đổi
-  const handleReferenceDocumentChange = (value) => {
-    setReferenceDocument(value);
-
-    const defaultWarehouseCode = getDefaultWarehouse(value);
-
-    setItemWarehouses(prev => {
-      const updatedWarehouses = { ...prev };
-
-      order.details.forEach(item => {
-        if (!manuallySelectedWarehouses[item.id]) {
-          updatedWarehouses[item.id] = defaultWarehouseCode;
-        }
-      });
-
-      return updatedWarehouses;
-    });
-
-    // Cập nhật dữ liệu cho ProductRow
-    setRowsData(prev => {
-      const updatedRows = { ...prev };
-
-      order.details.forEach(item => {
-        if (!manuallySelectedWarehouses[item.id]) {
-          updatedRows[item.id] = {
-            ...updatedRows[item.id],
-            warehouse: defaultWarehouseCode,
-          };
-        }
-      });
-
-      return updatedRows;
-    });
+  const handleReferenceDocumentChange = (selectedCategory) => {
+    setCategory(selectedCategory);
+  
+    const defaultWarehouseCode = getDefaultWarehouse(selectedCategory);
+  
+    // Gán lại kho mặc định cho tất cả item chưa có kho
+    setItems(prevItems =>
+      prevItems.map(item =>
+        !item.warehouse ? { ...item, warehouse: defaultWarehouseCode } : item
+      )
+    );
   };
-
+  
   // Xử lý thay đổi kho cho sản phẩm
   const handleWarehouseChange = (itemId, warehouseCode) => {
     setItemWarehouses(prev => ({
@@ -231,20 +223,13 @@ const AddReceiptNoteManually = () => {
 
     try {
       // Kiểm tra dữ liệu
-      const invalidRows = items.some(item => !item.product || item.quantity <= 0 || !item.warehouse);
-      if (invalidRows) {
-        alert("Vui lòng nhập đầy đủ thông tin cho tất cả các dòng.");
-        setIsSubmitting(false);
-        return;
-      }
 
-      const itemsWithMissingData = order.details.filter(item =>
-        !rowsData[item.materialId || item.productId] ||
-        !rowsData[item.materialId || item.productId].warehouse
+      const itemsWithMissingData = items.filter(item =>
+        !item.product || !item.warehouse || !item.quantity || Number(item.quantity) <= 0
       );
 
       if (itemsWithMissingData.length > 0) {
-        alert("Vui lòng chọn kho nhập cho tất cả sản phẩm!");
+        alert("Vui lòng nhập đầy đủ thông tin cho tất cả các dòng.");
         setIsSubmitting(false);
         return;
       }
@@ -260,7 +245,7 @@ const AddReceiptNoteManually = () => {
         grnCode: receiptCode,
         receiptDate: new Date().toISOString(),
         description,
-        category: "Nhập kho thủ công",
+        category: category,
         details
       };
 
