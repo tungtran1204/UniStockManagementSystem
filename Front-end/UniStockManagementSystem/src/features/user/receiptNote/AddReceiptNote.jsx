@@ -719,9 +719,6 @@ const AddReceiptNote = () => {
               </Button>
             </div>
           </div>
-
-          {/* Confirmation dialog for successful save */}
-          {/* You can implement a modal dialog here for successful save confirmation */}
         </CardBody>
       </Card>
     </div>

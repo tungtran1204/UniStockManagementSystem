@@ -14,10 +14,13 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import vn.unistock.unistockmanagementsystem.entities.GoodReceiptNote;
 import vn.unistock.unistockmanagementsystem.entities.User;
+import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderDTO;
 import vn.unistock.unistockmanagementsystem.features.user.purchaseRequests.PurchaseRequestDTO;
 import vn.unistock.unistockmanagementsystem.security.filter.CustomUserDetails;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/unistock/user/receiptnote")
@@ -27,13 +30,16 @@ public class ReceiptNoteController {
     private final ReceiptNoteService receiptNoteService;
 
     @GetMapping
-    public ResponseEntity<Page<ReceiptNoteDTO>> getAllGoodReceipts(
+    public ResponseEntity<Map<String, Object>> getAllGoodReceipts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        PageRequest pageable = PageRequest.of(page, size);
-        Page<ReceiptNoteDTO> requests = receiptNoteService.getAllReceiptNote(pageable);
-        return ResponseEntity.ok(receiptNoteService.getAllReceiptNote(pageable));
+        Page<ReceiptNoteDTO> notes = receiptNoteService.getAllReceiptNote(page, size);
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", notes.getContent());
+        response.put("totalPages", notes.getTotalPages());
+        response.put("totalElements", notes.getTotalElements());
+        return ResponseEntity.ok(response);
     }
 
 
