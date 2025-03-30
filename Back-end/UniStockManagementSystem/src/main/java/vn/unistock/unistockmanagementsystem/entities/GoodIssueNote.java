@@ -27,8 +27,8 @@ public class GoodIssueNote {
     private String ginCode;
 
     @ManyToOne
-    @JoinColumn(name = "po_id", nullable = true)
-    private PurchaseOrder purchaseOrder;
+    @JoinColumn(name = "so_id", nullable = true)
+    private SalesOrder salesOrder;
 
     @Column(columnDefinition = "TEXT")
     private String description;
