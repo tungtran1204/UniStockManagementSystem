@@ -8,8 +8,9 @@ import {
   Button,
   IconButton,
 } from "@material-tailwind/react";
-import { TextField, Button as MuiButton, Divider } from "@mui/material";
+import { TextField, Button as MuiButton, Divider, FormControl, OutlinedInput, IconButton as MuiIconButton } from "@mui/material";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const ChangePasswordModal = ({
   open,
@@ -83,12 +84,12 @@ const ChangePasswordModal = ({
   };
 
   return (
-    <Dialog open={open} size="sm" className="px-4 py-2">
+    <Dialog open={open} handler={onClose} size="sm" className="px-4 py-2">
       <DialogHeader className="flex justify-between items-center pb-2">
         <Typography variant="h4" color="blue-gray">
           Đổi mật khẩu
         </Typography>
-        <IconButton size="sm" variant="text" onClick={handleClose}>
+        <IconButton size="sm" variant="text" onClick={onClose}>
           <XMarkIcon className="h-5 w-5 stroke-2" />
         </IconButton>
       </DialogHeader>
@@ -171,7 +172,7 @@ const ChangePasswordModal = ({
         </div>
       </DialogBody>
       <DialogFooter className="pt-0">
-        <MuiButton size="medium" color="error" variant="outlined" onClick={handleClose}>
+        <MuiButton size="medium" color="error" variant="outlined" onClick={onClose}>
           Hủy
         </MuiButton>
         <Button

@@ -41,6 +41,12 @@ const IssueNotePage = () => {
     setCurrentPage(selectedItem.selected);
   };
 
+  const handleAdd = async () => {
+    // const code = await getNextCode();
+    // navigate("/user/sale-orders/add", { state: { nextCode: code } });
+    navigate("/user/issueNote/add");
+  };
+
   const filteredIssueNotes = issueNotes.filter(
     (note) =>
       note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -97,7 +103,7 @@ const IssueNotePage = () => {
           <PageHeader
             title="Danh sách phiếu xuất kho"
             addButtonLabel="Thêm phiếu xuất"
-            onAdd={() => setOpenAddModal(true)}
+            onAdd={() => navigate("/user/issueNote/add")}
             onImport={() => setShowImportPopup(true)}
             onExport={() => { /* export Excel */ }}
           />

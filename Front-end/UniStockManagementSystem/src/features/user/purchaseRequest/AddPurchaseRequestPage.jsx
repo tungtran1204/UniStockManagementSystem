@@ -401,14 +401,19 @@ const AddPurchaseRequestPage = () => {
   };
 
   return (
-    <div className="mt-12 mb-8 flex flex-col gap-12">
-      <Card>
-        <CardHeader variant="gradient" color="gray" className="mb-4 p-4">
-          <Typography variant="h6" color="white">
-            Yêu cầu mua vật tư {requestCode} {fromSaleOrder && saleOrderCode ? `cho đơn hàng ${saleOrderCode}` : ""}
-          </Typography>
-        </CardHeader>
-        <CardBody className="px-4 py-4">
+    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+      <Card className="bg-gray-50 p-7 rounded-none shadow-none">
+        <CardBody className="pb-2 bg-white rounded-xl">
+          <PageHeader
+            title={"Yêu cầu mua vật tư " + requestCode + (fromSaleOrder && saleOrderCode ? `cho đơn hàng ${saleOrderCode}` : "")}
+            addButtonLabel=""
+            onAdd={() => { }}
+            onImport={() => {/* Xử lý import nếu có */ }}
+            onExport={() => {/* Xử lý export file ở đây nếu có */ }}
+            showAdd={false}
+            showImport={false} // Ẩn nút import nếu không dùng
+            showExport={false} // Ẩn xuất file nếu không dùng
+          />
           {errors.message && (
             <Typography className="text-xs text-red-500 mb-4">{errors.message}</Typography>
           )}
@@ -453,12 +458,98 @@ const AddPurchaseRequestPage = () => {
             </div>
           </div>
 
-          <div className="border border-gray-200 rounded mb-4">
+          <div className="py-2 flex items-center justify-between gap-2">
+            {/* Items per page */}
+            <div className="flex items-center gap-2">
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                Hiển thị
+              </Typography>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(0);
+                }}
+                className="border rounded px-2 py-1"
+              >
+                {[5, 10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                dòng mỗi trang
+              </Typography>
+            </div>
+
+            {/* Search input */}
+            <TableSearch
+              // value={searchTerm}
+              // onChange={setSearchTerm}
+              onSearch={() => {
+                // Thêm hàm xử lý tìm kiếm vào đây nếu có
+                (e) => setTableSearchQuery(e.target.value)
+              }}
+              placeholder="Tìm kiếm"
+            />
+
             {billOfMaterialsError && (
               <Typography className="text-xs text-red-500 mb-2 px-2">
                 {billOfMaterialsError}
               </Typography>
             )}
+
+          </div>
+          <div className="border border-gray-200 rounded mb-4">
+            {/* <div className="flex items-center gap-4 mb-4">
+              <div className="flex-1">
+                <Input
+                  label="Tìm kiếm trong danh sách"
+                  value={tableSearchQuery}
+                  onChange={(e) => setTableSearchQuery(e.target.value)}
+                  className="w-full"
+                  icon={
+                    tableSearchQuery && (
+                      <button
+                        className="absolute right-3 top-1/2 -translate-y-1/2"
+                        onClick={() => setTableSearchQuery("")}
+                      >
+                        <FaTimes className="h-4 w-4 text-gray-500 hover:text-gray-700" />
+                      </button>
+                    )
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 mb-4">
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                Hiển thị
+              </Typography>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(0);
+                }}
+                className="border rounded px-2 py-1"
+              >
+                {[5, 10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                dòng mỗi trang
+              </Typography>
+            </div>
+            {billOfMaterialsError && (
+              <Typography className="text-xs text-red-500 mb-2 px-2">
+                {billOfMaterialsError}
+              </Typography>
+            )} */}
 
             <table className="w-full text-left border-collapse">
               <thead className="bg-gray-50 border-b border-gray-200">
@@ -637,50 +728,60 @@ const AddPurchaseRequestPage = () => {
                 )}
               </tbody>
             </table>
-
-            {items.length > 0 && (
-              <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
-                <div className="flex items-center gap-2">
-                  <Typography variant="small" color="blue-gray" className="font-normal">
-                    Trang {currentPage + 1} / {Math.ceil(items.length / pageSize)} • {items.length} dòng
-                  </Typography>
-                </div>
-                <ReactPaginate
-                  previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
-                  nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
-                  breakLabel="..."
-                  pageCount={Math.ceil(items.length / pageSize)}
-                  marginPagesDisplayed={2}
-                  pageRangeDisplayed={5}
-                  onPageChange={handlePageChange}
-                  containerClassName="flex items-center gap-1"
-                  pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-                  pageLinkClassName="flex items-center justify-center w-full h-full"
-                  previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-                  nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
-                  breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
-                  activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
-                  forcePage={currentPage}
-                  disabledClassName="opacity-50 cursor-not-allowed"
-                />
-              </div>
-            )}
           </div>
 
-          <div className="flex gap-2 mb-4">
+          {items.length > 0 && (
+            <div className="flex items-center justify-between pb-4">
+              <div className="flex items-center gap-2">
+                <Typography variant="small" color="blue-gray" className="font-normal">
+                  Trang {currentPage + 1} / {Math.ceil(items.length / pageSize)} • {items.length} dòng
+                </Typography>
+              </div>
+              <ReactPaginate
+                previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
+                nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
+                breakLabel="..."
+                pageCount={Math.ceil(items.length / pageSize)}
+                marginPagesDisplayed={2}
+                pageRangeDisplayed={5}
+                onPageChange={handlePageChange}
+                containerClassName="flex items-center gap-1"
+                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                pageLinkClassName="flex items-center justify-center w-full h-full"
+                previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
+                activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
+                forcePage={currentPage}
+                disabledClassName="opacity-50 cursor-not-allowed"
+              />
+            </div>
+          )}
+
+          <div className="flex gap-2 mb-4 h-8">
             {!fromSaleOrder && (
               <>
-                <Button variant="outlined" onClick={handleAddRow} className="flex items-center gap-2">
-                  <FaPlus /> Thêm dòng
-                </Button>
-                <Button
+                <MuiButton
+                  size="small"
                   variant="outlined"
-                  color="red"
-                  onClick={handleRemoveAllRows}
-                  className="flex items-center gap-2"
+                  onClick={handleAddRow}
                 >
-                  <FaTrash /> Xóa hết dòng
-                </Button>
+                  <div className='flex items-center gap-2'>
+                    <FaPlus className="h-4 w-4" />
+                    <span>Thêm dòng</span>
+                  </div>
+                </MuiButton>
+                <MuiButton
+                  size="small"
+                  variant="outlined"
+                  color="error"
+                  onClick={handleRemoveAllRows}
+                >
+                  <div className='flex items-center gap-2'>
+                    <FaTrash className="h-4 w-4" />
+                    <span>Xóa hết dòng</span>
+                  </div>
+                </MuiButton>
               </>
             )}
           </div>
