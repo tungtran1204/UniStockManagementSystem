@@ -396,7 +396,7 @@ const AddMaterialPage = () => {
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-2 mt-8">
+                    <div className="flex justify-end gap-2 mt-8 pb-2">
                         <MuiButton
                             size="medium"
                             color="error"
