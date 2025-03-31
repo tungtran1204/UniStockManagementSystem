@@ -1,0 +1,179 @@
+import React, { useState, useEffect } from "react";
+import { Modal, Box, Typography, Button } from "@mui/material";
+import TableSearch from "@/components/TableSearch";
+import Table from "@/components/Table";
+import ReactPaginate from "react-paginate";
+import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
+import useIssueNote from "./useIssueNote";
+import dayjs from "dayjs";
+
+const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
+  const { saleOrders, loading, fetchSaleOrders } = useIssueNote();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  useEffect(() => {
+    fetchSaleOrders(currentPage, pageSize);
+  }, [currentPage, pageSize]);
+
+  const handlePageChange = ({ selected }) => {
+    setCurrentPage(selected);
+  };
+
+  // Ensure the data is correctly mapped for the table
+  const mappedOrders = (saleOrders.content || []).map((order, index) => ({
+    id: order.id || index, // Ensure each row has a unique ID
+    code: order.code || "N/A",
+    customer: order.customer || "N/A",
+    date: order.date || null,
+  }));
+
+  const filteredOrders = mappedOrders.filter(
+    (order) =>
+      order.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.customer.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const displayedOrders = filteredOrders.slice(
+    currentPage * pageSize,
+    (currentPage + 1) * pageSize
+  );
+
+  const columnsConfig = [
+    { field: "code", headerName: "Mã đơn hàng", flex: 1.5, minWidth: 150 },
+    { field: "customer", headerName: "Khách hàng", flex: 2, minWidth: 200 },
+    {
+      field: "date",
+      headerName: "Ngày tạo",
+      flex: 1.5,
+      minWidth: 150,
+      renderCell: (params) =>
+        params.value ? dayjs(params.value).format("DD/MM/YYYY") : "N/A",
+    },
+    {
+      field: "actions",
+      headerName: "Hành động",
+      flex: 0.5,
+      minWidth: 100,
+      renderCell: (params) => (
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={() => setSelectedOrder(params.row)}
+        >
+          Chọn
+        </Button>
+      ),
+    },
+  ];
+
+  return (
+    <Modal open={true} onClose={onClose}>
+      <Box
+        sx={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: 800,
+          bgcolor: "background.paper",
+          boxShadow: 24,
+          p: 4,
+          borderRadius: 2,
+        }}
+      >
+        <Typography variant="h6" mb={2}>
+          Chọn đơn hàng
+        </Typography>
+
+        {/* Search and Items per page */}
+        <div className="py-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Typography variant="small" color="blue-gray" className="font-light">
+              Hiển thị
+            </Typography>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(0);
+              }}
+              className="border text-sm rounded px-2 py-1"
+            >
+              {[5, 10, 20, 50].map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+            <Typography variant="small" color="blue-gray" className="font-normal">
+              bản ghi mỗi trang
+            </Typography>
+          </div>
+
+          <TableSearch
+            value={searchTerm}
+            onChange={setSearchTerm}
+            onSearch={() => {
+              console.log("Tìm kiếm đơn hàng:", searchTerm);
+            }}
+            placeholder="Tìm kiếm đơn hàng"
+          />
+        </div>
+
+        {/* Table */}
+        <Table
+          data={displayedOrders}
+          columnsConfig={columnsConfig}
+          loading={loading}
+          enableSelection={false}
+        />
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
+          <Typography variant="small" color="blue-gray" className="font-normal">
+            Trang {currentPage + 1} / {Math.ceil(filteredOrders.length / pageSize)} •{" "}
+            {filteredOrders.length} bản ghi
+          </Typography>
+          <ReactPaginate
+            previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
+            nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
+            breakLabel="..."
+            pageCount={Math.ceil(filteredOrders.length / pageSize)}
+            marginPagesDisplayed={2}
+            pageRangeDisplayed={5}
+            onPageChange={handlePageChange}
+            containerClassName="flex items-center gap-1"
+            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+            pageLinkClassName="flex items-center justify-center w-full h-full"
+            previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+            nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+            breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
+            activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
+            forcePage={currentPage}
+            disabledClassName="opacity-50 cursor-not-allowed"
+          />
+        </div>
+
+        {/* Actions */}
+        <Box mt={2} display="flex" justifyContent="flex-end" gap={2}>
+          <Button variant="outlined" onClick={onClose}>
+            Hủy
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => onOrderSelected(selectedOrder)}
+            disabled={!selectedOrder}
+          >
+            Xác nhận
+          </Button>
+        </Box>
+      </Box>
+    </Modal>
+  );
+};
+
+export default ModalChooseOrder;

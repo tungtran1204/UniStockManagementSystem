@@ -21,6 +21,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Import Tiếng Việt
 import FileUploadBox from '@/components/FileUploadBox';
 import ModalAddPartner from "./ModalAddPartner";
+import ModalChooseOrder from "./ModalChooseOrder"; // Import the modal
 import { getPartnersByType } from "@/features/user/partner/partnerService";
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table"; // hoặc './Table' nếu file cùng thư mục
@@ -42,7 +43,20 @@ const AddReceiptNote = () => {
   const [files, setFiles] = useState([]); // Cập nhật để hỗ trợ nhiều file;
   const [category, setCategory] = useState("");
   const selectRef = useRef(null);
+  const [isChooseOrderModalOpen, setIsChooseOrderModalOpen] = useState(false);
 
+  const handleOpenChooseOrderModal = () => {
+    setIsChooseOrderModalOpen(true);
+  };
+
+  const handleCloseChooseOrderModal = () => {
+    setIsChooseOrderModalOpen(false);
+  };
+
+  const handleOrderSelected = (selectedOrder) => {
+    setReferenceDocument(selectedOrder); // Update referenceDocument with the selected order
+    handleCloseChooseOrderModal();
+  };
 
   const [OutsourceError, setOutsourceError] = useState("");
   const [outsources, setOutsources] = useState([]);
@@ -339,6 +353,19 @@ const AddReceiptNote = () => {
                       renderValue: (selected) =>
                         selected ? selected : <span style={{ color: '#9e9e9e' }}>Tham chiếu chứng từ</span>,
                     },
+                  }}
+                  InputProps={{
+                    endAdornment: (
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent input focus
+                          handleOpenChooseOrderModal();
+                        }}
+                        size="small"
+                      >
+                        <FaPlus fontSize="small" />
+                      </IconButton>
+                    ),
                   }}
                 >
                   <MenuItem value="Chứng từ A">Chứng từ A</MenuItem>
@@ -945,6 +972,12 @@ const AddReceiptNote = () => {
             if (category === "Gia công") fetchOutsources();
             if (category === "Trả lại hàng mua") fetchSuppliers();
           }}
+        />
+      )}
+      {isChooseOrderModalOpen && (
+        <ModalChooseOrder
+          onClose={handleCloseChooseOrderModal}
+          onOrderSelected={handleOrderSelected}
         />
       )}
     </div >
