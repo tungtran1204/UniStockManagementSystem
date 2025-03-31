@@ -81,7 +81,7 @@ export const toggleSaleOrderStatus = async (orderId, newStatus) => {
 export const getProducts = async () => {
   try {
     const response = await axios.get(
-      `${import.meta.env.VITE_API_URL}/user/products`, {headers: authHeader(),}
+      `${import.meta.env.VITE_API_URL}/user/products`, { headers: authHeader(), }
     );
     return response.data;
   } catch (error) {
@@ -100,9 +100,9 @@ export const updateOrder = async (orderId, orderData) => {
     return response.data;
   } catch (error) {
     console.error("Lỗi khi cập nhật đơn hàng:", error);
-    throw error; 
+    throw error;
   }
-  
+
 };
 
 export const getTotalQuantityOfProduct = async (productId) => {
@@ -113,7 +113,7 @@ export const getTotalQuantityOfProduct = async (productId) => {
         headers: authHeader(),
       }
     );
-    return response.data; 
+    return response.data;
   } catch (error) {
     console.error("❌ [getTotalQuantityOfProduct] Lỗi khi lấy tổng tồn kho:", error);
     throw error;
@@ -133,3 +133,21 @@ export const getProductMaterialsByProduct = async (productId) => {
     throw error;
   }
 };
+
+export const cancelSaleOrder = async (orderId, reason) => {
+  try {
+    const response = await axios.put(
+      `${API_URL}/${orderId}/cancel`,
+      { rejectionReason: reason },
+      {
+        headers: authHeader()
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("❌ [cancelSaleOrder] Lỗi:", error);
+    throw error;
+  }
+};
+
+

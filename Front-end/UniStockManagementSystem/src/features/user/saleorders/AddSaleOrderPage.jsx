@@ -231,6 +231,8 @@ const AddSaleOrderPage = () => {
     }
   };
 
+
+
   const aggregateItems = (itemsArray) => {
     const aggregated = itemsArray.reduce((acc, curr) => {
       const existingItem = acc.find(
@@ -285,7 +287,7 @@ const AddSaleOrderPage = () => {
       orderDate,
       partnerCode: customerCode,
       partnerName: customerName,
-      status: "Đang chuẩn bị",
+      status: "PROCESSING",
       note: description,
       orderDetails: aggregatedItems,
     };

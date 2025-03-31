@@ -13,7 +13,10 @@ import vn.unistock.unistockmanagementsystem.entities.*;
 import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerRepository;
 import vn.unistock.unistockmanagementsystem.features.user.products.ProductsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderRepository;
+import vn.unistock.unistockmanagementsystem.features.user.purchaseRequests.PurchaseRequestRepository;
 import vn.unistock.unistockmanagementsystem.security.filter.CustomUserDetails;
+
+import java.util.List;
 
 @Service
 public class SaleOrdersService {
@@ -21,15 +24,17 @@ public class SaleOrdersService {
     private final SaleOrdersMapper saleOrdersMapper;
     private final PartnerRepository partnerRepository;
     private final ProductsRepository productsRepository;
+    private final PurchaseRequestRepository purchaseRequestRepository;
 
     public SaleOrdersService(SaleOrdersRepository saleOrdersRepository,
                              SaleOrdersMapper saleOrdersMapper,
                              PartnerRepository partnerRepository,
-                             ProductsRepository productsRepository) {
+                             ProductsRepository productsRepository, PurchaseRequestRepository purchaseRequestRepository) {
         this.saleOrdersRepository = saleOrdersRepository;
         this.saleOrdersMapper = saleOrdersMapper;
         this.partnerRepository = partnerRepository;
         this.productsRepository = productsRepository;
+        this.purchaseRequestRepository = purchaseRequestRepository;
     }
 
     /**
@@ -38,7 +43,11 @@ public class SaleOrdersService {
     public Page<SaleOrdersDTO> getAllOrders(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<SalesOrder> salesOrderPage = saleOrdersRepository.findAll(pageable);
-        return salesOrderPage.map(saleOrdersMapper::toDTO);
+        return salesOrderPage.map(saleOrder -> {
+            SaleOrdersDTO dto = saleOrdersMapper.toDTO(saleOrder);
+            enrichStatusLabel(dto, saleOrder);
+            return dto;
+        });
     }
 
     public String getNextOrderCode() {
@@ -50,8 +59,75 @@ public class SaleOrdersService {
     public SaleOrdersDTO getOrderById(Long orderId) {
         SalesOrder saleOrder = saleOrdersRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found with ID: " + orderId));
-        return saleOrdersMapper.toDTO(saleOrder);
+        SaleOrdersDTO dto = saleOrdersMapper.toDTO(saleOrder);
+        enrichStatusLabel(dto, saleOrder);
+        return dto;
     }
+
+    private void enrichStatusLabel(SaleOrdersDTO dto, SalesOrder saleOrder) {
+        List<PurchaseRequest> requests = purchaseRequestRepository.findAllBySalesOrder_OrderId(saleOrder.getOrderId());
+
+        // Trạng thái chính của đơn hàng
+        SalesOrder.OrderStatus orderStatus = saleOrder.getStatus();
+
+        if (orderStatus == SalesOrder.OrderStatus.PROCESSING) {
+            // ✅ Mặc định là "Đang xử lý"
+            if (requests.isEmpty()) {
+                dto.setPurchaseRequestStatus("NONE");
+                dto.setStatusLabel("Chưa có yêu cầu");
+            } else {
+                boolean allCancelled = requests.stream()
+                        .allMatch(r -> r.getStatus() == PurchaseRequest.RequestStatus.CANCELLED);
+                boolean anyConfirmed = requests.stream()
+                        .anyMatch(r -> r.getStatus() == PurchaseRequest.RequestStatus.CONFIRMED);
+
+                if (anyConfirmed) {
+                    dto.setPurchaseRequestStatus("CONFIRMED");
+                    dto.setStatusLabel("Yêu cầu đã được duyệt");
+                } else if (allCancelled) {
+                    dto.setPurchaseRequestStatus("CANCELLED");
+                    dto.setStatusLabel("Yêu cầu bị từ chối");
+                } else {
+                    dto.setPurchaseRequestStatus("PENDING");
+                    dto.setStatusLabel("Đang chờ yêu cầu được duyệt");
+                }
+            }
+        } else if (orderStatus == SalesOrder.OrderStatus.PREPARING_MATERIAL) {
+            dto.setPurchaseRequestStatus("CONFIRMED");
+            dto.setStatusLabel("Đang chuẩn bị vật tư");
+        } else if (orderStatus == SalesOrder.OrderStatus.CANCELLED) {
+            dto.setPurchaseRequestStatus("CANCELLED");
+            dto.setStatusLabel("Đã huỷ");
+        } else {
+            // Trường hợp chưa xác định rõ
+            dto.setPurchaseRequestStatus("UNKNOWN");
+            dto.setStatusLabel("Không rõ trạng thái");
+        }
+    }
+
+    @Transactional
+    public void cancelSalesOrder(Long orderId, String rejectionReason) {
+        SalesOrder order = saleOrdersRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+
+        // ✅ Cập nhật trạng thái & lý do huỷ đơn hàng
+        order.setStatus(SalesOrder.OrderStatus.CANCELLED);
+        order.setRejectionReason(rejectionReason);
+
+        saleOrdersRepository.save(order);
+
+        // ✅ Tìm và huỷ tất cả yêu cầu mua vật tư liên quan
+        List<PurchaseRequest> requests = purchaseRequestRepository.findAllBySalesOrder_OrderId(orderId);
+        for (PurchaseRequest pr : requests) {
+            pr.setStatus(PurchaseRequest.RequestStatus.CANCELLED);
+            pr.setRejectionReason("Đơn hàng đã bị huỷ");
+            purchaseRequestRepository.save(pr);
+        }
+    }
+
+
+
+
 
     @Transactional
     public SaleOrdersDTO createSaleOrder(SaleOrdersDTO saleOrdersDTO) {
@@ -83,6 +159,11 @@ public class SaleOrdersService {
         order.setPartner(partner);
         order.setCreatedByUser(currentUser);
 
+        // Set mặc định status nếu chưa có
+        if (order.getStatus() == null) {
+            order.setStatus(SalesOrder.OrderStatus.PROCESSING);
+        }
+
         // Đảm bảo mỗi SalesOrderDetail có salesOrder được set và thay thế Product transient bằng persistent
         if (order.getDetails() != null) {
             order.getDetails().forEach(detail -> {
@@ -96,6 +177,8 @@ public class SaleOrdersService {
         SalesOrder savedOrder = saleOrdersRepository.save(order);
         return saleOrdersMapper.toDTO(savedOrder);
     }
+
+
     public SaleOrdersDTO updateSaleOrder(Long orderId, SaleOrdersDTO saleOrdersDTO) {
         SalesOrder existingOrder = saleOrdersRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found with ID: " + orderId));
@@ -111,15 +194,17 @@ public class SaleOrdersService {
         partner.setContactName(saleOrdersDTO.getContactName());
 
         SalesOrder newOrderData = saleOrdersMapper.toEntity(saleOrdersDTO);
-
         newOrderData.setPartner(partner);
-
         newOrderData.setOrderId(existingOrder.getOrderId());
+
+        // Set mặc định status nếu DTO không truyền lên
+        if (newOrderData.getStatus() == null) {
+            newOrderData.setStatus(existingOrder.getStatus());
+        }
 
         if (newOrderData.getDetails() != null) {
             for (SalesOrderDetail detail : newOrderData.getDetails()) {
                 detail.setSalesOrder(newOrderData);
-
             }
         }
         newOrderData.setCreatedByUser(existingOrder.getCreatedByUser());
