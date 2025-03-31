@@ -38,10 +38,14 @@ public class SalesOrder {
     @JoinColumn(name = "created_by", nullable = false)
     private User createdByUser;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status = OrderStatus.PROCESSING;
 
     @Column(columnDefinition = "TEXT")
     private String note;
+
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
 
     // Audit
     @Column(name = "created_at", updatable = false)
@@ -54,6 +58,10 @@ public class SalesOrder {
     @OneToMany(mappedBy = "salesOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SalesOrderDetail> details;
 
+    @OneToMany(mappedBy = "salesOrder")
+    private List<PurchaseRequest> purchaseRequests;
+
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -64,4 +72,19 @@ public class SalesOrder {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    public enum OrderStatus {
+        PROCESSING,          // Đang xử lý
+        PREPARING_MATERIAL, // Đang chuẩn bị vật tư
+        CANCELLED           // Đã hủy
+    }
+    @JsonIgnore
+    public String getStatusLabel() {
+        return switch (status) {
+            case PROCESSING -> "Đang xử lý";
+            case PREPARING_MATERIAL -> "Đang chuẩn bị vật tư";
+            case CANCELLED -> "Đã hủy";
+        };
+    }
+
 }

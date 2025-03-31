@@ -53,4 +53,17 @@ public class SaleOrdersController {
         return ResponseEntity.ok(updatedOrder);
     }
 
+    @PutMapping("/{orderId}/cancel")
+    public ResponseEntity<?> cancelSaleOrder(
+            @PathVariable Long orderId,
+            @RequestBody CancelOrderRequest request
+    ) {
+        try {
+            saleOrdersService.cancelSalesOrder(orderId, request.getRejectionReason());
+            return ResponseEntity.ok("Đơn hàng đã được huỷ.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Không thể huỷ đơn hàng: " + e.getMessage());
+        }
+    }
+
 }
