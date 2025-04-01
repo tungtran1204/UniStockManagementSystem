@@ -18,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 import vn.unistock.unistockmanagementsystem.entities.*;
 import vn.unistock.unistockmanagementsystem.features.admin.user.UserRepository;
 import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryRepository;
+import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryTransactionRepository;
 import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.products.ProductsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderDTO;

@@ -1,4 +1,4 @@
-package vn.unistock.unistockmanagementsystem.features.user.receiptnote;
+package vn.unistock.unistockmanagementsystem.features.user.inventory;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

@@ -64,6 +64,15 @@ const SaleOrdersPage = () => {
         order.partnerName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case "PROCESSING": return "Đang xử lý";
+      case "PREPARING_MATERIAL": return "Đang chuẩn bị vật tư";
+      case "CANCELLED": return "Đã huỷ";
+      default: return status;
+    }
+  };
+
   const columnsConfig = [
     { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
     { field: 'orderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false },
@@ -101,9 +110,10 @@ const SaleOrdersPage = () => {
     index: currentPage * pageSize + index + 1,
     orderCode: order.orderCode || "N/A",
     partnerName: order.partnerName || "N/A",
-    status: order.status || "N/A",
+    status: order.statusLabel || getStatusLabel(order.status),
     orderDate: order.orderDate,
   }));
+
 
 
   return (

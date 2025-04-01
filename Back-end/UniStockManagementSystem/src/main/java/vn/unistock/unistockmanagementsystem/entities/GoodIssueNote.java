@@ -26,16 +26,18 @@ public class GoodIssueNote {
     @NotBlank(message = "GIN code cannot be blank")
     private String ginCode;
 
+    @ManyToOne
+    @JoinColumn(name = "so_id", nullable = true)
+    private SalesOrder salesOrder;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "category", nullable = false)
+    private String category;
+
     @CreationTimestamp
     private LocalDateTime issueDate;
-
-    @ManyToOne
-    @JoinColumn(name = "po_id", nullable = true)
-    private PurchaseOrder purchaseOrder;
-
     @ManyToOne
     @JoinColumn(name = "created_by", nullable = false)
     @NotNull(message = "Created by is required")

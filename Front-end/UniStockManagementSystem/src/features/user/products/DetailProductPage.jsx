@@ -703,7 +703,7 @@ const DetailProductPage = () => {
 
                             <div>
                                 <Typography variant="medium" className="mb-1 text-black">
-                                    Hình ảnh nguyên vật liệu
+                                    Hình ảnh sản phẩm
                                 </Typography>
                                 {isEditing && (
                                     <ImageUploadBox
@@ -912,4 +912,4 @@ const DetailProductPage = () => {
     );
 };
 
-export default DetailProductPage;
+export default DetailProductPage; 

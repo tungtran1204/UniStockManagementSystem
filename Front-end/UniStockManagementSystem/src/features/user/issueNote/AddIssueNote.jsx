@@ -21,6 +21,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Import Tiếng Việt
 import FileUploadBox from '@/components/FileUploadBox';
 import ModalAddPartner from "./ModalAddPartner";
+import ModalChooseOrder from "./ModalChooseOrder"; // Import the modal
 import { getPartnersByType } from "@/features/user/partner/partnerService";
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table"; // hoặc './Table' nếu file cùng thư mục
@@ -42,7 +43,30 @@ const AddReceiptNote = () => {
   const [files, setFiles] = useState([]); // Cập nhật để hỗ trợ nhiều file;
   const [category, setCategory] = useState("");
   const selectRef = useRef(null);
+  const [isChooseOrderModalOpen, setIsChooseOrderModalOpen] = useState(false);
 
+  const handleOpenChooseOrderModal = () => {
+    setIsChooseOrderModalOpen(true);
+  };
+
+  const handleCloseChooseOrderModal = () => {
+    setIsChooseOrderModalOpen(false);
+  };
+
+  const handleOrderSelected = (selectedOrder) => {
+    setReferenceDocument(selectedOrder.orderCode);
+    setPartnerCode(selectedOrder.partnerCode);
+    setPartnerName(selectedOrder.partnerName);
+    setCreateDate(
+      selectedOrder.orderDate
+        ? dayjs(selectedOrder.orderDate).format("YYYY-MM-DD")
+        : ""
+    );
+    setDescription(selectedOrder.note);
+    setAddress(selectedOrder.address);
+    setContactName(selectedOrder.contactName);
+    handleCloseChooseOrderModal();
+  };
 
   const [OutsourceError, setOutsourceError] = useState("");
   const [outsources, setOutsources] = useState([]);
@@ -267,10 +291,8 @@ const AddReceiptNote = () => {
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
-        {/* Header */}
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
-            // title={"Phiếu xuất kho " + receiptCode}
             title="Phiếu xuất kho"
             showAdd={false}
             showImport={false}
@@ -279,24 +301,20 @@ const AddReceiptNote = () => {
 
           {/* Thông tin chung */}
           <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
-            <InformationCircleIcon className="h-5 w-5 mr-2"></InformationCircleIcon>
+            <InformationCircleIcon className="h-5 w-5 mr-2" />
             Thông tin chung
           </Typography>
-          <div
-            className={`grid gap-x-12 gap-y-4 gap-4 mb-4 ${category === "Bán hàng" || category === "Trả lại hàng mua" ? "grid-cols-3" : "grid-cols-2"}`}>
+          <div className={`grid gap-x-12 gap-y-4 gap-4 mb-4 ${category === "Bán hàng" || category === "Trả lại hàng mua" ? "grid-cols-3" : "grid-cols-2"}`}>
             <div>
               <Typography variant="medium" className="mb-1 text-black">
-                Phân loại xuất kho
-                <span className="text-red-500"> *</span>
+                Phân loại xuất kho <span className="text-red-500">*</span>
               </Typography>
               <TextField
                 select
                 hiddenLabel
                 color="success"
                 value={category}
-                onChange={(e) => {
-                  setCategory(e.target.value);
-                }}
+                onChange={(e) => setCategory(e.target.value)}
                 fullWidth
                 size="small"
                 slotProps={{
@@ -318,8 +336,6 @@ const AddReceiptNote = () => {
                 </Typography>
               )}
             </div>
-            {/* Check phân loại, chứng từ tham chiếu sẽ hiển thị theo phân loại 
-            (VD: category === "Bán hàng" => Các option sẽ là các đơn bán hàng) */}
             {(category === "Bán hàng" || category === "Trả lại hàng mua") && (
               <div>
                 <Typography className="mb-1 text-black">
@@ -340,6 +356,19 @@ const AddReceiptNote = () => {
                         selected ? selected : <span style={{ color: '#9e9e9e' }}>Tham chiếu chứng từ</span>,
                     },
                   }}
+                  InputProps={{
+                    endAdornment: (
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenChooseOrderModal();
+                        }}
+                        size="small"
+                      >
+                        <FaPlus fontSize="small" />
+                      </IconButton>
+                    ),
+                  }}
                 >
                   <MenuItem value="Chứng từ A">Chứng từ A</MenuItem>
                   <MenuItem value="Chứng từ B">Chứng từ B</MenuItem>
@@ -355,7 +384,7 @@ const AddReceiptNote = () => {
                   value={createdDate ? dayjs(createdDate) : null}
                   onChange={(newValue) => {
                     if (newValue) {
-                      setOrderDate(newValue.format("YYYY-MM-DD")); // format lại để lưu về dạng chuẩn
+                      setCreateDate(newValue.format("YYYY-MM-DD"));
                     }
                   }}
                   format="DD/MM/YYYY"
@@ -945,6 +974,12 @@ const AddReceiptNote = () => {
             if (category === "Gia công") fetchOutsources();
             if (category === "Trả lại hàng mua") fetchSuppliers();
           }}
+        />
+      )}
+      {isChooseOrderModalOpen && (
+        <ModalChooseOrder
+          onClose={handleCloseChooseOrderModal}
+          onOrderSelected={handleOrderSelected}
         />
       )}
     </div >
