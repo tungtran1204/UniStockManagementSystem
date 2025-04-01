@@ -8,6 +8,7 @@ import {
   getPurchaseOrderById,
   getSaleOrderByPurchaseOrderId,
   createPurchaseOrdersFromRequest,
+  fetchPendingOrInProgressOrders,
 } from "./purchaseOrderService";
 
 const usePurchaseOrder = () => {
@@ -81,7 +82,8 @@ const usePurchaseOrder = () => {
     setSelectedStatus,
     getPurchaseOrderById,
     getSaleOrderByPurchaseOrderId,
-    createOrdersFromRequest
+    createOrdersFromRequest,
+    fetchPendingOrInProgressOrders,
   };
 };
 

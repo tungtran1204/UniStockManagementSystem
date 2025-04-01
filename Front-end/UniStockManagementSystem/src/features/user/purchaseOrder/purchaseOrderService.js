@@ -114,3 +114,17 @@ export const getSaleOrderByPurchaseOrderId = async (poId) => {
   });
   return response.data;
 };
+
+// Lấy các đơn hàng có trạng thái PENDING hoặc IN_PROGRESS
+export const fetchPendingOrInProgressOrders = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/filter/status`, {
+      headers: authHeader(),
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy đơn hàng chờ nhận hoặc đã nhập một phần:", error);
+    throw error;
+  }
+};
+

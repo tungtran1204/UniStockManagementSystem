@@ -46,6 +46,7 @@ import ForgotPassword from "../features/auth/reset_password/ConfirmEmailPage";
 import ResetPassword from "../features/auth/reset_password/ResetPasswordPage";
 import LoginPage from "../features/auth/login/LoginPage";
 import ConfirmOTPPage from "../features/auth/reset_password/ConfirmOTPPage";
+import AddReceiptNoteGeneral from "../features/user/receiptNote/AddReceiptNoteGeneral";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -335,6 +336,11 @@ export const routes = [
       {
         path: "/user/receiptNote/manual",
         element: <AddReceiptNoteManually />,
+        roles: ["USER"],
+      },
+      {
+        path: "/user/receiptNote/general",
+        element: <AddReceiptNoteGeneral />,
         roles: ["USER"],
       }
     ],

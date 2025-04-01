@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import vn.unistock.unistockmanagementsystem.entities.PurchaseOrder;
 import vn.unistock.unistockmanagementsystem.entities.SalesOrder;
 
+import java.util.List;
 import java.util.Optional;
 @Repository
 public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Long> {
@@ -28,4 +29,8 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
     WHERE po.poId = :purchaseOrderId
 """)
     Optional<SalesOrder> findSalesOrderByPurchaseOrderId(@Param("purchaseOrderId") Long purchaseOrderId);
+
+    @Query("SELECT p FROM PurchaseOrder p WHERE p.status IN ('PENDING', 'IN_PROGRESS')")
+    List<PurchaseOrder> findPendingOrInProgressOrders();
+
 }
