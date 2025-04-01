@@ -22,12 +22,14 @@ const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
     setCurrentPage(selected);
   };
 
-  // Ensure the data is correctly mapped for the table
-  const mappedOrders = (saleOrders.content || []).map((order, index) => ({
-    id: order.id || index, // Ensure each row has a unique ID
-    code: order.code || "N/A",
-    customer: order.customer || "N/A",
-    date: order.date || null,
+  // Map dữ liệu từ API: API trả về đối tượng với các trường: orderId, orderCode, partnerCode, partnerName, orderDate, note, address, phoneNumber, contactName, orderDetails,...
+  // Lưu luôn full order để sau khi chọn có thể fill đầy đủ thông tin.
+  const mappedOrders = saleOrders.map((order) => ({
+    id: order.orderId,
+    code: order.orderCode || "N/A",
+    customer: order.partnerName || "N/A",
+    date: order.orderDate || null,
+    fullOrder: order, // lưu toàn bộ đối tượng đơn hàng
   }));
 
   const filteredOrders = mappedOrders.filter(
@@ -61,7 +63,7 @@ const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
         <Button
           size="small"
           variant="outlined"
-          onClick={() => setSelectedOrder(params.row)}
+          onClick={() => setSelectedOrder(params.row.fullOrder)}
         >
           Chọn
         </Button>
@@ -165,7 +167,12 @@ const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
           <Button
             variant="contained"
             color="primary"
-            onClick={() => onOrderSelected(selectedOrder)}
+            onClick={() => {
+              if (selectedOrder) {
+                onOrderSelected(selectedOrder); // Pass toàn bộ đơn hàng đã chọn
+              }
+              onClose();
+            }}
             disabled={!selectedOrder}
           >
             Xác nhận
