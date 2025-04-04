@@ -125,7 +125,7 @@ const PurchaseRequestPage = () => {
         },
         {
             field: 'rejectionReason',
-            headerName: 'Lý do hủy',
+            headerName: 'Lý do từ chối',
             flex: 2,
             minWidth: 220,
             renderCell: (params) => {

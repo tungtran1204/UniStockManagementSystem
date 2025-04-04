@@ -20,10 +20,13 @@ import {
   getSaleOrderById,
   getTotalQuantityOfProduct,
   getProductMaterialsByProduct,
+  cancelSaleOrder,
 } from "./saleOrdersService";
 import ModalAddCustomer from "./ModalAddCustomer";
 import PageHeader from "@/components/PageHeader";
 import { canCreatePurchaseRequest } from "@/features/user/purchaseRequest/PurchaseRequestService"
+import CancelSaleOrderModal from "./CancelSaleOrderModal";
+
 
 // ------------------ 3 MODE ------------------
 const MODE_VIEW = "view";
@@ -32,6 +35,9 @@ const MODE_DINHMUC = "dinhMuc";
 // ---------------------------------------------
 
 const CUSTOMER_TYPE_ID = 2;
+
+
+
 
 const AddCustomerDropdownIndicator = (props) => {
   return (
@@ -87,6 +93,7 @@ const EditSaleOrderPage = () => {
   const navigate = useNavigate();
   const { updateExistingOrder } = useSaleOrder();
 
+
   // ---------------- STATE ĐƠN HÀNG ----------------
   const [orderCode, setOrderCode] = useState("");
   const [orderDate, setOrderDate] = useState(dayjs().format("YYYY-MM-DD"));
@@ -97,6 +104,9 @@ const EditSaleOrderPage = () => {
   const [contactName, setContactName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [description, setDescription] = useState("");
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
+
 
   // Mảng dòng sản phẩm
   const [items, setItems] = useState([]);
@@ -210,6 +220,9 @@ const EditSaleOrderPage = () => {
           contactName: orderData.contactName || "",
           phoneNumber: orderData.phoneNumber || "",
           items: JSON.parse(JSON.stringify(loadedItems)),
+          rejectionReason: orderData.rejectionReason || "",
+          statusLabel: orderData.statusLabel || "Không rõ",
+          status: orderData.status || "",
         });
       } catch (error) {
         console.error("Lỗi khi lấy đơn hàng:", error);
@@ -355,6 +368,17 @@ const EditSaleOrderPage = () => {
     );
     setGlobalError("");
   };
+  const handleCancelSaleOrder = async (reason) => {
+    try {
+      await cancelSaleOrder(orderId, reason);
+      alert("Đơn hàng đã được hủy.");
+      navigate("/user/sale-orders");
+    } catch (error) {
+      console.error("Lỗi khi hủy đơn hàng:", error);
+      alert("Không thể hủy đơn hàng. Vui lòng thử lại sau.");
+    }
+  };
+
 
   const handleCancelEdit = () => {
     if (!originalData) return;
@@ -615,7 +639,7 @@ const EditSaleOrderPage = () => {
       address,
       phoneNumber,
       contactName,
-      status: "Đang chuẩn bị",
+      status: "PROCESSING",
       orderDate,
       note: description,
       orderDetails: aggregated.map((it) => ({
@@ -940,9 +964,21 @@ const EditSaleOrderPage = () => {
                   <Typography variant="small" className="mb-2 font-bold text-gray-900">
                     Trạng thái đơn hàng
                   </Typography>
-                  <Input label="Trạng thái" value="Đang chuẩn bị" disabled className="text-sm" />
+                  <Input label="Trạng thái" value={originalData?.statusLabel || "Không rõ"} disabled />
                 </div>
               </div>
+              {originalData?.status === "CANCELLED" && (
+                <div>
+                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                    Lý do huỷ đơn hàng
+                  </Typography>
+                  <Textarea
+                    value={originalData?.rejectionReason?.trim() || "Không có"}
+                    disabled
+                    className="text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
+                  />
+                </div>
+              )}
               <div>
                 <Typography variant="small" className="mb-2 font-bold text-gray-900">
                   Diễn giải
@@ -1136,8 +1172,21 @@ const EditSaleOrderPage = () => {
               >
                 <FaArrowLeft className="h-3 w-3" /> Quay lại
               </MuiButton>
+              {mode === MODE_VIEW && originalData?.statusLabel !== "Đã huỷ" && activeTab === "info" && (
+                <Button
+                  size="lg"
+                  color="red"
+                  variant="outlined"
+                  className="ml-2"
+                  onClick={() => setShowCancelModal(true)}
+                >
+                  Huỷ đơn hàng
+                </Button>
+              )}
 
-              {mode === MODE_VIEW && activeTab === "products" && canCreatePurchaseRequestState && (
+
+
+              {mode === MODE_VIEW && activeTab === "products" && canCreatePurchaseRequestState && originalData?.status !== "CANCELLED" && (
                 <MuiButton
                   variant="contained"
                   size="medium"
@@ -1178,7 +1227,7 @@ const EditSaleOrderPage = () => {
                 </div>
               )}
 
-              {canCreatePurchaseRequestState && mode === MODE_DINHMUC && (
+              {canCreatePurchaseRequestState && mode === MODE_DINHMUC && originalData?.status !== "CANCELLED" && (
                 <Button
                   size="lg"
                   color="white"
@@ -1218,6 +1267,14 @@ const EditSaleOrderPage = () => {
           </div>
         </CardBody>
       </Card>
+
+      {showCancelModal && (
+        <CancelSaleOrderModal
+          open={showCancelModal}
+          onClose={() => setShowCancelModal(false)}
+          onConfirm={handleCancelSaleOrder}
+        />
+      )}
 
       {isCreatePartnerPopupOpen && (
         <ModalAddCustomer

@@ -97,20 +97,38 @@ public class PurchaseRequestService {
     }
 
     @Transactional
-    public PurchaseRequestDTO updatePurchaseRequestStatus(Long purchaseRequestId, String newStatus, String rejectionReason) {
-        PurchaseRequest request = purchaseRequestRepository.findById(purchaseRequestId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy yêu cầu với ID: " + purchaseRequestId));
+    public PurchaseRequestDTO updatePurchaseRequestStatus(Long id, String status, String rejectionReason) {
+        PurchaseRequest request = purchaseRequestRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy yêu cầu mua vật tư với ID: " + id));
 
-        PurchaseRequest.RequestStatus statusEnum;
-        try {
-            statusEnum = PurchaseRequest.RequestStatus.valueOf(newStatus);
-        } catch (IllegalArgumentException e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trạng thái không hợp lệ: " + newStatus);
+        PurchaseRequest.RequestStatus statusEnum = PurchaseRequest.RequestStatus.valueOf(status);
+        request.setStatus(statusEnum);
+
+        if (statusEnum == PurchaseRequest.RequestStatus.CANCELLED) {
+            request.setRejectionReason(rejectionReason);
+        } else {
+            request.setRejectionReason(null);
         }
 
-        request.setStatus(statusEnum);
-        request.setRejectionReason(rejectionReason); // nếu null thì vẫn hợp lệ
         purchaseRequestRepository.save(request);
+
+        // Nếu yêu cầu này liên kết với đơn hàng, cập nhật trạng thái đơn hàng nếu cần
+        if (request.getSalesOrder() != null) {
+            SalesOrder salesOrder = request.getSalesOrder();
+            List<PurchaseRequest> allRequests = purchaseRequestRepository.findAllBySalesOrder_OrderId(salesOrder.getOrderId());
+
+            boolean allCancelled = allRequests.stream().allMatch(r -> r.getStatus() == PurchaseRequest.RequestStatus.CANCELLED);
+            boolean anyConfirmed = allRequests.stream().anyMatch(r -> r.getStatus() == PurchaseRequest.RequestStatus.CONFIRMED);
+
+            if (anyConfirmed) {
+                salesOrder.setStatus(SalesOrder.OrderStatus.PREPARING_MATERIAL);
+            } else if (allCancelled) {
+                salesOrder.setStatus(SalesOrder.OrderStatus.PROCESSING);
+            }
+
+            saleOrdersRepository.save(salesOrder);
+        }
+
 
         return purchaseRequestMapper.toDTO(request);
     }

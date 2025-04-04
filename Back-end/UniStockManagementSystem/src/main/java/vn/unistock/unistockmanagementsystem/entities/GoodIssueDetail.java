@@ -27,18 +27,17 @@ public class GoodIssueDetail {
     private Warehouse warehouse;
 
     @ManyToOne
-    @JoinColumn(name = "material_id", nullable = false)
+    @JoinColumn(name = "material_id", nullable = true)
     private Material material;
+
+    @ManyToOne
+    @JoinColumn(name = "product_id", nullable = true)
+    private Product product;
+
+    @ManyToOne
+    @JoinColumn(name = "unit_id")
+    private Unit unit;
 
     @Column(nullable = false)
     private Double quantity;
-
-    private Long referenceId;
-
-    @Enumerated(EnumType.STRING)
-    private ReferenceType referenceType;
-
-    public enum ReferenceType {
-        PURCHASE_ORDER_DETAILS, ORDER_DETAILS
-    }
 }

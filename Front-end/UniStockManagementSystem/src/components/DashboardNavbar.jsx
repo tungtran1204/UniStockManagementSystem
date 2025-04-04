@@ -86,13 +86,8 @@ export function DashboardNavbar() {
         <div className="flex items-center">
           {user ? (
             <>
-              {/* Hiển thị avatar người dùng dựa vào user.userDetail.profilePicture nếu có */}
               <Avatar
-                src={
-                  user.userDetail && user.userDetail.profilePicture
-                    ? user.userDetail.profilePicture
-                    : "/img/default-avatar.png"
-                }
+                src={user.avatar ? user.avatar : "/img/default-avatar.png"}
                 alt={user.email}
                 size="sm"
                 variant="circular"
