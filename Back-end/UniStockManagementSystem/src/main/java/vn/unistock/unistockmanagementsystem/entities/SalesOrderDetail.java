@@ -33,4 +33,15 @@ public class SalesOrderDetail {
     @Column(nullable = false)
     private int quantity;
 
+    @Column(name = "received_quantity", nullable = false)
+    private Integer receivedQuantity = 0;
+
+    @Column(name = "remaining_quantity", nullable = false)
+    private Integer remainingQuantity;
+
+    @PrePersist
+    @PreUpdate
+    private void updateRemainingQuantity() {
+        this.remainingQuantity = this.quantity - this.receivedQuantity;
+    }
 }
