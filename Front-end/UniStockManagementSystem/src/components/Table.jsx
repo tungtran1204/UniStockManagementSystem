@@ -2,7 +2,7 @@ import * as React from 'react';
 import { DataGrid, GridCellModes } from '@mui/x-data-grid';
 import { Stack, Button } from '@mui/material';
 
-const SingleClickEditing = ({ data, columnsConfig, enableSelection, columnVisibilityModel, onColumnVisibilityModelChange, }) => {
+const SingleClickEditing = ({ data, columnsConfig, enableSelection, columnVisibilityModel, onColumnVisibilityModelChange, headerHeight }) => {
     const [cellModesModel, setCellModesModel] = React.useState({});
     const [selectedRows, setSelectedRows] = React.useState([]);
 
@@ -59,7 +59,7 @@ const SingleClickEditing = ({ data, columnsConfig, enableSelection, columnVisibi
                 onCellClick={handleCellClick}
                 columnVisibilityModel={columnVisibilityModel}
                 onColumnVisibilityModelChange={onColumnVisibilityModelChange}
-                columnHeaderHeight={40}
+                columnHeaderHeight={headerHeight ?? 40} 
                 getRowHeight={() => 'auto'}
                 hideFooter={true}
                 checkboxSelection={enableSelection}
@@ -102,6 +102,10 @@ const SingleClickEditing = ({ data, columnsConfig, enableSelection, columnVisibi
                         border: '0.5px solid rgba(224, 224, 224, 1)',
                         borderTop: 0,
                         backgroundColor: '#f5f5f5', // Màu nền header
+                    },
+                    '& .MuiDataGrid-columnHeaderTitle': {
+                        whiteSpace: 'normal',
+                        textAlign: 'center',
                     },
                     '& .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-columnHeader:focus-within': {
                         outline: 'none'
