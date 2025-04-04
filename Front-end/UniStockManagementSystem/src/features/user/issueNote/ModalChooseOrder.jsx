@@ -29,6 +29,7 @@ const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
     code: order.orderCode || "N/A",
     customer: order.partnerName || "N/A",
     date: order.orderDate || null,
+    note: order.note || "N/A", // Add note field
     fullOrder: order, // lưu toàn bộ đối tượng đơn hàng
   }));
 
@@ -44,15 +45,22 @@ const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
   );
 
   const columnsConfig = [
-    { field: "code", headerName: "Mã đơn hàng", flex: 1.5, minWidth: 150 },
+    { field: "code", headerName: "Mã đơn hàng", flex: 1.5, minWidth: 120 },
     { field: "customer", headerName: "Khách hàng", flex: 2, minWidth: 200 },
     {
       field: "date",
       headerName: "Ngày tạo",
       flex: 1.5,
-      minWidth: 150,
+      minWidth: 100,
       renderCell: (params) =>
         params.value ? dayjs(params.value).format("DD/MM/YYYY") : "N/A",
+    },
+    {
+      field: "note",
+      headerName: "Diễn giải",
+      flex: 2,
+      minWidth: 200,
+      renderCell: (params) => params.value || "N/A",
     },
     {
       field: "actions",
@@ -169,7 +177,7 @@ const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
             color="primary"
             onClick={() => {
               if (selectedOrder) {
-                onOrderSelected(selectedOrder); // Pass toàn bộ đơn hàng đã chọn
+                onOrderSelected(selectedOrder); // Pass the full order, including orderDetails
               }
               onClose();
             }}
