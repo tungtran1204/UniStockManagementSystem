@@ -1,95 +1,222 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   Card,
-  CardHeader,
   CardBody,
   Typography,
   Button,
-  Input,
-  Textarea,
 } from "@material-tailwind/react";
-import { TextField, MenuItem, Autocomplete, IconButton, Button as MuiButton, Tooltip } from '@mui/material';
+import {
+  TextField,
+  MenuItem,
+  Autocomplete,
+  IconButton,
+  Button as MuiButton,
+  Tooltip
+} from '@mui/material';
 import { useNavigate, useLocation } from "react-router-dom";
 import ReactPaginate from "react-paginate";
-import { FaPlus, FaTrash, FaArrowLeft } from "react-icons/fa";
-import { ArrowLeftIcon, ArrowRightIcon, ListBulletIcon } from "@heroicons/react/24/outline";
+import { FaPlus, FaTrash, FaArrowLeft, FaSearch } from "react-icons/fa";
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ListBulletIcon
+} from "@heroicons/react/24/outline";
 import { InformationCircleIcon } from "@heroicons/react/24/solid";
-import PageHeader from '@/components/PageHeader';
+import dayjs from "dayjs";
+import "dayjs/locale/vi"; // Sử dụng ngôn ngữ Tiếng Việt cho DatePicker
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs from "dayjs";
-import "dayjs/locale/vi"; // Import Tiếng Việt
+
+import PageHeader from '@/components/PageHeader';
 import FileUploadBox from '@/components/FileUploadBox';
-import { getPartnersByType } from "@/features/user/partner/partnerService";
 import TableSearch from '@/components/TableSearch';
-import Table from "@/components/Table"; // hoặc './Table' nếu file cùng thư mục
-import ModalAddPartner from "../issueNote/ModalAddPartner";
+import Table from "@/components/Table";
+import ProductRow from "./ProductRow";
+import ModalChooseOrder from "./ChooseOriginalDocumentModal";
+
+import { fetchPendingOrInProgressOrders, getPurchaseOrderById } from "../purchaseOrder/purchaseOrderService";
 import { getWarehouseList } from "../warehouse/warehouseService";
 import { getProducts } from "../saleorders/saleOrdersService";
-import { fetchPendingOrInProgressOrders } from "../purchaseOrder/purchaseOrderService";
-import { getPurchaseOrderById } from "../purchaseOrder/purchaseOrderService";
+import { getAllActiveMaterials } from "../materials/materialService";
+import {
+  createReceiptNote,
+  uploadPaperEvidence,
+  getNextCode
+} from "./receiptNoteService";
 
 const OUTSOURCE_TYPE_ID = 3;
+
 const SUPPLIER_TYPE_ID = 2;
 
 const AddReceiptNoteGeneral = () => {
+  // region: Khai báo state và biến
   const navigate = useNavigate();
-  const [isCreatePartnerPopupOpen, setIsCreatePartnerPopupOpen] = useState(false);
-  const [partnerCode, setPartnerCode] = useState("");
-  const [partnerPhone, setPartnerPhone] = useState("");
+  const location = useLocation();
+
+  // ====== Các state quản lý form ======
+  const [receiptCode, setReceiptCode] = useState("");
+  const [category, setCategory] = useState("");                 // Phân loại nhập kho
+  const [createdDate, setCreateDate] = useState("");           // Ngày lập phiếu
+  const [description, setDescription] = useState("");          // Lý do xuất/ diễn giải
+  const [referenceDocument, setReferenceDocument] = useState("");  // Chứng từ tham chiếu
+  const isReferenceFlow = (category === "Vật tư mua bán" || category === "Hàng hóa gia công") && !!referenceDocument;
+
+  // Thông tin đối tác
   const [partnerName, setPartnerName] = useState("");
-  const [partners, setPartners] = useState([]);
   const [address, setAddress] = useState("");
   const [contactName, setContactName] = useState("");
-  const [createdDate, setCreateDate] = useState("");
-  const [description, setDescription] = useState("");
-  const [referenceDocument, setReferenceDocument] = useState("");
-  const [files, setFiles] = useState([]); // Cập nhật để hỗ trợ nhiều file;
-  const [category, setCategory] = useState("");
-  const selectRef = useRef(null);
-  const [receiptCode, setReceiptCode] = useState("");
-  const [warehouses, setWarehouses] = useState([]);
-  const [OutsourceError, setOutsourceError] = useState("");
-  const [outsources, setOutsources] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
-  const location = useLocation();
-  const initialNextCode = location.state?.nextCode;
-  const [availableOrders, setAvailableOrders] = useState([]);
-  const [availableOutsourceDocs, setAvailableOutsourceDocs] = useState([]);
+  const [partnerPhone, setPartnerPhone] = useState("");
 
-  //lấy danh sách cho dropdown chứng từ tham chiếu
+  // Danh sách kho, file, v.v.
+  const [warehouses, setWarehouses] = useState([]);
+  const [files, setFiles] = useState([]);  // Dùng để upload giấy tờ kèm
+
+  // Danh sách tài liệu gốc (hoá đơn, phiếu xuất, v.v.) cho tham chiếu
+  const [availableOrders, setAvailableOrders] = useState([]);       // Dùng cho "Vật tư mua bán"
+  const [availableOutsourceDocs, setAvailableOutsourceDocs] = useState([]); // Dùng cho "Hàng hóa gia công"
+
+  // Các danh sách đối tác
+  const [outsources, setOutsources] = useState([]); // Đối tác Gia công
+  const [suppliers, setSuppliers] = useState([]);   // Đối tác Nhà cung cấp
+
+  // Ẩn / Hiện Modal
+  const [isChooseDocModalOpen, setIsChooseDocModalOpen] = useState(false);
+
+  // Dữ liệu các dòng sản phẩm
+  const [documentItems, setDocumentItems] = useState([]); // Danh sách sản phẩm khi chọn chứng từ
+  const [materialList, setMaterialList] = useState([]);
+  const [productList, setProductList] = useState([]);
+  const [combinedList, setCombinedList] = useState([]);  // Gộp cả products & materials
+  const [manualItems, setManualItems] = useState([]);     // Danh sách sản phẩm thêm thủ công
+
+  // Phân trang bảng
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+
+  // ----- Trạng thái gọi API, validate, v.v. -----
+  const [isSaving, setIsSaving] = useState(false);
+  const [quantityErrors, setQuantityErrors] = useState({}); // Lưu thông báo lỗi cho từng dòng (nếu cần)
+
+  // Lưu mã phiếu nhập code tạm (nếu có) từ location
+  const initialNextCode = location.state?.nextCode;
+
+  // region: useEffect - gọi data, set default values
   useEffect(() => {
+    // Ngày lập phiếu mặc định là ngày hiện tại
+    if (!createdDate) {
+      const today = dayjs().format("YYYY-MM-DD");
+      setCreateDate(today);
+    }
+  }, [createdDate]);
+
+  // Gọi API lấy Product, Material
+  useEffect(() => {
+    const fetchLists = async () => {
+      try {
+        const [materials, products] = await Promise.all([
+          getAllActiveMaterials(),
+          getProducts(),
+        ]);
+
+        // Giả sử ta chuẩn hoá về dạng:
+        const mappedMaterials = (materials || []).map(m => ({
+          id: m.materialId,
+          code: m.materialCode,
+          name: m.materialName,
+          unit: m.unitName || "",
+          type: "material",
+        }));
+
+        // Giả sử getProducts() trả về { content: [...] }
+        // Hoặc mảng
+        const rawProducts = Array.isArray(products) ? products : products?.content || [];
+        const mappedProducts = rawProducts.map(p => ({
+          id: p.productId,
+          code: p.productCode,
+          name: p.productName,
+          unit: p.unitName || "",
+          type: "product",
+        }));
+
+        setMaterialList(mappedMaterials);
+        setProductList(mappedProducts);
+        setCombinedList([...mappedProducts, ...mappedMaterials]);
+      } catch (err) {
+        console.error("Lỗi lấy danh sách vật tư / sản phẩm:", err);
+      }
+    };
+    fetchLists();
+  }, []);
+
+  useEffect(() => {
+    // Lấy danh sách kho, sản phẩm, mã phiếu nhập
+    const fetchInitData = async () => {
+      try {
+      // Lấy danh sách kho
+      const resWarehouses = await getWarehouseList();
+      setWarehouses(resWarehouses?.data || resWarehouses || []);
+
+      // Lấy danh sách sản phẩm (nếu cần cho việc thêm thủ công)
+      const resProducts = await getProducts();
+      // Tuỳ biến nếu bạn muốn hiển thị hoặc map data
+      // Ở đây ta chỉ demo sẵn sàng cho ProductRow
+
+      // Lấy mã phiếu nhập từ backend
+      const nextCode = await getNextCode();
+      setReceiptCode(nextCode);
+    } catch (err) {
+      console.error("Lỗi khi lấy dữ liệu khởi tạo:", err);
+    }
+    };
+    fetchInitData();
+  }, []);
+
+  useEffect(() => {
+    // Khi thay đổi category (phân loại nhập kho), gọi API lấy danh sách chứng từ tương ứng
     if (category === "Vật tư mua bán") {
-      fetchOutsources();
+      // Lấy danh sách đơn mua (Pending hoặc InProgress)
       fetchPendingOrInProgressOrders().then((orders) => {
+        // Map sang định dạng Autocomplete
         const formatted = orders.map((o) => ({
           label: o.poCode,
           value: o.poId,
           poCode: o.poCode,
           orderDate: dayjs(o.orderDate).format("DD/MM/YYYY"),
           supplierName: o.supplierName || "Không xác định",
+          details: o.details || o.orderDetails || []
         }));
         setAvailableOrders(formatted);
       });
+      // Lấy danh sách đối tác Gia công (nếu cần) hoặc logic khác
+      fetchOutsources();
     }
 
     if (category === "Hàng hóa gia công") {
+      // Lấy danh sách phiếu/đơn xuất gia công
+      fetchOutsourceDocuments();
+      // Lấy danh sách đối tác Gia công
       fetchOutsources();
-      fetchOutsourceDocuments(); // custom danh sách cho phiếu xuất gia công
     }
 
+    if (category === "Hàng hóa trả lại") {
+      // Lấy danh sách Nhà cung cấp
+      fetchSuppliers();
+    }
   }, [category]);
 
-
-  //lấy danh sách phiếu xuất gia công
+  /**
+   * Lấy danh sách phiếu gia công (Pending hoặc InProgress) 
+   */
   const fetchOutsourceDocuments = async () => {
     try {
-      const response = await fetchPendingOrInProgressOrders(); // dùng tạm API đơn mua
+      // Ở đây demo tạm dùng chung API fetchPendingOrInProgressOrders
+      const response = await fetchPendingOrInProgressOrders();
       const formatted = response.map((doc) => ({
         value: doc.id,
         poCode: doc.code,
         orderDate: dayjs(doc.createdDate).format("DD/MM/YYYY"),
         supplierName: doc.partnerName,
+        details: doc.details || []
       }));
       setAvailableOutsourceDocs(formatted);
     } catch (err) {
@@ -97,265 +224,522 @@ const AddReceiptNoteGeneral = () => {
     }
   };
 
-
-
+  /**
+   * Lấy danh sách đối tác Gia công
+   * (Tuỳ theo API thực tế, ví dụ getPartnersByType(OUTSOURCE_TYPE_ID))
+   */
   const fetchOutsources = async () => {
     try {
-      const response = await getPartnersByType(OUTSOURCE_TYPE_ID);
-      if (!response || !response.partners) {
-        console.error("API không trả về dữ liệu hợp lệ!");
-        setOutsources([]);
-        return;
-      }
-      const mappedOutsources = response.partners
-        .map((outsource) => {
-          const outsourcePartnerType = outsource.partnerTypes.find(
-            (pt) => pt.partnerType.typeId === OUTSOURCE_TYPE_ID
-          );
-          return {
-            code: outsourcePartnerType?.partnerCode || "",
-            label: `${outsourcePartnerType?.partnerCode || ""} - ${outsource.partnerName}`,
-            name: outsource.partnerName,
-            address: outsource.address,
-            phone: outsource.phone,
-            contactName: outsource.contactName
-          };
-        })
-        .filter((c) => c.code !== "");
-      setOutsources(mappedOutsources);
+      // Demo gọi API
+      // const response = await getPartnersByType(OUTSOURCE_TYPE_ID);
+      // Map data
+      // setOutsources(mappedOutsources);
     } catch (error) {
       console.error("Lỗi khi tải danh sách đối tác gia công:", error);
-      setOutsources([]);
     }
   };
 
+  /**
+   * Lấy danh sách Nhà cung cấp (đối tác có type = SUPPLIER_TYPE_ID)
+   */
   const fetchSuppliers = async () => {
     try {
-      const response = await getPartnersByType(SUPPLIER_TYPE_ID);
-      if (!response || !response.partners) {
-        console.error("API không trả về dữ liệu hợp lệ!");
-        setSuppliers([]);
-        return;
-      }
-      const mappedSuppliers = response.partners
-        .map((supplier) => {
-          const supplierPartnerType = supplier.partnerTypes.find(
-            (pt) => pt.partnerType.typeId === SUPPLIER_TYPE_ID
-          );
-          return {
-            code: supplierPartnerType?.partnerCode || "",
-            label: `${supplierPartnerType?.partnerCode || ""} - ${supplier.partnerName}`,
-            name: supplier.partnerName,
-            address: supplier.address,
-            phone: supplier.phone,
-            contactName: supplier.contactName
-          };
-        })
-        .filter((c) => c.code !== "");
-      setSuppliers(mappedSuppliers);
+      // Demo gọi API
+      // const response = await getPartnersByType(SUPPLIER_TYPE_ID);
+      // setSuppliers(mappedSuppliers);
     } catch (error) {
-      console.error("Lỗi khi tải danh sách đối tác gia công:", error);
-      setSuppliers([]);
+      console.error("Lỗi khi tải danh sách NCC:", error);
     }
   };
 
-  useEffect(() => {
-    if (category === "Vật tư mua bán") {
-      fetchOutsources();
-    }
-
-    if (category === "Hàng hóa gia công") {
-      fetchOutsources();
-    }
-
-    if (category === "Hàng hóa trả lại") {
-      fetchSuppliers();
-    }
-  }, [category]);
-
-  useEffect(() => {
-    if (!createdDate) {
-      const today = dayjs().format("YYYY-MM-DD");
-      setCreateDate(today);
-    }
-  }, []);
-
-  const handleOutsourceChange = (selectedOption) => {
-    setPartnerCode(selectedOption.code);
-    setPartnerName(selectedOption.name);
-    setAddress(selectedOption.address);
-    setContactName(selectedOption.contactName);
-    // setPhoneNumber(selectedOption.phone);
-    if (selectedOption.code) {
-      setOutsourceError("");
-    }
-  };
-
-  //lấy danh sách kho, sản phẩm và mã phiếu nhập
-  useEffect(() => {
-    const fetchInitData = async () => {
-      const resWarehouses = await getWarehouseList();
-      setWarehouses(resWarehouses?.data || resWarehouses || []);
-
-      const resProducts = await getProducts();
-      const options = resProducts.content.map(p => ({
-        value: p.productId,
-        label: `${p.productCode} - ${p.productName}`,
-        unitId: p.unitId,
-        unitName: p.unitName
-      }));
-      setProducts(options);
-
-      if (initialNextCode) {
-        setReceiptCode(initialNextCode);
-      } else {
-        const nextCode = await getNextCode();
-        setReceiptCode(nextCode);
-      }
-
+  // region: Helper function
+  /**
+   * Trả về kho mặc định dựa trên loại nhập kho (category).
+   * Tuỳ chỉnh theo business logic.
+   */
+  const getDefaultWarehouse = (warehouseType) => {
+    const warehouseTypeMap = {
+      "Thành phẩm sản xuất": "KTP",
+      "Hàng hóa trả lại": "KPL",
+      "Vật tư mua bán": "KVT",
+      "Hàng hóa gia công": "KVT",
+      "Nhập kho vật tư thừa": "KVT",
     };
+    const warehouseCode = warehouseTypeMap[warehouseType] || "";
+    const defaultWarehouse = warehouses.find(w => w.warehouseCode === warehouseCode);
+    return defaultWarehouse ? defaultWarehouse.warehouseCode : "";
+  };
 
-    fetchInitData();
-  }, []);
+  // ------------------ Khi chọn chứng từ từ modal => load chi tiết ------------------
+  const handleChooseDoc = async (selectedOrder) => {
+    setIsChooseDocModalOpen(false);
+    if (!selectedOrder) return;
+    console.log("Chọn chứng từ:", selectedOrder);
+    const { poId } = selectedOrder;
+    setReferenceDocument(poId);
+
+    try {
+      const po = await getPurchaseOrderById(poId);
+      setPartnerName(po.supplierName || "");
+      setAddress(po.supplierAddress || "");
+      setContactName(po.supplierContactName || "");
+      setPartnerPhone(po.supplierPhone || "");
+
+      const defaultWarehouseCode = getDefaultWarehouse(category);//lấy kho mặc định theo category
+      const newItems = (po.details || []).map((detail, idx) => {
+        const remaining = detail.orderedQuantity - (detail.receivedQuantity || 0);
+
+        return {
+          id: idx + 1,
+          ...detail, // 👈 giữ nguyên các field như materialCode, productCode, unitName,...
+          warehouseCode: defaultWarehouseCode, // Gán kho mặc định
+          quantity: remaining > 0 ? remaining : 0,
+          remainingQuantity: remaining,
+        };
+      });
+
+      setDocumentItems(newItems);
+    } catch (err) {
+      console.error("Không lấy được chi tiết PO:", err);
+    }
+  };
 
 
-  // Danh sách sản phẩm
-  const [products, setProducts] = useState([
-    { id: 1, code: "UNI01_27", name: "Product name", unit: "Cái", warehouse: "KTP", quantity: 4 },
-    { id: 2, code: "UNI02_44", name: "Product name", unit: "Cái", warehouse: "KTP", quantity: 4 },
-    { id: 3, code: "UNI01_98", name: "Product name", unit: "Cái", warehouse: "KTP", quantity: 4 },
-  ]);
+  // ------------------- Xử lý thay đổi cột quantity / warehouse / etc. -------------------
+  const isQuantityValid = (value, maxRemain) => {
+    const numValue = Number(value);
+    return numValue > 0 && numValue <= maxRemain;
+  };
 
-  // Xử lý upload file
+  const handleRowChange = (rowId, field, value) => {
+    if (isReferenceFlow) {
+      setDocumentItems(prev => prev.map(row => {
+        if (row.id === rowId) {
+          let newRow = { ...row, [field]: value };
+
+          // Nếu thay đổi quantity => validate
+          if (field === "quantity") {
+            // Số còn phải nhập
+            const maxRemain = row.remainingQuantity || 0;
+            const isValid = isQuantityValid(value, maxRemain);
+            if (!isValid) {
+              setQuantityErrors(prev => ({ ...prev, [rowId]: `Số lượng phải từ 1 đến ${maxRemain}!` }));
+            } else {
+              setQuantityErrors(prev => {
+                const copy = { ...prev };
+                delete copy[rowId];
+                return copy;
+              });
+            }
+          }
+          return newRow;
+        }
+        return row;
+      }));
+    } else {
+      // Manual items
+      setManualItems(prev => prev.map(row => {
+        if (row.id === rowId) {
+          let newRow = { ...row, [field]: value };
+          // Nếu thay đổi quantity => check > 0, v.v.
+          if (field === "quantity") {
+            // Ở AddReceiptNoteManually, ta cho 1 <= quantity <= 1000 (VD)
+            const val = Number(value);
+            if (!val || val < 1 || val > 100000) {
+              setQuantityErrors(prev => ({ ...prev, [rowId]: "Số lượng không hợp lệ!" }));
+            } else {
+              setQuantityErrors(prev => {
+                const copy = { ...prev };
+                delete copy[rowId];
+                return copy;
+              });
+            }
+          }
+          return newRow;
+        }
+        return row;
+      }));
+    }
+  };
+  // region: Thay đổi dữ liệu bảng thủ công (nếu không có chứng từ tham chiếu)
+  /**
+   * Thêm dòng mới cho danh sách manualItems
+   */
+  // Khi bấm "Thêm dòng"
+  const handleAddRow = () => {
+    const defaultWarehouseCode = getDefaultWarehouse(category);
+    setManualItems(prev => [
+      ...prev,
+      {
+        id: prev.length + 1,
+        selected: null, // chưa chọn
+        warehouse: defaultWarehouseCode, // Gán kho mặc định
+        quantity: 0,
+      }
+    ]);
+  };
+
+
+  /**
+   * Xoá 1 dòng khỏi danh sách manualItems
+   * @param {Number} id - id (hoặc index) của item
+   */
+  const handleRemoveRow = (id) => {
+    setManualItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  /**
+   * Xoá toàn bộ dòng
+   */
+  const handleRemoveAllRows = () => {
+    setManualItems([]);
+    setCurrentPage(0);
+  };
+
+  // region: Xử lí file upload
+  /**
+   * Khi user chọn file
+   */
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
-
     if (selectedFiles.length + files.length > 3) {
-      alert("Tải lên tối đa 3 file!");
+      alert("Bạn chỉ được tải lên tối đa 3 file!");
       return;
     }
-
     setFiles([...files, ...selectedFiles]);
   };
 
+  /**
+   * Xoá 1 file đã chọn
+   * @param {Number} index - index file trong mảng
+   */
   const handleRemoveFile = (index) => {
     setFiles(files.filter((_, i) => i !== index));
   };
 
-  // Phân trang
-  const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
-
-  const totalPages = Math.ceil(products.length / pageSize);
-  const totalElements = products.length;
-
-  // Kiểm tra nếu currentPage > totalPages khi dữ liệu thay đổi
-  useEffect(() => {
-    if (currentPage >= totalPages) {
-      setCurrentPage(totalPages > 0 ? totalPages - 1 : 0);
-    }
-  }, [products, totalPages]);
-
+  // region: Phân trang
+  /**
+   * Hàm xử lí đổi trang
+   * @param {Object} param - {selected} do thư viện ReactPaginate
+   */
   const handlePageChange = ({ selected }) => {
     setCurrentPage(selected);
   };
 
-  const handleAddRow = () => {
-    setProducts([
-      ...products,
-      { id: products.length + 1, code: "", name: "Product name", unit: "Cái", warehouse: "KTP", quantity: 0 },
-    ]);
+  /**
+   * Lấy mảng items hiện tại (dựa theo category + referenceDocument)
+   */
+  const getCurrentItems = () => {
+    if ((category === "Vật tư mua bán" || category === "Hàng hóa gia công") && referenceDocument) {
+      return documentItems;
+    }
+    return manualItems;
   };
 
-  const handleRemoveRow = (id) => {
-    const updatedProducts = products.filter((product) => product.id !== id);
-    setProducts(updatedProducts);
+  //Hàm xử lí lưu phiếu nhập
 
-    if (updatedProducts.length === 0) {
-      setCurrentPage(0);
+  const handleSaveReceipt = async () => {    
+    // Nếu chưa chọn category => return
+    if (!category) {
+      alert("Vui lòng chọn Phân loại nhập kho!");
+      return;
+    }
+    if (isSaving) {
+      return;
+    }
+  
+    let hasError = false;
+    let localErrors = {};
+  
+    // Kiểm tra dữ liệu trước khi gửi
+    console.log("Kiểm tra dữ liệu trước khi gửi", { isReferenceFlow, documentItems, manualItems });
+    if (isReferenceFlow) {
+      documentItems.forEach(row => {
+        if (!row.warehouseCode) {
+          hasError = true;
+          localErrors[row.id] = "Chưa chọn kho nhập!";
+        }
+        if (row.quantity === undefined || row.quantity === null || row.quantity < 0) {
+          hasError = true;
+          localErrors[row.id] = "Số lượng không hợp lệ!";
+        }
+      });
+    } else {
+      manualItems.forEach(row => {
+        if (!row.selected) {
+          hasError = true;
+          localErrors[row.id] = "Chưa chọn sản phẩm/vật tư!";
+        }
+        if (!row.warehouse) {
+          hasError = true;
+          localErrors[row.id] = "Chưa chọn kho nhập!";
+        }
+        if (!row.quantity || row.quantity <= 0) {
+          hasError = true;
+          localErrors[row.id] = "Số lượng không hợp lệ!";
+        }
+      });
+    }
+  
+    if (hasError) {
+      console.log("Có lỗi validate", localErrors);
+      setQuantityErrors(localErrors);
+      return;
+    }
+  
+    setIsSaving(true);
+    try {
+      // Tạo payload theo cấu trúc ReceiptNoteDTO
+      const payload = {
+        grnCode: receiptCode,
+        description: description || "",
+        category: category,
+        receiptDate: new Date(createdDate).toISOString(),
+        poId: isReferenceFlow ? Number(referenceDocument) : null,
+        details: []
+      };
+  
+      console.log("Tạo payload", payload);
+  
+      // Map dữ liệu chi tiết (details)
+      if (isReferenceFlow) {
+        payload.details = documentItems.map(row => {
+          const warehouse = warehouses.find(w => w.warehouseCode === row.warehouseCode);
+          if (!warehouse) {
+            throw new Error(`Không tìm thấy kho với code: ${row.warehouseCode}`);
+          }
+          return {
+            warehouseId: warehouse.warehouseId,
+            materialId: row.materialId ? Number(row.materialId) : null,
+            productId: row.productId ? Number(row.productId) : null,
+            quantity: Number(row.quantity),
+            unitId: row.unitId ? Number(row.unitId) : null
+          };
+        });
+      } else {
+        payload.details = manualItems.map(row => {
+          const warehouse = warehouses.find(w => w.warehouseCode === row.warehouse);
+          if (!warehouse) {
+            throw new Error(`Không tìm thấy kho với code: ${row.warehouse}`);
+          }
+          const isMaterial = row.selected?.type === "material";
+          return {
+            warehouseId: warehouse.warehouseId,
+            materialId: isMaterial ? Number(row.selected.id) : null,
+            productId: isMaterial ? null : Number(row.selected.id),
+            quantity: Number(row.quantity),
+            unitId: row.selected?.unitId ? Number(row.selected.unitId) : null
+          };
+        });
+      }
+  
+      console.log("Payload hoàn chỉnh", payload);
+  
+      // Gọi API tạo phiếu nhập
+      const response = await createReceiptNote(payload);
+      console.log("Response từ createReceiptNote", response);
+  
+      // Upload file đính kèm nếu có
+      if (files.length > 0) {
+        console.log("Bắt đầu upload file", { files });
+        await uploadPaperEvidence(response.grnId, "GOOD_RECEIPT_NOTE", files);
+        console.log("Upload file thành công");
+      }
+  
+      console.log("Lưu thành công");
+      alert("Tạo phiếu nhập thành công!");
+      navigate("/user/receiptNote");
+    } catch (err) {
+      console.error("❌ Lỗi khi lưu phiếu nhập:", err);
+      let msg = err?.response?.data?.message || err.message || "Lỗi không xác định!";
+      alert("Không thể lưu phiếu nhập: " + msg);
+    } finally {
+      console.log("Kết thúc handleSaveReceipt, reset isSaving");
+      setIsSaving(false);
     }
   };
-
-  const handleRemoveAllRows = () => {
-    setProducts([]);
-    setCurrentPage(0);
-  };
-
-  const handleOpenCreatePartnerPopup = () => {
-    console.log("Opening modal...");
-    setIsCreatePartnerPopupOpen(true);
-  };
-
-  const handleCloseCreatePartnerPopup = () => {
-    console.log("Closing modal, current state:", isCreatePartnerPopupOpen);
-    setIsCreatePartnerPopupOpen(false);
-  };
-
+  /**
+   * Cấu hình cột bảng (khi hiển thị danh sách manualItems)
+   */
   const columnsConfig = [
-    { field: 'index', headerName: 'STT', minWidth: 60, editable: false, renderCell: (params) => params.row.index + 1 },
-    { field: 'code', headerName: 'Mã hàng', minWidth: 120, editable: false },
-    { field: 'name', headerName: 'Tên hàng', minWidth: 200, editable: false },
-    { field: 'unit', headerName: 'Đơn vị', minWidth: 100, editable: false },
-    { field: 'warehouse', headerName: 'Kho nhập', minWidth: 120, editable: false },
-    { field: 'quantity', headerName: 'Số lượng', minWidth: 100, editable: false },
-    // {
-    //   field: 'actions',
-    //   headerName: 'Hành động',
-    //   minWidth: 100,
-    //   editable: false,
-    //   renderCell: (params) => (
-    //     <Button
-    //       size="small"
-    //       color="error"
-    //       onClick={() => handleRemoveRow(params.row.id)}
-    //     >
-    //       ✖
-    //     </Button>
-    //   )
-    // },
+    {
+      field: 'item',
+      headerName: 'Hàng hoá / Vật tư',
+      minWidth: 250,
+      // Tắt filter/sort tuỳ ý
+      sortable: false,
+      renderCell: (params) => {
+        // params.row sẽ chứa { selected, warehouse, quantity, ... }
+        // Lấy danh sách hiển thị:
+        const dropdownList = getDropdownListByCategory(); // hàm ở trên
+
+        return (
+          <Autocomplete
+            sx={{ width: '100%' }}
+            size="small"
+            options={dropdownList}
+            getOptionLabel={(option) => option?.code + " - " + option?.name}
+            value={params.row.selected || null}
+            onChange={(e, newValue) => {
+              // newValue là {id, code, name, unit, type}...
+              // Cập nhật state
+              handleChangeSelectedItem(params.row.id, newValue);
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                variant="outlined"
+                placeholder="Chọn sản phẩm / vật tư"
+                size="small"
+              />
+            )}
+          />
+        );
+      },
+    },
+    {
+      field: 'unit',
+      headerName: 'Đơn vị',
+      minWidth: 100,
+      renderCell: (params) => {
+        // Hiển thị unit dựa trên params.row.selected
+        return (
+          <span>{params.row.selected?.unit || ""}</span>
+        );
+      }
+    },
+    {
+      field: 'warehouse',
+      headerName: 'Kho nhập',
+      minWidth: 120,
+      renderCell: (params) => {
+        return (
+          <Autocomplete
+            sx={{ width: '100%' }}
+            size="small"
+            options={warehouses || []}
+            getOptionLabel={(option) => option?.warehouseCode || ""}
+            value={warehouses.find(wh => wh.warehouseCode === params.row.warehouse) || null}
+            onChange={(e, newValue) => {
+              // Cập nhật state
+              setManualItems(prev =>
+                prev.map(item =>
+                  item.id === params.row.id
+                    ? { ...item, warehouse: newValue?.warehouseCode || "" }
+                    : item
+                )
+              );
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                variant="outlined"
+                placeholder="Chọn kho"
+                size="small"
+              />
+            )}
+          />
+        );
+      }
+    },
+    {
+      field: 'quantity',
+      headerName: 'Số lượng',
+      minWidth: 80,
+      renderCell: (params) => {
+        return (
+          <div>
+            <TextField
+              type="number"
+              size="small"
+              inputProps={{ min: 0 }}
+              value={params.row.quantity}
+              onChange={(e) => handleChangeQuantity(params.row.id, e.target.value)}
+              style={{ width: '100%' }}
+            />
+          </div>
+
+        );
+      }
+    },
     {
       field: 'actions',
       headerName: 'Hành động',
-      flex: 0.5,
-      minWidth: 100,
-      editable: false,
-      filterable: false,
+      minWidth: 80,
       renderCell: (params) => (
-        <div className="flex justify-center w-full">
-          <Tooltip content="Xoá">
-            <button
-              onClick={(e) => {
-                e.stopPropagation(); // Ngăn sự kiện bubble
-                handleRemoveRow(params.row.index - 1);
-              }}
-              className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white"
-            >
-              <FaTrash className="h-3 w-3" />
-            </button>
-          </Tooltip>
-        </div>
+        <IconButton
+          color="error"
+          onClick={() => handleRemoveRow(params.row.id)}
+        >
+          <FaTrash fontSize="small" />
+        </IconButton>
       )
     }
   ];
 
-  // Lấy danh sách sản phẩm hiển thị theo trang hiện tại
-  const displayedProducts = products.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
 
-  const displayedProductsWithIndex = displayedProducts.map((item, idx) => ({
+  // region: Render giao diện
+  // Tính toán phân trang
+  const currentItems = getCurrentItems();
+  const totalElements = currentItems.length;
+  const totalPages = Math.ceil(totalElements / pageSize);
+  const displayedItems = currentItems.slice(
+    currentPage * pageSize,
+    (currentPage + 1) * pageSize
+  );
+  // Gắn index cho mỗi row (để hiển thị STT)
+  const displayedItemsWithIndex = displayedItems.map((item, idx) => ({
     ...item,
     index: currentPage * pageSize + idx,
   }));
 
-  const currentDocuments = category === "Hàng hóa gia công"
-    ? availableOutsourceDocs
-    : availableOrders;
+  // Tuỳ thuộc category để lấy ds chứng từ
+  const currentDocuments =
+    category === "Hàng hóa gia công" ? availableOutsourceDocs : availableOrders;
+
+  // endregion
+
+  // Trong component AddReceiptNoteGeneral
+  const getDropdownListByCategory = () => {
+    if (category === "Thành phẩm sản xuất" || category === "Hàng hóa trả lại") {
+      return productList || [];
+    } else if (category === "Nhập kho vật tư thừa") {
+      return materialList || [];
+    } else if (category === "Khác") {
+      return combinedList || [];
+    }
+    // Trường hợp còn lại (category không rõ ràng) - trả về một danh sách an toàn
+    return combinedList || productList || materialList || [];
+  };
+
+  //xử lí thay đổi item trong danh sách manualItems
+  const handleChangeSelectedItem = (rowId, newValue) => {
+    setManualItems(prev =>
+      prev.map(item =>
+        item.id === rowId
+          ? { ...item, selected: newValue }
+          : item
+      )
+    );
+  };
+
+  const handleChangeQuantity = (rowId, newQty) => {
+    setManualItems(prev =>
+      prev.map(item =>
+        item.id === rowId
+          ? { ...item, quantity: Number(newQty) }
+          : item
+      )
+    );
+  };
+
 
 
   return (
-    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+    <div className="mb-8 flex flex-col gap-12">
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
-        {/* Header */}
         <CardBody className="pb-2 bg-white rounded-xl">
+          {/* Tiêu đề phiếu */}
           <PageHeader
             title={`Phiếu nhập kho ${receiptCode}`}
             showAdd={false}
@@ -365,14 +749,16 @@ const AddReceiptNoteGeneral = () => {
 
           {/* Thông tin chung */}
           <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
-            <InformationCircleIcon className="h-5 w-5 mr-2"></InformationCircleIcon>
+            <InformationCircleIcon className="h-5 w-5 mr-2" />
             Thông tin chung
           </Typography>
-          <div
-            className={`grid gap-4 mb-4 ${category === "Vật tư mua bán" || category === "Hàng hóa gia công" ? "grid-cols-3" : "grid-cols-2"}`}>
+
+          {/* Phân loại nhập kho, Chứng từ tham chiếu (nếu có) */}
+          <div className={`grid gap-4 mb-4 ${(category === "Vật tư mua bán" || category === "Hàng hóa gia công") ? "grid-cols-3" : "grid-cols-2"}`}>
+            {/* Chọn phân loại nhập kho */}
             <div>
               <Typography variant="medium" className="mb-1 text-black">
-                Phân loại xuất kho
+                Phân loại nhập kho
                 <span className="text-red-500"> *</span>
               </Typography>
               <TextField
@@ -382,16 +768,13 @@ const AddReceiptNoteGeneral = () => {
                 value={category}
                 onChange={(e) => {
                   setCategory(e.target.value);
+                  // Nếu đổi category => xóa referenceDocument cũ (nếu có)
+                  setReferenceDocument(null);
+                  setDocumentItems([]);
+                  setManualItems([]);
                 }}
                 fullWidth
                 size="small"
-                slotProps={{
-                  select: {
-                    displayEmpty: true,
-                    renderValue: (selected) =>
-                      selected ? selected : <span style={{ color: '#9e9e9e' }}>Phân loại nhập kho</span>,
-                  },
-                }}
               >
                 <MenuItem value="Thành phẩm sản xuất">Thành phẩm sản xuất</MenuItem>
                 <MenuItem value="Vật tư mua bán">Vật tư mua bán</MenuItem>
@@ -400,96 +783,51 @@ const AddReceiptNoteGeneral = () => {
                 <MenuItem value="Nhập kho vật tư thừa">Nhập kho vật tư thừa</MenuItem>
                 <MenuItem value="Khác">Khác</MenuItem>
               </TextField>
-              {!category && (
-                <Typography variant="small" className="text-red-500 mt-1">
-                  Vui lòng chọn phân loại nhập kho
-                </Typography>
-              )}
             </div>
-            {/* Check phân loại, chứng từ tham chiếu sẽ hiển thị theo phân loại*/}
+
+            {/* Tham chiếu chứng từ (nếu là Vật tư mua bán / Hàng hóa gia công) */}
             {(category === "Vật tư mua bán" || category === "Hàng hóa gia công") && (
               <div>
-
                 <Typography className="mb-1 text-black">
                   Tham chiếu chứng từ gốc
+                  <span className="text-red-500"> *</span>
                 </Typography>
-
-                <TextField
-                  select
-                  fullWidth
-                  size="small"
-                  color="success"
-                  value={referenceDocument}
-                  onChange={async (e) => {
-                    const selectedId = e.target.value;
-                    setReferenceDocument(selectedId);
-
-                    try {
-                      const res = await getPurchaseOrderById(selectedId);
-                      console.log("Đơn hàng chi tiết:", res);
-                      // Gán thông tin đối tác
-                      setPartnerName(res.supplierName || "");
-                      setPartnerCode(res.supplierCode || "");
-                      setContactName(res.supplierContactName || "");
-                      setAddress(res.supplierAddress || "");
-
-                      // Gán danh sách chi tiết vật tư vào bảng sản phẩm
-                      const newProducts = res.details.map((item, index) => ({
-                        id: index + 1,
-                        code: item.materialCode,
-                        name: item.materialName,
-                        unit: item.unit,
-                        warehouse: "", // Có thể để trống, user sẽ chọn sau
-                        quantity: item.remainingQuantity, // Hoặc orderedQuantity tùy logic
-                      }));
-
-                      setProducts(newProducts);
-                    } catch (err) {
-                      console.error("Không lấy được thông tin đơn hàng:", err);
+                <Autocomplete
+                  options={currentDocuments}
+                  value={currentDocuments.find((doc) => doc.value === referenceDocument) || null}
+                  getOptionLabel={(option) => option.poCode || ""}
+                  onChange={(event, newValue) => {
+                    if (newValue) {
+                      handleChooseDoc(newValue);
                     }
                   }}
-
-
-                  SelectProps={{
-                    MenuProps: {
-                      PaperProps: {
-                        style: {
-                          maxHeight: 300, // Có scroll nếu danh sách quá dài
-                        },
-                      },
-                    },
-                    renderValue: (selected) => {
-                      const selectedOrder = availableOrders.find(o => o.value === selected);
-                      return selectedOrder
-                        ? `${selectedOrder.poCode}`
-                        : "Chọn chứng từ...";
-                    },
-                  }}
-                >
-                  {/* Header cho các cột */}
-                  <MenuItem disabled>
-                    <div className="flex w-full font-semibold text-gray-700 text-sm">
-                      <span className="w-[120px]">Mã chứng từ</span>
-                      <span className="w-[120px]">Ngày chứng từ</span>
-                      <span className="flex-1">Tên đối tác</span>
-                    </div>
-                  </MenuItem>
-
-                  {currentDocuments.map((order) => (
-                    <MenuItem key={order.value} value={order.value}>
-                      <div className="flex w-full text-sm">
-                        <span className="w-[120px]">{order.poCode}</span>
-                        <span className="w-[120px] text-gray-600">{order.orderDate}</span>
-                        <span className="flex-1 truncate">{order.supplierName}</span>
-                      </div>
-                    </MenuItem>
-                  ))}
-
-                </TextField>
-
-
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Chọn chứng từ..."
+                      hiddenLabel
+                      color="success"
+                      size="small"
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            <IconButton onClick={() => setIsChooseDocModalOpen(true)}
+                              size="small">
+                              <FaSearch fontSize="small" />
+                            </IconButton>
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      }}
+                    />
+                  )}
+                  isOptionEqualToValue={(option, value) => option.value === value.value}
+                />
               </div>
             )}
+
+            {/* Ngày lập phiếu */}
             <div>
               <Typography variant="medium" className="mb-1 text-black">
                 Ngày lập phiếu
@@ -499,11 +837,10 @@ const AddReceiptNoteGeneral = () => {
                   value={createdDate ? dayjs(createdDate) : null}
                   onChange={(newValue) => {
                     if (newValue) {
-                      setOrderDate(newValue.format("YYYY-MM-DD")); // format lại để lưu về dạng chuẩn
+                      setCreateDate(newValue.format("YYYY-MM-DD"));
                     }
                   }}
                   format="DD/MM/YYYY"
-                  dayOfWeekFormatter={(weekday) => `${weekday.format("dd")}`}
                   slotProps={{
                     day: {
                       sx: () => ({
@@ -530,9 +867,10 @@ const AddReceiptNoteGeneral = () => {
               </LocalizationProvider>
             </div>
           </div>
-          {(category === "Vật tư mua bán" || category === "Hàng hóa gia công" || category === "Hàng hóa trả lại") && (
-            <div className="grid grid-cols-3 gap-4 mb-4">
 
+          {/* Nếu là Vật tư mua bán / Gia công => hiển thị thông tin đối tác */}
+          {(category === "Vật tư mua bán" || category === "Hàng hóa gia công") && (
+            <div className="grid grid-cols-3 gap-4 mb-4">
               <div className="col-span-2">
                 <Typography variant="medium" className="mb-1 text-black">
                   Tên đối tác
@@ -542,16 +880,8 @@ const AddReceiptNoteGeneral = () => {
                   size="small"
                   color="success"
                   variant="outlined"
-                  type="text"
+                  disabled
                   value={partnerName}
-                  sx={{
-                    '& .MuiInputBase-root.Mui-disabled': {
-                      bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
-                      },
-                    },
-                  }}
                 />
               </div>
               <div>
@@ -563,16 +893,8 @@ const AddReceiptNoteGeneral = () => {
                   size="small"
                   color="success"
                   variant="outlined"
-                  type="text"
+                  disabled
                   value={contactName}
-                  sx={{
-                    '& .MuiInputBase-root.Mui-disabled': {
-                      bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
-                      },
-                    },
-                  }}
                 />
               </div>
 
@@ -585,16 +907,8 @@ const AddReceiptNoteGeneral = () => {
                   size="small"
                   color="success"
                   variant="outlined"
-                  type="text"
+                  disabled
                   value={address}
-                  sx={{
-                    '& .MuiInputBase-root.Mui-disabled': {
-                      bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
-                      },
-                    },
-                  }}
                 />
               </div>
               <div>
@@ -606,22 +920,80 @@ const AddReceiptNoteGeneral = () => {
                   size="small"
                   color="success"
                   variant="outlined"
-                  type="text"
+                  disabled
                   value={partnerPhone}
-                  sx={{
-                    '& .MuiInputBase-root.Mui-disabled': {
-                      bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
-                      },
-                    },
-                  }}
                 />
               </div>
             </div>
           )}
 
-          {/* Diễn giải & Kèm theo */}
+          {/* Nếu là Hàng hoá trả lại => hiển thị autocomplete nhà cung cấp, vv. */}
+          {category === "Hàng hóa trả lại" && (
+            <div className="grid grid-cols-3 gap-x-12 gap-y-4 mb-4">
+              {/* Demo: Tự điều chỉnh logic */}
+              <div>
+                <Typography variant="medium" className="mb-1 text-black">
+                  Mã đối tác
+                </Typography>
+                <Autocomplete
+                  options={suppliers}
+                  size="small"
+                  disableClearable
+                  getOptionLabel={(option) => option.code || ""}
+                  onChange={(event, selectedOption) => {
+                    // setPartnerCode(selectedOption.code)
+                    // setPartnerName(selectedOption.name) ...
+                  }}
+                  renderOption={(props, option) => (
+                    <li {...props}>
+                      {option.code} - {option.name}
+                    </li>
+                  )}
+                  renderInput={(params) => {
+                    return (
+                      <TextField
+                        color="success"
+                        hiddenLabel
+                        {...params}
+                        placeholder="Mã đối tác"
+                        InputProps={{
+                          ...params.InputProps,
+                          endAdornment: (
+                            <>
+                              <IconButton
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // handleOpenCreatePartnerPopup();
+                                }}
+                                size="small"
+                              >
+                                <FaPlus fontSize="small" />
+                              </IconButton>
+                              {params.InputProps.endAdornment}
+                            </>
+                          )
+                        }}
+                      />
+                    );
+                  }}
+                />
+              </div>
+              <div className="col-span-2">
+                <Typography variant="medium" className="mb-1 text-black">
+                  Tên đối tác
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  color="success"
+                  variant="outlined"
+                />
+              </div>
+              {/* ... Tương tự cho địa chỉ, sđt, người liên hệ, vv. */}
+            </div>
+          )}
+
+          {/* Lý do xuất & Kèm theo */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <Typography variant="medium" className="mb-1 text-black">
@@ -643,17 +1015,22 @@ const AddReceiptNoteGeneral = () => {
               <Typography variant="medium" className="mb-1 text-black">
                 Kèm theo
               </Typography>
-              <FileUploadBox files={files} setFiles={setFiles} maxFiles={3} />
+              {/* Upload tài liệu: sử dụng component FileUploadBox */}
+              <FileUploadBox
+                files={files}
+                setFiles={setFiles}
+                maxFiles={3}
+              />
             </div>
           </div>
 
           {/* Danh sách sản phẩm */}
           <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
-            <ListBulletIcon className="h-5 w-5 mr-2"></ListBulletIcon>
+            <ListBulletIcon className="h-5 w-5 mr-2" />
             Danh sách sản phẩm
           </Typography>
 
-          {/* Items per page and search */}
+          {/* Bộ phận chọn pageSize & search */}
           <div className="py-2 flex items-center justify-between gap-2">
             {/* Items per page */}
             <div className="flex items-center gap-2">
@@ -677,25 +1054,59 @@ const AddReceiptNoteGeneral = () => {
               </Typography>
             </div>
 
-            {/* Search input */}
+            {/* Search input (nếu có nhu cầu) */}
             <TableSearch
-              // value={searchTerm}
-              // onChange={setSearchTerm}
-              onSearch={() => {
-                // Thêm hàm xử lý tìm kiếm vào đây nếu có
-                console.log("Tìm kiếm đơn hàng:", searchTerm);
-              }}
               placeholder="Tìm kiếm"
+              onSearch={(val) => {
+                // Thêm logic tìm kiếm nếu cần
+              }}
             />
-
           </div>
 
-          {/* Bảng sản phẩm */}
-          <Table
-            data={displayedProductsWithIndex}
-            columnsConfig={columnsConfig}
-            enableSelection={false}
-          />
+          {/* Hiển thị bảng */}
+          {/* Nếu category= Vật tư mua bán / Gia công và đã chọn chứng từ => hiển thị bảng ProductRow */}
+          {(category === "Vật tư mua bán" || category === "Hàng hóa gia công") && referenceDocument ? (
+            <div className="overflow-auto border rounded">
+              <table className="w-full table-auto text-sm">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="p-2 border">STT</th>
+                    <th className="p-2 border">Mã hàng</th>
+                    <th className="p-2 border">Tên hàng</th>
+                    <th className="p-2 border">Đơn vị</th>
+                    <th className="p-2 border">Kho nhập<span className="text-red-500"> *</span></th>
+                    <th className="p-2 border">Số lượng đặt</th>
+                    <th className="p-2 border">Đã nhận</th>
+                    <th className="p-2 border">Còn lại</th>
+                    <th className="p-2 border">Số lượng nhập kho<span className="text-red-500"> *</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayedItemsWithIndex.map((item, index) => (
+                    <ProductRow
+                      key={item.id}
+                      item={item}
+                      index={index}
+                      warehouses={warehouses}
+                      defaultWarehouseCode={getDefaultWarehouse(category)}
+                      currentPage={currentPage}
+                      pageSize={pageSize}
+                      onDataChange={handleRowChange}
+                      errorMessage={quantityErrors[item.id]}
+                    />
+                  ))}
+                </tbody>
+              </table>
+
+            </div>
+          ) : (
+            // Nếu không có chứng từ, hiển thị bảng manualItems
+            <Table
+              data={displayedItemsWithIndex}
+              columnsConfig={columnsConfig}
+              enableSelection={false}
+            />
+          )}
 
           {/* Phân trang */}
           {totalElements > 0 && (
@@ -725,29 +1136,35 @@ const AddReceiptNoteGeneral = () => {
               />
             </div>
           )}
-          <div className="flex gap-2 mt-2 mb-4 h-8">
-            <MuiButton
-              size="small"
-              variant="outlined"
-              onClick={handleAddRow}
-            >
-              <div className='flex items-center gap-2'>
-                <FaPlus className="h-4 w-4" />
-                <span>Thêm dòng</span>
-              </div>
-            </MuiButton>
-            <MuiButton
-              size="small"
-              variant="outlined"
-              color="error"
-              onClick={handleRemoveAllRows}
-            >
-              <div className='flex items-center gap-2'>
-                <FaTrash className="h-4 w-4" />
-                <span>Xóa hết dòng</span>
-              </div>
-            </MuiButton>
-          </div>
+
+          {/* Nếu không dùng chứng từ => hiển thị nút thêm, xóa dòng */}
+          {!(category === "Vật tư mua bán" || category === "Hàng hóa gia công") && (
+            <div className="flex gap-2 mt-2 mb-4 h-8">
+              <MuiButton
+                size="small"
+                variant="outlined"
+                onClick={handleAddRow}
+              >
+                <div className="flex items-center gap-2">
+                  <FaPlus className="h-4 w-4" />
+                  <span>Thêm dòng</span>
+                </div>
+              </MuiButton>
+              <MuiButton
+                size="small"
+                variant="outlined"
+                color="error"
+                onClick={handleRemoveAllRows}
+              >
+                <div className="flex items-center gap-2">
+                  <FaTrash className="h-4 w-4" />
+                  <span>Xoá hết dòng</span>
+                </div>
+              </MuiButton>
+            </div>
+          )}
+
+          {/* Footer button */}
           <div className="mt-6 border-t pt-4 flex justify-between">
             <MuiButton
               color="info"
@@ -755,8 +1172,8 @@ const AddReceiptNoteGeneral = () => {
               variant="outlined"
               sx={{
                 height: '36px',
-                color: '#616161',           // text color
-                borderColor: '#9e9e9e',     // border
+                color: '#616161',
+                borderColor: '#9e9e9e',
                 '&:hover': {
                   backgroundColor: '#f5f5f5',
                   borderColor: '#757575',
@@ -767,12 +1184,13 @@ const AddReceiptNoteGeneral = () => {
             >
               <FaArrowLeft className="h-3 w-3" /> Quay lại
             </MuiButton>
+
             <div className="flex items-center justify-end gap-2 pb-2">
               <MuiButton
                 size="medium"
                 color="error"
                 variant="outlined"
-              // onClick={handleCancel}
+                onClick={() => navigate("/user/receiptNote")} // Hoặc xử lý reset tuỳ ý
               >
                 Hủy
               </MuiButton>
@@ -780,9 +1198,9 @@ const AddReceiptNoteGeneral = () => {
                 size="lg"
                 color="white"
                 variant="text"
-                className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px]"
                 ripple={true}
-              // onClick={handleSaveOrder}
+                onClick={handleSaveReceipt}
               >
                 Lưu
               </Button>
@@ -790,19 +1208,15 @@ const AddReceiptNoteGeneral = () => {
           </div>
         </CardBody>
       </Card>
-      {isCreatePartnerPopupOpen && (
-        <ModalAddPartner
-          category={category}
-          onClose={handleCloseCreatePartnerPopup}
-          onSuccess={(newPartner) => {
-            // Đóng modal và sau đó refresh danh sách khách hàng
-            handleCloseCreatePartnerPopup();
-            if (category === "Gia công") fetchOutsources();
-            if (category === "Trả lại hàng mua") fetchSuppliers();
-          }}
+
+      {/* Modal chọn chứng từ */}
+      {isChooseDocModalOpen && (
+        <ModalChooseOrder
+          onClose={() => setIsChooseDocModalOpen(false)}
+          onOrderSelected={handleChooseDoc}
         />
       )}
-    </div >
+    </div>
   );
 };
 

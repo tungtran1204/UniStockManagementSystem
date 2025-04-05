@@ -131,6 +131,11 @@ public class MaterialsController {
         return ResponseEntity.ok(materialsService.updateMaterial(id, materialDTO, image));
     }
 
+    @GetMapping("/active")
+    public ResponseEntity<List<MaterialsDTO>> getActiveMaterials() {
+        List<MaterialsDTO> activeMaterials = materialsService.getAllActiveMaterials();
+        return ResponseEntity.ok(activeMaterials);
+    }
 
 
 }

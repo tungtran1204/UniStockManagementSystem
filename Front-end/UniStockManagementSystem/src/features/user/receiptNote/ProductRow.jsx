@@ -18,9 +18,14 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
   const [warehouse, setWarehouse] = useState(defaultWarehouseCode || '');
   const [quantity, setQuantity] = useState('');
   const [quantityError, setQuantityError] = useState('');
-  const [remainingQuantity, setRemainingQuantity] = useState(
-    Math.max(0, item.orderedQuantity - item.receivedQuantity)
-  );
+  const [remainingQuantity, setRemainingQuantity] = useState(0);
+
+  useEffect(() => {
+    if (item.quantity !== undefined && item.quantity !== null) {
+      setQuantity(item.quantity.toString());
+    }
+  }, [item.quantity]);
+  
 
   useEffect(() => {
     setWarehouse(defaultWarehouseCode);

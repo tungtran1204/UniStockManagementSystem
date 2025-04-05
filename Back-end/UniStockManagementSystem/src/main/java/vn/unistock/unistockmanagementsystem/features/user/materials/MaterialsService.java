@@ -187,4 +187,12 @@ public class MaterialsService {
                 .map(materialsMapper::toDTO)
                 .collect(Collectors.toList());
     }
+
+    public List<MaterialsDTO> getAllActiveMaterials() {
+        List<Material> activeMaterials = materialsRepository.findAllByIsUsingTrue();
+        return activeMaterials.stream()
+                .map(materialsMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
 }

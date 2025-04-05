@@ -326,10 +326,12 @@ const AddReceiptNote = () => {
     if (order?.details?.length > 0) {
       const initialRowsData = {};
       order.details.forEach(item => {
+        const remaining = item.orderedQuantity - (item.receivedQuantity || 0);
         initialRowsData[item.materialId || item.productId] = {
-          quantity: item.orderedQuantity, // 🔥 Gán giá trị mặc định
-          warehouse: itemWarehouses[item.materialId || item.productId] || "", // Giữ warehouse mặc định
-        };
+          quantity: remaining > 0 ? remaining : 0,
+          remainingQuantity: 0,
+          warehouse: itemWarehouses[item.materialId || item.productId] || "",
+        };        
       });
       setRowsData(initialRowsData);
     }
@@ -435,7 +437,7 @@ const AddReceiptNote = () => {
                 {/* <Option value="Thành phẩm sản xuất">Thành phẩm sản xuất</Option>
                 <Option value="Hàng hóa trả lại">Hàng hóa trả lại</Option> */}
                 <Option value="Vật tư mua bán">Vật tư mua bán</Option>
-                <Option value="Hàng hóa gia công">Hàng hóa gia công</Option>              
+                <Option value="Hàng hóa gia công">Hàng hóa gia công</Option>
               </Select>
               {!category && (
                 <Typography variant="small" className="text-red-500 mt-1">
@@ -618,7 +620,11 @@ const AddReceiptNote = () => {
                   displayedItems.map((item, index) => (
                     <ProductRow
                       key={`item-${item.materialId || item.productId}-${index}`}
-                      item={item}
+                      item={{
+                        ...item,
+                        quantity: rowsData[item.materialId || item.productId]?.quantity,
+                        remainingQuantity: rowsData[item.materialId || item.productId]?.remainingQuantity,
+                      }}
                       index={index + currentPage * pageSize}
                       warehouses={warehouses}
                       defaultWarehouseCode={getDefaultWarehouse(referenceDocument)}
