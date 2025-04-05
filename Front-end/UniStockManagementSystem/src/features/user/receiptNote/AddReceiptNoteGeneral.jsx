@@ -464,7 +464,7 @@ const AddReceiptNoteGeneral = () => {
           hasError = true;
           localErrors[row.id] = "Chưa chọn kho nhập!";
         }
-        if (row.quantity === undefined || row.quantity === null || row.quantity < 0) {
+        if (row.quantity === undefined || row.quantity === null || row.quantity === "" || row.quantity < 0) {
           hasError = true;
           localErrors[row.id] = "Số lượng không hợp lệ!";
         }
@@ -479,7 +479,10 @@ const AddReceiptNoteGeneral = () => {
           hasError = true;
           localErrors[row.id] = "Chưa chọn kho nhập!";
         }
-        if (!row.quantity || row.quantity <= 0) {
+        if (!row.quantity ||
+          row.quantity === undefined ||
+          row.quantity === null ||
+          row.quantity === "" || row.quantity <= 0) {
           hasError = true;
           localErrors[row.id] = "Số lượng không hợp lệ!";
         }
