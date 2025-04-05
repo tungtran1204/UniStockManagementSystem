@@ -38,14 +38,15 @@ const getPageInfo = (pathname) => {
           if (subPage.path === pathname) {
             return {
               layoutName: route.title || route.layout,
-              pageName: subPage.name || pathname,
+              pageName: page.name || pathname,
+              subPageName: subPage.name || pathname,
             };
           }
         }
       }
     }
   }
-  return { layoutName: "Trang", pageName: "Không xác định" }; // Mặc định nếu không tìm thấy
+  return { layoutName: "Trang", pageName: "Không xác định", subPageName: "Không xác định" }; // Mặc định nếu không tìm thấy
 };
 export function Navbar({ brandName, routes }) {
   const [controller, dispatch] = useMaterialTailwindController();
@@ -53,7 +54,7 @@ export function Navbar({ brandName, routes }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { layoutName, pageName } = getPageInfo(pathname);
+  const { layoutName, pageName, subPageName } = getPageInfo(pathname);
 
   const handleLogout = () => {
     logout();
@@ -107,7 +108,7 @@ export function Navbar({ brandName, routes }) {
             </Breadcrumbs>
 
             <Typography variant="h6" color="blue-gray">
-              {pageName}
+              {subPageName || pageName}
             </Typography>
           </div>
         </div>
