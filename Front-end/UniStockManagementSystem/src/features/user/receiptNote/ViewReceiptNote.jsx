@@ -8,6 +8,7 @@ import {
   Input,
   Textarea
 } from "@material-tailwind/react";
+import { Button as MuiButton } from '@mui/material';
 import PageHeader from '@/components/PageHeader';
 import useReceiptNote from "./useReceiptNote";
 import useUser from "../../admin/users/useUser";
@@ -16,6 +17,9 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import robotoFont from '@/assets/fonts/Roboto-Regular-normal.js';
+import ReactPaginate from "react-paginate";
+import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
+import { FaArrowLeft } from "react-icons/fa";
 
 const ViewReceiptNote = () => {
   const { id } = useParams();
@@ -26,12 +30,16 @@ const ViewReceiptNote = () => {
   const [creator, setCreator] = useState("Đang tải...");
   const [loading, setLoading] = useState(true);
 
+  // State phân trang cho bảng
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+
   useEffect(() => {
     const fetchDetail = async () => {
       try {
         const receipt = await getReceiptNote(id);
         setData(receipt);
-        console.log("Phiếu nhập: ",receipt);
+        console.log("Phiếu nhập: ", receipt);
         if (receipt.createdBy) {
           const user = await getUserById(receipt.createdBy);
           setCreator(user.username || user.email || "Không xác định");
@@ -54,20 +62,20 @@ const ViewReceiptNote = () => {
     });
   };
 
+  // Nếu đang tải hoặc không có data, hiển thị thông báo thích hợp
+  if (loading) return <Typography>Đang tải dữ liệu...</Typography>;
+  if (!data) return <Typography className="text-red-500">Không tìm thấy phiếu nhập</Typography>;
+
+  // Phân trang cho bảng danh sách hàng hóa
+  const totalItems = data.details ? data.details.length : 0;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const displayedItems = data.details ? data.details.slice(currentPage * pageSize, (currentPage + 1) * pageSize) : [];
+
   const handleExportPDF = () => {
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     doc.addFileToVFS("Roboto-Regular.ttf", robotoFont);
     doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
     doc.setFont("Roboto");
-    // doc.addImage(
-    //   '/path/to/logo.png', // bạn sẽ cần convert ảnh thành base64 hoặc import bằng Vite
-    //   'PNG',
-    //   50, 90, // vị trí X, Y
-    //   100, 100, // kích thước width, height
-    //   undefined,
-    //   'NONE',
-    //   0.1 // opacity (0.0 – 1.0)
-    // );
 
     doc.setFontSize(14);
     doc.text("CÔNG TY TNHH THIÊN NGỌC AN", 14, 20);
@@ -84,7 +92,7 @@ const ViewReceiptNote = () => {
     doc.text(`Diễn giải: ${data.description || "Không có"}`, 14, 66);
     doc.text(`Ngày tạo: ${formatDate(data.receiptDate)}`, 140, 48);
     doc.text(`Người tạo: ${creator}`, 140, 54);
-   
+
 
     autoTable(doc, {
       startY: 74,
@@ -102,7 +110,7 @@ const ViewReceiptNote = () => {
         { content: item.materialName || item.productName, styles: { halign: 'left' } },
         { content: item.unitName || "-", styles: { halign: 'center' } },
         { content: item.quantity, styles: { halign: 'center' } },
-        { content: item.warehouseName , styles: { halign: 'center' } }
+        { content: item.warehouseName, styles: { halign: 'center' } }
       ]),
       styles: {
         font: "Roboto",
@@ -121,14 +129,6 @@ const ViewReceiptNote = () => {
       tableLineColor: 200,
       margin: { top: 0, left: 14, right: 14 },
     });
-
-    // doc.setTextColor(200, 0, 0); // đỏ đậm
-    // doc.setFontSize(40);
-    // doc.setFont("Roboto", "bold");
-    // doc.text("ĐÃ NHẬP KHO", 105, 150, {
-    //   align: "center",
-    //   angle: -20
-    // });
 
     const finalY = doc.lastAutoTable.finalY + 12;
     doc.text("Người giao hàng", 20, finalY);

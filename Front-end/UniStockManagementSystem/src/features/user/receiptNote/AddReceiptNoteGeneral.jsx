@@ -19,7 +19,8 @@ import { FaPlus, FaTrash, FaArrowLeft, FaSearch } from "react-icons/fa";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
-  ListBulletIcon
+  ListBulletIcon,
+  XCircleIcon
 } from "@heroicons/react/24/outline";
 import { InformationCircleIcon } from "@heroicons/react/24/solid";
 import dayjs from "dayjs";
@@ -676,10 +677,12 @@ const AddReceiptNoteGeneral = () => {
       minWidth: 80,
       renderCell: (params) => (
         <IconButton
+          variant="text" 
+          size="5px"
           color="error"
           onClick={() => handleRemoveRow(params.row.id)}
         >
-          <FaTrash fontSize="small" />
+          <XCircleIcon className="h-6 w-6 mr-1" />
         </IconButton>
       )
     }
