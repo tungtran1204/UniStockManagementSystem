@@ -450,7 +450,7 @@ const AddReceiptNoteGeneral = () => {
     // Kiểm tra xem bảng danh sách có ít nhất 1 sản phẩm không
     const currentItems = isReferenceFlow ? documentItems : manualItems;
     if (currentItems.length === 0) {
-      alert("Phiếu nhập kho phải có ít nhất một sản phẩm!");
+      alert("Vui lòng nhập ít nhất một hàng hóa với số lượng nhập hợp lệ!");
       return;
     }
     let hasError = false;
@@ -798,12 +798,16 @@ const AddReceiptNoteGeneral = () => {
                   <span className="text-red-500"> *</span>
                 </Typography>
                 <Autocomplete
-                  options={currentDocuments}
+                  options={[{ isHeader: true, poCode: 'Mã chứng từ', orderDate: 'Ngày tạo chứng từ' }, ...currentDocuments]}
                   value={currentDocuments.find((doc) => doc.value === referenceDocument) || null}
-                  getOptionLabel={(option) => option.poCode ? `${option.poCode} - ${option.orderDate}` : ""}
+                  getOptionLabel={(option) => option.poCode || ""}
+                  getOptionDisabled={(option) => option.isHeader === true}
                   renderOption={(props, option) => (
                     <li {...props}>
-                      {option.poCode} - {option.orderDate} ({option.supplierName})
+                            <div className={`flex justify-between w-full ${option.isHeader ? 'font-semibold text-black text-center' : ''}`}>
+                        <span className="text-gray-600">{option.poCode}</span>
+                        <span className="text-gray-600">{option.orderDate}</span>
+                      </div>
                     </li>
                   )}
                   onChange={(event, newValue) => {
@@ -1019,23 +1023,26 @@ const AddReceiptNoteGeneral = () => {
                   size="small"
                   color="success"
                   variant="outlined"
+                  disabled
+                  InputProps={{
+                    style: { backgroundColor: '#eeeeee' }
+                  }}
                 />
               </div>
               {/* ... Tương tự cho địa chỉ, sđt, người liên hệ, vv. */}
             </div>
           )}
 
-          {/* Lý do xuất & Kèm theo */}
+          {/* Lý do nhập & Kèm theo */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <Typography variant="medium" className="mb-1 text-black">
-                Lý do xuất
+                Diễn giải nhập kho
               </Typography>
               <TextField
                 fullWidth
                 size="small"
                 hiddenLabel
-                placeholder="Lý do xuất"
                 multiline
                 rows={4}
                 color="success"

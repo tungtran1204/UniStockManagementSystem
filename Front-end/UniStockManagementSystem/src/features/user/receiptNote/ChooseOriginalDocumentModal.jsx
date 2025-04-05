@@ -63,13 +63,13 @@ const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
   );
 
   const columnsConfig = [
-    { field: "code", headerName: "Mã đơn hàng", flex: 1.5, minWidth: 150 },
-    { field: "customer", headerName: "Khách hàng", flex: 2, minWidth: 200 },
+    { field: "code", headerName: "Mã đơn hàng", flex: 0.8, minWidth: 80 },
+    { field: "customer", headerName: "Khách hàng", flex: 3, minWidth: 200 },
     {
       field: "date",
       headerName: "Ngày tạo",
-      flex: 1.5,
-      minWidth: 150,
+      flex: 0.8,
+      minWidth: 80,
       renderCell: (params) =>
         params.value ? dayjs(params.value).format("DD/MM/YYYY") : "N/A",
     },
@@ -77,7 +77,7 @@ const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
       field: "actions",
       headerName: "Hành động",
       flex: 0.5,
-      minWidth: 100,
+      minWidth: 50,
       renderCell: (params) => (
         <Button
           size="small"
