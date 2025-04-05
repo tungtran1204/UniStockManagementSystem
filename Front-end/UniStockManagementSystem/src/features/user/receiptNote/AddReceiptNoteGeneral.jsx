@@ -152,21 +152,21 @@ const AddReceiptNoteGeneral = () => {
     // Lấy danh sách kho, sản phẩm, mã phiếu nhập
     const fetchInitData = async () => {
       try {
-      // Lấy danh sách kho
-      const resWarehouses = await getWarehouseList();
-      setWarehouses(resWarehouses?.data || resWarehouses || []);
+        // Lấy danh sách kho
+        const resWarehouses = await getWarehouseList();
+        setWarehouses(resWarehouses?.data || resWarehouses || []);
 
-      // Lấy danh sách sản phẩm (nếu cần cho việc thêm thủ công)
-      const resProducts = await getProducts();
-      // Tuỳ biến nếu bạn muốn hiển thị hoặc map data
-      // Ở đây ta chỉ demo sẵn sàng cho ProductRow
+        // Lấy danh sách sản phẩm (nếu cần cho việc thêm thủ công)
+        const resProducts = await getProducts();
+        // Tuỳ biến nếu bạn muốn hiển thị hoặc map data
+        // Ở đây ta chỉ demo sẵn sàng cho ProductRow
 
-      // Lấy mã phiếu nhập từ backend
-      const nextCode = await getNextCode();
-      setReceiptCode(nextCode);
-    } catch (err) {
-      console.error("Lỗi khi lấy dữ liệu khởi tạo:", err);
-    }
+        // Lấy mã phiếu nhập từ backend
+        const nextCode = await getNextCode();
+        setReceiptCode(nextCode);
+      } catch (err) {
+        console.error("Lỗi khi lấy dữ liệu khởi tạo:", err);
+      }
     };
     fetchInitData();
   }, []);
@@ -438,7 +438,7 @@ const AddReceiptNoteGeneral = () => {
 
   //Hàm xử lí lưu phiếu nhập
 
-  const handleSaveReceipt = async () => {    
+  const handleSaveReceipt = async () => {
     // Nếu chưa chọn category => return
     if (!category) {
       alert("Vui lòng chọn Phân loại nhập kho!");
@@ -447,10 +447,15 @@ const AddReceiptNoteGeneral = () => {
     if (isSaving) {
       return;
     }
-  
+    // Kiểm tra xem bảng danh sách có ít nhất 1 sản phẩm không
+    const currentItems = isReferenceFlow ? documentItems : manualItems;
+    if (currentItems.length === 0) {
+      alert("Phiếu nhập kho phải có ít nhất một sản phẩm!");
+      return;
+    }
     let hasError = false;
     let localErrors = {};
-  
+
     // Kiểm tra dữ liệu trước khi gửi
     console.log("Kiểm tra dữ liệu trước khi gửi", { isReferenceFlow, documentItems, manualItems });
     if (isReferenceFlow) {
@@ -480,13 +485,13 @@ const AddReceiptNoteGeneral = () => {
         }
       });
     }
-  
+
     if (hasError) {
       console.log("Có lỗi validate", localErrors);
       setQuantityErrors(localErrors);
       return;
     }
-  
+
     setIsSaving(true);
     try {
       // Tạo payload theo cấu trúc ReceiptNoteDTO
@@ -498,9 +503,9 @@ const AddReceiptNoteGeneral = () => {
         poId: isReferenceFlow ? Number(referenceDocument) : null,
         details: []
       };
-  
+
       console.log("Tạo payload", payload);
-  
+
       // Map dữ liệu chi tiết (details)
       if (isReferenceFlow) {
         payload.details = documentItems.map(row => {
@@ -532,20 +537,20 @@ const AddReceiptNoteGeneral = () => {
           };
         });
       }
-  
+
       console.log("Payload hoàn chỉnh", payload);
-  
+
       // Gọi API tạo phiếu nhập
       const response = await createReceiptNote(payload);
       console.log("Response từ createReceiptNote", response);
-  
+
       // Upload file đính kèm nếu có
       if (files.length > 0) {
         console.log("Bắt đầu upload file", { files });
         await uploadPaperEvidence(response.grnId, "GOOD_RECEIPT_NOTE", files);
         console.log("Upload file thành công");
       }
-  
+
       console.log("Lưu thành công");
       alert("Tạo phiếu nhập thành công!");
       navigate("/user/receiptNote");
@@ -795,10 +800,25 @@ const AddReceiptNoteGeneral = () => {
                 <Autocomplete
                   options={currentDocuments}
                   value={currentDocuments.find((doc) => doc.value === referenceDocument) || null}
-                  getOptionLabel={(option) => option.poCode || ""}
+                  getOptionLabel={(option) => option.poCode ? `${option.poCode} - ${option.orderDate}` : ""}
+                  renderOption={(props, option) => (
+                    <li {...props}>
+                      {option.poCode} - {option.orderDate} ({option.supplierName})
+                    </li>
+                  )}
                   onChange={(event, newValue) => {
                     if (newValue) {
-                      handleChooseDoc(newValue);
+                      handleChooseDoc({
+                        poId: newValue.value, // poId 
+                        ...newValue
+                      });
+                    } else {
+                      setReferenceDocument(null);
+                      setPartnerName("");
+                      setAddress("");
+                      setContactName("");
+                      setPartnerPhone("");
+                      setDocumentItems([]);
                     }
                   }}
                   renderInput={(params) => (
@@ -882,6 +902,9 @@ const AddReceiptNoteGeneral = () => {
                   variant="outlined"
                   disabled
                   value={partnerName}
+                  InputProps={{
+                    style: { backgroundColor: '#eeeeee' }
+                  }}
                 />
               </div>
               <div>
@@ -895,6 +918,9 @@ const AddReceiptNoteGeneral = () => {
                   variant="outlined"
                   disabled
                   value={contactName}
+                  InputProps={{
+                    style: { backgroundColor: '#eeeeee' }
+                  }}
                 />
               </div>
 
@@ -909,6 +935,9 @@ const AddReceiptNoteGeneral = () => {
                   variant="outlined"
                   disabled
                   value={address}
+                  InputProps={{
+                    style: { backgroundColor: '#eeeeee' }
+                  }}
                 />
               </div>
               <div>
@@ -922,6 +951,9 @@ const AddReceiptNoteGeneral = () => {
                   variant="outlined"
                   disabled
                   value={partnerPhone}
+                  InputProps={{
+                    style: { backgroundColor: '#eeeeee' }
+                  }}
                 />
               </div>
             </div>
@@ -929,7 +961,7 @@ const AddReceiptNoteGeneral = () => {
 
           {/* Nếu là Hàng hoá trả lại => hiển thị autocomplete nhà cung cấp, vv. */}
           {category === "Hàng hóa trả lại" && (
-            <div className="grid grid-cols-3 gap-x-12 gap-y-4 mb-4">
+            <div className="grid grid-cols-3 gap-4 mb-4">
               {/* Demo: Tự điều chỉnh logic */}
               <div>
                 <Typography variant="medium" className="mb-1 text-black">
@@ -1085,7 +1117,7 @@ const AddReceiptNoteGeneral = () => {
                   {displayedItemsWithIndex.map((item, index) => (
                     <ProductRow
                       key={item.id}
-                      rowId={item.id} 
+                      rowId={item.id}
                       item={item}
                       index={index}
                       warehouses={warehouses}
@@ -1104,12 +1136,12 @@ const AddReceiptNoteGeneral = () => {
                           }
                           return row;
                         }));
-                    
+
                         // Thực hiện validate quantity ở đây
                         const targetRow = documentItems.find(row => (row.materialId && row.materialId === itemKey) || (row.productId && row.productId === itemKey));
                         const maxRemain = targetRow?.remainingQuantity || 0;
                         const isValid = Number(data.quantity) > 0 && Number(data.quantity) <= maxRemain;
-                    
+
                         if (!isValid) {
                           setQuantityErrors(prev => ({
                             ...prev,
