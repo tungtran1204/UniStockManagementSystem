@@ -1085,13 +1085,44 @@ const AddReceiptNoteGeneral = () => {
                   {displayedItemsWithIndex.map((item, index) => (
                     <ProductRow
                       key={item.id}
+                      rowId={item.id} 
                       item={item}
                       index={index}
                       warehouses={warehouses}
                       defaultWarehouseCode={getDefaultWarehouse(category)}
                       currentPage={currentPage}
                       pageSize={pageSize}
-                      onDataChange={handleRowChange}
+                      onDataChange={(itemKey, data) => {
+                        setDocumentItems(prevItems => prevItems.map(row => {
+                          // Kiểm tra đúng theo productId/materialId để cập nhật
+                          if ((row.materialId && row.materialId === itemKey) || (row.productId && row.productId === itemKey)) {
+                            return {
+                              ...row,
+                              quantity: data.quantity,
+                              warehouseCode: data.warehouse,
+                            };
+                          }
+                          return row;
+                        }));
+                    
+                        // Thực hiện validate quantity ở đây
+                        const targetRow = documentItems.find(row => (row.materialId && row.materialId === itemKey) || (row.productId && row.productId === itemKey));
+                        const maxRemain = targetRow?.remainingQuantity || 0;
+                        const isValid = Number(data.quantity) > 0 && Number(data.quantity) <= maxRemain;
+                    
+                        if (!isValid) {
+                          setQuantityErrors(prev => ({
+                            ...prev,
+                            [targetRow.id]: `Số lượng phải từ 1 đến ${maxRemain}!`,
+                          }));
+                        } else {
+                          setQuantityErrors(prev => {
+                            const copy = { ...prev };
+                            delete copy[targetRow.id];
+                            return copy;
+                          });
+                        }
+                      }}
                       errorMessage={quantityErrors[item.id]}
                     />
                   ))}
