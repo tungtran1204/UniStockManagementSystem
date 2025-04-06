@@ -44,10 +44,8 @@ import {
   uploadPaperEvidence,
   getNextCode
 } from "./receiptNoteService";
+import { getPartnersByCodePrefix } from "../partner/partnerService";
 
-const OUTSOURCE_TYPE_ID = 3;
-
-const SUPPLIER_TYPE_ID = 2;
 
 const AddReceiptNoteGeneral = () => {
   // region: Khai báo state và biến
@@ -77,6 +75,7 @@ const AddReceiptNoteGeneral = () => {
   const [availableOutsourceDocs, setAvailableOutsourceDocs] = useState([]); // Dùng cho "Hàng hóa gia công"
 
   // Các danh sách đối tác
+  const [customers, setCustomers] = useState([]); // danh sách KH
   const [outsources, setOutsources] = useState([]); // Đối tác Gia công
   const [suppliers, setSuppliers] = useState([]);   // Đối tác Nhà cung cấp
 
@@ -109,6 +108,17 @@ const AddReceiptNoteGeneral = () => {
       setCreateDate(today);
     }
   }, [createdDate]);
+
+  // Gọi API lấy danh sách khách hàng 
+  const fetchCustomers = async () => {
+    try {
+      const response = await getPartnersByCodePrefix("KH");
+      console.log("Danh sách khách hàng:", response);
+      setCustomers(response || []);
+    } catch (err) {
+      console.error("Lỗi khi lấy danh sách khách hàng:", err);
+    }
+  };
 
   // Gọi API lấy Product, Material
   useEffect(() => {
@@ -200,8 +210,8 @@ const AddReceiptNoteGeneral = () => {
     }
 
     if (category === "Hàng hóa trả lại") {
-      // Lấy danh sách Nhà cung cấp
-      fetchSuppliers();
+      // Lấy danh sách khách hàng
+      fetchCustomers();
     }
   }, [category]);
 
@@ -677,7 +687,7 @@ const AddReceiptNoteGeneral = () => {
       minWidth: 80,
       renderCell: (params) => (
         <IconButton
-          variant="text" 
+          variant="text"
           size="5px"
           color="error"
           onClick={() => handleRemoveRow(params.row.id)}
@@ -810,7 +820,7 @@ const AddReceiptNoteGeneral = () => {
                   getOptionDisabled={(option) => option.isHeader === true}
                   renderOption={(props, option) => (
                     <li {...props}>
-                            <div className={`flex justify-between w-full ${option.isHeader ? 'font-semibold text-black text-center' : ''}`}>
+                      <div className={`flex justify-between w-full ${option.isHeader ? 'font-semibold text-black text-center' : ''}`}>
                         <span className="text-gray-600">{option.poCode}</span>
                         <span className="text-gray-600">{option.orderDate}</span>
                       </div>
@@ -969,60 +979,46 @@ const AddReceiptNoteGeneral = () => {
             </div>
           )}
 
-          {/* Nếu là Hàng hoá trả lại => hiển thị autocomplete nhà cung cấp, vv. */}
+          {/* Nếu là Hàng hoá trả lại => hiển thị autocomplete khách hàng */}
           {category === "Hàng hóa trả lại" && (
             <div className="grid grid-cols-3 gap-4 mb-4">
-              {/* Demo: Tự điều chỉnh logic */}
-              <div>
+              <div className="col-span-2">
                 <Typography variant="medium" className="mb-1 text-black">
-                  Mã đối tác
+                  Đối tác<span className="text-red-500"> *</span>
                 </Typography>
                 <Autocomplete
-                  options={suppliers}
+                  options={customers}
                   size="small"
-                  disableClearable
-                  getOptionLabel={(option) => option.code || ""}
+                  getOptionLabel={(option) =>
+                    `${option.partnerTypes?.find(pt => pt.partnerCode?.startsWith("KH"))?.partnerCode || ""} - ${option.partnerName|| ""}`
+                  }
+                  isOptionEqualToValue={(option, value) => option.partnerId === value.partnerId} // ✅ thêm dòng này!
                   onChange={(event, selectedOption) => {
-                    // setPartnerCode(selectedOption.code)
-                    // setPartnerName(selectedOption.name) ...
+                    setPartnerName(selectedOption?.partnerName || "");
+                    setAddress(selectedOption?.address || "");
+                    setContactName(selectedOption?.contactName || "");
+                    setPartnerPhone(selectedOption?.phone || "");
                   }}
                   renderOption={(props, option) => (
                     <li {...props}>
-                      {option.code} - {option.name}
+                      {option.partnerTypes?.find(pt => pt.partnerCode?.startsWith("KH"))?.partnerCode || ""} - {option.partnerName}
                     </li>
                   )}
-                  renderInput={(params) => {
-                    return (
-                      <TextField
-                        color="success"
-                        hiddenLabel
-                        {...params}
-                        placeholder="Mã đối tác"
-                        InputProps={{
-                          ...params.InputProps,
-                          endAdornment: (
-                            <>
-                              <IconButton
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // handleOpenCreatePartnerPopup();
-                                }}
-                                size="small"
-                              >
-                                <FaPlus fontSize="small" />
-                              </IconButton>
-                              {params.InputProps.endAdornment}
-                            </>
-                          )
-                        }}
-                      />
-                    );
-                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      color="success"
+                      hiddenLabel
+                      placeholder="Chọn đối tác"
+                      size="small"
+                    />
+                  )}
                 />
               </div>
-              <div className="col-span-2">
+
+              <div>
                 <Typography variant="medium" className="mb-1 text-black">
-                  Tên đối tác
+                  Người liên hệ
                 </Typography>
                 <TextField
                   fullWidth
@@ -1030,12 +1026,45 @@ const AddReceiptNoteGeneral = () => {
                   color="success"
                   variant="outlined"
                   disabled
+                  value={contactName}
                   InputProps={{
                     style: { backgroundColor: '#eeeeee' }
                   }}
                 />
               </div>
-              {/* ... Tương tự cho địa chỉ, sđt, người liên hệ, vv. */}
+
+              <div className="col-span-2">
+                <Typography variant="medium" className="mb-1 text-black">
+                  Địa chỉ
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  color="success"
+                  variant="outlined"
+                  disabled
+                  value={address}
+                  InputProps={{
+                    style: { backgroundColor: '#eeeeee' }
+                  }}
+                />
+              </div>
+              <div>
+                <Typography variant="medium" className="mb-1 text-black">
+                  Số điện thoại
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  color="success"
+                  variant="outlined"
+                  disabled
+                  value={partnerPhone}
+                  InputProps={{
+                    style: { backgroundColor: '#eeeeee' }
+                  }}
+                />
+              </div>
             </div>
           )}
 

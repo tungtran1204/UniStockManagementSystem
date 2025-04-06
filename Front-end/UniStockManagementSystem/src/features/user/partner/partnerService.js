@@ -147,3 +147,18 @@ export const getPartnersByMaterial = async (materialId) => {
     }
   };
 
+  export const getPartnersByCodePrefix = async (prefix = "KH") => {
+    try {
+      const headers = authHeader();
+      const response = await axios.get(`${API_URL}/code-prefix`, {
+        headers,
+        params: { prefix }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("❌ [getPartnersByCodePrefix] Error:", error);
+      throw error;
+    }
+  };
+  
+
