@@ -525,19 +525,21 @@ const AddReceiptNoteGeneral = () => {
 
       // Map dữ liệu chi tiết (details)
       if (isReferenceFlow) {
-        payload.details = documentItems.map(row => {
-          const warehouse = warehouses.find(w => w.warehouseCode === row.warehouseCode);
-          if (!warehouse) {
-            throw new Error(`Không tìm thấy kho với code: ${row.warehouseCode}`);
-          }
-          return {
-            warehouseId: warehouse.warehouseId,
-            materialId: row.materialId ? Number(row.materialId) : null,
-            productId: row.productId ? Number(row.productId) : null,
-            quantity: Number(row.quantity),
-            unitId: row.unitId ? Number(row.unitId) : null
-          };
-        });
+        payload.details = documentItems
+  .filter(row => row.remainingQuantity > 0 && Number(row.quantity) > 0)
+  .map(row => {
+    const warehouse = warehouses.find(w => w.warehouseCode === row.warehouseCode);
+    if (!warehouse) {
+      throw new Error(`Không tìm thấy kho với code: ${row.warehouseCode}`);
+    }
+    return {
+      warehouseId: warehouse.warehouseId,
+      materialId: row.materialId ? Number(row.materialId) : null,
+      productId: row.productId ? Number(row.productId) : null,
+      quantity: Number(row.quantity),
+      unitId: row.unitId ? Number(row.unitId) : null
+    };
+  });
       } else {
         payload.details = manualItems.map(row => {
           const warehouse = warehouses.find(w => w.warehouseCode === row.warehouse);
