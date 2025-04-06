@@ -10,6 +10,7 @@ import Table from "@/components/Table";
 import useUser from "../../admin/users/useUser";
 import usePurchaseOrder from "../purchaseOrder/usePurchaseOrder";
 import useReceiptNote from "./useReceiptNote";
+import { getNextCode } from "./receiptNoteService";
 import {
   Menu,
   MenuHandler,
@@ -190,7 +191,15 @@ const ReceiptNotePage = () => {
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
             title="Danh sách phiếu nhập kho"
-            showAdd={false}
+            addButtonLabel="Thêm phiếu nhập"
+            onAdd={async () => {
+              try {
+                const code = await getNextCode();
+                navigate("/user/receiptNote/general", { state: { nextCode: code } });
+              } catch (error) {
+                console.error("Không lấy được mã phiếu nhập:", error);
+              }
+            }}
             customButtons={
               <Menu placement="bottom-end">
                 <MenuHandler>
@@ -216,7 +225,7 @@ const ReceiptNotePage = () => {
                   </MenuItem>
                   <MenuItem
                     className="hover:bg-green-900/10 rounded-[4px]"
-                    onClick={() => navigate("/user/receiptNote/manual", { state: { category: "Thành phẩm sản xuất" } })}
+                    onClick={() => navigate("/user/receiptNote/general")}
                   >
                     <span className="text-gray-700 hover:text-green-900">Thành phẩm sản xuất</span>
                   </MenuItem>

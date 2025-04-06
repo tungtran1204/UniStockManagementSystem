@@ -56,4 +56,11 @@ public class PurchaseOrderController {
         return ResponseEntity.ok(dto);
     }
 
+    @GetMapping("/filter/status")
+    public ResponseEntity<List<PurchaseOrderDTO>> getPendingOrInProgressOrders() {
+        List<PurchaseOrderDTO> orders = purchaseOrderService.getPendingOrInProgressOrders();
+        return ResponseEntity.ok(orders);
+    }
+
+
 }
