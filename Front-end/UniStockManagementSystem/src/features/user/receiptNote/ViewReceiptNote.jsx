@@ -8,7 +8,7 @@ import {
   Input,
   Textarea
 } from "@material-tailwind/react";
-import { Button as MuiButton } from '@mui/material';
+import { TextField, Button as MuiButton } from '@mui/material';
 import PageHeader from '@/components/PageHeader';
 import useReceiptNote from "./useReceiptNote";
 import useUser from "../../admin/users/useUser";
@@ -17,9 +17,13 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import robotoFont from '@/assets/fonts/Roboto-Regular-normal.js';
+import Table from "@/components/Table";
 import ReactPaginate from "react-paginate";
-import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, ArrowRightIcon, ListBulletIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import { FaArrowLeft } from "react-icons/fa";
+import { XMarkIcon } from "@heroicons/react/24/solid";
+import dayjs from "dayjs";
+import { Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material";
 
 const ViewReceiptNote = () => {
   const { id } = useParams();
@@ -33,6 +37,117 @@ const ViewReceiptNote = () => {
   // State phân trang cho bảng
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
+
+  //preview file
+  const [previewFile, setPreviewFile] = useState(null);
+
+  const getPreviewURL = (file) => {
+    if (!file) return "";
+    if (file instanceof File) return URL.createObjectURL(file);
+    if (typeof file === "string") return file;
+    return "";
+  };
+
+
+  const getPreviewType = (file) => {
+    if (!file) return "other";
+
+    let filename = "";
+
+    // Nếu là File object thì dùng file.name
+    if (file instanceof File) {
+      filename = file.name;
+    }
+    // Nếu là string URL thì lấy phần cuối đường dẫn
+    else if (typeof file === "string") {
+      const parts = file.split('/');
+      filename = parts[parts.length - 1].split('?')[0]; // tránh bị query string làm sai định dạng
+    } else {
+      return "other";
+    }
+
+    const extension = filename.split('.').pop().toLowerCase();
+
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(extension)) return "image";
+    if (extension === 'pdf') return "pdf";
+    if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(extension)) return "office";
+
+    return "other";
+  };
+
+  const handlePreview = (file) => {
+    console.log("Preview file: ", file);
+    setPreviewFile(file);
+  };
+
+  const handleClosePreview = () => {
+    setPreviewFile(null);
+  };
+
+  const viewColumnsConfig = [
+    {
+      field: 'index',
+      headerName: 'STT',
+      minWidth: 50,
+      renderCell: (params) => {
+        const row = params.row;
+        return <div className="text-center">{row.index + 1}</div>;
+      }
+    },
+    {
+      field: 'code',
+      headerName: 'Mã hàng',
+      minWidth: 100,
+      renderCell: (params) => {
+        const row = params.row;
+        return <div className="text-center">{row.materialCode || row.productCode || ""}</div>;
+      }
+    },
+    {
+      field: 'name',
+      headerName: 'Tên hàng',
+      minWidth: 150,
+      renderCell: (params) => {
+        const row = params.row;
+        return <div className="text-center">{row.materialName || row.productName || ""}</div>;
+      }
+    },
+    {
+      field: 'unitName',
+      headerName: 'Đơn vị',
+      minWidth: 80,
+      renderCell: (params) => {
+        const row = params.row;
+        return <div className="text-center">{row.unitName || "-"}</div>;
+      }
+    },
+    {
+      field: 'quantity',
+      headerName: 'Số lượng',
+      minWidth: 80,
+      renderCell: (params) => {
+        const row = params.row;
+        const quantity = row.quantity;
+        return <div className="text-center">{!isNaN(quantity) ? quantity : ""}</div>;
+      }
+    },
+    {
+      field: 'warehouse',
+      headerName: 'Nhập kho',
+      minWidth: 150,
+      renderCell: (params) => {
+        const row = params.row;
+        return (
+          <div className="text-center">
+            {row.warehouseCode && row.warehouseName
+              ? `${row.warehouseCode} - ${row.warehouseName}`
+              : ""}
+          </div>
+        );
+      }
+    },
+  ];
+
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -53,14 +168,7 @@ const ViewReceiptNote = () => {
     fetchDetail();
   }, [id]);
 
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
+  const formatDate = (dateStr) => dayjs(dateStr).format("DD/MM/YYYY");
 
   // Nếu đang tải hoặc không có data, hiển thị thông báo thích hợp
   if (loading) return <Typography>Đang tải dữ liệu...</Typography>;
@@ -70,6 +178,12 @@ const ViewReceiptNote = () => {
   const totalItems = data.details ? data.details.length : 0;
   const totalPages = Math.ceil(totalItems / pageSize);
   const displayedItems = data.details ? data.details.slice(currentPage * pageSize, (currentPage + 1) * pageSize) : [];
+  const displayedItemsWithIndex = displayedItems.map((item, idx) => ({
+    ...item,
+    index: currentPage * pageSize + idx,
+    id: item.id !== undefined ? item.id : currentPage * pageSize + idx,
+  }));
+
 
   const handleExportPDF = () => {
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
@@ -183,29 +297,70 @@ const ViewReceiptNote = () => {
               </Button>
             }
           />
-          <Typography variant="h6" className="mb-2 text-gray-700 text-sm font-semibold">
+          <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
+            <InformationCircleIcon className="h-5 w-5 mr-2" />
             Thông tin chung
           </Typography>
 
           <div className="grid grid-cols-3 gap-4 mb-4">
-            <div>
-              <Typography variant="small">Mã phiếu nhập</Typography>
-              <Input value={data.grnCode} disabled className="bg-gray-100" />
+            <div className>
+              <Typography variant="medium" className="mb-1 text-black">Mã phiếu nhập</Typography>
+              <TextField
+                fullWidth
+                size="small"
+                color="success"
+                variant="outlined"
+                disabled
+                value={data.grnCode}
+                InputProps={{
+                  style: { backgroundColor: '#eeeeee' }
+                }}
+              />
             </div>
             <div>
-              <Typography variant="small">Loại hàng hóa</Typography>
-              <Input value={data.category || ""} disabled className="bg-gray-100" />
+              <Typography variant="medium" className="mb-1 text-black">Loại hàng hóa</Typography>
+              <TextField
+                fullWidth
+                size="small"
+                color="success"
+                variant="outlined"
+                disabled
+                value={data.category}
+                InputProps={{
+                  style: { backgroundColor: '#eeeeee' }
+                }}
+              />
             </div>
             <div>
-              <Typography variant="small">Ngày tạo phiếu</Typography>
-              <Input value={formatDate(data.receiptDate)} disabled className="bg-gray-100" />
+              <Typography variant="medium" className="mb-1 text-black">Ngày tạo phiếu</Typography>
+              <TextField
+                fullWidth
+                size="small"
+                color="success"
+                variant="outlined"
+                disabled
+                value={formatDate(data.receiptDate)}
+                InputProps={{
+                  style: { backgroundColor: '#eeeeee' }
+                }}
+              />
             </div>
             <div>
-              <Typography variant="small">Người tạo</Typography>
-              <Input value={creator} disabled className="bg-gray-100" />
+              <Typography variant="medium" className="mb-1 text-black">Người tạo</Typography>
+              <TextField
+                fullWidth
+                size="small"
+                color="success"
+                variant="outlined"
+                disabled
+                value={creator}
+                InputProps={{
+                  style: { backgroundColor: '#eeeeee' }
+                }}
+              />
             </div>
             <div>
-              <Typography variant="small">Tham chiếu chứng từ</Typography>
+              <Typography variant="medium" className="mb-1 text-black">Tham chiếu chứng từ</Typography>
               {data.poId ? (
                 <Link
                   to={`/user/purchaseOrder/${data.poId}`}
@@ -214,7 +369,18 @@ const ViewReceiptNote = () => {
                   Xem chứng từ
                 </Link>
               ) : (
-                <Input value="Không có" disabled className="bg-gray-100" />
+                <TextField
+                  fullWidth
+                  size="small"
+                  color="success"
+                  variant="outlined"
+                  disabled
+                  value="Không có"
+                  InputProps={{
+                    style: { backgroundColor: '#eeeeee' }
+                  }}
+                />
+
               )}
             </div>
           </div>
@@ -222,71 +388,192 @@ const ViewReceiptNote = () => {
           {/* Diễn giải và file đính kèm */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
-              <Typography variant="small">Diễn giải</Typography>
-              <Textarea value={data.description || "Không có"} disabled className="bg-gray-100" />
+              <Typography variant="medium" className="mb-1 text-black">Diễn giải nhập kho</Typography>
+              <TextField
+                fullWidth
+                size="small"
+                hiddenLabel
+                multiline
+                rows={4}
+                color="success"
+                value={data.description || "Không có"}
+                disabled
+                InputProps={{
+                  style: { backgroundColor: '#eeeeee' }
+                }}
+              />
             </div>
             <div>
-              <Typography variant="small">File đính kèm</Typography>
+              <Typography variant="medium" className="mb-1 text-black">File đính kèm</Typography>
               {data.paperEvidence && data.paperEvidence.length > 0 ? (
-                <ul className="list-disc list-inside text-sm text-blue-700">
-                  {data.paperEvidence.map((url, index) => (
-                    <li key={index}>
-                      <a href={url} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                        {url.split("/").pop()}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+                <div className="mt-2 text-sm text-gray-800">
+                  <div className="grid grid-cols-3 gap-2 mt-1 text-sm text-gray-700 w-fit">
+                    {data.paperEvidence.map((url, index) => (
+                      <Button
+                        key={index}
+                        variant="outlined"
+                        className="flex items-center justify-between border rounded text-xs"
+                        onClick={() => handlePreview(url)}
+                      >
+                        <span className="truncate max-w-[75%]">{url.split("/").pop()}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
               ) : (
                 <Typography variant="small" className="text-gray-600">Không có</Typography>
               )}
+              <Dialog open={!!previewFile} onClose={handleClosePreview} maxWidth="md" fullWidth>
+                <div className="flex justify-between items-center mr-6">
+                  <DialogTitle>{previewFile?.name}</DialogTitle>
+                  <IconButton
+                    size="sm"
+                    variant="text"
+                    onClick={handleClosePreview}
+                  >
+                    <XMarkIcon className="h-6 w-6 stroke-2" />
+                  </IconButton>
+                </div>
+                <DialogContent dividers>
+                  {previewFile && (() => {
+                    const type = getPreviewType(previewFile);
+                    const url = getPreviewURL(previewFile);
+
+                    const renderActions = (
+                      <div className="mt-4 flex justify-center gap-4">
+                         <MuiButton
+                          color="info"
+                          size="medium"
+                          variant="outlined"
+                          sx={{
+                            height: '36px',
+                            color: "blue-gray",
+                          }}
+                          onClick={() => window.open(url, '_blank')}
+                          className="flex items-center gap-2"
+                        >
+                          Tải về
+                        </MuiButton>
+                      </div>
+                    );
+
+                    switch (type) {
+                      case "image":
+                        return (
+                          <>
+                            <img
+                              src={url}
+                              alt="Image Preview"
+                              style={{
+                                display: "block",
+                                maxWidth: "100%",
+                                maxHeight: "80vh",
+                                width: "auto",
+                                height: "auto",
+                                margin: "0 auto"
+                              }}
+                            />
+                            {renderActions}
+                          </>
+                        );
+                      case "pdf":
+                        return (
+                          <>
+                            <iframe
+                              src={url}
+                              title="PDF Preview"
+                              style={{ width: "100%", height: "80vh", border: "none" }}
+                            />
+                            {renderActions}
+                          </>
+                        );
+                      default:
+                        return (
+                          <div className="text-center">
+                            <Typography>Không thể xem trước file.</Typography>
+                            <MuiButton
+                          color="info"
+                          size="medium"
+                          variant="outlined"
+                          sx={{
+                            height: '36px',
+                            color: "blue-gray",
+                          }}
+                          onClick={() => window.open(url, '_blank')}
+                          className="flex items-center gap-2"
+                        >
+                          Tải về
+                        </MuiButton>
+                          </div>
+                        );
+                    }
+                  })()}
+                </DialogContent>
+
+              </Dialog>
             </div>
           </div>
 
-          <Typography variant="h6" className="mb-2 text-gray-700 text-sm font-semibold">
+          <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
+            <ListBulletIcon className="h-5 w-5 mr-2" />
             Danh sách hàng hóa
           </Typography>
           <div className="overflow-auto border rounded">
-            <table className="w-full table-auto text-sm">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 border">STT</th>
-                  <th className="p-2 border">Mã hàng</th>
-                  <th className="p-2 border">Tên hàng</th>
-                  <th className="p-2 border">Đơn vị</th>
-                  <th className="p-2 border">Số lượng</th>
-                  <th className="p-2 border">Nhập kho</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.details && data.details.length > 0 ? (
-                  data.details.map((item, index) => (
-                    <tr key={index}>
-                      <td className="p-2 border text-center">{index + 1}</td>
-                      <td className="p-2 border text-center">{item.materialCode || item.productCode}</td>
-                      <td className="p-2 border text-center">{item.materialName || item.productName}</td>
-                      <td className="p-2 border text-center">{item.unitName || "-"}</td>
-                      <td className="p-2 border text-center">{item.quantity}</td>
-                      <td className="p-2 border text-center">{item.warehouseCode} - {item.warehouseName}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="5" className="p-4 text-center text-gray-500">Không có dữ liệu hàng hóa</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+            <Table
+              data={displayedItemsWithIndex}
+              columnsConfig={viewColumnsConfig}
+              enableSelection={false}
+            />
           </div>
 
+          {/* Phân trang cho bảng danh sách hàng hóa */}
+          {totalItems > 0 && (
+            <div className="flex items-center justify-between pt-4">
+              <div className="flex items-center gap-2">
+                <Typography variant="small" color="blue-gray" className="font-normal">
+                  Trang {currentPage + 1} / {totalPages} • {totalItems} bản ghi
+                </Typography>
+              </div>
+              <ReactPaginate
+                previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
+                nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
+                breakLabel="..."
+                pageCount={totalPages}
+                marginPagesDisplayed={2}
+                pageRangeDisplayed={5}
+                onPageChange={({ selected }) => setCurrentPage(selected)}
+                containerClassName="flex items-center gap-1"
+                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                pageLinkClassName="flex items-center justify-center w-full h-full"
+                previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
+                activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
+                forcePage={currentPage}
+                disabledClassName="opacity-50 cursor-not-allowed"
+              />
+            </div>
+          )}
+
           <div className="mt-6 border-t pt-4 flex justify-end">
-            <Button
-              size="sm"
-              color="blue"
+            <MuiButton
+              color="info"
+              size="medium"
+              variant="outlined"
+              sx={{
+                height: '36px',
+                color: '#616161',
+                borderColor: '#9e9e9e',
+                '&:hover': {
+                  backgroundColor: '#f5f5f5',
+                  borderColor: '#757575',
+                },
+              }}
               onClick={() => navigate("/user/receiptNote")}
+              className="flex items-center gap-2"
             >
-              Quay lại danh sách
-            </Button>
+              <FaArrowLeft className="h-3 w-3" /> Quay lại
+            </MuiButton>
           </div>
         </CardBody>
       </Card>
