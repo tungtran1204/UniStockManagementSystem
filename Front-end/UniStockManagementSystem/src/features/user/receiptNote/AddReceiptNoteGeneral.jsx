@@ -61,6 +61,7 @@ const AddReceiptNoteGeneral = () => {
   const isReferenceFlow = (category === "Vật tư mua bán" || category === "Hàng hóa gia công") && !!referenceDocument;
 
   // Thông tin đối tác
+  const [partnerId, setPartnerId] = useState(null);
   const [partnerName, setPartnerName] = useState("");
   const [address, setAddress] = useState("");
   const [contactName, setContactName] = useState("");
@@ -291,6 +292,7 @@ const AddReceiptNoteGeneral = () => {
 
     try {
       const po = await getPurchaseOrderById(poId);
+      setPartnerId(po.supplierId || null); 
       setPartnerName(po.supplierName || "");
       setAddress(po.supplierAddress || "");
       setContactName(po.supplierContactName || "");
@@ -515,6 +517,7 @@ const AddReceiptNoteGeneral = () => {
         category: category,
         receiptDate: new Date(createdDate).toISOString(),
         poId: isReferenceFlow ? Number(referenceDocument) : null,
+        partnerId: partnerId || null,
         details: []
       };
 
@@ -994,11 +997,21 @@ const AddReceiptNoteGeneral = () => {
                   }
                   isOptionEqualToValue={(option, value) => option.partnerId === value.partnerId} // ✅ thêm dòng này!
                   onChange={(event, selectedOption) => {
-                    setPartnerName(selectedOption?.partnerName || "");
-                    setAddress(selectedOption?.address || "");
-                    setContactName(selectedOption?.contactName || "");
-                    setPartnerPhone(selectedOption?.phone || "");
+                    if (selectedOption) {
+                      setPartnerId(selectedOption.partnerId || null);
+                      setPartnerName(selectedOption.partnerName || "");
+                      setAddress(selectedOption.address || "");
+                      setContactName(selectedOption.contactName || "");
+                      setPartnerPhone(selectedOption.phone || "");
+                    } else {
+                      setPartnerId(null);
+                      setPartnerName("");
+                      setAddress("");
+                      setContactName("");
+                      setPartnerPhone("");
+                    }
                   }}
+                  
                   renderOption={(props, option) => (
                     <li {...props}>
                       {option.partnerTypes?.find(pt => pt.partnerCode?.startsWith("KH"))?.partnerCode || ""} - {option.partnerName}

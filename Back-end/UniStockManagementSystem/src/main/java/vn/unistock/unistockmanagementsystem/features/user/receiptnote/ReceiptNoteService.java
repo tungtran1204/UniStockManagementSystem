@@ -106,6 +106,12 @@ public class ReceiptNoteService {
                     .details(new ArrayList<>())
                     .build();
 
+            // lưu đối tác nếu nhập hàng bán bị trả lại
+            if (grnDto.getPartnerId() != null) {
+                Partner partner = Partner.builder().partnerId(grnDto.getPartnerId()).build();
+                grn.setPartner(partner);
+            }
+
             boolean hasSaleOrder = false;
             if (grnDto.getPoId() != null) {
                 PurchaseOrder po = purchaseOrderRepository.findById(grnDto.getPoId())
