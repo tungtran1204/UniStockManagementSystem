@@ -44,10 +44,8 @@ import {
   uploadPaperEvidence,
   getNextCode
 } from "./receiptNoteService";
+import { getPartnersByCodePrefix } from "../partner/partnerService";
 
-const OUTSOURCE_TYPE_ID = 3;
-
-const SUPPLIER_TYPE_ID = 2;
 
 const AddReceiptNoteGeneral = () => {
   // region: Khai báo state và biến
@@ -63,6 +61,7 @@ const AddReceiptNoteGeneral = () => {
   const isReferenceFlow = (category === "Vật tư mua bán" || category === "Hàng hóa gia công") && !!referenceDocument;
 
   // Thông tin đối tác
+  const [partnerId, setPartnerId] = useState(null);
   const [partnerName, setPartnerName] = useState("");
   const [address, setAddress] = useState("");
   const [contactName, setContactName] = useState("");
@@ -77,6 +76,7 @@ const AddReceiptNoteGeneral = () => {
   const [availableOutsourceDocs, setAvailableOutsourceDocs] = useState([]); // Dùng cho "Hàng hóa gia công"
 
   // Các danh sách đối tác
+  const [customers, setCustomers] = useState([]); // danh sách KH
   const [outsources, setOutsources] = useState([]); // Đối tác Gia công
   const [suppliers, setSuppliers] = useState([]);   // Đối tác Nhà cung cấp
 
@@ -109,6 +109,17 @@ const AddReceiptNoteGeneral = () => {
       setCreateDate(today);
     }
   }, [createdDate]);
+
+  // Gọi API lấy danh sách khách hàng 
+  const fetchCustomers = async () => {
+    try {
+      const response = await getPartnersByCodePrefix("KH");
+      console.log("Danh sách khách hàng:", response);
+      setCustomers(response || []);
+    } catch (err) {
+      console.error("Lỗi khi lấy danh sách khách hàng:", err);
+    }
+  };
 
   // Gọi API lấy Product, Material
   useEffect(() => {
@@ -200,8 +211,8 @@ const AddReceiptNoteGeneral = () => {
     }
 
     if (category === "Hàng hóa trả lại") {
-      // Lấy danh sách Nhà cung cấp
-      fetchSuppliers();
+      // Lấy danh sách khách hàng
+      fetchCustomers();
     }
   }, [category]);
 
@@ -281,6 +292,7 @@ const AddReceiptNoteGeneral = () => {
 
     try {
       const po = await getPurchaseOrderById(poId);
+      setPartnerId(po.supplierId || null); 
       setPartnerName(po.supplierName || "");
       setAddress(po.supplierAddress || "");
       setContactName(po.supplierContactName || "");
@@ -505,6 +517,7 @@ const AddReceiptNoteGeneral = () => {
         category: category,
         receiptDate: new Date(createdDate).toISOString(),
         poId: isReferenceFlow ? Number(referenceDocument) : null,
+        partnerId: partnerId || null,
         details: []
       };
 
@@ -512,19 +525,21 @@ const AddReceiptNoteGeneral = () => {
 
       // Map dữ liệu chi tiết (details)
       if (isReferenceFlow) {
-        payload.details = documentItems.map(row => {
-          const warehouse = warehouses.find(w => w.warehouseCode === row.warehouseCode);
-          if (!warehouse) {
-            throw new Error(`Không tìm thấy kho với code: ${row.warehouseCode}`);
-          }
-          return {
-            warehouseId: warehouse.warehouseId,
-            materialId: row.materialId ? Number(row.materialId) : null,
-            productId: row.productId ? Number(row.productId) : null,
-            quantity: Number(row.quantity),
-            unitId: row.unitId ? Number(row.unitId) : null
-          };
-        });
+        payload.details = documentItems
+  .filter(row => row.remainingQuantity > 0 && Number(row.quantity) > 0)
+  .map(row => {
+    const warehouse = warehouses.find(w => w.warehouseCode === row.warehouseCode);
+    if (!warehouse) {
+      throw new Error(`Không tìm thấy kho với code: ${row.warehouseCode}`);
+    }
+    return {
+      warehouseId: warehouse.warehouseId,
+      materialId: row.materialId ? Number(row.materialId) : null,
+      productId: row.productId ? Number(row.productId) : null,
+      quantity: Number(row.quantity),
+      unitId: row.unitId ? Number(row.unitId) : null
+    };
+  });
       } else {
         payload.details = manualItems.map(row => {
           const warehouse = warehouses.find(w => w.warehouseCode === row.warehouse);
@@ -677,7 +692,7 @@ const AddReceiptNoteGeneral = () => {
       minWidth: 80,
       renderCell: (params) => (
         <IconButton
-          variant="text" 
+          variant="text"
           size="5px"
           color="error"
           onClick={() => handleRemoveRow(params.row.id)}
@@ -810,7 +825,7 @@ const AddReceiptNoteGeneral = () => {
                   getOptionDisabled={(option) => option.isHeader === true}
                   renderOption={(props, option) => (
                     <li {...props}>
-                            <div className={`flex justify-between w-full ${option.isHeader ? 'font-semibold text-black text-center' : ''}`}>
+                      <div className={`flex justify-between w-full ${option.isHeader ? 'font-semibold text-black text-center' : ''}`}>
                         <span className="text-gray-600">{option.poCode}</span>
                         <span className="text-gray-600">{option.orderDate}</span>
                       </div>
@@ -969,60 +984,56 @@ const AddReceiptNoteGeneral = () => {
             </div>
           )}
 
-          {/* Nếu là Hàng hoá trả lại => hiển thị autocomplete nhà cung cấp, vv. */}
+          {/* Nếu là Hàng hoá trả lại => hiển thị autocomplete khách hàng */}
           {category === "Hàng hóa trả lại" && (
             <div className="grid grid-cols-3 gap-4 mb-4">
-              {/* Demo: Tự điều chỉnh logic */}
-              <div>
-                <Typography variant="medium" className="mb-1 text-black">
-                  Mã đối tác
-                </Typography>
-                <Autocomplete
-                  options={suppliers}
-                  size="small"
-                  disableClearable
-                  getOptionLabel={(option) => option.code || ""}
-                  onChange={(event, selectedOption) => {
-                    // setPartnerCode(selectedOption.code)
-                    // setPartnerName(selectedOption.name) ...
-                  }}
-                  renderOption={(props, option) => (
-                    <li {...props}>
-                      {option.code} - {option.name}
-                    </li>
-                  )}
-                  renderInput={(params) => {
-                    return (
-                      <TextField
-                        color="success"
-                        hiddenLabel
-                        {...params}
-                        placeholder="Mã đối tác"
-                        InputProps={{
-                          ...params.InputProps,
-                          endAdornment: (
-                            <>
-                              <IconButton
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // handleOpenCreatePartnerPopup();
-                                }}
-                                size="small"
-                              >
-                                <FaPlus fontSize="small" />
-                              </IconButton>
-                              {params.InputProps.endAdornment}
-                            </>
-                          )
-                        }}
-                      />
-                    );
-                  }}
-                />
-              </div>
               <div className="col-span-2">
                 <Typography variant="medium" className="mb-1 text-black">
-                  Tên đối tác
+                  Đối tác<span className="text-red-500"> *</span>
+                </Typography>
+                <Autocomplete
+                  options={customers}
+                  size="small"
+                  getOptionLabel={(option) =>
+                    `${option.partnerTypes?.find(pt => pt.partnerCode?.startsWith("KH"))?.partnerCode || ""} - ${option.partnerName|| ""}`
+                  }
+                  isOptionEqualToValue={(option, value) => option.partnerId === value.partnerId} // ✅ thêm dòng này!
+                  onChange={(event, selectedOption) => {
+                    if (selectedOption) {
+                      setPartnerId(selectedOption.partnerId || null);
+                      setPartnerName(selectedOption.partnerName || "");
+                      setAddress(selectedOption.address || "");
+                      setContactName(selectedOption.contactName || "");
+                      setPartnerPhone(selectedOption.phone || "");
+                    } else {
+                      setPartnerId(null);
+                      setPartnerName("");
+                      setAddress("");
+                      setContactName("");
+                      setPartnerPhone("");
+                    }
+                  }}
+                  
+                  renderOption={(props, option) => (
+                    <li {...props}>
+                      {option.partnerTypes?.find(pt => pt.partnerCode?.startsWith("KH"))?.partnerCode || ""} - {option.partnerName}
+                    </li>
+                  )}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      color="success"
+                      hiddenLabel
+                      placeholder="Chọn đối tác"
+                      size="small"
+                    />
+                  )}
+                />
+              </div>
+
+              <div>
+                <Typography variant="medium" className="mb-1 text-black">
+                  Người liên hệ
                 </Typography>
                 <TextField
                   fullWidth
@@ -1030,12 +1041,45 @@ const AddReceiptNoteGeneral = () => {
                   color="success"
                   variant="outlined"
                   disabled
+                  value={contactName}
                   InputProps={{
                     style: { backgroundColor: '#eeeeee' }
                   }}
                 />
               </div>
-              {/* ... Tương tự cho địa chỉ, sđt, người liên hệ, vv. */}
+
+              <div className="col-span-2">
+                <Typography variant="medium" className="mb-1 text-black">
+                  Địa chỉ
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  color="success"
+                  variant="outlined"
+                  disabled
+                  value={address}
+                  InputProps={{
+                    style: { backgroundColor: '#eeeeee' }
+                  }}
+                />
+              </div>
+              <div>
+                <Typography variant="medium" className="mb-1 text-black">
+                  Số điện thoại
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  color="success"
+                  variant="outlined"
+                  disabled
+                  value={partnerPhone}
+                  InputProps={{
+                    style: { backgroundColor: '#eeeeee' }
+                  }}
+                />
+              </div>
             </div>
           )}
 

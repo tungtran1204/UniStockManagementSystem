@@ -48,4 +48,12 @@ public class PartnerController {
         return ResponseEntity.ok(partners);
     }
 
+    @GetMapping("/code-prefix")
+    public ResponseEntity<List<PartnerDTO>> getPartnersByCodePrefix(
+            @RequestParam(defaultValue = "KH") String prefix
+    ) {
+        List<PartnerDTO> partners = partnerService.getPartnersByCodePrefix(prefix);
+        return ResponseEntity.ok(partners);
+    }
+
 }

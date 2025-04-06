@@ -33,6 +33,11 @@ const ViewReceiptNote = () => {
   const [data, setData] = useState(null);
   const [creator, setCreator] = useState("Đang tải...");
   const [loading, setLoading] = useState(true);
+  const [partnerName, setPartnerName] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [address, setAddress] = useState("");
+  const [partnerPhone, setPartnerPhone] = useState("");
+  const [category, setCategory] = useState(data?.category);
 
   // State phân trang cho bảng
   const [currentPage, setCurrentPage] = useState(0);
@@ -158,6 +163,10 @@ const ViewReceiptNote = () => {
         if (receipt.createdBy) {
           const user = await getUserById(receipt.createdBy);
           setCreator(user.username || user.email || "Không xác định");
+          setPartnerName(receipt.partnerName || "");
+setContactName(receipt.contactName || "");
+setAddress(receipt.address || "");
+setPartnerPhone(receipt.phone || "");
         }
       } catch (err) {
         console.error("Lỗi khi tải phiếu nhập kho:", err);
@@ -318,7 +327,7 @@ const ViewReceiptNote = () => {
               />
             </div>
             <div>
-              <Typography variant="medium" className="mb-1 text-black">Loại hàng hóa</Typography>
+              <Typography variant="medium" className="mb-1 text-black">Phân loại hàng nhập kho</Typography>
               <TextField
                 fullWidth
                 size="small"
@@ -346,7 +355,7 @@ const ViewReceiptNote = () => {
               />
             </div>
             <div>
-              <Typography variant="medium" className="mb-1 text-black">Người tạo</Typography>
+              <Typography variant="medium" className="mb-1 text-black">Người tạo phiếu</Typography>
               <TextField
                 fullWidth
                 size="small"
@@ -383,43 +392,21 @@ const ViewReceiptNote = () => {
 
               )}
             </div>
-          </div>
-
-          {/* Diễn giải và file đính kèm */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <Typography variant="medium" className="mb-1 text-black">Diễn giải nhập kho</Typography>
-              <TextField
-                fullWidth
-                size="small"
-                hiddenLabel
-                multiline
-                rows={4}
-                color="success"
-                value={data.description || "Không có"}
-                disabled
-                InputProps={{
-                  style: { backgroundColor: '#eeeeee' }
-                }}
-              />
-            </div>
             <div>
               <Typography variant="medium" className="mb-1 text-black">File đính kèm</Typography>
               {data.paperEvidence && data.paperEvidence.length > 0 ? (
-                <div className="mt-2 text-sm text-gray-800">
-                  <div className="grid grid-cols-3 gap-2 mt-1 text-sm text-gray-700 w-fit">
+                  <div className="grid grid-cols-3 gap-2 mt-1 text-sm text-gray-700 w-fit mt-2 text-sm text-gray-800">
                     {data.paperEvidence.map((url, index) => (
                       <Button
                         key={index}
                         variant="outlined"
-                        className="flex items-center justify-between border rounded text-xs"
+                        className="flex items-center justify-between text-xs px-2 py-1 h-9 min-h-0 leading-none"
                         onClick={() => handlePreview(url)}
                       >
                         <span className="truncate max-w-[75%]">{url.split("/").pop()}</span>
                       </Button>
                     ))}
                   </div>
-                </div>
               ) : (
                 <Typography variant="small" className="text-gray-600">Không có</Typography>
               )}
@@ -513,6 +500,101 @@ const ViewReceiptNote = () => {
               </Dialog>
             </div>
           </div>
+
+          {/* Diễn giải */}
+          <div className="grid grid-cols-1 gap-4 mb-6">
+            <div>
+              <Typography variant="medium" className="mb-1 text-black">Diễn giải nhập kho</Typography>
+              <TextField
+                fullWidth
+                size="small"
+                hiddenLabel
+                multiline
+                rows={4}
+                color="success"
+                value={data.description || "Không có"}
+                disabled
+                InputProps={{
+                  style: { backgroundColor: '#eeeeee' }
+                }}
+              />
+            </div>           
+          </div>
+
+          <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
+            <InformationCircleIcon className="h-5 w-5 mr-2" />
+            Thông tin đối tác trả hàng
+          </Typography>
+          {(data.category === "Hàng hóa trả lại") && (
+                      <div className="grid grid-cols-3 gap-4 mb-4">
+                        <div className="col-span-2">
+                          <Typography variant="medium" className="mb-1 text-black">
+                            Tên đối tác
+                          </Typography>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            color="success"
+                            variant="outlined"
+                            disabled
+                            value={partnerName}
+                            InputProps={{
+                              style: { backgroundColor: '#eeeeee' }
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <Typography variant="medium" className="mb-1 text-black">
+                            Người liên hệ
+                          </Typography>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            color="success"
+                            variant="outlined"
+                            disabled
+                            value={contactName}
+                            InputProps={{
+                              style: { backgroundColor: '#eeeeee' }
+                            }}
+                          />
+                        </div>
+          
+                        <div className="col-span-2">
+                          <Typography variant="medium" className="mb-1 text-black">
+                            Địa chỉ
+                          </Typography>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            color="success"
+                            variant="outlined"
+                            disabled
+                            value={address}
+                            InputProps={{
+                              style: { backgroundColor: '#eeeeee' }
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <Typography variant="medium" className="mb-1 text-black">
+                            Số điện thoại
+                          </Typography>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            color="success"
+                            variant="outlined"
+                            disabled
+                            value={partnerPhone}
+                            InputProps={{
+                              style: { backgroundColor: '#eeeeee' }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
 
           <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
             <ListBulletIcon className="h-5 w-5 mr-2" />
