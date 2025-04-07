@@ -29,4 +29,14 @@ export const getGoodReceiptReportPaginated = (page = 0, size = 10) => {
   });
 };
 
+const API_URL_GIN_RP = "http://localhost:8080/api/unistock/user/issuenote";
+//const API_URL_GIN_RP = `${import.meta.env.VITE_API_URL}/user/issuenote`;
+export const getGoodIssueReportPaginated = (page = 0, size = 10) => {
+  const token = localStorage.getItem("token");
 
+  return axios.get(`${API_URL_GIN_RP}/report?page=${page}&size=${size}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
