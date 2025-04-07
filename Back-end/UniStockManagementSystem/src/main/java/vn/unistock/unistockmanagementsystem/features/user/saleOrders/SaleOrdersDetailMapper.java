@@ -31,7 +31,7 @@ public interface SaleOrdersDetailMapper {
 
     // Ánh xạ từ SalesOrderDetailDTO (DTO) → SalesOrderDetail (Entity)
     @Mapping(source = "productId", target = "product.productId")
-    @Mapping(source = "quantity", target = "remainingQuantity n")
+    @Mapping(source = "quantity", target = "remainingQuantity")
     @Mapping(source = "productCode",  target = "product.productCode")
     SalesOrderDetail toEntity(SalesOrderDetailDTO dto);
 
