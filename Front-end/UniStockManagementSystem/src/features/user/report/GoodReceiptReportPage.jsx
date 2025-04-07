@@ -15,13 +15,14 @@ import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
 import DateFilterButton from "@/components/DateFilterButton";
+import QuantityFilterButton from "@/components/QuantityFilterButton";
 import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Import Tiếng Việt
 
 
 const GoodReceiptReportPage = () => {
     const [currentPage, setCurrentPage] = useState(0);
-    const [pageSize, setPageSize] = useState(10);
+    const [pageSize, setPageSize] = useState(5);
     const [searchTerm, setSearchTerm] = useState("");
     const navigate = useNavigate();
     const [anchorEl, setAnchorEl] = useState(null);
@@ -31,7 +32,10 @@ const GoodReceiptReportPage = () => {
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [selectedWarehouses, setSelectedWarehouses] = useState([]);
     const [warehouseAnchorEl, setWarehouseAnchorEl] = useState(null);
-
+    const [quantityAnchorEl, setQuantityAnchorEl] = useState(null);
+    const [quantityFilters, setQuantityFilters] = useState({
+        itemQuantity: { label: "Số lượng", type: "range", min: null, max: null },
+    });
 
     // // Fetch data on component mount and when page or size changes
     // useEffect(() => {
@@ -233,7 +237,15 @@ const GoodReceiptReportPage = () => {
         const matchesWarehouse =
             selectedWarehouses.length === 0 || selectedWarehouses.includes(item.toWarehouse);
 
-        return matchesSearch && matchesStart && matchesEnd && matchesCategory && matchesWarehouse;
+        const matchesQuantity = (itemQuantity) => {
+            const { min, max, type } = quantityFilters.itemQuantity;
+            if (type === "lt") return max == null || itemQuantity <= max;
+            if (type === "gt") return min == null || itemQuantity >= min;
+            if (type === "eq") return min == null || itemQuantity === min;
+            return (min == null || itemQuantity >= min) && (max == null || itemQuantity <= max);
+        };
+
+        return matchesSearch && matchesStart && matchesEnd && matchesCategory && matchesWarehouse && matchesQuantity(item.itemQuantity);
     });
 
     const pageCount = Math.ceil(filteredData.length / pageSize);
@@ -453,6 +465,15 @@ const GoodReceiptReportPage = () => {
                                 </div>
                             )}
                         </Menu>
+
+                        {/* Filter by quantity */}
+                        <QuantityFilterButton
+                            anchorEl={quantityAnchorEl}
+                            setAnchorEl={setQuantityAnchorEl}
+                            filters={quantityFilters}
+                            setFilters={setQuantityFilters}
+                            setCurrentPage={setCurrentPage}
+                        />
                     </div>
                     <div className="py-2 flex items-center justify-between gap-2">
                         {/* Items per page */}
@@ -491,20 +512,19 @@ const GoodReceiptReportPage = () => {
                         <div className="flex items-center gap-2">
                             <Typography variant="small" color="blue-gray" className="font-normal">
                                 {/* Trang {currentPage + 1} / {totalPages || 1} • {totalElements || 0} bản ghi */}
-                                Trang {currentPage + 1} / {1} • {0} bản ghi
+                                Trang {currentPage + 1} / {pageCount || 1} • {filteredData.length} bản ghi
                             </Typography>
                         </div>
                         <ReactPaginate
                             previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
                             nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
                             breakLabel="..."
-                            // pageCount={totalPages || 1}
-                            pageCount={1}
+                            pageCount={pageCount || 1}
                             marginPagesDisplayed={2}
                             pageRangeDisplayed={5}
                             onPageChange={handlePageChangeWrapper}
                             containerClassName="flex items-center gap-1"
-                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067]"
+                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                             pageLinkClassName="flex items-center justify-center w-full h-full"
                             previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                             nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"

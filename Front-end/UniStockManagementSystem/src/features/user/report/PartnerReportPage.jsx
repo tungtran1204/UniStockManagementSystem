@@ -8,39 +8,33 @@ import {
     Menu,
     Checkbox,
     ListItemText,
+    Stack,
+    Chip,
 } from '@mui/material';
 import { FaAngleDown } from "react-icons/fa";
-import ClearIcon from '@mui/icons-material/Clear';
-import { PiLessThanOrEqualBold, PiGreaterThanOrEqualBold } from "react-icons/pi";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
 import QuantityFilterButton from "@/components/QuantityFilterButton";
-import StatusFilterButton from "@/components/StatusFilterButton";
 import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Import Tiếng Việt
 
-
-const InventoryReportPage = () => {
+const PartnerReportPage = () => {
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(5);
     const [searchTerm, setSearchTerm] = useState("");
     const navigate = useNavigate();
     const [quantityAnchorEl, setQuantityAnchorEl] = useState(null);
     const [quantityFilters, setQuantityFilters] = useState({
-        itemRealQuantity: { label: "Tồn kho", type: "range", min: null, max: null },
-        itemReservedQuantity: { label: "Đang giữ chỗ", type: "range", min: null, max: null },
-        itemBuyingQuantity: { label: "Đang đặt mua", type: "range", min: null, max: null },
+        totalOrder: { label: "Tổng số đơn hàng", type: "range", min: null, max: null },
     });
-    const [selectedWarehouses, setSelectedWarehouses] = useState([]);
-    const [warehouseAnchorEl, setWarehouseAnchorEl] = useState(null);
-    const [statusAnchorEl, setStatusAnchorEl] = useState(null);
-    const [selectedStatuses, setSelectedStatuses] = useState([]);
+    const [partnerTypeAnchorEl, setPartnerTypeAnchorEl] = useState(null);
+    const [selectedPartnerTypes, setSelectedPartnerTypes] = useState([]);
 
     // // Fetch data on component mount and when page or size changes
     // useEffect(() => {
-    //     fetchPaginatedReceiptNotes(currentPage, pageSize);
+    //   fetchPaginatedReceiptNotes(currentPage, pageSize);
     // }, [currentPage, pageSize]);
 
     // Handle page change
@@ -60,122 +54,81 @@ const InventoryReportPage = () => {
         fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
     };
 
-    //Lấy hết danh sách kho trong db
-    const warehouseList = [
-        "Kho A",
-        "Kho B",
-        "Kho C",
+    const allPartnerTypes = [
+        "Khách hàng",
+        "Nhà cung cấp",
+        "Gia công"
     ];
-
-    const allStatuses = [
-        {
-            value: true,
-            label: "Đang hoạt động",
-            className: "bg-green-100 text-green-800",
-        },
-        {
-            value: false,
-            label: "Ngừng hoạt động",
-            className: "bg-red-100 text-red-800",
-        },
-    ];
-
 
     const columnsConfig = [
         { field: 'stt', headerName: 'STT', flex: 1, minWidth: 50, editable: false, filterable: false },
         {
-            field: 'itemCode',
-            headerName: 'Mã hàng',
+            field: 'partnerCode',
+            headerName: 'Mã đối tác',
             flex: 1.5,
-            minWidth: 150,
-            editable: false,
-            filterable: false,
-            //dùng renderCell để cấu hình data
-        },
-        {
-            field: 'itemName',
-            headerName: 'Tên hàng',
-            flex: 2,
-            minWidth: 350,
-            editable: false,
-            filterable: false,
-            //dùng renderCell để cấu hình data
-        },
-        {
-            field: 'itemStatus',
-            headerName: 'Trạng thái',
-            flex: 1.5,
-            minWidth: 150,
+            minWidth: 200,
             editable: false,
             filterable: false,
             renderCell: (params) => {
-                const isActive = params.value === true;
-                const label = isActive ? 'Đang hoạt động' : 'Ngừng hoạt động';
-                const className = isActive
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800';
+                const partnerTypes = params.row.partnerTypes;
+
+                if (!partnerTypes || partnerTypes.length === 0) return "";
 
                 return (
-                    <div
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${className}`}
-                    >
-                        {label}
-                    </div>
+                    <Stack direction="column">
+                        {partnerTypes.map((pt, index) => (
+                            <Typography key={index} className="block font-normal text-sm text-black">
+                                {pt.partnerCode}
+                            </Typography>
+                        ))}
+                    </Stack>
                 );
             },
         },
         {
-            field: 'itemUnit',
-            headerName: 'Đơn vị',
-            flex: 1,
-            minWidth: 100,
+            field: 'partnerType',
+            headerName: 'Nhóm đối tác',
+            flex: 1.5,
+            minWidth: 200,
+            editable: false,
+            filterable: false,
+            renderCell: (params) => {
+                const partnerTypes = params.row.partnerTypes;
+                if (!partnerTypes || partnerTypes.length === 0) return null;
+
+                return (
+                    <Stack
+                        direction="row"
+                        useFlexGap
+                        sx={{ flexWrap: 'wrap', gap: 0.5, marginTop: '5px', marginBottom: '5px' }}
+                    >
+                        {partnerTypes.map((pt, index) => {
+                            const typeName = pt.partnerType?.typeName;
+                            return (
+                                <Chip key={index} label={typeName} variant="outlined" color="success" size="small" sx={{ fontFamily: 'Roboto, sans-serif' }} />
+                            );
+                        })}
+                    </Stack>
+                );
+            },
+        },
+        {
+            field: 'partnerName',
+            headerName: 'Tên đối tác',
+            flex: 2,
+            minWidth: 850,
             editable: false,
             filterable: false,
             //dùng renderCell để cấu hình data
         },
         {
-            field: 'itemRealQuantity',
-            headerName: 'Số lượng tồn thực tế',
+            field: 'totalOrder',
+            headerName: 'Tổng số đơn hàng',
             flex: 1,
-            minWidth: 135,
+            minWidth: 200,
             editable: false,
             filterable: false,
             //dùng renderCell để cấu hình data
-        },
-        {
-            field: 'itemReservedQuantity',
-            headerName: 'Số lượng đang giữ chỗ',
-            flex: 1,
-            minWidth: 135,
-            editable: false,
-            filterable: false,
-            //dùng renderCell để cấu hình data
-        },
-        {
-            field: 'itemBuyingQuantity',
-            headerName: 'Số lượng đang đặt mua',
-            flex: 1,
-            minWidth: 135,
-            editable: false,
-            filterable: false,
-            //dùng renderCell để cấu hình data
-        },
-        {
-            field: 'inWarehouse',
-            headerName: 'Lưu kho',
-            flex: 1,
-            minWidth: 150,
-            editable: false,
-            filterable: false,
-            //dùng renderCell để cấu hình data
-        },
-        {
-            field: 'image',
-            headerName: 'Hình ảnh',
-            flex: 1,
-            minWidth: 100,
-            editable: false,
-            filterable: false
         },
     ];
 
@@ -190,143 +143,152 @@ const InventoryReportPage = () => {
     //       type: "PURCHASE_ORDER"
     //     }
     //   }));
+
     const data = [
         {
             id: 1,
             stt: 1,
-            itemCode: "VT001",
-            itemName: "Khung xe đạp điện",
-            itemStatus: true,
-            itemUnit: "Cái",
-            itemRealQuantity: 10,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho A",
-            image: "Thành phẩm sản xuất",
+            partnerName: "Công ty TNHH Linh Kiện An Phát",
+            totalOrder: 12,
+            partnerTypes: [
+                {
+                    partnerType: { typeId: 1, typeCode: "KH", typeName: "Khách hàng" },
+                    partnerCode: "KH01",
+                },
+            ],
         },
         {
             id: 2,
             stt: 2,
-            itemCode: "VT002",
-            itemName: "Ắc quy 12V",
-            itemStatus: true,
-            itemUnit: "Bình",
-            itemRealQuantity: 5,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho B",
-            image: "Vật tư mua bán",
+            partnerName: "Công ty Cổ phần Phụ Tùng Việt Nhật",
+            totalOrder: 20,
+            partnerTypes: [
+                {
+                    partnerType: { typeId: 2, typeCode: "NCC", typeName: "Nhà cung cấp" },
+                    partnerCode: "NCC01",
+                },
+            ],
         },
         {
             id: 3,
             stt: 3,
-            itemCode: "VT003",
-            itemName: "Lốp xe",
-            itemStatus: false,
-            itemUnit: "Chiếc",
-            itemRealQuantity: 20,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho C",
-            image: "Hàng hoá gia công",
+            partnerName: "Xưởng Gia Công Việt Hưng",
+            totalOrder: 8,
+            partnerTypes: [
+                {
+                    partnerType: { typeId: 3, typeCode: "GC", typeName: "Gia công" },
+                    partnerCode: "GC01",
+                },
+            ],
         },
         {
             id: 4,
             stt: 4,
-            itemCode: "VT004",
-            itemName: "Đèn LED",
-            itemStatus: true,
-            itemUnit: "Bóng",
-            itemRealQuantity: 15,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho A",
-            image: "Thành phẩm sản xuất",
+            partnerName: "Công ty TNHH Kim Cương Xanh",
+            totalOrder: 15,
+            partnerTypes: [
+                {
+                    partnerType: { typeId: 2, typeCode: "NCC", typeName: "Nhà cung cấp" },
+                    partnerCode: "NCC02",
+                },
+                {
+                    partnerType: { typeId: 1, typeCode: "KH", typeName: "Khách hàng" },
+                    partnerCode: "KH02",
+                },
+            ],
         },
         {
             id: 5,
             stt: 5,
-            itemCode: "VT005",
-            itemName: "Bộ điều khiển",
-            itemStatus: false,
-            itemUnit: "Cái",
-            itemRealQuantity: 7,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho B",
-            image: "Hàng bán trả lại",
+            partnerName: "Đại lý Xe điện Thành Đạt",
+            totalOrder: 6,
+            partnerTypes: [
+                {
+                    partnerType: { typeId: 1, typeCode: "KH", typeName: "Khách hàng" },
+                    partnerCode: "KH03",
+                },
+            ],
         },
         {
             id: 6,
             stt: 6,
-            itemCode: "VT006",
-            itemName: "Yên xe",
-            itemStatus: true,
-            itemUnit: "Chiếc",
-            itemRealQuantity: 12,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho C",
-            image: "Hàng bán trả lại",
+            partnerName: "Cửa hàng Xe đạp điện Minh Tâm",
+            totalOrder: 10,
+            partnerTypes: [
+                {
+                    partnerType: { typeId: 1, typeCode: "KH", typeName: "Khách hàng" },
+                    partnerCode: "KH04",
+                },
+                {
+                    partnerType: { typeId: 3, typeCode: "GC", typeName: "Gia công" },
+                    partnerCode: "GC02",
+                },
+            ],
         },
         {
             id: 7,
             stt: 7,
-            itemCode: "VT007",
-            itemName: "Bánh xe sau",
-            itemStatus: true,
-            itemUnit: "Chiếc",
-            itemRealQuantity: 25,
-            itemReservedQuantity: 12,
-            itemBuyingQuantity: 8,
-            inWarehouse: "Kho A",
-            image: "Vật tư mua bán",
+            partnerName: "Công ty TNHH Ngọc Bảo An",
+            totalOrder: 18,
+            partnerTypes: [
+                {
+                    partnerType: { typeId: 2, typeCode: "NCC", typeName: "Nhà cung cấp" },
+                    partnerCode: "NCC03",
+                },
+            ],
         },
         {
             id: 8,
             stt: 8,
-            itemCode: "VT008",
-            itemName: "Phanh đĩa",
-            itemStatus: false,
-            itemUnit: "Cái",
-            itemRealQuantity: 5,
-            itemReservedQuantity: 3,
-            itemBuyingQuantity: 6,
-            inWarehouse: "Kho B",
-            image: "Vật tư mua bán",
+            partnerName: "Công ty TNHH Thương mại Hòa Bình",
+            totalOrder: 4,
+            partnerTypes: [
+                {
+                    partnerType: { typeId: 1, typeCode: "KH", typeName: "Khách hàng" },
+                    partnerCode: "KH05",
+                },
+            ],
         },
         {
             id: 9,
             stt: 9,
-            itemCode: "VT009",
-            itemName: "Chân chống xe",
-            itemStatus: true,
-            itemUnit: "Chiếc",
-            itemRealQuantity: 18,
-            itemReservedQuantity: 5,
-            itemBuyingQuantity: 4,
-            inWarehouse: "Kho C",
-            image: "Thành phẩm sản xuất",
+            partnerName: "Công ty TNHH Thiết bị Toàn Cầu",
+            totalOrder: 14,
+            partnerTypes: [
+                {
+                    partnerType: { typeId: 2, typeCode: "NCC", typeName: "Nhà cung cấp" },
+                    partnerCode: "NCC04",
+                },
+            ],
         },
         {
             id: 10,
             stt: 10,
-            itemCode: "VT010",
-            itemName: "Vành xe",
-            itemStatus: true,
-            itemUnit: "Chiếc",
-            itemRealQuantity: 30,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 0,
-            inWarehouse: "Kho A",
-            image: "Thành phẩm sản xuất",
+            partnerName: "Cửa hàng Xe điện Nova",
+            totalOrder: 7,
+            partnerTypes: [
+                {
+                    partnerType: { typeId: 1, typeCode: "KH", typeName: "Khách hàng" },
+                    partnerCode: "KH06",
+                },
+            ],
         },
     ]
 
     const filteredData = data.filter((item) => {
         const matchesSearch =
-            item.itemCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.itemName.toLowerCase().includes(searchTerm.toLowerCase());
+            item.partnerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.partnerTypes?.some((pt) =>
+                pt.partnerCode.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+        const matchesPartnerType = (item) => {
+            if (selectedPartnerTypes.length === 0) return true;
+            return item.partnerTypes?.some((pt) =>
+                selectedPartnerTypes.includes(pt.partnerType.typeName)
+            );
+        };
+
 
         const matchesAllQuantities = Object.entries(quantityFilters).every(([key, f]) => {
             const value = item[key];
@@ -336,14 +298,7 @@ const InventoryReportPage = () => {
             return (f.min == null || value >= f.min) && (f.max == null || value <= f.max);
         });
 
-        const matchesWarehouse =
-            selectedWarehouses.length === 0 || selectedWarehouses.includes(item.inWarehouse);
-
-        const matchesStatus =
-            selectedStatuses.length === 0 ||
-            selectedStatuses.some((status) => status.value === item.itemStatus);
-            
-        return matchesSearch && matchesWarehouse && matchesAllQuantities && matchesStatus;
+        return matchesSearch && matchesAllQuantities && matchesPartnerType(item);
     });
 
     const pageCount = Math.ceil(filteredData.length / pageSize);
@@ -354,9 +309,8 @@ const InventoryReportPage = () => {
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
                 <CardBody className="pb-2 bg-white rounded-xl">
                     <PageHeader
-                        title="Báo cáo tồn kho"
+                        title="Báo cáo theo đơn đặt hàng"
                         showAdd={false}
-                        showImport={false}
                     />
 
                     <div className="mb-3 flex flex-wrap items-center gap-4">
@@ -370,22 +324,13 @@ const InventoryReportPage = () => {
                             />
                         </div>
 
-                        {/* Filter by quantity */}
-                        <QuantityFilterButton
-                            anchorEl={quantityAnchorEl}
-                            setAnchorEl={setQuantityAnchorEl}
-                            filters={quantityFilters}
-                            setFilters={setQuantityFilters}
-                            buttonLabel="Số lượng"
-                        />
-
-                        {/* Filter by warehouse */}
+                        {/* Filter by partner type */}
                         <Button
-                            onClick={(e) => setWarehouseAnchorEl(e.currentTarget)}
+                            onClick={(e) => setPartnerTypeAnchorEl(e.currentTarget)}
                             size="sm"
-                            variant={selectedWarehouses.length > 0 ? "outlined" : "contained"}
+                            variant={selectedPartnerTypes.length > 0 ? "outlined" : "contained"}
                             sx={{
-                                ...(selectedWarehouses.length > 0
+                                ...(selectedPartnerTypes.length > 0
                                     ? {
                                         backgroundColor: "#ffffff",
                                         boxShadow: "none",
@@ -413,51 +358,53 @@ const InventoryReportPage = () => {
                                     }),
                             }}
                         >
-                            {selectedWarehouses.length > 0 ? (
+                            {selectedPartnerTypes.length > 0 ? (
                                 <span className="flex items-center gap-[5px]">
-                                    {selectedWarehouses[0]}
-                                    {selectedWarehouses.length > 1 && (
-                                        <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin">+{selectedWarehouses.length - 1}</span>
+                                    {selectedPartnerTypes[0]}
+                                    {selectedPartnerTypes.length > 1 && (
+                                        <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin">
+                                            +{selectedPartnerTypes.length - 1}
+                                        </span>
                                     )}
                                 </span>
                             ) : (
                                 <span className="flex items-center gap-[5px]">
-                                    Lưu kho
-                                    <FaAngleDown className="h-4 w-4" />
+                                    Nhóm đối tác <FaAngleDown className="h-4 w-4" />
                                 </span>
                             )}
                         </Button>
 
                         <Menu
-                            anchorEl={warehouseAnchorEl}
-                            open={Boolean(warehouseAnchorEl)}
-                            onClose={() => setWarehouseAnchorEl(null)}
+                            anchorEl={partnerTypeAnchorEl}
+                            open={Boolean(partnerTypeAnchorEl)}
+                            onClose={() => setPartnerTypeAnchorEl(null)}
                             anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
                         >
-                            {warehouseList.map((wh) => (
+                            {allPartnerTypes.map((type) => (
                                 <MenuItem
-                                    key={wh}
+                                    key={type}
                                     onClick={() => {
-                                        const updated = selectedWarehouses.includes(wh)
-                                            ? selectedWarehouses.filter(w => w !== wh)
-                                            : [...selectedWarehouses, wh];
-                                        setSelectedWarehouses(updated);
+                                        const updated = selectedPartnerTypes.includes(type)
+                                            ? selectedPartnerTypes.filter((t) => t !== type)
+                                            : [...selectedPartnerTypes, type];
+                                        setSelectedPartnerTypes(updated);
                                     }}
                                     sx={{ paddingLeft: "7px", minWidth: "150px" }}
                                 >
-                                    <Checkbox color="success" size="small" checked={selectedWarehouses.includes(wh)} />
-                                    <ListItemText primary={wh} />
+                                    <Checkbox
+                                        color="success"
+                                        size="small"
+                                        checked={selectedPartnerTypes.includes(type)}
+                                    />
+                                    <ListItemText primary={type} />
                                 </MenuItem>
                             ))}
-                            {selectedWarehouses.length > 0 && (
+                            {selectedPartnerTypes.length > 0 && (
                                 <div className="flex justify-end">
                                     <Button
                                         variant="text"
                                         size="medium"
-                                        onClick={() => {
-                                            setSelectedWarehouses([]);
-                                            setCurrentPage(0);
-                                        }}
+                                        onClick={() => setSelectedPartnerTypes([])}
                                         sx={{
                                             color: "#000000DE",
                                             "&:hover": {
@@ -472,17 +419,16 @@ const InventoryReportPage = () => {
                             )}
                         </Menu>
 
-                        {/* Filter by status */}
-                        <StatusFilterButton
-                            anchorEl={statusAnchorEl}
-                            setAnchorEl={setStatusAnchorEl}
-                            selectedStatuses={selectedStatuses}
-                            setSelectedStatuses={setSelectedStatuses}
-                            allStatuses={allStatuses}
-                            buttonLabel="Trạng thái"
+                        {/* Filter by quantity */}
+                        <QuantityFilterButton
+                            anchorEl={quantityAnchorEl}
+                            setAnchorEl={setQuantityAnchorEl}
+                            filters={quantityFilters}
+                            setFilters={setQuantityFilters}
+                            buttonLabel="Số lượng"
                         />
-
                     </div>
+
                     <div className="py-2 flex items-center justify-between gap-2">
                         {/* Items per page */}
                         <div className="flex items-center gap-2">
@@ -505,14 +451,12 @@ const InventoryReportPage = () => {
                                 bản ghi mỗi trang
                             </Typography>
                         </div>
-
                     </div>
 
                     <Table
                         data={paginatedData}
                         columnsConfig={columnsConfig}
                         enableSelection={false}
-                        headerHeight={60}
                     />
 
 
@@ -545,8 +489,8 @@ const InventoryReportPage = () => {
                     </div>
                 </CardBody>
             </Card>
-        </div >
+        </div>
     );
 };
 
-export default InventoryReportPage;
+export default PartnerReportPage;
