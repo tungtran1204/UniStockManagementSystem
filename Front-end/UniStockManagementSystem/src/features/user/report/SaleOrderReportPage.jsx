@@ -53,22 +53,22 @@ const SaleOrderReportPage = () => {
     {
       value: "PROCESSING",
       label: "Đang xử lý",
-      className: "bg-blue-100 text-blue-800",
+      className: "bg-blue-50 text-blue-800",
     },
     {
       value: "PREPARING_MATERIAL",
       label: "Đang chuẩn bị vật tư",
-      className: "bg-yellow-100 text-yellow-800",
+      className: "bg-yellow-100 text-amber-800",
     },
     {
       value: "CANCELLED",
       label: "Đã huỷ",
-      className: "bg-red-100 text-red-800",
+      className: "bg-red-50 text-red-800",
     },
     {
       value: "COMPLETED",
       label: "Đã hoàn thành",
-      className: "bg-green-100 text-green-800",
+      className: "bg-green-50 text-green-800",
     },
   ];
 

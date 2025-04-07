@@ -21,6 +21,8 @@ import StatusFilterButton from "@/components/StatusFilterButton";
 import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Import Tiếng Việt
 
+import { getInventoryReportPaginated } from "./reportService";
+import { getWarehouseList } from "../warehouse/warehouseService";
 
 const InventoryReportPage = () => {
     const [currentPage, setCurrentPage] = useState(0);
@@ -31,17 +33,58 @@ const InventoryReportPage = () => {
     const [quantityFilters, setQuantityFilters] = useState({
         itemRealQuantity: { label: "Tồn kho", type: "range", min: null, max: null },
         itemReservedQuantity: { label: "Đang giữ chỗ", type: "range", min: null, max: null },
-        itemBuyingQuantity: { label: "Đang đặt mua", type: "range", min: null, max: null },
+        itemAvailableQuantity: { label: "Có sẵn", type: "range", min: null, max: null },
     });
     const [selectedWarehouses, setSelectedWarehouses] = useState([]);
     const [warehouseAnchorEl, setWarehouseAnchorEl] = useState(null);
     const [statusAnchorEl, setStatusAnchorEl] = useState(null);
     const [selectedStatuses, setSelectedStatuses] = useState([]);
+    const [reportData, setReportData] = useState([]);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalElements, setTotalElements] = useState(0);
 
-    // // Fetch data on component mount and when page or size changes
-    // useEffect(() => {
-    //     fetchPaginatedReceiptNotes(currentPage, pageSize);
-    // }, [currentPage, pageSize]);
+    const [warehouseList, setWarehouses] = useState([]);
+
+    useEffect(() => {
+        fetchReport(currentPage, pageSize);
+    }, [currentPage, pageSize]);
+
+    useEffect(() => {
+        fetchReport(currentPage, pageSize);
+    }, [currentPage, pageSize, searchTerm, selectedWarehouses, selectedStatuses, quantityFilters]);
+
+    const fetchReport = async (page, size) => {
+        try {
+            const response = await getInventoryReportPaginated({
+                page,
+                size,
+                search: searchTerm,
+                warehouses: selectedWarehouses,
+                statuses: selectedStatuses,
+                quantityFilters,
+            });
+            const content = response.data.content.map((item, index) => ({
+                id: index + 1 + page * size,
+                stt: index + 1 + page * size,
+                itemCode: item.itemCode,
+                itemName: item.itemName,
+                itemStatus: item.isActive,
+                itemUnit: item.unitName,
+                itemRealQuantity: item.totalQuantity,
+                itemReservedQuantity: item.reservedQuantity,
+                itemAvailableQuantity: item.availableQuantity,
+                inWarehouse: item.warehouseName,
+                image: "",
+            }));
+            setReportData(content);
+            setTotalPages(response.data.totalPages);
+            setTotalElements(response.data.totalElements);
+        } catch (error) {
+            setReportData([]);
+            setTotalPages(1);
+            setTotalElements(0);
+        }
+    };
 
     // Handle page change
     const handlePageChange = (selectedPage) => {
@@ -60,26 +103,32 @@ const InventoryReportPage = () => {
         fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
     };
 
-    //Lấy hết danh sách kho trong db
-    const warehouseList = [
-        "Kho A",
-        "Kho B",
-        "Kho C",
-    ];
+    useEffect(() => {
+        const fetchInitData = async () => {
+            try {
+                const response = await getWarehouseList();
+                const activeWarehouses = (response?.data || response || []).filter(wh => wh.isActive);
+                setWarehouses(activeWarehouses);
+            } catch (err) {
+                console.error("Lỗi khi lấy dữ liệu kho:", err);
+            }
+        };
+
+        fetchInitData();
+    }, []);
 
     const allStatuses = [
         {
             value: true,
             label: "Đang hoạt động",
-            className: "bg-green-100 text-green-800",
+            className: "bg-green-50 text-green-800",
         },
         {
             value: false,
             label: "Ngừng hoạt động",
-            className: "bg-red-100 text-red-800",
+            className: "bg-red-50 text-red-800",
         },
     ];
-
 
     const columnsConfig = [
         { field: 'stt', headerName: 'STT', flex: 1, minWidth: 50, editable: false, filterable: false },
@@ -112,8 +161,8 @@ const InventoryReportPage = () => {
                 const isActive = params.value === true;
                 const label = isActive ? 'Đang hoạt động' : 'Ngừng hoạt động';
                 const className = isActive
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800';
+                    ? 'bg-green-50 text-green-800'
+                    : 'bg-red-50 text-red-800';
 
                 return (
                     <div
@@ -135,7 +184,7 @@ const InventoryReportPage = () => {
         },
         {
             field: 'itemRealQuantity',
-            headerName: 'Số lượng tồn thực tế',
+            headerName: 'Tồn kho thực tế',
             flex: 1,
             minWidth: 135,
             editable: false,
@@ -144,7 +193,7 @@ const InventoryReportPage = () => {
         },
         {
             field: 'itemReservedQuantity',
-            headerName: 'Số lượng đang giữ chỗ',
+            headerName: 'SL đang giữ chỗ',
             flex: 1,
             minWidth: 135,
             editable: false,
@@ -152,8 +201,8 @@ const InventoryReportPage = () => {
             //dùng renderCell để cấu hình data
         },
         {
-            field: 'itemBuyingQuantity',
-            headerName: 'Số lượng đang đặt mua',
+            field: 'itemAvailableQuantity',
+            headerName: 'SL có sẵn',
             flex: 1,
             minWidth: 135,
             editable: false,
@@ -169,185 +218,9 @@ const InventoryReportPage = () => {
             filterable: false,
             //dùng renderCell để cấu hình data
         },
-        {
-            field: 'image',
-            headerName: 'Hình ảnh',
-            flex: 1,
-            minWidth: 100,
-            editable: false,
-            filterable: false
-        },
     ];
 
-    //   const data = receiptNotes.map((receipt) => ({
-    //     grnId: receipt.grnId,
-    //     receiptCode: receipt.grnCode,
-    //     category: receipt.category || 'không có dữ liệu',
-    //     createdDate: receipt.receiptDate,
-    //     createBy: receipt.createdBy,
-    //     reference: {
-    //       id: receipt.poId || "N/A",
-    //       type: "PURCHASE_ORDER"
-    //     }
-    //   }));
-    const data = [
-        {
-            id: 1,
-            stt: 1,
-            itemCode: "VT001",
-            itemName: "Khung xe đạp điện",
-            itemStatus: true,
-            itemUnit: "Cái",
-            itemRealQuantity: 10,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho A",
-            image: "Thành phẩm sản xuất",
-        },
-        {
-            id: 2,
-            stt: 2,
-            itemCode: "VT002",
-            itemName: "Ắc quy 12V",
-            itemStatus: true,
-            itemUnit: "Bình",
-            itemRealQuantity: 5,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho B",
-            image: "Vật tư mua bán",
-        },
-        {
-            id: 3,
-            stt: 3,
-            itemCode: "VT003",
-            itemName: "Lốp xe",
-            itemStatus: false,
-            itemUnit: "Chiếc",
-            itemRealQuantity: 20,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho C",
-            image: "Hàng hoá gia công",
-        },
-        {
-            id: 4,
-            stt: 4,
-            itemCode: "VT004",
-            itemName: "Đèn LED",
-            itemStatus: true,
-            itemUnit: "Bóng",
-            itemRealQuantity: 15,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho A",
-            image: "Thành phẩm sản xuất",
-        },
-        {
-            id: 5,
-            stt: 5,
-            itemCode: "VT005",
-            itemName: "Bộ điều khiển",
-            itemStatus: false,
-            itemUnit: "Cái",
-            itemRealQuantity: 7,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho B",
-            image: "Hàng bán trả lại",
-        },
-        {
-            id: 6,
-            stt: 6,
-            itemCode: "VT006",
-            itemName: "Yên xe",
-            itemStatus: true,
-            itemUnit: "Chiếc",
-            itemRealQuantity: 12,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho C",
-            image: "Hàng bán trả lại",
-        },
-        {
-            id: 7,
-            stt: 7,
-            itemCode: "VT007",
-            itemName: "Bánh xe sau",
-            itemStatus: true,
-            itemUnit: "Chiếc",
-            itemRealQuantity: 25,
-            itemReservedQuantity: 12,
-            itemBuyingQuantity: 8,
-            inWarehouse: "Kho A",
-            image: "Vật tư mua bán",
-        },
-        {
-            id: 8,
-            stt: 8,
-            itemCode: "VT008",
-            itemName: "Phanh đĩa",
-            itemStatus: false,
-            itemUnit: "Cái",
-            itemRealQuantity: 5,
-            itemReservedQuantity: 3,
-            itemBuyingQuantity: 6,
-            inWarehouse: "Kho B",
-            image: "Vật tư mua bán",
-        },
-        {
-            id: 9,
-            stt: 9,
-            itemCode: "VT009",
-            itemName: "Chân chống xe",
-            itemStatus: true,
-            itemUnit: "Chiếc",
-            itemRealQuantity: 18,
-            itemReservedQuantity: 5,
-            itemBuyingQuantity: 4,
-            inWarehouse: "Kho C",
-            image: "Thành phẩm sản xuất",
-        },
-        {
-            id: 10,
-            stt: 10,
-            itemCode: "VT010",
-            itemName: "Vành xe",
-            itemStatus: true,
-            itemUnit: "Chiếc",
-            itemRealQuantity: 30,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 0,
-            inWarehouse: "Kho A",
-            image: "Thành phẩm sản xuất",
-        },
-    ]
-
-    const filteredData = data.filter((item) => {
-        const matchesSearch =
-            item.itemCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.itemName.toLowerCase().includes(searchTerm.toLowerCase());
-
-        const matchesAllQuantities = Object.entries(quantityFilters).every(([key, f]) => {
-            const value = item[key];
-            if (f.type === "lt") return f.max == null || value <= f.max;
-            if (f.type === "gt") return f.min == null || value >= f.min;
-            if (f.type === "eq") return f.min == null || value === f.min;
-            return (f.min == null || value >= f.min) && (f.max == null || value <= f.max);
-        });
-
-        const matchesWarehouse =
-            selectedWarehouses.length === 0 || selectedWarehouses.includes(item.inWarehouse);
-
-        const matchesStatus =
-            selectedStatuses.length === 0 ||
-            selectedStatuses.some((status) => status.value === item.itemStatus);
-            
-        return matchesSearch && matchesWarehouse && matchesAllQuantities && matchesStatus;
-    });
-
-    const pageCount = Math.ceil(filteredData.length / pageSize);
-    const paginatedData = filteredData.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+    const data = reportData;
 
     return (
         <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -415,7 +288,7 @@ const InventoryReportPage = () => {
                         >
                             {selectedWarehouses.length > 0 ? (
                                 <span className="flex items-center gap-[5px]">
-                                    {selectedWarehouses[0]}
+                                    {selectedWarehouses[0]?.warehouseName}
                                     {selectedWarehouses.length > 1 && (
                                         <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin">+{selectedWarehouses.length - 1}</span>
                                     )}
@@ -435,8 +308,7 @@ const InventoryReportPage = () => {
                             anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
                         >
                             {warehouseList.map((wh) => (
-                                <MenuItem
-                                    key={wh}
+                                <MenuItem key={wh.warehouseId}
                                     onClick={() => {
                                         const updated = selectedWarehouses.includes(wh)
                                             ? selectedWarehouses.filter(w => w !== wh)
@@ -445,8 +317,8 @@ const InventoryReportPage = () => {
                                     }}
                                     sx={{ paddingLeft: "7px", minWidth: "150px" }}
                                 >
-                                    <Checkbox color="success" size="small" checked={selectedWarehouses.includes(wh)} />
-                                    <ListItemText primary={wh} />
+                                    <Checkbox color="success" size="small" checked={selectedWarehouses.some(w => w.warehouseId === wh.warehouseId)} />
+                                    <ListItemText primary={wh.warehouseName} />
                                 </MenuItem>
                             ))}
                             {selectedWarehouses.length > 0 && (
@@ -509,26 +381,23 @@ const InventoryReportPage = () => {
                     </div>
 
                     <Table
-                        data={paginatedData}
+                        data={reportData}
                         columnsConfig={columnsConfig}
                         enableSelection={false}
-                        headerHeight={60}
                     />
-
 
                     {/* Pagination */}
                     <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
                         <div className="flex items-center gap-2">
                             <Typography variant="small" color="blue-gray" className="font-normal">
-                                {/* Trang {currentPage + 1} / {totalPages || 1} • {totalElements || 0} bản ghi */}
-                                Trang {currentPage + 1} / {pageCount || 1} • {filteredData.length} bản ghi
+                                Trang {currentPage + 1} / {totalPages || 1} • {totalElements || 0} bản ghi
                             </Typography>
                         </div>
                         <ReactPaginate
                             previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
                             nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
                             breakLabel="..."
-                            pageCount={pageCount || 1}
+                            pageCount={totalPages || 1}
                             marginPagesDisplayed={2}
                             pageRangeDisplayed={5}
                             onPageChange={handlePageChangeWrapper}

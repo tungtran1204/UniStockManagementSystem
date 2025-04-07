@@ -18,7 +18,8 @@ import DateFilterButton from "@/components/DateFilterButton";
 import QuantityFilterButton from "@/components/QuantityFilterButton";
 import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Import Tiếng Việt
-
+import { getGoodReceiptReportPaginated } from "./reportService";
+import { getWarehouseList } from "../warehouse/warehouseService";
 
 const GoodReceiptReportPage = () => {
     const [currentPage, setCurrentPage] = useState(0);
@@ -36,11 +37,47 @@ const GoodReceiptReportPage = () => {
     const [quantityFilters, setQuantityFilters] = useState({
         itemQuantity: { label: "Số lượng", type: "range", min: null, max: null },
     });
+    const [reportData, setReportData] = useState([]);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalElements, setTotalElements] = useState(0);
 
-    // // Fetch data on component mount and when page or size changes
-    // useEffect(() => {
-    //     fetchPaginatedReceiptNotes(currentPage, pageSize);
-    // }, [currentPage, pageSize]);
+    const [warehouseList, setWarehouses] = useState([]);
+
+    // Fetch report data
+    useEffect(() => {
+        fetchReport(currentPage, pageSize);
+    }, [currentPage, pageSize]);
+
+    useEffect(() => {
+        fetchReport(currentPage, pageSize);
+    }, [currentPage, pageSize, searchTerm, selectedWarehouses, quantityFilters]);
+
+    const fetchReport = () => {
+        // Lấy toàn bộ dữ liệu: page = 0, size = 10000
+        getGoodReceiptReportPaginated(0, 10000)
+            .then((res) => {
+                const data = res.data.content.map((item, index) => ({
+                    id: index + 1,
+                    stt: index + 1,
+                    receiptCode: item.grnCode,
+                    receiptDate: item.receiptDate,
+                    itemCode: item.materialCode || item.productCode,
+                    itemName: item.materialName || item.productName,
+                    itemUnit: item.unitName,
+                    itemQuantity: item.quantity,
+                    toWarehouse: item.warehouseName,
+                    category: item.category,
+                }));
+                setReportData(data);
+            })
+            .catch(() => {
+                setReportData([]);
+            });
+    };
+
+    useEffect(() => {
+        fetchReport();
+    }, []);
 
     // Handle page change
     const handlePageChange = (selectedPage) => {
@@ -63,21 +100,29 @@ const GoodReceiptReportPage = () => {
     const categoryList = [
         "Thành phẩm sản xuất",
         "Hàng hoá gia công",
-        "Hàng bán trả lại",
+        "Hàng hóa trả lại",
         "Vật tư mua bán",
+        "Nhập kho vật tư thừa",
+        "Khác",
     ];
 
-    //Lấy hết danh sách kho trong db
-    const warehouseList = [
-        "Kho A",
-        "Kho B",
-        "Kho C",
-    ];
+    useEffect(() => {
+        const fetchInitData = async () => {
+            try {
+                const response = await getWarehouseList();
+                const activeWarehouses = (response?.data || response || []).filter(wh => wh.isActive);
+                setWarehouses(activeWarehouses);
+            } catch (err) {
+                console.error("Lỗi khi lấy dữ liệu kho:", err);
+            }
+        };
+
+        fetchInitData();
+    }, []);
 
 
     const columnsConfig = [
-        { field: 'stt', headerName: 'STT', flex: 1, minWidth: 50, editable: false, filterable: false },
-        { field: 'receiptCode', headerName: 'Mã phiếu nhập', flex: 1, minWidth: 100, editable: false, filterable: false },
+        { field: 'stt', headerName: 'STT', flex: 1, minWidth: 20, editable: false, filterable: false },
         {
             field: 'receiptDate',
             headerName: 'Ngày nhập',
@@ -127,99 +172,17 @@ const GoodReceiptReportPage = () => {
             field: 'toWarehouse',
             headerName: 'Kho nhập',
             flex: 1,
-            minWidth: 100,
+            minWidth: 200,
             editable: false,
             filterable: false,
             //dùng renderCell để cấu hình data
         },
         { field: 'category', headerName: 'Phân loại nhập', flex: 2, minWidth: 200, editable: false, filterable: false },
+        { field: 'receiptCode', headerName: 'Mã phiếu nhập', flex: 1, minWidth: 120, editable: false, filterable: false },
+
     ];
 
-    //   const data = receiptNotes.map((receipt) => ({
-    //     grnId: receipt.grnId,
-    //     receiptCode: receipt.grnCode,
-    //     category: receipt.category || 'không có dữ liệu',
-    //     createdDate: receipt.receiptDate,
-    //     createBy: receipt.createdBy,
-    //     reference: {
-    //       id: receipt.poId || "N/A",
-    //       type: "PURCHASE_ORDER"
-    //     }
-    //   }));
-    const data = [
-        {
-            id: 1,
-            stt: 1,
-            receiptCode: "PX001",
-            receiptDate: "2025-04-01T08:30:00Z",
-            itemCode: "VT001",
-            itemName: "Khung xe đạp điện",
-            itemUnit: "Cái",
-            itemQuantity: 10,
-            toWarehouse: "Kho A",
-            category: "Thành phẩm sản xuất",
-        },
-        {
-            id: 2,
-            stt: 2,
-            receiptCode: "PX002",
-            receiptDate: "2025-04-02T09:00:00Z",
-            itemCode: "VT002",
-            itemName: "Ắc quy 12V",
-            itemUnit: "Bình",
-            itemQuantity: 5,
-            toWarehouse: "Kho B",
-            category: "Vật tư mua bán",
-        },
-        {
-            id: 3,
-            stt: 3,
-            receiptCode: "PX003",
-            receiptDate: "2025-04-05T14:45:00Z",
-            itemCode: "VT003",
-            itemName: "Lốp xe",
-            itemUnit: "Chiếc",
-            itemQuantity: 20,
-            toWarehouse: "Kho C",
-            category: "Hàng hoá gia công",
-        },
-        {
-            id: 4,
-            stt: 4,
-            receiptCode: "PX004",
-            receiptDate: "2025-03-28T10:00:00Z",
-            itemCode: "VT004",
-            itemName: "Đèn LED",
-            itemUnit: "Bóng",
-            itemQuantity: 15,
-            toWarehouse: "Kho A",
-            category: "Thành phẩm sản xuất",
-        },
-        {
-            id: 5,
-            stt: 5,
-            receiptCode: "PX005",
-            receiptDate: "2025-03-15T08:15:00Z",
-            itemCode: "VT005",
-            itemName: "Bộ điều khiển",
-            itemUnit: "Cái",
-            itemQuantity: 7,
-            toWarehouse: "Kho B",
-            category: "Hàng bán trả lại",
-        },
-        {
-            id: 6,
-            stt: 6,
-            receiptCode: "PX006",
-            receiptDate: "2025-04-10T13:20:00Z",
-            itemCode: "VT006",
-            itemName: "Yên xe",
-            itemUnit: "Chiếc",
-            itemQuantity: 12,
-            toWarehouse: "Kho C",
-            category: "Hàng bán trả lại",
-        },
-    ]
+    const data = reportData;
 
     const filteredData = data.filter((item) => {
         const matchesSearch =
@@ -235,7 +198,8 @@ const GoodReceiptReportPage = () => {
             selectedCategories.length === 0 || selectedCategories.includes(item.category);
 
         const matchesWarehouse =
-            selectedWarehouses.length === 0 || selectedWarehouses.includes(item.toWarehouse);
+            selectedWarehouses.length === 0 ||
+            selectedWarehouses.some(w => w.warehouseName === item.toWarehouse);
 
         const matchesQuantity = (itemQuantity) => {
             const { min, max, type } = quantityFilters.itemQuantity;
@@ -409,7 +373,7 @@ const GoodReceiptReportPage = () => {
                         >
                             {selectedWarehouses.length > 0 ? (
                                 <span className="flex items-center gap-[5px]">
-                                    {selectedWarehouses[0]}
+                                    {selectedWarehouses[0]?.warehouseName}
                                     {selectedWarehouses.length > 1 && (
                                         <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin">+{selectedWarehouses.length - 1}</span>
                                     )}
@@ -430,7 +394,7 @@ const GoodReceiptReportPage = () => {
                         >
                             {warehouseList.map((wh) => (
                                 <MenuItem
-                                    key={wh}
+                                    key={wh.warehouseId}
                                     onClick={() => {
                                         const updated = selectedWarehouses.includes(wh)
                                             ? selectedWarehouses.filter(w => w !== wh)
@@ -439,8 +403,8 @@ const GoodReceiptReportPage = () => {
                                     }}
                                     sx={{ paddingLeft: "7px", minWidth: "150px" }}
                                 >
-                                    <Checkbox color="success" size="small" checked={selectedWarehouses.includes(wh)} />
-                                    <ListItemText primary={wh} />
+                                    <Checkbox color="success" size="small" checked={selectedWarehouses.some(w => w.warehouseId === wh.warehouseId)} />
+                                    <ListItemText primary={wh.warehouseName} />
                                 </MenuItem>
                             ))}
                             {selectedWarehouses.length > 0 && (
@@ -505,7 +469,6 @@ const GoodReceiptReportPage = () => {
                         columnsConfig={columnsConfig}
                         enableSelection={false}
                     />
-
 
                     {/* Pagination */}
                     <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">

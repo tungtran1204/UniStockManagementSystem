@@ -3,6 +3,7 @@ package vn.unistock.unistockmanagementsystem.features.user.receiptnote;
 import lombok.*;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -26,4 +27,7 @@ public class ReceiptNoteDetailViewDTO implements Serializable {
     private String unitName;
     private Long referenceId;
     private String referenceType;
+    private String grnCode;
+    private String category;
+    private LocalDateTime receiptDate;
 }

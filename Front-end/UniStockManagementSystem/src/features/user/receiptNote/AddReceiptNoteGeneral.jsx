@@ -251,19 +251,6 @@ const AddReceiptNoteGeneral = () => {
     }
   };
 
-  /**
-   * Lấy danh sách Nhà cung cấp (đối tác có type = SUPPLIER_TYPE_ID)
-   */
-  const fetchSuppliers = async () => {
-    try {
-      // Demo gọi API
-      // const response = await getPartnersByType(SUPPLIER_TYPE_ID);
-      // setSuppliers(mappedSuppliers);
-    } catch (error) {
-      console.error("Lỗi khi tải danh sách NCC:", error);
-    }
-  };
-
   // region: Helper function
   /**
    * Trả về kho mặc định dựa trên loại nhập kho (category).
@@ -374,6 +361,7 @@ const AddReceiptNoteGeneral = () => {
       }));
     }
   };
+
   // region: Thay đổi dữ liệu bảng thủ công (nếu không có chứng từ tham chiếu)
   /**
    * Thêm dòng mới cho danh sách manualItems

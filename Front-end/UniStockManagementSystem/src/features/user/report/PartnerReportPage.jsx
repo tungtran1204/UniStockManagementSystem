@@ -2,16 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { Card, CardBody, Typography } from "@material-tailwind/react";
-import {
-    Button,
-    MenuItem,
-    Menu,
-    Checkbox,
-    ListItemText,
-    Stack,
-    Chip,
-} from '@mui/material';
-import { FaAngleDown } from "react-icons/fa";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
@@ -27,10 +17,11 @@ const PartnerReportPage = () => {
     const navigate = useNavigate();
     const [quantityAnchorEl, setQuantityAnchorEl] = useState(null);
     const [quantityFilters, setQuantityFilters] = useState({
-        totalOrder: { label: "Tổng số đơn hàng", type: "range", min: null, max: null },
+        totalSaleOrder: { label: "Tổng số đơn bán hàng", type: "range", min: null, max: null },
+        totalPurchaseOrder: { label: "Tổng số đơn mua hàng", type: "range", min: null, max: null },
+        totalOutsourcingOrder: { label: "Tổng số đơn gia công", type: "range", min: null, max: null },
+        totalReturnOrder: { label: "Tổng số đơn trả lại", type: "range", min: null, max: null },
     });
-    const [partnerTypeAnchorEl, setPartnerTypeAnchorEl] = useState(null);
-    const [selectedPartnerTypes, setSelectedPartnerTypes] = useState([]);
 
     // // Fetch data on component mount and when page or size changes
     // useEffect(() => {
@@ -54,76 +45,47 @@ const PartnerReportPage = () => {
         fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
     };
 
-    const allPartnerTypes = [
-        "Khách hàng",
-        "Nhà cung cấp",
-        "Gia công"
-    ];
-
     const columnsConfig = [
         { field: 'stt', headerName: 'STT', flex: 1, minWidth: 50, editable: false, filterable: false },
-        {
-            field: 'partnerCode',
-            headerName: 'Mã đối tác',
-            flex: 1.5,
-            minWidth: 200,
-            editable: false,
-            filterable: false,
-            renderCell: (params) => {
-                const partnerTypes = params.row.partnerTypes;
-
-                if (!partnerTypes || partnerTypes.length === 0) return "";
-
-                return (
-                    <Stack direction="column">
-                        {partnerTypes.map((pt, index) => (
-                            <Typography key={index} className="block font-normal text-sm text-black">
-                                {pt.partnerCode}
-                            </Typography>
-                        ))}
-                    </Stack>
-                );
-            },
-        },
-        {
-            field: 'partnerType',
-            headerName: 'Nhóm đối tác',
-            flex: 1.5,
-            minWidth: 200,
-            editable: false,
-            filterable: false,
-            renderCell: (params) => {
-                const partnerTypes = params.row.partnerTypes;
-                if (!partnerTypes || partnerTypes.length === 0) return null;
-
-                return (
-                    <Stack
-                        direction="row"
-                        useFlexGap
-                        sx={{ flexWrap: 'wrap', gap: 0.5, marginTop: '5px', marginBottom: '5px' }}
-                    >
-                        {partnerTypes.map((pt, index) => {
-                            const typeName = pt.partnerType?.typeName;
-                            return (
-                                <Chip key={index} label={typeName} variant="outlined" color="success" size="small" sx={{ fontFamily: 'Roboto, sans-serif' }} />
-                            );
-                        })}
-                    </Stack>
-                );
-            },
-        },
         {
             field: 'partnerName',
             headerName: 'Tên đối tác',
             flex: 2,
-            minWidth: 850,
+            minWidth: 650,
             editable: false,
             filterable: false,
             //dùng renderCell để cấu hình data
         },
         {
-            field: 'totalOrder',
-            headerName: 'Tổng số đơn hàng',
+            field: 'totalSaleOrder',
+            headerName: 'Tổng số đơn bán hàng',
+            flex: 1,
+            minWidth: 200,
+            editable: false,
+            filterable: false,
+            //dùng renderCell để cấu hình data
+        },
+        {
+            field: 'totalPurchaseOrder',
+            headerName: 'Tổng số đơn mua hàng',
+            flex: 1,
+            minWidth: 200,
+            editable: false,
+            filterable: false,
+            //dùng renderCell để cấu hình data
+        },
+        {
+            field: 'totalOutsourcingOrder',
+            headerName: 'Tổng số đơn gia công',
+            flex: 1,
+            minWidth: 200,
+            editable: false,
+            filterable: false,
+            //dùng renderCell để cấu hình data
+        },
+        {
+            field: 'totalReturnOrder',
+            headerName: 'Tổng số đơn trả lại',
             flex: 1,
             minWidth: 200,
             editable: false,
@@ -148,130 +110,92 @@ const PartnerReportPage = () => {
         {
             id: 1,
             stt: 1,
-            partnerName: "Công ty TNHH Linh Kiện An Phát",
-            totalOrder: 12,
-            partnerTypes: [
-                {
-                    partnerType: { typeId: 1, typeCode: "KH", typeName: "Khách hàng" },
-                    partnerCode: "KH01",
-                },
-            ],
+            partnerName: "Công ty TNHH ABC Việt Nam",
+            totalSaleOrder: 12,
+            totalPurchaseOrder: 5,
+            totalOutsourcingOrder: 3,
+            totalReturnOrder: 2,
         },
         {
             id: 2,
             stt: 2,
-            partnerName: "Công ty Cổ phần Phụ Tùng Việt Nhật",
-            totalOrder: 20,
-            partnerTypes: [
-                {
-                    partnerType: { typeId: 2, typeCode: "NCC", typeName: "Nhà cung cấp" },
-                    partnerCode: "NCC01",
-                },
-            ],
+            partnerName: "Công ty Cổ phần Thiết bị Số",
+            totalSaleOrder: 8,
+            totalPurchaseOrder: 10,
+            totalOutsourcingOrder: 1,
+            totalReturnOrder: 0,
         },
         {
             id: 3,
             stt: 3,
-            partnerName: "Xưởng Gia Công Việt Hưng",
-            totalOrder: 8,
-            partnerTypes: [
-                {
-                    partnerType: { typeId: 3, typeCode: "GC", typeName: "Gia công" },
-                    partnerCode: "GC01",
-                },
-            ],
+            partnerName: "Nhà cung cấp Công Nghiệp Bắc Ninh",
+            totalSaleOrder: 4,
+            totalPurchaseOrder: 18,
+            totalOutsourcingOrder: 0,
+            totalReturnOrder: 1,
         },
         {
             id: 4,
             stt: 4,
-            partnerName: "Công ty TNHH Kim Cương Xanh",
-            totalOrder: 15,
-            partnerTypes: [
-                {
-                    partnerType: { typeId: 2, typeCode: "NCC", typeName: "Nhà cung cấp" },
-                    partnerCode: "NCC02",
-                },
-                {
-                    partnerType: { typeId: 1, typeCode: "KH", typeName: "Khách hàng" },
-                    partnerCode: "KH02",
-                },
-            ],
+            partnerName: "Công ty TNHH Thịnh Phát",
+            totalSaleOrder: 16,
+            totalPurchaseOrder: 2,
+            totalOutsourcingOrder: 0,
+            totalReturnOrder: 0,
         },
         {
             id: 5,
             stt: 5,
-            partnerName: "Đại lý Xe điện Thành Đạt",
-            totalOrder: 6,
-            partnerTypes: [
-                {
-                    partnerType: { typeId: 1, typeCode: "KH", typeName: "Khách hàng" },
-                    partnerCode: "KH03",
-                },
-            ],
+            partnerName: "Gia công cơ khí Minh Khoa",
+            totalSaleOrder: 0,
+            totalPurchaseOrder: 0,
+            totalOutsourcingOrder: 9,
+            totalReturnOrder: 0,
         },
         {
             id: 6,
             stt: 6,
-            partnerName: "Cửa hàng Xe đạp điện Minh Tâm",
-            totalOrder: 10,
-            partnerTypes: [
-                {
-                    partnerType: { typeId: 1, typeCode: "KH", typeName: "Khách hàng" },
-                    partnerCode: "KH04",
-                },
-                {
-                    partnerType: { typeId: 3, typeCode: "GC", typeName: "Gia công" },
-                    partnerCode: "GC02",
-                },
-            ],
+            partnerName: "Công ty TNHH Giao Nhận Hoàng Long",
+            totalSaleOrder: 6,
+            totalPurchaseOrder: 3,
+            totalOutsourcingOrder: 0,
+            totalReturnOrder: 1,
         },
         {
             id: 7,
             stt: 7,
-            partnerName: "Công ty TNHH Ngọc Bảo An",
-            totalOrder: 18,
-            partnerTypes: [
-                {
-                    partnerType: { typeId: 2, typeCode: "NCC", typeName: "Nhà cung cấp" },
-                    partnerCode: "NCC03",
-                },
-            ],
+            partnerName: "Công ty TNHH Kỹ thuật điện Hưng Thịnh",
+            totalSaleOrder: 11,
+            totalPurchaseOrder: 6,
+            totalOutsourcingOrder: 0,
+            totalReturnOrder: 2,
         },
         {
             id: 8,
             stt: 8,
-            partnerName: "Công ty TNHH Thương mại Hòa Bình",
-            totalOrder: 4,
-            partnerTypes: [
-                {
-                    partnerType: { typeId: 1, typeCode: "KH", typeName: "Khách hàng" },
-                    partnerCode: "KH05",
-                },
-            ],
+            partnerName: "Nhà máy sản xuất Lê Minh",
+            totalSaleOrder: 2,
+            totalPurchaseOrder: 14,
+            totalOutsourcingOrder: 1,
+            totalReturnOrder: 0,
         },
         {
             id: 9,
             stt: 9,
-            partnerName: "Công ty TNHH Thiết bị Toàn Cầu",
-            totalOrder: 14,
-            partnerTypes: [
-                {
-                    partnerType: { typeId: 2, typeCode: "NCC", typeName: "Nhà cung cấp" },
-                    partnerCode: "NCC04",
-                },
-            ],
+            partnerName: "Đại lý phân phối Ánh Dương",
+            totalSaleOrder: 19,
+            totalPurchaseOrder: 0,
+            totalOutsourcingOrder: 0,
+            totalReturnOrder: 3,
         },
         {
             id: 10,
             stt: 10,
-            partnerName: "Cửa hàng Xe điện Nova",
-            totalOrder: 7,
-            partnerTypes: [
-                {
-                    partnerType: { typeId: 1, typeCode: "KH", typeName: "Khách hàng" },
-                    partnerCode: "KH06",
-                },
-            ],
+            partnerName: "Công ty TNHH Long Thành",
+            totalSaleOrder: 9,
+            totalPurchaseOrder: 7,
+            totalOutsourcingOrder: 2,
+            totalReturnOrder: 1,
         },
     ]
 
@@ -282,14 +206,6 @@ const PartnerReportPage = () => {
                 pt.partnerCode.toLowerCase().includes(searchTerm.toLowerCase())
             );
 
-        const matchesPartnerType = (item) => {
-            if (selectedPartnerTypes.length === 0) return true;
-            return item.partnerTypes?.some((pt) =>
-                selectedPartnerTypes.includes(pt.partnerType.typeName)
-            );
-        };
-
-
         const matchesAllQuantities = Object.entries(quantityFilters).every(([key, f]) => {
             const value = item[key];
             if (f.type === "lt") return f.max == null || value <= f.max;
@@ -298,7 +214,7 @@ const PartnerReportPage = () => {
             return (f.min == null || value >= f.min) && (f.max == null || value <= f.max);
         });
 
-        return matchesSearch && matchesAllQuantities && matchesPartnerType(item);
+        return matchesSearch && matchesAllQuantities;
     });
 
     const pageCount = Math.ceil(filteredData.length / pageSize);
@@ -309,7 +225,7 @@ const PartnerReportPage = () => {
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
                 <CardBody className="pb-2 bg-white rounded-xl">
                     <PageHeader
-                        title="Báo cáo theo đơn đặt hàng"
+                        title="Báo cáo theo đối tác"
                         showAdd={false}
                     />
 
@@ -323,101 +239,6 @@ const PartnerReportPage = () => {
                                 placeholder="Tìm kiếm"
                             />
                         </div>
-
-                        {/* Filter by partner type */}
-                        <Button
-                            onClick={(e) => setPartnerTypeAnchorEl(e.currentTarget)}
-                            size="sm"
-                            variant={selectedPartnerTypes.length > 0 ? "outlined" : "contained"}
-                            sx={{
-                                ...(selectedPartnerTypes.length > 0
-                                    ? {
-                                        backgroundColor: "#ffffff",
-                                        boxShadow: "none",
-                                        borderColor: "#089456",
-                                        textTransform: "none",
-                                        color: "#089456",
-                                        px: 1.5,
-                                        "&:hover": {
-                                            backgroundColor: "#0894561A",
-                                            borderColor: "#089456",
-                                            boxShadow: "none",
-                                        },
-                                    }
-                                    : {
-                                        backgroundColor: "#0ab067",
-                                        boxShadow: "none",
-                                        textTransform: "none",
-                                        color: "#ffffff",
-                                        px: 1.5,
-                                        "&:hover": {
-                                            backgroundColor: "#089456",
-                                            borderColor: "#089456",
-                                            boxShadow: "none",
-                                        },
-                                    }),
-                            }}
-                        >
-                            {selectedPartnerTypes.length > 0 ? (
-                                <span className="flex items-center gap-[5px]">
-                                    {selectedPartnerTypes[0]}
-                                    {selectedPartnerTypes.length > 1 && (
-                                        <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin">
-                                            +{selectedPartnerTypes.length - 1}
-                                        </span>
-                                    )}
-                                </span>
-                            ) : (
-                                <span className="flex items-center gap-[5px]">
-                                    Nhóm đối tác <FaAngleDown className="h-4 w-4" />
-                                </span>
-                            )}
-                        </Button>
-
-                        <Menu
-                            anchorEl={partnerTypeAnchorEl}
-                            open={Boolean(partnerTypeAnchorEl)}
-                            onClose={() => setPartnerTypeAnchorEl(null)}
-                            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                        >
-                            {allPartnerTypes.map((type) => (
-                                <MenuItem
-                                    key={type}
-                                    onClick={() => {
-                                        const updated = selectedPartnerTypes.includes(type)
-                                            ? selectedPartnerTypes.filter((t) => t !== type)
-                                            : [...selectedPartnerTypes, type];
-                                        setSelectedPartnerTypes(updated);
-                                    }}
-                                    sx={{ paddingLeft: "7px", minWidth: "150px" }}
-                                >
-                                    <Checkbox
-                                        color="success"
-                                        size="small"
-                                        checked={selectedPartnerTypes.includes(type)}
-                                    />
-                                    <ListItemText primary={type} />
-                                </MenuItem>
-                            ))}
-                            {selectedPartnerTypes.length > 0 && (
-                                <div className="flex justify-end">
-                                    <Button
-                                        variant="text"
-                                        size="medium"
-                                        onClick={() => setSelectedPartnerTypes([])}
-                                        sx={{
-                                            color: "#000000DE",
-                                            "&:hover": {
-                                                backgroundColor: "transparent",
-                                                textDecoration: "underline",
-                                            },
-                                        }}
-                                    >
-                                        Xóa
-                                    </Button>
-                                </div>
-                            )}
-                        </Menu>
 
                         {/* Filter by quantity */}
                         <QuantityFilterButton

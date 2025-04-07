@@ -1,6 +1,7 @@
 package vn.unistock.unistockmanagementsystem.features.user.inventory;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,4 +25,10 @@ public class InventoryController {
         return ResponseEntity.ok(details);
     }
 
+    @GetMapping("/report")
+    public ResponseEntity<Page<InventoryReportDTO>> getInventoryReport(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(inventoryService.getInventoryReport(page, size));
+    }
 }
