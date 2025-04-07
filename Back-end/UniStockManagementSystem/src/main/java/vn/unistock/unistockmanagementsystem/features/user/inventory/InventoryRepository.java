@@ -1,5 +1,8 @@
 package vn.unistock.unistockmanagementsystem.features.user.inventory;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -32,5 +35,37 @@ public interface InventoryRepository extends JpaRepository<Inventory,Long> {
             "AND i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.AVAILABLE")
     List<InventoryByWarehouseDTO> findInventoryByProductId(@Param("productId") Long productId);
 
+    //query for inventory report
+    @Query("""
+SELECT new vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryReportDTO(
+    COALESCE(m.materialCode, p.productCode),
+    COALESCE(m.materialName, p.productName),
+    COALESCE(m.isUsing, p.isProductionActive),
+    COALESCE(u1.unitName, u2.unitName),
+    SUM(CASE WHEN i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.AVAILABLE THEN i.quantity ELSE 0 END),
+    SUM(CASE WHEN i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.RESERVED THEN i.quantity ELSE 0 END),
+    SUM(i.quantity),
+    w.warehouseCode,
+    w.warehouseName
+)
+FROM Inventory i
+LEFT JOIN i.material m
+LEFT JOIN i.product p
+LEFT JOIN m.unit u1
+LEFT JOIN p.unit u2
+JOIN i.warehouse w
+GROUP BY m.materialCode, p.productCode, m.materialName, p.productName,
+         m.isUsing, p.isProductionActive,
+         u1.unitName, u2.unitName,
+         w.warehouseCode, w.warehouseName
+""")
+    List<InventoryReportDTO> getInventoryReportRaw();
+
+    default Page<InventoryReportDTO> getInventoryReport(Pageable pageable) {
+        List<InventoryReportDTO> all = getInventoryReportRaw();
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), all.size());
+        return new PageImpl<>(all.subList(start, end), pageable, all.size());
+    }
 
 }
