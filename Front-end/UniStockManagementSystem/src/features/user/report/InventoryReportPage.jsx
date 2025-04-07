@@ -656,7 +656,6 @@ const InventoryReportPage = () => {
                         data={filteredData}
                         columnsConfig={columnsConfig}
                         enableSelection={false}
-                        headerHeight={60}
                     />
 
 
