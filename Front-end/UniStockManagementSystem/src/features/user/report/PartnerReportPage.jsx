@@ -7,35 +7,26 @@ import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
 import QuantityFilterButton from "@/components/QuantityFilterButton";
-import DateFilterButton from "@/components/DateFilterButton";
 import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Import Tiếng Việt
 
-const StockMovementReportPage = () => {
+const PartnerReportPage = () => {
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(5);
     const [searchTerm, setSearchTerm] = useState("");
     const navigate = useNavigate();
     const [quantityAnchorEl, setQuantityAnchorEl] = useState(null);
     const [quantityFilters, setQuantityFilters] = useState({
-        beginQuantity: { label: "Tồn đầu kỳ", type: "range", min: null, max: null },
-        inQuantity: { label: "Nhập trong kỳ", type: "range", min: null, max: null },
-        outQuantity: { label: "Xuất trong kỳ", type: "range", min: null, max: null },
-        endQuantity: { label: "Tồn cuối kỳ", type: "range", min: null, max: null },
+        totalSaleOrder: { label: "Tổng số đơn bán hàng", type: "range", min: null, max: null },
+        totalPurchaseOrder: { label: "Tổng số đơn mua hàng", type: "range", min: null, max: null },
+        totalOutsourcingOrder: { label: "Tổng số đơn gia công", type: "range", min: null, max: null },
+        totalReturnOrder: { label: "Tổng số đơn trả lại", type: "range", min: null, max: null },
     });
-    const [startDate, setStartDate] = useState(null);
-    const [endDate, setEndDate] = useState(null);
 
     // // Fetch data on component mount and when page or size changes
     // useEffect(() => {
     //   fetchPaginatedReceiptNotes(currentPage, pageSize);
     // }, [currentPage, pageSize]);
-
-    useEffect(() => {
-        const now = dayjs();
-        setStartDate(now.startOf("month").format("YYYY-MM-DD"));
-        setEndDate(now.endOf("month").format("YYYY-MM-DD"));
-    }, []);
 
     // Handle page change
     const handlePageChange = (selectedPage) => {
@@ -57,55 +48,46 @@ const StockMovementReportPage = () => {
     const columnsConfig = [
         { field: 'stt', headerName: 'STT', flex: 1, minWidth: 50, editable: false, filterable: false },
         {
-            field: 'itemCode',
-            headerName: 'Mã hàng',
-            flex: 1.5,
-            minWidth: 150,
-            editable: false,
-            filterable: false,
-            //dùng renderCell để cấu hình data
-        },
-        {
-            field: 'itemName',
-            headerName: 'Tên hàng',
+            field: 'partnerName',
+            headerName: 'Tên đối tác',
             flex: 2,
-            minWidth: 500,
+            minWidth: 650,
             editable: false,
             filterable: false,
             //dùng renderCell để cấu hình data
         },
         {
-            field: 'beginQuantity',
-            headerName: 'Số lượng tồn đầu kỳ',
+            field: 'totalSaleOrder',
+            headerName: 'Tổng số đơn bán hàng',
             flex: 1,
-            minWidth: 135,
+            minWidth: 200,
             editable: false,
             filterable: false,
             //dùng renderCell để cấu hình data
         },
         {
-            field: 'inQuantity',
-            headerName: 'Số lượng nhập trong kỳ',
+            field: 'totalPurchaseOrder',
+            headerName: 'Tổng số đơn mua hàng',
             flex: 1,
-            minWidth: 135,
+            minWidth: 200,
             editable: false,
             filterable: false,
             //dùng renderCell để cấu hình data
         },
         {
-            field: 'outQuantity',
-            headerName: 'Số lượng xuất trong kỳ',
+            field: 'totalOutsourcingOrder',
+            headerName: 'Tổng số đơn gia công',
             flex: 1,
-            minWidth: 135,
+            minWidth: 200,
             editable: false,
             filterable: false,
             //dùng renderCell để cấu hình data
         },
         {
-            field: 'endQuantity',
-            headerName: 'Số lượng tồn cuối kỳ',
+            field: 'totalReturnOrder',
+            headerName: 'Tổng số đơn trả lại',
             flex: 1,
-            minWidth: 135,
+            minWidth: 200,
             editable: false,
             filterable: false,
             //dùng renderCell để cấu hình data
@@ -128,113 +110,101 @@ const StockMovementReportPage = () => {
         {
             id: 1,
             stt: 1,
-            itemCode: "VT001",
-            itemName: "Khung xe điện",
-            beginQuantity: 100,
-            inQuantity: 50,
-            outQuantity: 40,
-            endQuantity: 110,
+            partnerName: "Công ty TNHH ABC Việt Nam",
+            totalSaleOrder: 12,
+            totalPurchaseOrder: 5,
+            totalOutsourcingOrder: 3,
+            totalReturnOrder: 2,
         },
         {
             id: 2,
             stt: 2,
-            itemCode: "VT002",
-            itemName: "Bánh xe trước",
-            beginQuantity: 80,
-            inQuantity: 30,
-            outQuantity: 25,
-            endQuantity: 85,
+            partnerName: "Công ty Cổ phần Thiết bị Số",
+            totalSaleOrder: 8,
+            totalPurchaseOrder: 10,
+            totalOutsourcingOrder: 1,
+            totalReturnOrder: 0,
         },
         {
             id: 3,
             stt: 3,
-            itemCode: "VT003",
-            itemName: "Bộ điều tốc",
-            beginQuantity: 60,
-            inQuantity: 40,
-            outQuantity: 50,
-            endQuantity: 50,
+            partnerName: "Nhà cung cấp Công Nghiệp Bắc Ninh",
+            totalSaleOrder: 4,
+            totalPurchaseOrder: 18,
+            totalOutsourcingOrder: 0,
+            totalReturnOrder: 1,
         },
         {
             id: 4,
             stt: 4,
-            itemCode: "VT004",
-            itemName: "Bình ắc quy",
-            beginQuantity: 120,
-            inQuantity: 70,
-            outQuantity: 90,
-            endQuantity: 100,
+            partnerName: "Công ty TNHH Thịnh Phát",
+            totalSaleOrder: 16,
+            totalPurchaseOrder: 2,
+            totalOutsourcingOrder: 0,
+            totalReturnOrder: 0,
         },
         {
             id: 5,
             stt: 5,
-            itemCode: "VT005",
-            itemName: "Tay lái",
-            beginQuantity: 55,
-            inQuantity: 25,
-            outQuantity: 30,
-            endQuantity: 50,
+            partnerName: "Gia công cơ khí Minh Khoa",
+            totalSaleOrder: 0,
+            totalPurchaseOrder: 0,
+            totalOutsourcingOrder: 9,
+            totalReturnOrder: 0,
         },
         {
             id: 6,
             stt: 6,
-            itemCode: "VT006",
-            itemName: "Đèn pha LED",
-            beginQuantity: 70,
-            inQuantity: 20,
-            outQuantity: 15,
-            endQuantity: 75,
+            partnerName: "Công ty TNHH Giao Nhận Hoàng Long",
+            totalSaleOrder: 6,
+            totalPurchaseOrder: 3,
+            totalOutsourcingOrder: 0,
+            totalReturnOrder: 1,
         },
         {
             id: 7,
             stt: 7,
-            itemCode: "VT007",
-            itemName: "Yên xe",
-            beginQuantity: 40,
-            inQuantity: 10,
-            outQuantity: 20,
-            endQuantity: 30,
+            partnerName: "Công ty TNHH Kỹ thuật điện Hưng Thịnh",
+            totalSaleOrder: 11,
+            totalPurchaseOrder: 6,
+            totalOutsourcingOrder: 0,
+            totalReturnOrder: 2,
         },
         {
             id: 8,
             stt: 8,
-            itemCode: "VT008",
-            itemName: "Đồng hồ tốc độ",
-            beginQuantity: 90,
-            inQuantity: 35,
-            outQuantity: 30,
-            endQuantity: 95,
+            partnerName: "Nhà máy sản xuất Lê Minh",
+            totalSaleOrder: 2,
+            totalPurchaseOrder: 14,
+            totalOutsourcingOrder: 1,
+            totalReturnOrder: 0,
         },
         {
             id: 9,
             stt: 9,
-            itemCode: "VT009",
-            itemName: "Còi điện",
-            beginQuantity: 45,
-            inQuantity: 15,
-            outQuantity: 10,
-            endQuantity: 50,
+            partnerName: "Đại lý phân phối Ánh Dương",
+            totalSaleOrder: 19,
+            totalPurchaseOrder: 0,
+            totalOutsourcingOrder: 0,
+            totalReturnOrder: 3,
         },
         {
             id: 10,
             stt: 10,
-            itemCode: "VT010",
-            itemName: "Chân chống",
-            beginQuantity: 60,
-            inQuantity: 20,
-            outQuantity: 10,
-            endQuantity: 70,
+            partnerName: "Công ty TNHH Long Thành",
+            totalSaleOrder: 9,
+            totalPurchaseOrder: 7,
+            totalOutsourcingOrder: 2,
+            totalReturnOrder: 1,
         },
     ]
 
     const filteredData = data.filter((item) => {
         const matchesSearch =
-            item.itemCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.itemName.toLowerCase().includes(searchTerm.toLowerCase());
-
-        const issueDate = dayjs(item.issueDate);
-        const matchesStart = startDate ? issueDate.isAfter(dayjs(startDate).startOf("day")) || issueDate.isSame(dayjs(startDate).startOf("day")) : true;
-        const matchesEnd = endDate ? issueDate.isBefore(dayjs(endDate).endOf("day")) || issueDate.isSame(dayjs(endDate).endOf("day")) : true;
+            item.partnerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            item.partnerTypes?.some((pt) =>
+                pt.partnerCode.toLowerCase().includes(searchTerm.toLowerCase())
+            );
 
         const matchesAllQuantities = Object.entries(quantityFilters).every(([key, f]) => {
             const value = item[key];
@@ -244,7 +214,7 @@ const StockMovementReportPage = () => {
             return (f.min == null || value >= f.min) && (f.max == null || value <= f.max);
         });
 
-        return matchesSearch && matchesStart && matchesEnd && matchesAllQuantities;
+        return matchesSearch && matchesAllQuantities;
     });
 
     const pageCount = Math.ceil(filteredData.length / pageSize);
@@ -255,7 +225,7 @@ const StockMovementReportPage = () => {
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
                 <CardBody className="pb-2 bg-white rounded-xl">
                     <PageHeader
-                        title="Báo cáo xuất nhập tồn"
+                        title="Báo cáo theo đối tác"
                         showAdd={false}
                     />
 
@@ -269,15 +239,6 @@ const StockMovementReportPage = () => {
                                 placeholder="Tìm kiếm"
                             />
                         </div>
-
-                        {/* Filter by date */}
-                        <DateFilterButton
-                            startDate={startDate}
-                            endDate={endDate}
-                            setStartDate={setStartDate}
-                            setEndDate={setEndDate}
-                            setCurrentPage={setCurrentPage}
-                        />
 
                         {/* Filter by quantity */}
                         <QuantityFilterButton
@@ -353,4 +314,4 @@ const StockMovementReportPage = () => {
     );
 };
 
-export default StockMovementReportPage;
+export default PartnerReportPage;

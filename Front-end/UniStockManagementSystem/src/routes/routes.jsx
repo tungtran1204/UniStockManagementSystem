@@ -1,12 +1,23 @@
 import {
-  HomeIcon,
-  UserCircleIcon,
   TableCellsIcon,
-  InformationCircleIcon,
   ServerStackIcon,
   Bars3BottomRightIcon,
-  ArchiveBoxIcon,
 } from "@heroicons/react/24/solid";
+
+import {
+  Dashboard,
+  LockPerson,
+  AccountCircle,
+  Home,
+  LocalMall,
+  ShoppingCart,
+  Warehouse,
+  Exposure,
+  AllInbox,
+  Construction,
+  Diversity3,
+  Assessment
+} from '@mui/icons-material';
 
 import { Navigate } from "react-router-dom";
 
@@ -52,6 +63,7 @@ import SaleOrderReportPage from "../features/user/report/SaleOrderReportPage";
 import GoodReceiptReportPage from "../features/user/report/GoodReceiptReportPage";
 import GoodIssueReportPage from "../features/user/report/GoodIssueReportPage";
 import StockMovementReportPage from "../features/user/report/StockMovementReportPage";
+import PartnerReportPage from "../features/user/report/PartnerReportPage";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -71,21 +83,21 @@ export const routes = [
     layout: "admin",
     pages: [
       {
-        icon: <UserCircleIcon {...icon} />,
+        icon: <Dashboard {...icon} />,
         name: "Bảng Điều Khiển",
         path: "/admin/dashboard",
         element: <AdminDashboard />,
         roles: ["ADMIN"],
       },
       {
-        icon: <TableCellsIcon {...icon} />,
+        icon: <AccountCircle {...icon} />,
         name: "Người Dùng",
         path: "/admin/users",
         element: <UserPage />,
         roles: ["ADMIN"],
       },
       {
-        icon: <InformationCircleIcon {...icon} />,
+        icon: <LockPerson {...icon} />,
         name: "Vai Trò",
         path: "/admin/roles",
         element: <RolePage />,
@@ -98,21 +110,21 @@ export const routes = [
     layout: "user",
     pages: [
       {
-        icon: <HomeIcon {...icon} />,
+        icon: <Home {...icon} />,
         name: "Trang chủ",
         path: "/user/home",
         element: <WarehousePage />,
         roles: ["USER"],
       },
       {
-        icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
-        name: "Đơn bán hàng",
+        icon: <ShoppingCart {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
+        name: "Bán hàng",
         path: "/user/sale-orders",
         element: <SaleOrdersPage />, // Trang quản lý đơn hàng 
         roles: ["USER"],
       },
       {
-        icon: <UserCircleIcon {...icon} />,
+        icon: <LocalMall {...icon} />,
         name: "Mua hàng",
         path: "/user/purchaseOrder",
         roles: ["USER"],
@@ -135,7 +147,7 @@ export const routes = [
         ],
       },
       {
-        icon: <UserCircleIcon {...icon} />,
+        icon: <Exposure {...icon} />,
         name: "Xuất nhập kho",
         path: "/user/receiptNote",
         roles: ["USER"],
@@ -158,14 +170,14 @@ export const routes = [
         ],
       },
       {
-        icon: <ArchiveBoxIcon {...icon} />,
+        icon: <Warehouse {...icon} />,
         name: "Kho",
         path: "/user/warehouse",
         element: <WarehousePage />,
         roles: ["USER"],
       },
       {
-        icon: <TableCellsIcon {...icon} />,
+        icon: <AllInbox {...icon} />,
         name: "Sản phẩm",
         path: "/user/products",
         element: <Navigate to="/user/products" replace />,
@@ -188,14 +200,14 @@ export const routes = [
         ],
       },
       {
-        icon: <TableCellsIcon {...icon} />, // Sử dụng TableCellsIcon cho phần quản lý nguyên vật liệu
+        icon: <Construction {...icon} />, // Sử dụng TableCellsIcon cho phần quản lý nguyên vật liệu
         name: "Vật tư",
         path: "/user/materials",
         element: <MaterialPage />,
         roles: ["USER"],
       },
       {
-        icon: <UserCircleIcon {...icon} />,
+        icon: <Diversity3 {...icon} />,
         name: "Đối tác",
         path: "/user/partner",
         roles: ["USER"],
@@ -218,7 +230,7 @@ export const routes = [
         ],
       },
       {
-        icon: <UserCircleIcon {...icon} />,
+        icon: <Assessment {...icon} />,
         name: "Báo cáo",
         path: "/user/report",
         roles: ["USER"],
@@ -256,6 +268,13 @@ export const routes = [
             name: "Đơn hàng",
             path: "/user/report/order-based",
             element: <SaleOrderReportPage />,
+            roles: ["USER"],
+          },
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Đối tác",
+            path: "/user/report/partner-based",
+            element: <PartnerReportPage />,
             roles: ["USER"],
           },
         ],

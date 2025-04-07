@@ -164,9 +164,9 @@ const ViewReceiptNote = () => {
           const user = await getUserById(receipt.createdBy);
           setCreator(user.username || user.email || "Không xác định");
           setPartnerName(receipt.partnerName || "");
-setContactName(receipt.contactName || "");
-setAddress(receipt.address || "");
-setPartnerPhone(receipt.phone || "");
+          setContactName(receipt.contactName || "");
+          setAddress(receipt.address || "");
+          setPartnerPhone(receipt.phone || "");
         }
       } catch (err) {
         console.error("Lỗi khi tải phiếu nhập kho:", err);
@@ -322,7 +322,12 @@ setPartnerPhone(receipt.phone || "");
                 disabled
                 value={data.grnCode}
                 InputProps={{
-                  style: { backgroundColor: '#eeeeee' }
+                  style: { backgroundColor: '#f5f5f5' }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#e0e0e0',
+                  },
                 }}
               />
             </div>
@@ -336,7 +341,12 @@ setPartnerPhone(receipt.phone || "");
                 disabled
                 value={data.category}
                 InputProps={{
-                  style: { backgroundColor: '#eeeeee' }
+                  style: { backgroundColor: '#f5f5f5' }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#e0e0e0',
+                  },
                 }}
               />
             </div>
@@ -350,7 +360,12 @@ setPartnerPhone(receipt.phone || "");
                 disabled
                 value={formatDate(data.receiptDate)}
                 InputProps={{
-                  style: { backgroundColor: '#eeeeee' }
+                  style: { backgroundColor: '#f5f5f5' }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#e0e0e0',
+                  },
                 }}
               />
             </div>
@@ -364,7 +379,12 @@ setPartnerPhone(receipt.phone || "");
                 disabled
                 value={creator}
                 InputProps={{
-                  style: { backgroundColor: '#eeeeee' }
+                  style: { backgroundColor: '#f5f5f5' }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#e0e0e0',
+                  },
                 }}
               />
             </div>
@@ -386,8 +406,13 @@ setPartnerPhone(receipt.phone || "");
                   disabled
                   value="Không có"
                   InputProps={{
-                    style: { backgroundColor: '#eeeeee' }
+                    style: { backgroundColor: '#f5f5f5' }
                   }}
+                  sx={{
+                  '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#e0e0e0',
+                  },
+                }}
                 />
 
               )}
@@ -395,18 +420,18 @@ setPartnerPhone(receipt.phone || "");
             <div>
               <Typography variant="medium" className="mb-1 text-black">File đính kèm</Typography>
               {data.paperEvidence && data.paperEvidence.length > 0 ? (
-                  <div className="grid grid-cols-3 gap-2 mt-1 text-sm text-gray-700 w-fit mt-2 text-sm text-gray-800">
-                    {data.paperEvidence.map((url, index) => (
-                      <Button
-                        key={index}
-                        variant="outlined"
-                        className="flex items-center justify-between text-xs px-2 py-1 h-9 min-h-0 leading-none"
-                        onClick={() => handlePreview(url)}
-                      >
-                        <span className="truncate max-w-[75%]">{url.split("/").pop()}</span>
-                      </Button>
-                    ))}
-                  </div>
+                <div className="grid grid-cols-3 gap-2 mt-1 text-sm text-gray-700 w-fit mt-2 text-sm text-gray-800">
+                  {data.paperEvidence.map((url, index) => (
+                    <Button
+                      key={index}
+                      variant="outlined"
+                      className="flex items-center justify-between text-xs px-2 py-1 h-9 min-h-0 leading-none"
+                      onClick={() => handlePreview(url)}
+                    >
+                      <span className="truncate max-w-[75%]">{url.split("/").pop()}</span>
+                    </Button>
+                  ))}
+                </div>
               ) : (
                 <Typography variant="small" className="text-gray-600">Không có</Typography>
               )}
@@ -428,7 +453,7 @@ setPartnerPhone(receipt.phone || "");
 
                     const renderActions = (
                       <div className="mt-4 flex justify-center gap-4">
-                         <MuiButton
+                        <MuiButton
                           color="info"
                           size="medium"
                           variant="outlined"
@@ -479,18 +504,18 @@ setPartnerPhone(receipt.phone || "");
                           <div className="text-center">
                             <Typography>Không thể xem trước file.</Typography>
                             <MuiButton
-                          color="info"
-                          size="medium"
-                          variant="outlined"
-                          sx={{
-                            height: '36px',
-                            color: "blue-gray",
-                          }}
-                          onClick={() => window.open(url, '_blank')}
-                          className="flex items-center gap-2"
-                        >
-                          Tải về
-                        </MuiButton>
+                              color="info"
+                              size="medium"
+                              variant="outlined"
+                              sx={{
+                                height: '36px',
+                                color: "blue-gray",
+                              }}
+                              onClick={() => window.open(url, '_blank')}
+                              className="flex items-center gap-2"
+                            >
+                              Tải về
+                            </MuiButton>
                           </div>
                         );
                     }
@@ -515,85 +540,92 @@ setPartnerPhone(receipt.phone || "");
                 value={data.description || "Không có"}
                 disabled
                 InputProps={{
-                  style: { backgroundColor: '#eeeeee' }
+                  style: { backgroundColor: '#f5f5f5' }
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#e0e0e0',
+                  },
                 }}
               />
-            </div>           
+            </div>
           </div>
 
-          <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
-            <InformationCircleIcon className="h-5 w-5 mr-2" />
-            Thông tin đối tác trả hàng
-          </Typography>
           {(data.category === "Hàng hóa trả lại") && (
-                      <div className="grid grid-cols-3 gap-4 mb-4">
-                        <div className="col-span-2">
-                          <Typography variant="medium" className="mb-1 text-black">
-                            Tên đối tác
-                          </Typography>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            color="success"
-                            variant="outlined"
-                            disabled
-                            value={partnerName}
-                            InputProps={{
-                              style: { backgroundColor: '#eeeeee' }
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <Typography variant="medium" className="mb-1 text-black">
-                            Người liên hệ
-                          </Typography>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            color="success"
-                            variant="outlined"
-                            disabled
-                            value={contactName}
-                            InputProps={{
-                              style: { backgroundColor: '#eeeeee' }
-                            }}
-                          />
-                        </div>
-          
-                        <div className="col-span-2">
-                          <Typography variant="medium" className="mb-1 text-black">
-                            Địa chỉ
-                          </Typography>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            color="success"
-                            variant="outlined"
-                            disabled
-                            value={address}
-                            InputProps={{
-                              style: { backgroundColor: '#eeeeee' }
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <Typography variant="medium" className="mb-1 text-black">
-                            Số điện thoại
-                          </Typography>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            color="success"
-                            variant="outlined"
-                            disabled
-                            value={partnerPhone}
-                            InputProps={{
-                              style: { backgroundColor: '#eeeeee' }
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
+            <div>
+              <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
+                <InformationCircleIcon className="h-5 w-5 mr-2" />
+                Thông tin đối tác trả hàng
+              </Typography>
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="col-span-2">
+                  <Typography variant="medium" className="mb-1 text-black">
+                    Tên đối tác
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    disabled
+                    value={partnerName}
+                    InputProps={{
+                      style: { backgroundColor: '#f5f5f5' }
+                    }}
+                  />
+                </div>
+                <div>
+                  <Typography variant="medium" className="mb-1 text-black">
+                    Người liên hệ
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    disabled
+                    value={contactName}
+                    InputProps={{
+                      style: { backgroundColor: '#f5f5f5' }
+                    }}
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <Typography variant="medium" className="mb-1 text-black">
+                    Địa chỉ
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    disabled
+                    value={address}
+                    InputProps={{
+                      style: { backgroundColor: '#f5f5f5' }
+                    }}
+                  />
+                </div>
+                <div>
+                  <Typography variant="medium" className="mb-1 text-black">
+                    Số điện thoại
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    disabled
+                    value={partnerPhone}
+                    InputProps={{
+                      style: { backgroundColor: '#f5f5f5' }
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
 
           <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
