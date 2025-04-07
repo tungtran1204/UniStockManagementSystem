@@ -78,4 +78,12 @@ public class PartnerService {
                 .map(partnerMapper::toDTO)
                 .collect(Collectors.toList());
     }
+
+    public List<PartnerDTO> getPartnersByCodePrefix(String prefix) {
+        List<Partner> partners = partnerRepository.findByPartnerCodePrefix(prefix);
+        return partners.stream()
+                .map(partnerMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
 }

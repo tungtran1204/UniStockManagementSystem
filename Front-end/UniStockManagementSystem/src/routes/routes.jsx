@@ -46,6 +46,12 @@ import ForgotPassword from "../features/auth/reset_password/ConfirmEmailPage";
 import ResetPassword from "../features/auth/reset_password/ResetPasswordPage";
 import LoginPage from "../features/auth/login/LoginPage";
 import ConfirmOTPPage from "../features/auth/reset_password/ConfirmOTPPage";
+import AddReceiptNoteGeneral from "../features/user/receiptNote/AddReceiptNoteGeneral";
+import InventoryReportPage from "../features/user/report/InventoryReportPage";
+import SaleOrderReportPage from "../features/user/report/SaleOrderReportPage";
+import GoodReceiptReportPage from "../features/user/report/GoodReceiptReportPage";
+import GoodIssueReportPage from "../features/user/report/GoodIssueReportPage";
+import StockMovementReportPage from "../features/user/report/StockMovementReportPage";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -211,6 +217,49 @@ export const routes = [
           },
         ],
       },
+      {
+        icon: <UserCircleIcon {...icon} />,
+        name: "Báo cáo",
+        path: "/user/report",
+        roles: ["USER"],
+        subPages: [
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Tồn kho",
+            path: "/user/report/inventory",
+            element: <InventoryReportPage />,
+            roles: ["USER"],
+          },
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Nhập kho",
+            path: "/user/report/receipt", // Relative path
+            element: <GoodReceiptReportPage />,
+            roles: ["USER"],
+          },
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Xuất kho",
+            path: "/user/report/issue",
+            element: <GoodIssueReportPage />,
+            roles: ["USER"],
+          },
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Xuất nhập tồn",
+            path: "/user/report/stock-movement",
+            element: <StockMovementReportPage />,
+            roles: ["USER"],
+          },
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Đơn hàng",
+            path: "/user/report/order-based",
+            element: <SaleOrderReportPage />,
+            roles: ["USER"],
+          },
+        ],
+      },
     ],
   },
   {
@@ -335,6 +384,11 @@ export const routes = [
       {
         path: "/user/receiptNote/manual",
         element: <AddReceiptNoteManually />,
+        roles: ["USER"],
+      },
+      {
+        path: "/user/receiptNote/general",
+        element: <AddReceiptNoteGeneral />,
         roles: ["USER"],
       }
     ],

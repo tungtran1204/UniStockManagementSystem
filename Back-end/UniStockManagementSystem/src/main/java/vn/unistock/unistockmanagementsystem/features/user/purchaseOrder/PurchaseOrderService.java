@@ -234,4 +234,14 @@ public class PurchaseOrderService {
         return saleOrdersMapper.toDTO(salesOrder);
     }
 
+    @Transactional(readOnly = true)
+    public List<PurchaseOrderDTO> getPendingOrInProgressOrders() {
+        List<PurchaseOrder> orders = purchaseOrderRepository.findPendingOrInProgressOrders();
+        return orders.stream()
+                .map(PurchaseOrderDTO::createForList)
+                .toList();
+    }
+
+
+
 }

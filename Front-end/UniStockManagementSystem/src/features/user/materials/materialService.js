@@ -261,3 +261,18 @@ export const exportExcel = async () => {
     throw error;
   }
 };
+
+//lấy danh sách các vật liệu đang sử dụng
+export const getAllActiveMaterials = async () => {
+  try {
+    const response = await axios.get(
+      `${import.meta.env.VITE_API_URL}/user/materials/active`,
+      { headers: authHeader() }
+    );
+    return response.data; // Danh sách nguyên vật liệu đang sử dụng
+  } catch (error) {
+    console.error("❌ Lỗi khi lấy danh sách nguyên vật liệu đang sử dụng:", error);
+    throw error;
+  }
+};
+

@@ -36,12 +36,12 @@ const MainLayout = ({ children }) => {
 
       {/* Nội dung chính */}
       <div
-        className={`flex flex-col transition-all duration-300 ${openSidenav ? "xl:ml-60 xl:w-[calc(100%-240px)]" : "ml-0 w-full"
+        className={`flex flex-col transition-all duration-300 ${openSidenav ? "xl:ml-[250px] xl:w-[calc(100%-250px)] ml" : "ml-0 w-full"
           }`}
       >
 
         {/* Phần nội dung cuộn */}
-        <div className="flex-grow max-w-full mt-[65px] overflow-y-auto bg-gray-50">
+        <div className="flex-grow max-w-full mt-[62px] overflow-y-auto bg-gray-50">
           {children}
         </div>
 
@@ -49,7 +49,7 @@ const MainLayout = ({ children }) => {
         <div className="text-blue-gray-600 max-w-full bg-gray-50">
 
           {/* Footer cố định */}
-          <div className="text-blue-gray-600 max-w-full   bg-gray-50">
+          <div className="text-blue-gray-600 max-w-full bg-gray-50">
             <Footer />
           </div>
         </div>

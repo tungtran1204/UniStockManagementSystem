@@ -49,6 +49,10 @@ public class GoodReceiptNote {
     private LocalDateTime receiptDate;
 
     @ManyToOne
+    @JoinColumn(name = "partner_id")
+    private Partner partner;
+
+    @ManyToOne
     @JoinColumn(name = "created_by", nullable = false)
     @NotNull(message = "Created by is required")
     private User createdBy;

@@ -19,6 +19,11 @@ public class ReceiptNoteDTO {
     private Long createdBy;
     private Long poId;
     private String category;
+    private Long partnerId;
+    private String partnerName;
+    private String address;
+    private String contactName;
+    private String phone;
     private List<ReceiptNoteDetailDTO> details;
     private List<String> paperEvidence;
 }

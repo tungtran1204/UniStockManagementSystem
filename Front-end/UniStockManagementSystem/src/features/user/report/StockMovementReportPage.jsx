@@ -14,7 +14,7 @@ import {
   MenuItem
 } from "@material-tailwind/react";
 
-const SaleOrderReportPage = () => {
+const StockMovementReportPage = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
@@ -203,4 +203,4 @@ const SaleOrderReportPage = () => {
   );
 };
 
-export default SaleOrderReportPage;
+export default StockMovementReportPage;

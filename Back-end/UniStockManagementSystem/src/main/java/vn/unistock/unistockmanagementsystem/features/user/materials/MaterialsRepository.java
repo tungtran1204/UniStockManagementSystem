@@ -25,4 +25,8 @@ public interface MaterialsRepository extends JpaRepository<Material, Long> {
 
     @Query("SELECT m FROM Material m JOIN m.materialPartners mp WHERE mp.partner.id = :partnerId")
     List<Material> findByPartnerId(@Param("partnerId") Long partnerId);
+
+    @Query("SELECT m FROM Material m WHERE m.isUsing = true")
+    List<Material> findAllByIsUsingTrue();
+
 }
