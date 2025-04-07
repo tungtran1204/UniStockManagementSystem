@@ -6,11 +6,8 @@ import {
     Button,
     MenuItem,
     Menu,
-    Popover,
-    TextField,
     Checkbox,
     ListItemText,
-    IconButton,
 } from '@mui/material';
 import { FaAngleDown } from "react-icons/fa";
 import ClearIcon from '@mui/icons-material/Clear';
@@ -19,7 +16,8 @@ import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
-import DateFilterButton from "@/components/DateFilterButton";
+import QuantityFilterButton from "@/components/QuantityFilterButton";
+import StatusFilterButton from "@/components/StatusFilterButton";
 import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Import Tiếng Việt
 
@@ -28,16 +26,19 @@ import { getWarehouseList } from "../warehouse/warehouseService";
 
 const InventoryReportPage = () => {
     const [currentPage, setCurrentPage] = useState(0);
-    const [pageSize, setPageSize] = useState(10);
+    const [pageSize, setPageSize] = useState(5);
     const [searchTerm, setSearchTerm] = useState("");
     const navigate = useNavigate();
-    const [quantityFilters, setQuantityFilters] = useState([
-        { field: "itemRealQuantity", type: "range", min: null, max: null, id: Date.now() }
-    ]);
     const [quantityAnchorEl, setQuantityAnchorEl] = useState(null);
+    const [quantityFilters, setQuantityFilters] = useState({
+        itemRealQuantity: { label: "Tồn kho", type: "range", min: null, max: null },
+        itemReservedQuantity: { label: "Đang giữ chỗ", type: "range", min: null, max: null },
+        itemAvailableQuantity: { label: "Có sẵn", type: "range", min: null, max: null },
+    });
     const [selectedWarehouses, setSelectedWarehouses] = useState([]);
     const [warehouseAnchorEl, setWarehouseAnchorEl] = useState(null);
-
+    const [statusAnchorEl, setStatusAnchorEl] = useState(null);
+    const [selectedStatuses, setSelectedStatuses] = useState([]);
     const [reportData, setReportData] = useState([]);
     const [totalPages, setTotalPages] = useState(1);
     const [totalElements, setTotalElements] = useState(0);
@@ -48,31 +49,41 @@ const InventoryReportPage = () => {
         fetchReport(currentPage, pageSize);
     }, [currentPage, pageSize]);
 
-    const fetchReport = (page, size) => {
-        getInventoryReportPaginated(page, size)
-            .then(res => {
-                const content = res.data.content.map((item, index) => ({
-                    id: index + 1 + page * size,
-                    stt: index + 1 + page * size,
-                    itemCode: item.itemCode,
-                    itemName: item.itemName,
-                    itemStatus: item.isActive,
-                    itemUnit: item.unitName,
-                    itemRealQuantity: item.totalQuantity,
-                    itemReservedQuantity: item.reservedQuantity,
-                    itemAvailableQuantity: item.availableQuantity,
-                    inWarehouse: item.warehouseName,
-                    image: ""
-                }));
-                setReportData(content);
-                setTotalPages(res.data.totalPages);
-                setTotalElements(res.data.totalElements);
-            })
-            .catch(() => {
-                setReportData([]);
-                setTotalPages(1);
-                setTotalElements(0);
+    useEffect(() => {
+        fetchReport(currentPage, pageSize);
+    }, [currentPage, pageSize, searchTerm, selectedWarehouses, selectedStatuses, quantityFilters]);
+
+    const fetchReport = async (page, size) => {
+        try {
+            const response = await getInventoryReportPaginated({
+                page,
+                size,
+                search: searchTerm,
+                warehouses: selectedWarehouses,
+                statuses: selectedStatuses,
+                quantityFilters,
             });
+            const content = response.data.content.map((item, index) => ({
+                id: index + 1 + page * size,
+                stt: index + 1 + page * size,
+                itemCode: item.itemCode,
+                itemName: item.itemName,
+                itemStatus: item.isActive,
+                itemUnit: item.unitName,
+                itemRealQuantity: item.totalQuantity,
+                itemReservedQuantity: item.reservedQuantity,
+                itemAvailableQuantity: item.availableQuantity,
+                inWarehouse: item.warehouseName,
+                image: "",
+            }));
+            setReportData(content);
+            setTotalPages(response.data.totalPages);
+            setTotalElements(response.data.totalElements);
+        } catch (error) {
+            setReportData([]);
+            setTotalPages(1);
+            setTotalElements(0);
+        }
     };
 
     // Handle page change
@@ -92,19 +103,6 @@ const InventoryReportPage = () => {
         fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
     };
 
-    const handleAddQuantityFilter = () => {
-        setQuantityFilters(prev => [
-            ...prev,
-            {
-                id: Date.now() + Math.random(),
-                field: "itemRealQuantity",
-                type: "range",
-                min: null,
-                max: null,
-            },
-        ]);
-    };
-
     useEffect(() => {
         const fetchInitData = async () => {
             try {
@@ -119,6 +117,18 @@ const InventoryReportPage = () => {
         fetchInitData();
     }, []);
 
+    const allStatuses = [
+        {
+            value: true,
+            label: "Đang hoạt động",
+            className: "bg-green-50 text-green-800",
+        },
+        {
+            value: false,
+            label: "Ngừng hoạt động",
+            className: "bg-red-50 text-red-800",
+        },
+    ];
 
     const columnsConfig = [
         { field: 'stt', headerName: 'STT', flex: 1, minWidth: 50, editable: false, filterable: false },
@@ -151,8 +161,8 @@ const InventoryReportPage = () => {
                 const isActive = params.value === true;
                 const label = isActive ? 'Đang hoạt động' : 'Ngừng hoạt động';
                 const className = isActive
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800';
+                    ? 'bg-green-50 text-green-800'
+                    : 'bg-red-50 text-red-800';
 
                 return (
                     <div
@@ -212,31 +222,6 @@ const InventoryReportPage = () => {
 
     const data = reportData;
 
-
-    const filteredData = data.filter((item) => {
-        const matchesSearch =
-            item.itemCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.itemName.toLowerCase().includes(searchTerm.toLowerCase());
-
-        const matchesAllQuantityFilters = quantityFilters.every(filter => {
-            const value = item[filter.field];
-            if (filter.type === "lt") return filter.max === null || value <= filter.max;
-            if (filter.type === "gt") return filter.min === null || value >= filter.min;
-            if (filter.type === "eq") return filter.min === null || value === filter.min;
-            return (
-                (filter.min === null || value >= filter.min) &&
-                (filter.max === null || value <= filter.max)
-            );
-        });
-
-        const matchesWarehouse =
-            selectedWarehouses.length === 0 || selectedWarehouses.some(w => w.warehouseName === item.inWarehouse);
-
-        return matchesSearch && matchesWarehouse && matchesAllQuantityFilters;
-    });
-
-
-
     return (
         <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
@@ -259,281 +244,13 @@ const InventoryReportPage = () => {
                         </div>
 
                         {/* Filter by quantity */}
-                        <Button
-                            onClick={(e) => setQuantityAnchorEl(e.currentTarget)}
-                            variant={quantityFilters.length > 0 ? "outlined" : "contained"}
-                            sx={{
-                                ...(quantityFilters.length > 0
-                                    ? {
-                                        backgroundColor: "#ffffff",
-                                        boxShadow: "none",
-                                        borderColor: "#089456",
-                                        textTransform: "none",
-                                        color: "#089456",
-                                        px: 1.5,
-                                        "&:hover": {
-                                            backgroundColor: "#0894561A",
-                                            borderColor: "#089456",
-                                            boxShadow: "none",
-                                        },
-                                    }
-                                    : {
-                                        backgroundColor: "#0ab067",
-                                        boxShadow: "none",
-                                        textTransform: "none",
-                                        color: "#ffffff",
-                                        px: 1.5,
-                                        "&:hover": {
-                                            backgroundColor: "#089456",
-                                            borderColor: "#089456",
-                                            boxShadow: "none",
-                                        },
-                                    }),
-                            }}
-                        >
-                            {quantityFilters.length > 0 ? (
-                                <span className="flex items-center gap-[4px]">
-                                    {
-                                        (() => {
-                                            const f = quantityFilters[0];
-                                            const label = f.field === "itemRealQuantity"
-                                                ? "Tồn kho"
-                                                : f.field === "itemReservedQuantity"
-                                                    ? "Đặt chỗ"
-                                                    : "Đặt mua";
-
-                                            let conditionContent = null;
-                                            if (f.type === "lt") {
-                                                conditionContent = (
-                                                    <span className="font-medium flex items-center gap-1">
-                                                        <PiLessThanOrEqualBold className="text-[16px]" /> {f.max}
-                                                    </span>
-                                                );
-                                            } else if (f.type === "gt") {
-                                                conditionContent = (
-                                                    <span className="font-medium flex items-center gap-1">
-                                                        <PiGreaterThanOrEqualBold className="text-[16px]" /> {f.min}
-                                                    </span>
-                                                );
-                                            } else if (f.type === "eq") {
-                                                conditionContent = (
-                                                    <span className="font-medium flex items-center gap-1">
-                                                        = {f.min}
-                                                    </span>
-                                                );
-                                            } else {
-                                                conditionContent = (
-                                                    <span className="font-medium">
-                                                        {f.min ?? "?"} - {f.max ?? "?"}
-                                                    </span>
-                                                );
-                                            }
-
-                                            return (
-                                                <>
-                                                    {label}: {conditionContent}
-                                                    {quantityFilters.length > 1 && (
-                                                        <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin">
-                                                            +{quantityFilters.length - 1}
-                                                        </span>
-                                                    )}
-                                                </>
-                                            );
-                                        })()
-                                    }
-                                </span>
-                            ) : (
-                                <span className="flex items-center gap-[5px]">
-                                    Số lượng
-                                    <FaAngleDown className="h-4 w-4" />
-                                </span>
-                            )}
-                        </Button>
-
-                        <Popover
-                            open={Boolean(quantityAnchorEl)}
+                        <QuantityFilterButton
                             anchorEl={quantityAnchorEl}
-                            onClose={() => setQuantityAnchorEl(null)}
-                            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                        >
-                            <div className="p-4 flex flex-col gap-4 w-fit">
-                                {quantityFilters.map((filter, index) => (
-                                    <div key={filter.id} className="flex gap-4">
-                                        {/* Chọn loại field */}
-                                        <TextField
-                                            select
-                                            hiddenLabel
-                                            color="success"
-                                            value={filter.field}
-                                            onChange={(e) => {
-                                                const updated = [...quantityFilters];
-                                                updated[index].field = e.target.value;
-                                                setQuantityFilters(updated);
-                                            }}
-                                            size="small"
-                                            sx={{ width: "fit-content", minWidth: 160 }}
-                                        >
-                                            <MenuItem value="itemRealQuantity">Tồn kho thực tế</MenuItem>
-                                            <MenuItem value="itemReservedQuantity">Đang đặt chỗ</MenuItem>
-                                            <MenuItem value="itemAvailableQuantity">Đang có sẵn</MenuItem>
-                                        </TextField>
-
-                                        {/* Loại lọc */}
-                                        <TextField
-                                            select
-                                            color="success"
-                                            hiddenLabel
-                                            value={filter.type}
-                                            onChange={(e) => {
-                                                const updated = [...quantityFilters];
-                                                updated[index].type = e.target.value;
-                                                updated[index].min = null;
-                                                updated[index].max = null;
-                                                setQuantityFilters(updated);
-                                            }}
-                                            size="small"
-                                            sx={{ width: "fit-content", minWidth: 100 }}
-                                        >
-                                            <MenuItem value="lt">
-                                                <span className="flex items-center gap-2">
-                                                    <PiLessThanOrEqualBold></PiLessThanOrEqualBold>
-                                                    (dưới)
-                                                </span>
-                                            </MenuItem>
-                                            <MenuItem value="gt">
-                                                <span className="flex items-center gap-2">
-                                                    <PiGreaterThanOrEqualBold></PiGreaterThanOrEqualBold>
-                                                    (trên)
-                                                </span>
-                                            </MenuItem>
-                                            <MenuItem value="eq">= (bằng)</MenuItem>
-                                            <MenuItem value="range">khoảng</MenuItem>
-                                        </TextField>
-
-                                        {/* Input tương ứng */}
-                                        {filter.type === "lt" && (
-                                            <TextField
-                                                hiddenLabel
-                                                type="number"
-                                                size="small"
-                                                color="success"
-                                                sx={{ width: "100px" }}
-                                                value={filter.max ?? ""}
-                                                onChange={(e) => {
-                                                    const updated = [...quantityFilters];
-                                                    updated[index].max = e.target.value === "" ? null : Number(e.target.value);
-                                                    setQuantityFilters(updated);
-                                                }}
-                                            />
-                                        )}
-
-                                        {filter.type === "gt" && (
-                                            <TextField
-                                                hiddenLabel
-                                                type="number"
-                                                size="small"
-                                                color="success"
-                                                sx={{ width: "100px" }}
-                                                value={filter.min ?? ""}
-                                                onChange={(e) => {
-                                                    const updated = [...quantityFilters];
-                                                    updated[index].min = e.target.value === "" ? null : Number(e.target.value);
-                                                    setQuantityFilters(updated);
-                                                }}
-                                            />
-                                        )}
-
-                                        {filter.type === "eq" && (
-                                            <TextField
-                                                hiddenLabel
-                                                type="number"
-                                                size="small"
-                                                color="success"
-                                                sx={{ width: "100px" }}
-                                                value={filter.min ?? ""}
-                                                onChange={(e) => {
-                                                    const updated = [...quantityFilters];
-                                                    updated[index].min = e.target.value === "" ? null : Number(e.target.value);
-                                                    setQuantityFilters(updated);
-                                                }}
-                                            />
-                                        )}
-
-                                        {filter.type === "range" && (
-                                            <div className="flex gap-3">
-                                                <TextField
-                                                    hiddenLabel
-                                                    placeholder="Từ"
-                                                    type="number"
-                                                    size="small"
-                                                    color="success"
-                                                    sx={{ width: "100px" }}
-                                                    value={filter.min ?? ""}
-                                                    onChange={(e) => {
-                                                        const updated = [...quantityFilters];
-                                                        updated[index].min = e.target.value === "" ? null : Number(e.target.value);
-                                                        setQuantityFilters(updated);
-                                                    }}
-                                                />
-                                                <div className="flex items-center">-</div>
-                                                <TextField
-                                                    hiddenLabel
-                                                    placeholder="Đến"
-                                                    type="number"
-                                                    size="small"
-                                                    color="success"
-                                                    sx={{ width: "100px" }}
-                                                    value={filter.max ?? ""}
-                                                    onChange={(e) => {
-                                                        const updated = [...quantityFilters];
-                                                        updated[index].max = e.target.value === "" ? null : Number(e.target.value);
-                                                        setQuantityFilters(updated);
-                                                    }}
-                                                />
-                                            </div>
-                                        )}
-                                        {/* Nút xoá điều kiện */}
-                                        <IconButton
-                                            onClick={() => {
-                                                setQuantityFilters(filters => filters.filter(f => f.id !== filter.id));
-                                            }}
-                                        >
-                                            <ClearIcon />
-                                        </IconButton>
-                                    </div>
-                                ))}
-                                <div className="flex justify-between">
-                                    <Button
-                                        variant="outlined"
-                                        size="small"
-                                        className="w-fit"
-                                        onClick={handleAddQuantityFilter}
-                                    >
-                                        + Thêm điều kiện
-                                    </Button>
-                                    {quantityFilters.length > 0 && (
-                                        <Button
-                                            variant="text"
-                                            size="small"
-                                            className="w-fit"
-                                            onClick={() => {
-                                                setQuantityFilters([]);
-                                                setCurrentPage(0);
-                                            }}
-                                            sx={{
-                                                color: "#000000DE",
-                                                "&:hover": {
-                                                    backgroundColor: "transparent",
-                                                    textDecoration: "underline",
-                                                },
-                                            }}
-                                        >
-                                            Xoá lọc
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
-                        </Popover>
+                            setAnchorEl={setQuantityAnchorEl}
+                            filters={quantityFilters}
+                            setFilters={setQuantityFilters}
+                            buttonLabel="Số lượng"
+                        />
 
                         {/* Filter by warehouse */}
                         <Button
@@ -626,6 +343,17 @@ const InventoryReportPage = () => {
                                 </div>
                             )}
                         </Menu>
+
+                        {/* Filter by status */}
+                        <StatusFilterButton
+                            anchorEl={statusAnchorEl}
+                            setAnchorEl={setStatusAnchorEl}
+                            selectedStatuses={selectedStatuses}
+                            setSelectedStatuses={setSelectedStatuses}
+                            allStatuses={allStatuses}
+                            buttonLabel="Trạng thái"
+                        />
+
                     </div>
                     <div className="py-2 flex items-center justify-between gap-2">
                         {/* Items per page */}
@@ -653,11 +381,10 @@ const InventoryReportPage = () => {
                     </div>
 
                     <Table
-                        data={filteredData}
+                        data={reportData}
                         columnsConfig={columnsConfig}
                         enableSelection={false}
                     />
-
 
                     {/* Pagination */}
                     <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
@@ -675,7 +402,7 @@ const InventoryReportPage = () => {
                             pageRangeDisplayed={5}
                             onPageChange={handlePageChangeWrapper}
                             containerClassName="flex items-center gap-1"
-                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067]"
+                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                             pageLinkClassName="flex items-center justify-center w-full h-full"
                             previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                             nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"

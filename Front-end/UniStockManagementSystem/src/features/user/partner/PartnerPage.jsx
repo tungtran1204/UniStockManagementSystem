@@ -100,7 +100,7 @@ const PartnerPage = () => {
                         useFlexGap
                         sx={{ flexWrap: 'wrap', gap: 0.5, marginTop: '5px', marginBottom: '5px' }}>
                         {params.value.map((type, index) => (
-                            <Chip key={index} label={type} size="small" sx={{ backgroundColor: '#0ab067', color: 'white', fontFamily: 'Roboto, sans-serif' }} />
+                            <Chip key={index} label={type} variant="outlined" color="success" size="small" sx={{ fontFamily: 'Roboto, sans-serif' }} />
                         ))}
                     </Stack>
                 );
