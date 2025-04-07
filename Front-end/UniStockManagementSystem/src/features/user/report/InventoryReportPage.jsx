@@ -23,6 +23,8 @@ import DateFilterButton from "@/components/DateFilterButton";
 import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Import Tiếng Việt
 
+import { getInventoryReportPaginated } from "./reportService";
+import { getWarehouseList } from "../warehouse/warehouseService";
 
 const InventoryReportPage = () => {
     const [currentPage, setCurrentPage] = useState(0);
@@ -36,11 +38,42 @@ const InventoryReportPage = () => {
     const [selectedWarehouses, setSelectedWarehouses] = useState([]);
     const [warehouseAnchorEl, setWarehouseAnchorEl] = useState(null);
 
+    const [reportData, setReportData] = useState([]);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalElements, setTotalElements] = useState(0);
 
-    // // Fetch data on component mount and when page or size changes
-    // useEffect(() => {
-    //     fetchPaginatedReceiptNotes(currentPage, pageSize);
-    // }, [currentPage, pageSize]);
+    const [warehouseList, setWarehouses] = useState([]);
+
+    useEffect(() => {
+        fetchReport(currentPage, pageSize);
+    }, [currentPage, pageSize]);
+
+    const fetchReport = (page, size) => {
+        getInventoryReportPaginated(page, size)
+            .then(res => {
+                const content = res.data.content.map((item, index) => ({
+                    id: index + 1 + page * size,
+                    stt: index + 1 + page * size,
+                    itemCode: item.itemCode,
+                    itemName: item.itemName,
+                    itemStatus: item.isActive,
+                    itemUnit: item.unitName,
+                    itemRealQuantity: item.totalQuantity,
+                    itemReservedQuantity: item.reservedQuantity,
+                    itemAvailableQuantity: item.availableQuantity,
+                    inWarehouse: item.warehouseName,
+                    image: ""
+                }));
+                setReportData(content);
+                setTotalPages(res.data.totalPages);
+                setTotalElements(res.data.totalElements);
+            })
+            .catch(() => {
+                setReportData([]);
+                setTotalPages(1);
+                setTotalElements(0);
+            });
+    };
 
     // Handle page change
     const handlePageChange = (selectedPage) => {
@@ -72,18 +105,19 @@ const InventoryReportPage = () => {
         ]);
     };
 
-    //Lấy hết danh sách kho trong db
-    const warehouseList = [
-        "Kho A",
-        "Kho B",
-        "Kho C",
-    ];
+    useEffect(() => {
+        const fetchInitData = async () => {
+            try {
+                const response = await getWarehouseList();
+                const activeWarehouses = (response?.data || response || []).filter(wh => wh.isActive);
+                setWarehouses(activeWarehouses);
+            } catch (err) {
+                console.error("Lỗi khi lấy dữ liệu kho:", err);
+            }
+        };
 
-    // const quantityLabel = quantityField === "itemRealQuantity"
-    //     ? "Số lượng tồn kho"
-    //     : quantityField === "itemReservedQuantity"
-    //         ? "Số lượng đã đặt chỗ"
-    //         : "Số lượng đang đặt mua";
+        fetchInitData();
+    }, []);
 
 
     const columnsConfig = [
@@ -140,7 +174,7 @@ const InventoryReportPage = () => {
         },
         {
             field: 'itemRealQuantity',
-            headerName: 'Số lượng tồn thực tế',
+            headerName: 'Tồn kho thực tế',
             flex: 1,
             minWidth: 135,
             editable: false,
@@ -149,7 +183,7 @@ const InventoryReportPage = () => {
         },
         {
             field: 'itemReservedQuantity',
-            headerName: 'Số lượng đang giữ chỗ',
+            headerName: 'SL đang giữ chỗ',
             flex: 1,
             minWidth: 135,
             editable: false,
@@ -157,8 +191,8 @@ const InventoryReportPage = () => {
             //dùng renderCell để cấu hình data
         },
         {
-            field: 'itemBuyingQuantity',
-            headerName: 'Số lượng đang đặt mua',
+            field: 'itemAvailableQuantity',
+            headerName: 'SL có sẵn',
             flex: 1,
             minWidth: 135,
             editable: false,
@@ -174,107 +208,10 @@ const InventoryReportPage = () => {
             filterable: false,
             //dùng renderCell để cấu hình data
         },
-        {
-            field: 'image',
-            headerName: 'Hình ảnh',
-            flex: 1,
-            minWidth: 100,
-            editable: false,
-            filterable: false
-        },
     ];
 
-    //   const data = receiptNotes.map((receipt) => ({
-    //     grnId: receipt.grnId,
-    //     receiptCode: receipt.grnCode,
-    //     category: receipt.category || 'không có dữ liệu',
-    //     createdDate: receipt.receiptDate,
-    //     createBy: receipt.createdBy,
-    //     reference: {
-    //       id: receipt.poId || "N/A",
-    //       type: "PURCHASE_ORDER"
-    //     }
-    //   }));
-    const data = [
-        {
-            id: 1,
-            stt: 1,
-            itemCode: "VT001",
-            itemName: "Khung xe đạp điện",
-            itemStatus: true,
-            itemUnit: "Cái",
-            itemRealQuantity: 10,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho A",
-            image: "Thành phẩm sản xuất",
-        },
-        {
-            id: 2,
-            stt: 2,
-            itemCode: "VT002",
-            itemName: "Ắc quy 12V",
-            itemStatus: true,
-            itemUnit: "Bình",
-            itemRealQuantity: 5,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho B",
-            image: "Vật tư mua bán",
-        },
-        {
-            id: 3,
-            stt: 3,
-            itemCode: "VT003",
-            itemName: "Lốp xe",
-            itemStatus: false,
-            itemUnit: "Chiếc",
-            itemRealQuantity: 20,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho C",
-            image: "Hàng hoá gia công",
-        },
-        {
-            id: 4,
-            stt: 4,
-            itemCode: "VT004",
-            itemName: "Đèn LED",
-            itemStatus: true,
-            itemUnit: "Bóng",
-            itemRealQuantity: 15,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho A",
-            image: "Thành phẩm sản xuất",
-        },
-        {
-            id: 5,
-            stt: 5,
-            itemCode: "VT005",
-            itemName: "Bộ điều khiển",
-            itemStatus: false,
-            itemUnit: "Cái",
-            itemRealQuantity: 7,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho B",
-            image: "Hàng bán trả lại",
-        },
-        {
-            id: 6,
-            stt: 6,
-            itemCode: "VT006",
-            itemName: "Yên xe",
-            itemStatus: true,
-            itemUnit: "Chiếc",
-            itemRealQuantity: 12,
-            itemReservedQuantity: 10,
-            itemBuyingQuantity: 10,
-            inWarehouse: "Kho C",
-            image: "Hàng bán trả lại",
-        },
-    ]
+    const data = reportData;
+
 
     const filteredData = data.filter((item) => {
         const matchesSearch =
@@ -293,13 +230,12 @@ const InventoryReportPage = () => {
         });
 
         const matchesWarehouse =
-            selectedWarehouses.length === 0 || selectedWarehouses.includes(item.inWarehouse);
+            selectedWarehouses.length === 0 || selectedWarehouses.some(w => w.warehouseName === item.inWarehouse);
 
         return matchesSearch && matchesWarehouse && matchesAllQuantityFilters;
     });
 
-    const pageCount = Math.ceil(filteredData.length / pageSize);
-    const paginatedData = filteredData.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+
 
     return (
         <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -439,7 +375,7 @@ const InventoryReportPage = () => {
                                         >
                                             <MenuItem value="itemRealQuantity">Tồn kho thực tế</MenuItem>
                                             <MenuItem value="itemReservedQuantity">Đang đặt chỗ</MenuItem>
-                                            <MenuItem value="itemBuyingQuantity">Đang đặt mua</MenuItem>
+                                            <MenuItem value="itemAvailableQuantity">Đang có sẵn</MenuItem>
                                         </TextField>
 
                                         {/* Loại lọc */}
@@ -635,7 +571,7 @@ const InventoryReportPage = () => {
                         >
                             {selectedWarehouses.length > 0 ? (
                                 <span className="flex items-center gap-[5px]">
-                                    {selectedWarehouses[0]}
+                                    {selectedWarehouses[0]?.warehouseName}
                                     {selectedWarehouses.length > 1 && (
                                         <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin">+{selectedWarehouses.length - 1}</span>
                                     )}
@@ -655,8 +591,7 @@ const InventoryReportPage = () => {
                             anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
                         >
                             {warehouseList.map((wh) => (
-                                <MenuItem
-                                    key={wh}
+                                <MenuItem key={wh.warehouseId}
                                     onClick={() => {
                                         const updated = selectedWarehouses.includes(wh)
                                             ? selectedWarehouses.filter(w => w !== wh)
@@ -665,8 +600,8 @@ const InventoryReportPage = () => {
                                     }}
                                     sx={{ paddingLeft: "7px", minWidth: "150px" }}
                                 >
-                                    <Checkbox color="success" size="small" checked={selectedWarehouses.includes(wh)} />
-                                    <ListItemText primary={wh} />
+                                    <Checkbox color="success" size="small" checked={selectedWarehouses.some(w => w.warehouseId === wh.warehouseId)} />
+                                    <ListItemText primary={wh.warehouseName} />
                                 </MenuItem>
                             ))}
                             {selectedWarehouses.length > 0 && (
@@ -718,7 +653,7 @@ const InventoryReportPage = () => {
                     </div>
 
                     <Table
-                        data={paginatedData}
+                        data={filteredData}
                         columnsConfig={columnsConfig}
                         enableSelection={false}
                         headerHeight={60}
@@ -729,16 +664,14 @@ const InventoryReportPage = () => {
                     <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
                         <div className="flex items-center gap-2">
                             <Typography variant="small" color="blue-gray" className="font-normal">
-                                {/* Trang {currentPage + 1} / {totalPages || 1} • {totalElements || 0} bản ghi */}
-                                Trang {currentPage + 1} / {1} • {0} bản ghi
+                                Trang {currentPage + 1} / {totalPages || 1} • {totalElements || 0} bản ghi
                             </Typography>
                         </div>
                         <ReactPaginate
                             previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
                             nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
                             breakLabel="..."
-                            // pageCount={totalPages || 1}
-                            pageCount={1}
+                            pageCount={totalPages || 1}
                             marginPagesDisplayed={2}
                             pageRangeDisplayed={5}
                             onPageChange={handlePageChangeWrapper}
