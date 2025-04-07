@@ -55,6 +55,7 @@ public class ReceiptNoteService {
     @Autowired private PurchaseOrderService purchaseOrderService;
     @Autowired private ReceiptNoteDetailViewMapper detailViewMapper;
     @Autowired private PurchaseOrderDetailRepository purchaseOrderDetailRepository;
+    @Autowired private ReceiptNoteDetailRepository detailRepository;
 
     public Page<ReceiptNoteDTO> getAllReceiptNote(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "receiptDate"));
@@ -105,6 +106,12 @@ public class ReceiptNoteService {
                     .createdBy(currentUser)
                     .details(new ArrayList<>())
                     .build();
+
+            // lưu đối tác nếu nhập hàng bán bị trả lại
+            if (grnDto.getPartnerId() != null) {
+                Partner partner = Partner.builder().partnerId(grnDto.getPartnerId()).build();
+                grn.setPartner(partner);
+            }
 
             boolean hasSaleOrder = false;
             if (grnDto.getPoId() != null) {
@@ -294,5 +301,10 @@ public class ReceiptNoteService {
             logger.error("Error uploading files", e);
             throw new RuntimeException("Failed to upload files: " + e.getMessage(), e);
         }
+    }
+
+    public Page<ReceiptNoteDetailViewDTO> getImportReportPaginated(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return detailRepository.getReceiptImportReport(pageable);
     }
 }

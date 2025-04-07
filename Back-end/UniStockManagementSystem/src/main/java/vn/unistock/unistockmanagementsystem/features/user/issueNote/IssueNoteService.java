@@ -158,9 +158,30 @@ public class IssueNoteService {
 
             // Lưu các dòng chi tiết
             issueNoteDetailRepository.saveAll(details);
-
-            // Gán list details mới tạo vào entity issueNote
             issueNote.setDetails(details);
+
+            // ***** PHẦN MỚI: Cập nhật số lượng nhận (receivedQuantity) của sản phẩm trong đơn hàng *****
+            if (issueNoteDto.getSoId() != null) {
+                // Lấy đơn hàng từ phiếu xuất kho đã set
+                SalesOrder salesOrder = issueNote.getSalesOrder();
+                // Duyệt từng dòng chi tiết xuất kho trong request
+                for (IssueNoteDetailDTO detailDto : issueNoteDto.getDetails()) {
+                    if (detailDto.getProductId() != null) {
+                        // Tìm dòng chi tiết đơn hàng tương ứng với sản phẩm
+                        SalesOrderDetail salesOrderDetail = salesOrder.getDetails().stream()
+                                .filter(d -> d.getProduct().getProductId().equals(detailDto.getProductId()))
+                                .findFirst()
+                                .orElseThrow(() -> new RuntimeException("Sales order detail not found for product ID: " + detailDto.getProductId()));
+                        // Tính số lượng xuất của dòng phiếu xuất kho (chuyển về kiểu số nguyên nếu cần)
+                        int exportQuantity = detailDto.getQuantity().intValue();
+                        // Cập nhật receivedQuantity (và remainingQuantity sẽ được tính lại tự động qua @PreUpdate)
+                        salesOrderDetail.setReceivedQuantity(salesOrderDetail.getReceivedQuantity() + exportQuantity);
+                    }
+                }
+                // Lưu lại đơn hàng (nếu cascade không tự động cập nhật các chi tiết)
+                salesOrderRepository.save(salesOrder);
+            }
+            // ***** KẾT THÚC PHẦN MỚI *****
 
             // Trả về DTO
             return issueNoteMapper.toDTO(issueNote);
@@ -169,6 +190,7 @@ public class IssueNoteService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi khi lưu phiếu xuất: " + e.getMessage());
         }
     }
+
 
     // Cập nhật tồn kho và ghi nhận giao dịch xuất kho (giảm số lượng tồn)
     private void updateInventoryAndTransactionForExport(Warehouse warehouse, Material material, Product product, Double quantity, GoodIssueNote issueNote) {

@@ -1,9 +1,43 @@
 import React, { useState, useEffect } from "react";
 import {
   Input,
-  Select,
-  Option
 } from "@material-tailwind/react";
+import Select from "react-select";
+
+const customStyles = {
+  control: (provided, state) => ({
+    ...provided,
+    minWidth: 150,
+    // Thiết lập viền duy nhất cho control:
+    border: state.isFocused ? "1px solid black" : "1px solid #ccc",
+    boxShadow: "none",
+    "&:hover": {
+      border: "1px solid black",
+    },
+  }),
+  menuList: (provided) => ({
+    ...provided,
+  }),
+  option: (provided, state) => ({
+    ...provided,
+    backgroundColor: state.isFocused
+      ? "#f3f4f6"
+      : state.isSelected
+        ? "#e5e7eb"
+        : "transparent",
+    color: "#000",
+    cursor: "pointer",
+    "&:active": {
+      backgroundColor: "#e5e7eb",
+    },
+  }),
+  menuPortal: (base) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+};
+
+
 
 // Hàm kiểm tra số lượng nhập hợp lệ
 const isValidQuantity = (inputQty, orderedQty, receivedQty) => {
@@ -18,9 +52,14 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
   const [warehouse, setWarehouse] = useState(defaultWarehouseCode || '');
   const [quantity, setQuantity] = useState('');
   const [quantityError, setQuantityError] = useState('');
-  const [remainingQuantity, setRemainingQuantity] = useState(
-    Math.max(0, item.orderedQuantity - item.receivedQuantity)
-  );
+  const [remainingQuantity, setRemainingQuantity] = useState(0);
+
+  useEffect(() => {
+    if (item.quantity !== undefined && item.quantity !== null) {
+      setQuantity(item.quantity.toString());
+    }
+  }, [item.quantity]);
+
 
   useEffect(() => {
     setWarehouse(defaultWarehouseCode);
@@ -107,21 +146,29 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
         </>
       ) : (
         <>
-          <td className="p-2 border">
+         <td className="px-4 py-2 text-sm border-r">
             <Select
-              value={warehouse}
-              onChange={(value) => handleWarehouseChange(value)}
-              className="!border-t-blue-gray-200 focus:!border-t-gray-900 min-w-[150px]"
-              labelProps={{
-                className: "before:content-none after:content-none",
-              }}
-            >
-              {warehouses.map((warehouse) => (
-                <Option key={warehouse.warehouseId} value={warehouse.warehouseCode}>
-                  {warehouse.warehouseCode} - {warehouse.warehouseName}
-                </Option>
-              ))}
-            </Select>
+              isSearchable
+              options={warehouses.map(w => ({
+                value: w.warehouseCode,
+                label: `${w.warehouseCode} - ${w.warehouseName}`
+              }))}
+              styles={customStyles}
+              menuPortalTarget={document.body}       // Render menu vào document.body
+              menuPosition="fixed"                   // Sử dụng vị trí fixed để tránh bị cắt
+              className="w-full px-2 py-1 rounded text-sm"
+              value={
+                warehouses.find(w => w.warehouseCode === warehouse)
+                  ? {
+                    value: warehouse,
+                    label: `${warehouse} - ${warehouses.find(w => w.warehouseCode === warehouse)?.warehouseName}`
+                  }
+                  : null
+              }
+              onChange={(option) => handleWarehouseChange(option?.value || '')}
+            />
+
+
           </td>
           <td className="p-2 border text-center">{item.orderedQuantity}</td>
           <td className="p-2 border text-center">{item.receivedQuantity}</td>

@@ -86,4 +86,18 @@ public class ReceiptNoteController {
                     .body("Failed to upload files: " + e.getMessage());
         }
     }
+    //endpoint receipt report
+    @GetMapping("/report")
+    public ResponseEntity<Map<String, Object>> getImportReportPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Page<ReceiptNoteDetailViewDTO> paged = receiptNoteService.getImportReportPaginated(page, size);
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", paged.getContent());
+        response.put("totalPages", paged.getTotalPages());
+        response.put("totalElements", paged.getTotalElements());
+        return ResponseEntity.ok(response);
+    }
+
 }

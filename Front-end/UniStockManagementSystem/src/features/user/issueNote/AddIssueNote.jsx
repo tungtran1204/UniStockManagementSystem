@@ -35,8 +35,9 @@ import ModalChooseOrder from "./ModalChooseOrder";
 import TableSearch from '@/components/TableSearch';
 
 import { getPartnersByType /* ... */ } from "@/features/user/partner/partnerService";
-import { getSaleOrders } from "./issueNoteService";
+import { getSaleOrders, uploadPaperEvidence } from "./issueNoteService";
 import { getTotalQuantityOfProduct } from "../saleorders/saleOrdersService";
+
 
 // Import useIssueNote có chứa addIssueNote
 import useIssueNote from "./useIssueNote";
@@ -466,6 +467,16 @@ const AddIssueNote = () => {
 
       const result = await addIssueNote(payload);
       if (result) {
+        // Nếu có file để upload, gọi service uploadPaperEvidence
+        if (files && files.length > 0) {
+          try {
+            const uploadResult = await uploadPaperEvidence(result.ginId, "GOOD_ISSUE_NOTE", files);
+            console.log("Upload result:", uploadResult);
+          } catch (uploadError) {
+            console.error("Error uploading paper evidence:", uploadError);
+            // Bạn có thể xử lý lỗi upload tùy ý (ví dụ: thông báo cho người dùng)
+          }
+        }
         alert("Tạo phiếu xuất kho thành công!");
         navigate("/user/issueNote");
       }
