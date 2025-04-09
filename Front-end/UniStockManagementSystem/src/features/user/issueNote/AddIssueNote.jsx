@@ -13,6 +13,7 @@ import {
   Button as MuiButton,
   Tooltip
 } from '@mui/material';
+import ClearRoundedIcon from '@mui/icons-material/ClearRounded';
 import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { FaPlus, FaTrash, FaArrowLeft } from "react-icons/fa";
@@ -60,6 +61,7 @@ const AddIssueNote = () => {
   const [address, setAddress] = useState("");
   const [partnerCode, setPartnerCode] = useState("");
   const [partnerName, setPartnerName] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
   // Thêm state soId để lưu orderId khi chọn đơn hàng
   const [soId, setSoId] = useState(null);
 
@@ -195,6 +197,20 @@ const AddIssueNote = () => {
   const handleCloseChooseOrderModal = () => setIsChooseOrderModalOpen(false);
 
   const handleOrderSelected = async (selectedOrder) => {
+    if (!selectedOrder) {
+      // Nếu user nhấn clear
+      setReferenceDocument("");
+      setSoId(null);
+      setPartnerCode("");
+      setPartnerName("");
+      setCreateDate("");
+      setDescription("");
+      setAddress("");
+      setContactName("");
+      setProducts([]);
+      return;
+    }
+
     setReferenceDocument(selectedOrder.orderCode);
     setSoId(selectedOrder.id); // Lưu orderId vào state soId
     setPartnerCode(selectedOrder.partnerCode);
@@ -432,7 +448,7 @@ const AddIssueNote = () => {
       }
 
       // Prepare details with proper validation
-      const details = products.flatMap(prod => 
+      const details = products.flatMap(prod =>
         prod.inStock
           .filter(wh => wh.warehouseId && wh.exportQuantity > 0)
           .map(wh => ({
@@ -499,18 +515,14 @@ const AddIssueNote = () => {
 
           <Typography
             variant="h6"
-            className="flex items-center mb-4 text-gray-700"
+            className="flex items-center mb-4 text-black"
           >
             <InformationCircleIcon className="h-5 w-5 mr-2" />
             Thông tin chung
           </Typography>
 
           <div
-            className={`grid gap-x-12 gap-y-4 mb-4 ${
-              category === "Bán hàng" || category === "Trả lại hàng mua"
-                ? "grid-cols-3"
-                : "grid-cols-2"
-            }`}
+            className="grid gap-x-12 gap-y-4 mb-4 grid-cols-3"
           >
             {/* Phân loại */}
             <div>
@@ -522,7 +534,21 @@ const AddIssueNote = () => {
                 hiddenLabel
                 color="success"
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(e) => {
+                  const newCategory = e.target.value;
+                  setCategory(newCategory);
+
+                  // 🔁 Reset dữ liệu liên quan
+                  setReferenceDocument("");
+                  setSoId(null);
+                  setPartnerCode("");
+                  setPartnerName("");
+                  setContactName("");
+                  setAddress("");
+                  setDescription("");
+                  setProducts([]);
+                  setFiles([]);
+                }}
                 fullWidth
                 size="small"
               >
@@ -549,8 +575,13 @@ const AddIssueNote = () => {
                 variant="outlined"
                 value={issueNoteCode}
                 disabled
-                InputProps={{
-                  style: { backgroundColor: '#eeeeee' }
+                sx={{
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  },
                 }}
               />
             </div>
@@ -560,6 +591,9 @@ const AddIssueNote = () => {
                 Ngày lập phiếu
               </Typography>
               <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+                <style>
+                  {`.MuiPickersCalendarHeader-label { text-transform: capitalize !important; }`}
+                </style>
                 <DatePicker
                   value={createdDate ? dayjs(createdDate) : null}
                   onChange={(newValue) => {
@@ -576,6 +610,20 @@ const AddIssueNote = () => {
                       size: "small",
                       color: "success",
                     },
+                    day: {
+                      sx: () => ({
+                        "&.Mui-selected": {
+                          backgroundColor: "#0ab067 !important",
+                          color: "white",
+                        },
+                        "&.Mui-selected:hover": {
+                          backgroundColor: "#089456 !important",
+                        },
+                        "&:hover": {
+                          backgroundColor: "#0894561A !important",
+                        },
+                      }),
+                    },
                   }}
                 />
               </LocalizationProvider>
@@ -589,37 +637,56 @@ const AddIssueNote = () => {
                 <Typography variant="medium" className="mb-1 text-black">
                   Tham chiếu chứng từ gốc
                 </Typography>
-                <TextField
-                  select
-                  hiddenLabel
-                  color="success"
-                  value={referenceDocument}
-                  onChange={(e) => {
-                    const sel = orders.find(o => o.orderCode === e.target.value);
-                    if (sel) handleOrderSelected(sel);
-                  }}
-                  fullWidth
+                <Autocomplete
+                  options={orders}
+                  disableClearable
+                  clearIcon={null}
                   size="small"
-                  InputProps={{
-                    endAdornment: (
-                      <IconButton
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenChooseOrderModal();
-                        }}
-                        size="small"
-                      >
-                        <FaPlus fontSize="small" />
-                      </IconButton>
-                    ),
+                  getOptionLabel={(option) => `${option.orderCode} - ${option.orderName}`}
+                  value={orders.find((o) => o.orderCode === referenceDocument) || null}
+                  onChange={(event, selectedOrder) => {
+                    if (selectedOrder) {
+                      handleOrderSelected(selectedOrder);
+                    }
                   }}
-                >
-                  {orders.map((o) => (
-                    <MenuItem key={o.id} value={o.orderCode}>
-                      {o.orderCode} - {o.orderName}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                  renderInput={(params) => (
+                    <TextField
+                      color="success"
+                      hiddenLabel
+                      {...params}
+                      placeholder="Tham chiếu chứng từ"
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <div className="flex items-center space-x-1">
+                            <IconButton
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenChooseOrderModal();
+                              }}
+                              size="small"
+                            >
+                              <FaPlus fontSize="small" />
+                            </IconButton>
+
+                            {partnerCode && (
+                              <IconButton
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOrderSelected(null);
+                                }}
+                                size="small"
+                              >
+                                <ClearRoundedIcon fontSize="18px" />
+                              </IconButton>
+                            )}
+                            {params.InputProps.endAdornment}
+                          </div>
+                        )
+                      }}
+                    />
+                  )}
+                />
               </div>
               <div>
                 <Typography variant="medium" className="mb-1 text-black">
@@ -751,8 +818,9 @@ const AddIssueNote = () => {
                 </Typography>
                 <Autocomplete
                   options={outsources}
-                  size="small"
                   disableClearable
+                  clearIcon={null}
+                  size="small"
                   getOptionLabel={(option) => `${option.code} - ${option.name}`}
                   value={outsources.find(o => o.code === partnerCode) || null}
                   onChange={(event, sel) => {
@@ -772,7 +840,7 @@ const AddIssueNote = () => {
                       InputProps={{
                         ...params.InputProps,
                         endAdornment: (
-                          <>
+                          <div className="flex items-center space-x-1">
                             <IconButton
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -782,8 +850,23 @@ const AddIssueNote = () => {
                             >
                               <FaPlus fontSize="small" />
                             </IconButton>
+
+                            {partnerCode && (
+                              <IconButton
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPartnerCode("");
+                                  setPartnerName("");
+                                  setAddress("");
+                                  setContactName(""); // clear
+                                }}
+                                size="small"
+                              >
+                                <ClearRoundedIcon fontSize="18px" />
+                              </IconButton>
+                            )}
                             {params.InputProps.endAdornment}
-                          </>
+                          </div>
                         )
                       }}
                     />
@@ -864,8 +947,9 @@ const AddIssueNote = () => {
                 </Typography>
                 <Autocomplete
                   options={suppliers}
-                  size="small"
                   disableClearable
+                  clearIcon={null}
+                  size="small"
                   getOptionLabel={(option) => option.code || ""}
                   value={suppliers.find(o => o.code === partnerCode) || null}
                   onChange={(event, sel) => {
@@ -876,6 +960,14 @@ const AddIssueNote = () => {
                       setContactName(sel.contactName);
                     }
                   }}
+                  slotProps={{
+                    paper: {
+                      sx: {
+                        maxHeight: 300, // Giới hạn chiều cao dropdown
+                        overflowY: "auto",
+                      },
+                    },
+                  }}
                   renderInput={(params) => (
                     <TextField
                       color="success"
@@ -885,7 +977,7 @@ const AddIssueNote = () => {
                       InputProps={{
                         ...params.InputProps,
                         endAdornment: (
-                          <>
+                          <div className="flex items-center space-x-1">
                             <IconButton
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -895,8 +987,23 @@ const AddIssueNote = () => {
                             >
                               <FaPlus fontSize="small" />
                             </IconButton>
+
+                            {partnerCode && (
+                              <IconButton
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPartnerCode("");
+                                  setPartnerName("");
+                                  setAddress("");
+                                  setContactName(""); // clear
+                                }}
+                                size="small"
+                              >
+                                <ClearRoundedIcon fontSize="18px" />
+                              </IconButton>
+                            )}
                             {params.InputProps.endAdornment}
-                          </>
+                          </div>
                         )
                       }}
                     />
@@ -981,7 +1088,7 @@ const AddIssueNote = () => {
                 hiddenLabel
                 placeholder="Lý do xuất"
                 multiline
-                rows={3}
+                rows={4}
                 color="success"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -1001,7 +1108,7 @@ const AddIssueNote = () => {
 
           <Typography
             variant="h6"
-            className="flex items-center mb-4 text-gray-700"
+            className="flex items-center mb-4 text-black"
           >
             <ListBulletIcon className="h-5 w-5 mr-2" />
             Danh sách sản phẩm

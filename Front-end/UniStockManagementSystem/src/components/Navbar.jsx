@@ -28,10 +28,23 @@ const getPageInfo = (pathname) => {
       // Nếu khớp đường dẫn, trả về tên
       if (page.path === pathname) {
         return {
-          layoutName: route.title || route.layout, // Lấy title nếu có, nếu không lấy layout
+          layoutName: page.layout || route.title || route.layout, // Lấy title nếu có, nếu không lấy layout
           pageName: page.name || pathname, // Lấy name nếu có, nếu không dùng pathname
         };
       }
+
+      // Kiểm tra path động dạng /:id
+      if (page.path?.includes(":")) {
+        const basePath = page.path.split("/:")[0];
+        const regex = new RegExp(`^${basePath}/\\d+$`); // chỉ chấp nhận ID là số
+        if (regex.test(pathname)) {
+          return {
+            layoutName: page.layout || route.title || route.layout,
+            pageName: page.name || pathname,
+          };
+        }
+      }
+
       // Kiểm tra subPages nếu có
       if (page.subPages) {
         for (const subPage of page.subPages) {
@@ -41,6 +54,18 @@ const getPageInfo = (pathname) => {
               pageName: page.name || pathname,
               subPageName: subPage.name || pathname,
             };
+          }
+
+          if (subPage.path?.includes(":")) {
+            const basePath = subPage.path.split("/:")[0];
+            const regex = new RegExp(`^${basePath}/\\d+$`);
+            if (regex.test(pathname)) {
+              return {
+                layoutName: subPage.layout || route.title || route.layout,
+                pageName: page.name || pathname,
+                subPageName: subPage.name || pathname,
+              };
+            }
           }
         }
       }
