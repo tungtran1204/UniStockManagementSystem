@@ -15,4 +15,6 @@ public class InventoryReportDTO {
     private Double totalQuantity;
     private String warehouseCode;
     private String warehouseName;
+    private Long warehouseId;
+    private String itemType;
 }

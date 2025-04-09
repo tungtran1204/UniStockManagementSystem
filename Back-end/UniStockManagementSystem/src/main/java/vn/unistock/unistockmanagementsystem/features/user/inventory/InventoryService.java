@@ -2,6 +2,7 @@ package vn.unistock.unistockmanagementsystem.features.user.inventory;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,9 +24,40 @@ public class InventoryService {
         return inventoryRepository.findInventoryByProductId(productId);
     }
 
-    public Page<InventoryReportDTO> getInventoryReport(int page, int size) {
+    public Page<InventoryReportDTO> getInventoryReport(
+            int page,
+            int size,
+            String search,
+            List<Long> warehouseIds,
+            List<Boolean> statuses,
+            Double minAvailable,
+            Double maxAvailable,
+            Double minReserved,
+            Double maxReserved,
+            Double minTotal,
+            Double maxTotal,
+            String itemType // <-- THÊM THAM SỐ NÀY
+    ) {
         Pageable pageable = PageRequest.of(page, size);
-        return inventoryRepository.getInventoryReport(pageable);
+        List<InventoryReportDTO> all = inventoryRepository.getInventoryReportRaw();
+
+        List<InventoryReportDTO> filtered = all.stream()
+                .filter(dto -> search == null || dto.getItemCode().toLowerCase().contains(search.toLowerCase())
+                        || dto.getItemName().toLowerCase().contains(search.toLowerCase()))
+                .filter(dto -> warehouseIds == null || warehouseIds.isEmpty() || warehouseIds.contains(dto.getWarehouseId()))
+                .filter(dto -> statuses == null || statuses.isEmpty() || statuses.contains(dto.getIsActive()))
+                .filter(dto -> minAvailable == null || dto.getAvailableQuantity() >= minAvailable)
+                .filter(dto -> maxAvailable == null || dto.getAvailableQuantity() <= maxAvailable)
+                .filter(dto -> minReserved == null || dto.getReservedQuantity() >= minReserved)
+                .filter(dto -> maxReserved == null || dto.getReservedQuantity() <= maxReserved)
+                .filter(dto -> minTotal == null || dto.getTotalQuantity() >= minTotal)
+                .filter(dto -> maxTotal == null || dto.getTotalQuantity() <= maxTotal)
+                .filter(dto -> itemType == null || itemType.isEmpty() || itemType.equalsIgnoreCase(dto.getItemType()))
+                .toList();
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), filtered.size());
+        return new PageImpl<>(filtered.subList(start, end), pageable, filtered.size());
     }
 
 }

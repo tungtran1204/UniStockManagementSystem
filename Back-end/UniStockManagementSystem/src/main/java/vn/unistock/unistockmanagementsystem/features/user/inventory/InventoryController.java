@@ -28,7 +28,26 @@ public class InventoryController {
     @GetMapping("/report")
     public ResponseEntity<Page<InventoryReportDTO>> getInventoryReport(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(inventoryService.getInventoryReport(page, size));
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) List<Long> warehouseIds,
+            @RequestParam(required = false) List<Boolean> statuses,
+            @RequestParam(required = false) Double minAvailable,
+            @RequestParam(required = false) Double maxAvailable,
+            @RequestParam(required = false) Double minReserved,
+            @RequestParam(required = false) Double maxReserved,
+            @RequestParam(required = false) Double minTotal,
+            @RequestParam(required = false) Double maxTotal,
+            @RequestParam(required = false) String itemType
+    ) {
+        return ResponseEntity.ok(
+                inventoryService.getInventoryReport(
+                        page, size, search, warehouseIds, statuses,
+                        minAvailable, maxAvailable,
+                        minReserved, maxReserved,
+                        minTotal, maxTotal, itemType
+                )
+        );
     }
+
 }

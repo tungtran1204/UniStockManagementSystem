@@ -9,14 +9,45 @@ const authHeader = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-export const getInventoryReportPaginated = (page = 0, size = 20) => {
+export const getInventoryReportPaginated = ({
+  page = 0,
+  size = 20,
+  search = "",
+  warehouses = [],
+  statuses = [],
+  quantityFilters = {},
+  itemType = ""
+}) => {
   const token = localStorage.getItem("token");
-  return axios.get(`${API_URL_IN_RP }/report?page=${page}&size=${size}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+  const params = new URLSearchParams();
+
+  params.append("page", page);
+  params.append("size", size);
+  if (search) params.append("search", search);
+
+  warehouses.forEach((wh) => params.append("warehouseIds", wh.warehouseId));
+  statuses.forEach((s) => params.append("statuses", s));
+  if (itemType) params.append("itemType", itemType);
+
+  const quantityFields = [
+    { key: "itemAvailableQuantity", paramMin: "minAvailable", paramMax: "maxAvailable" },
+    { key: "itemReservedQuantity", paramMin: "minReserved", paramMax: "maxReserved" },
+    { key: "itemRealQuantity", paramMin: "minTotal", paramMax: "maxTotal" },
+  ];
+
+  quantityFields.forEach(({ key, paramMin, paramMax }) => {
+    const filter = quantityFilters[key];
+    if (filter) {
+      if (filter.min !== null) params.append(paramMin, filter.min);
+      if (filter.max !== null) params.append(paramMax, filter.max);
+    }
+  });
+
+  return axios.get(`${API_URL_IN_RP}/report?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
   });
 };
+
 
 const API_URL_GRN_RP = "http://localhost:8080/api/unistock/user/receiptnote";
 //const API_URL_IN_RP = `${import.meta.env.VITE_API_URL}/user/receiptnote`;
