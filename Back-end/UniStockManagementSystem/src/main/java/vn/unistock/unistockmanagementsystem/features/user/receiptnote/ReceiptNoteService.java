@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -303,8 +300,52 @@ public class ReceiptNoteService {
         }
     }
 
-    public Page<ReceiptNoteDetailViewDTO> getImportReportPaginated(int page, int size) {
+    public Page<ReceiptNoteDetailViewDTO> getImportReportPaginated(
+            int page,
+            int size,
+            String search,
+            String itemType,
+            List<Long> warehouseIds,
+            String startDateStr,
+            String endDateStr,
+            List<String> categories,
+            Double minQuantity,
+            Double maxQuantity
+    ) {
         Pageable pageable = PageRequest.of(page, size);
-        return detailRepository.getReceiptImportReport(pageable);
+        List<ReceiptNoteDetailViewDTO> all = detailRepository.getReceiptImportReportRaw();
+
+        return new PageImpl<>(
+                all.stream()
+                        .filter(dto -> search == null || search.isBlank()
+                                || (dto.getProductCode() != null && dto.getProductCode().toLowerCase().contains(search.toLowerCase()))
+                                || (dto.getProductName() != null && dto.getProductName().toLowerCase().contains(search.toLowerCase()))
+                                || (dto.getMaterialCode() != null && dto.getMaterialCode().toLowerCase().contains(search.toLowerCase()))
+                                || (dto.getMaterialName() != null && dto.getMaterialName().toLowerCase().contains(search.toLowerCase()))
+                                || (dto.getGrnCode() != null && dto.getGrnCode().toLowerCase().contains(search.toLowerCase()))
+                        )
+                        .filter(dto -> itemType == null || itemType.isBlank()
+                                || itemType.equalsIgnoreCase(dto.getItemType())
+                        )
+                        .filter(dto -> !"UNKNOWN".equals(dto.getItemType()))
+                        .filter(dto -> warehouseIds == null || warehouseIds.isEmpty() || warehouseIds.contains(dto.getWarehouseId()))
+                        .filter(dto -> categories == null || categories.isEmpty() || categories.contains(dto.getCategory()))
+                        .filter(dto -> {
+                            if (dto.getReceiptDate() == null) return false;
+                            if (startDateStr != null && !startDateStr.isBlank()) {
+                                LocalDateTime start = LocalDateTime.parse(startDateStr + "T00:00:00");
+                                if (dto.getReceiptDate().isBefore(start)) return false;
+                            }
+                            if (endDateStr != null && !endDateStr.isBlank()) {
+                                LocalDateTime end = LocalDateTime.parse(endDateStr + "T23:59:59");
+                                if (dto.getReceiptDate().isAfter(end)) return false;
+                            }
+                            return true;
+                        })
+                        .filter(dto -> minQuantity == null || dto.getQuantity() >= minQuantity)
+                        .filter(dto -> maxQuantity == null || dto.getQuantity() <= maxQuantity)
+                        .toList()
+                , pageable, all.size());
     }
+
 }
