@@ -65,16 +65,3 @@ export const togglePartnerTypeStatus = async (typeId, newStatus) => {
     throw error;
   }
 };
-
-//lấy danh sách dòng sản phẩm đang hoạt động
-export const fetchActiveProductTypes = async () => {
-  try {
-    const response = await axios.get(`${API_URL}/active`, {
-      headers: authHeader(),
-    });
-    return response.data;
-  } catch (error) {
-    console.error("❌ Lỗi khi lấy danh sách dòng sản phẩm đang hoạt động:", error);
-    throw error;
-  }
-};

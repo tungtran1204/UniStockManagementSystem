@@ -20,6 +20,8 @@ import "dayjs/locale/vi"; // Import Tiếng Việt
 
 import { getInventoryReportPaginated } from "./reportService";
 import { getWarehouseList } from "../warehouse/warehouseService";
+import { fetchActiveProductTypes } from "../productType/productTypeService";
+import { fetchActiveMaterialTypes } from "../materialType/materialTypeService";
 
 const InventoryReportPage = () => {
     const [currentPage, setCurrentPage] = useState(0);
@@ -38,12 +40,18 @@ const InventoryReportPage = () => {
     const [selectedStatuses, setSelectedStatuses] = useState([]);
     const [itemTypeAnchorEl, setItemTypeAnchorEl] = useState(null);
     const [selectedItemType, setSelectedItemType] = useState(""); // "", "PRODUCT", "MATERIAL"
+    const [materialTypeAnchorEl, setMaterialTypeAnchorEl] = useState(null);
+    const [productTypeAnchorEl, setProductTypeAnchorEl] = useState(null);
 
     const [reportData, setReportData] = useState([]);
     const [totalPages, setTotalPages] = useState(1);
     const [totalElements, setTotalElements] = useState(0);
 
     const [warehouseList, setWarehouses] = useState([]);
+    const [productTypeList, setProductTypeList] = useState([]);
+    const [selectedProductTypes, setSelectedProductTypes] = useState([]);
+    const [materialTypeList, setMaterialTypeList] = useState([]);
+    const [selectedMaterialTypes, setSelectedMaterialTypes] = useState([]);
 
     useEffect(() => {
         fetchReport(currentPage, pageSize, selectedItemType);
@@ -60,6 +68,8 @@ const InventoryReportPage = () => {
                 statuses: selectedStatuses.map((s) => s.value),
                 quantityFilters,
                 itemType,
+                productTypeIds: selectedProductTypes.map((p) => p.typeId),
+                materialTypeIds: selectedMaterialTypes.map((m) => m.materialTypeId),
             });
             const content = response.data.content.map((item, index) => ({
                 id: index + 1 + page * size,
@@ -105,13 +115,13 @@ const InventoryReportPage = () => {
         const raw = value === "" ? null : Number(value);
         if (raw !== null && (isNaN(raw) || raw < 0)) return; // loại bỏ ký tự hoặc số âm
         setQuantityFilters(prev => ({
-          ...prev,
-          [field]: {
-            ...prev[field],
-            [type]: raw
-          }
+            ...prev,
+            [field]: {
+                ...prev[field],
+                [type]: raw
+            }
         }));
-      };
+    };
 
     // handle change status
     const handleStatusChange = (status) => {
@@ -121,17 +131,23 @@ const InventoryReportPage = () => {
         setSelectedStatuses(updatedStatuses);
     };
 
-    useEffect(() => {
-        const fetchInitData = async () => {
-            try {
-                const response = await getWarehouseList();
-                const activeWarehouses = (response?.data || response || []).filter(wh => wh.isActive);
-                setWarehouses(activeWarehouses);
-            } catch (err) {
-                console.error("Lỗi khi lấy dữ liệu kho:", err);
-            }
-        };
+    const fetchInitData = async () => {
+        try {
+            const response = await getWarehouseList();
+            const activeWarehouses = (response?.data || response || []).filter(wh => wh.isActive);
+            setWarehouses(activeWarehouses);
 
+            const productTypes = await fetchActiveProductTypes();
+            setProductTypeList(productTypes);
+
+            const materialTypes = await fetchActiveMaterialTypes();
+            setMaterialTypeList(materialTypes);
+        } catch (err) {
+            console.error("Lỗi khi lấy dữ liệu:", err);
+        }
+    };
+
+    useEffect(() => {
         fetchInitData();
     }, []);
 
@@ -470,6 +486,195 @@ const InventoryReportPage = () => {
                             buttonLabel="Trạng thái"
                             setCurrentPage={setCurrentPage}
                         />
+
+                        <Button
+                            onClick={(e) => setProductTypeAnchorEl(e.currentTarget)}
+                            size="sm"
+                            variant={selectedProductTypes.length > 0 ? "outlined" : "contained"}
+                            sx={{
+                                ...(selectedProductTypes.length > 0
+                                    ? {
+                                        backgroundColor: "#ffffff",
+                                        boxShadow: "none",
+                                        borderColor: "#089456",
+                                        textTransform: "none",
+                                        color: "#089456",
+                                        px: 1.5,
+                                        "&:hover": {
+                                            backgroundColor: "#0894561A",
+                                            borderColor: "#089456",
+                                            boxShadow: "none",
+                                        },
+                                    }
+                                    : {
+                                        backgroundColor: "#0ab067",
+                                        boxShadow: "none",
+                                        textTransform: "none",
+                                        color: "#ffffff",
+                                        px: 1.5,
+                                        "&:hover": {
+                                            backgroundColor: "#089456",
+                                            borderColor: "#089456",
+                                            boxShadow: "none",
+                                        },
+                                    }),
+                            }}
+                        >
+                            {selectedProductTypes.length > 0 ? (
+                                <span className="flex items-center gap-[5px]">
+                                    {selectedProductTypes[0]?.typeName}
+                                    {selectedProductTypes.length > 1 && (
+                                        <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin">+{selectedProductTypes.length - 1}</span>
+                                    )}
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-[5px]">
+                                    Dòng sản phẩm <FaAngleDown className="h-4 w-4" />
+                                </span>
+                            )}
+                        </Button>
+                        <Menu
+                            anchorEl={productTypeAnchorEl}
+                            open={Boolean(productTypeAnchorEl)}
+                            onClose={() => setProductTypeAnchorEl(null)}
+                            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                        >
+                            {productTypeList.map((pt) => (
+                                <MenuItem key={pt.typeId}
+                                    onClick={() => {
+                                        const updated = selectedProductTypes.includes(pt)
+                                            ? selectedProductTypes.filter(p => p !== pt)
+                                            : [...selectedProductTypes, pt];
+                                        setSelectedProductTypes(updated);
+                                        setCurrentPage(0);
+                                    }}
+                                    sx={{ paddingLeft: "7px", minWidth: "150px" }}
+                                >
+                                    <Checkbox color="success" size="small" checked={selectedProductTypes.some(p => p.typeId === pt.typeId)} />
+                                    <ListItemText primary={pt.typeName} />
+                                </MenuItem>
+                            ))}
+                            {selectedProductTypes.length > 0 && (
+                                <div className="flex justify-end">
+                                    <Button
+                                        variant="text"
+                                        size="medium"
+                                        onClick={() => {
+                                            setSelectedProductTypes([]);
+                                            setCurrentPage(0);
+                                        }}
+                                        sx={{
+                                            color: "#000000DE",
+                                            "&:hover": {
+                                                backgroundColor: "transparent",
+                                                textDecoration: "underline",
+                                            },
+                                        }}
+                                    >
+                                        Xóa
+                                    </Button>
+                                </div>
+                            )}
+                        </Menu>
+
+                        {/* Filter by material type */}
+                        <Button
+                            onClick={(e) => setMaterialTypeAnchorEl(e.currentTarget)}
+                            size="sm"
+                            variant={selectedMaterialTypes.length > 0 ? "outlined" : "contained"}
+                            sx={{
+                                ...(selectedMaterialTypes.length > 0
+                                    ? {
+                                        backgroundColor: "#ffffff",
+                                        boxShadow: "none",
+                                        borderColor: "#089456",
+                                        textTransform: "none",
+                                        color: "#089456",
+                                        px: 1.5,
+                                        "&:hover": {
+                                            backgroundColor: "#0894561A",
+                                            borderColor: "#089456",
+                                            boxShadow: "none",
+                                        },
+                                    }
+                                    : {
+                                        backgroundColor: "#0ab067",
+                                        boxShadow: "none",
+                                        textTransform: "none",
+                                        color: "#ffffff",
+                                        px: 1.5,
+                                        "&:hover": {
+                                            backgroundColor: "#089456",
+                                            borderColor: "#089456",
+                                            boxShadow: "none",
+                                        },
+                                    }),
+                            }}
+                        >
+                            {selectedMaterialTypes.length > 0 ? (
+                                <span className="flex items-center gap-[5px]">
+                                    {selectedMaterialTypes[0]?.name}
+                                    {selectedMaterialTypes.length > 1 && (
+                                        <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin">
+                                            +{selectedMaterialTypes.length - 1}
+                                        </span>
+                                    )}
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-[5px]">
+                                    Loại vật tư <FaAngleDown className="h-4 w-4" />
+                                </span>
+                            )}
+                        </Button>
+
+                        <Menu
+                            anchorEl={materialTypeAnchorEl}
+                            open={Boolean(materialTypeAnchorEl)}
+                            onClose={() => setMaterialTypeAnchorEl(null)}
+                            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                        >
+                            {materialTypeList.map((mt) => (
+                                <MenuItem
+                                    key={mt.materialTypeId}
+                                    onClick={() => {
+                                        const updated = selectedMaterialTypes.includes(mt)
+                                            ? selectedMaterialTypes.filter((m) => m !== mt)
+                                            : [...selectedMaterialTypes, mt];
+                                        setSelectedMaterialTypes(updated);
+                                        setCurrentPage(0);
+                                    }}
+                                    sx={{ paddingLeft: "7px", minWidth: "150px" }}
+                                >
+                                    <Checkbox
+                                        color="success"
+                                        size="small"
+                                        checked={selectedMaterialTypes.some((m) => m.materialTypeId === mt.materialTypeId)}
+                                    />
+                                    <ListItemText primary={mt.name} />
+                                </MenuItem>
+                            ))}
+                            {selectedMaterialTypes.length > 0 && (
+                                <div className="flex justify-end">
+                                    <Button
+                                        variant="text"
+                                        size="medium"
+                                        onClick={() => {
+                                            setSelectedMaterialTypes([]);
+                                            setCurrentPage(0);
+                                        }}
+                                        sx={{
+                                            color: "#000000DE",
+                                            "&:hover": {
+                                                backgroundColor: "transparent",
+                                                textDecoration: "underline",
+                                            },
+                                        }}
+                                    >
+                                        Xoá
+                                    </Button>
+                                </div>
+                            )}
+                        </Menu>
 
 
                     </div>

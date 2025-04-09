@@ -16,7 +16,9 @@ export const getInventoryReportPaginated = ({
   warehouses = [],
   statuses = [],
   quantityFilters = {},
-  itemType = ""
+  itemType = "",
+  productTypeIds = [],
+  materialTypeIds = [],
 }) => {
   const token = localStorage.getItem("token");
   const params = new URLSearchParams();
@@ -28,6 +30,8 @@ export const getInventoryReportPaginated = ({
   warehouses.forEach((wh) => params.append("warehouseIds", wh.warehouseId));
   statuses.forEach((s) => params.append("statuses", s));
   if (itemType) params.append("itemType", itemType);
+  productTypeIds.forEach((id) => params.append("productTypeIds", id));
+  materialTypeIds.forEach((id) => params.append("materialTypeIds", id));
 
   const quantityFields = [
     { key: "itemAvailableQuantity", paramMin: "minAvailable", paramMax: "maxAvailable" },
