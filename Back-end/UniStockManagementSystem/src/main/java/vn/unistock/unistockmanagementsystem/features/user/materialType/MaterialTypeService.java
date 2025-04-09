@@ -60,4 +60,11 @@ public class MaterialTypeService {
         MaterialType savedMaterialType = materialTypeRepository.save(materialType);
         return materialTypeMapper.toDTO(savedMaterialType);
     }
+
+    public List<MaterialTypeDTO> getActiveMaterialTypes() {
+        return materialTypeRepository.findAllByIsUsingTrue()
+                .stream()
+                .map(materialTypeMapper::toDTO)
+                .collect(Collectors.toList());
+    }
 }

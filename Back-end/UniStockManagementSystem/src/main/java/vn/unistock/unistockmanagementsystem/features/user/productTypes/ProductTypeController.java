@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -38,5 +39,10 @@ public class ProductTypeController {
     public ResponseEntity<ProductTypeDTO> createProductType(@RequestBody ProductTypeDTO productTypeDTO) {
         ProductTypeDTO createdProductType = productTypeService.createProductType(productTypeDTO);
         return ResponseEntity.ok(createdProductType);
+    }
+
+    @GetMapping("/active")
+    public ResponseEntity<List<ProductTypeDTO>> getActiveProductTypes() {
+        return ResponseEntity.ok(productTypeService.getActiveProductTypes());
     }
 }
