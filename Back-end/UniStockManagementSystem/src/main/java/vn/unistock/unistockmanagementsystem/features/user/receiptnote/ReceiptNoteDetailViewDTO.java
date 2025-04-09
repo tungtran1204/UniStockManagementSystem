@@ -30,4 +30,5 @@ public class ReceiptNoteDetailViewDTO implements Serializable {
     private String grnCode;
     private String category;
     private LocalDateTime receiptDate;
+    private String itemType;
 }

@@ -30,16 +30,14 @@ const InventoryReportPage = () => {
     const navigate = useNavigate();
     const [quantityAnchorEl, setQuantityAnchorEl] = useState(null);
     const [quantityFilters, setQuantityFilters] = useState({
-        itemRealQuantity: { label: "Tồn kho", type: "range", min: 0, max: null },
-        itemReservedQuantity: { label: "Đang giữ chỗ", type: "range", min: 0, max: null },
-        itemAvailableQuantity: { label: "Có sẵn", type: "range", min: 0, max: null },
+        itemRealQuantity: { label: "Tồn kho", type: "range", min: null, max: null },
+        itemReservedQuantity: { label: "Đang giữ chỗ", type: "range", min: null, max: null },
+        itemAvailableQuantity: { label: "Có sẵn", type: "range", min: null, max: null },
     });
     const [selectedWarehouses, setSelectedWarehouses] = useState([]);
     const [warehouseAnchorEl, setWarehouseAnchorEl] = useState(null);
     const [statusAnchorEl, setStatusAnchorEl] = useState(null);
     const [selectedStatuses, setSelectedStatuses] = useState([]);
-    // const [itemTypeAnchorEl, setItemTypeAnchorEl] = useState(null);
-    // const [selectedItemType, setSelectedItemType] = useState(""); // "", "PRODUCT", "MATERIAL"
     const [materialTypeAnchorEl, setMaterialTypeAnchorEl] = useState(null);
     const [productTypeAnchorEl, setProductTypeAnchorEl] = useState(null);
 
@@ -294,103 +292,6 @@ const InventoryReportPage = () => {
                                 placeholder="Tìm kiếm"
                             />
                         </div>
-
-                        {/* Filter by good category */}
-                        {/* <Button
-                            onClick={(e) => setItemTypeAnchorEl(e.currentTarget)}
-                            size="sm"
-                            variant={selectedItemType ? "outlined" : "contained"}
-                            sx={{
-                                ...(selectedItemType
-                                    ? {
-                                        backgroundColor: "#ffffff",
-                                        boxShadow: "none",
-                                        borderColor: "#089456",
-                                        textTransform: "none",
-                                        color: "#089456",
-                                        px: 1.5,
-                                        "&:hover": {
-                                            backgroundColor: "#0894561A",
-                                            borderColor: "#089456",
-                                            boxShadow: "none",
-                                        },
-                                    }
-                                    : {
-                                        backgroundColor: "#0ab067",
-                                        boxShadow: "none",
-                                        textTransform: "none",
-                                        color: "#ffffff",
-                                        px: 1.5,
-                                        "&:hover": {
-                                            backgroundColor: "#089456",
-                                            borderColor: "#089456",
-                                            boxShadow: "none",
-                                        },
-                                    }),
-                            }}
-                        >
-                            <span className="flex items-center gap-[5px]">
-                                {selectedItemType === "PRODUCT"
-                                    ? "Sản phẩm"
-                                    : selectedItemType === "MATERIAL"
-                                        ? "Vật tư"
-                                        : "Loại hàng hóa"}
-                                <FaAngleDown className="h-4 w-4" />
-                            </span>
-                        </Button>
-
-                        <Menu
-                            anchorEl={itemTypeAnchorEl}
-                            open={Boolean(itemTypeAnchorEl)}
-                            onClose={() => setItemTypeAnchorEl(null)}
-                            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                        >
-                            {[
-                                { label: "Tất cả", value: "" },
-                                { label: "Sản phẩm", value: "PRODUCT" },
-                                { label: "Vật tư", value: "MATERIAL" },
-                            ].map((option) => (
-                                <MenuItem
-                                    key={option.value}
-                                    onClick={() => {
-                                        setSelectedItemType(option.value);
-                                        setItemTypeAnchorEl(null);
-                                        setCurrentPage(0);
-                                    }}
-                                    sx={{ paddingLeft: "7px", minWidth: "150px" }}
-                                >
-                                    <Checkbox
-                                        color="success"
-                                        size="small"
-                                        checked={selectedItemType === option.value}
-                                    />
-                                    <ListItemText primary={option.label} />
-                                </MenuItem>
-                            ))}
-
-                            {selectedItemType && (
-                                <div className="flex justify-end">
-                                    <Button
-                                        variant="text"
-                                        size="medium"
-                                        onClick={() => {
-                                            setSelectedItemType("");
-                                            setCurrentPage(0);
-                                            setItemTypeAnchorEl(null);
-                                        }}
-                                        sx={{
-                                            color: "#000000DE",
-                                            "&:hover": {
-                                                backgroundColor: "transparent",
-                                                textDecoration: "underline",
-                                            },
-                                        }}
-                                    >
-                                        Xóa
-                                    </Button>
-                                </div>
-                            )}
-                        </Menu> */}
 
                         {/* Filter by quantity */}
                         <QuantityFilterButton
