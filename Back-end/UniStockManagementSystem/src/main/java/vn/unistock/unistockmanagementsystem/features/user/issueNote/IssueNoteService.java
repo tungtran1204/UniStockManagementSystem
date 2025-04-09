@@ -298,4 +298,9 @@ public class IssueNoteService {
 
         return dto;
     }
+    //issue report
+    public Page<IssueNoteReportDTO> getExportReportPaginated(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return issueNoteDetailRepository.getIssueNoteReport(pageable);
+    }
 }

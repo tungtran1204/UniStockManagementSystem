@@ -18,7 +18,8 @@ import QuantityFilterButton from "@/components/QuantityFilterButton";
 import DateFilterButton from "@/components/DateFilterButton";
 import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Import Tiếng Việt
-
+import { getGoodIssueReportPaginated } from "./reportService";
+import { getWarehouseList } from "../warehouse/warehouseService";
 
 const GoodIssueReportPage = () => {
     const [currentPage, setCurrentPage] = useState(0);
@@ -35,11 +36,72 @@ const GoodIssueReportPage = () => {
     const [quantityFilters, setQuantityFilters] = useState({
         itemQuantity: { label: "Số lượng", type: "range", min: null, max: null },
     });
+    const [reportData, setReportData] = useState([]);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalElements, setTotalElements] = useState(0);
 
-    // // Fetch data on component mount and when page or size changes
-    // useEffect(() => {
-    //     fetchPaginatedReceiptNotes(currentPage, pageSize);
-    // }, [currentPage, pageSize]);
+    const [warehouseList, setWarehouses] = useState([]);
+    const [itemTypeAnchorEl, setItemTypeAnchorEl] = useState(null);
+    const [selectedItemType, setSelectedItemType] = useState(""); // "", "PRODUCT", "MATERIAL"
+
+
+    // Fetch report data
+    useEffect(() => {
+        fetchReport(currentPage, pageSize);
+    }, [currentPage, pageSize]);
+
+    useEffect(() => {
+        fetchReport(currentPage, pageSize);
+    }, [currentPage, pageSize, searchTerm, selectedWarehouses, quantityFilters]);
+
+    const fetchReport = async (page = currentPage, size = pageSize) => {
+        try {
+            const response = await getGoodReceiptReportPaginated({
+                page,
+                size,
+                search: searchTerm,
+                startDate: startDate ? dayjs(startDate).format("YYYY-MM-DD") : null,
+                endDate: endDate ? dayjs(endDate).format("YYYY-MM-DD") : null,
+                categories: selectedCategories,
+                warehouses: selectedWarehouses,
+                quantityFilters,
+                itemType: selectedItemType
+            });
+
+            const data = response.data.content.map((item, index) => ({
+                id: index + 1 + page * size,
+                stt: index + 1 + page * size,
+                issueCode: item.ginCode,
+                receiptDate: item.receiptDate,
+                itemCode: item.materialCode || item.productCode,
+                itemName: item.materialName || item.productName,
+                itemUnit: item.unitName,
+                itemQuantity: item.quantity,
+                toWarehouse: item.warehouseName,
+                category: item.category,
+            }));
+            setReportData(data);
+            setTotalPages(response.data.totalPages);
+            setTotalElements(response.data.totalElements);
+        } catch (error) {
+            console.error("❌ Lỗi khi lấy dữ liệu báo cáo xuất kho:", error);
+            setReportData([]);
+        }
+    };
+
+
+    useEffect(() => {
+        fetchReport();
+    }, [
+        currentPage,
+        pageSize,
+        searchTerm,
+        startDate,
+        endDate,
+        selectedCategories,
+        selectedWarehouses,
+        quantityFilters
+    ]);
 
     // Handle page change
     const handlePageChange = (selectedPage) => {
@@ -65,12 +127,19 @@ const GoodIssueReportPage = () => {
         "Xuất kho trả lại hàng mua",
     ];
 
-    const warehouseList = [
-        "Kho A",
-        "Kho B",
-        "Kho C",
-    ];
+    useEffect(() => {
+        const fetchInitData = async () => {
+            try {
+                const response = await getWarehouseList();
+                const activeWarehouses = (response?.data || response || []).filter(wh => wh.isActive);
+                setWarehouses(activeWarehouses);
+            } catch (err) {
+                console.error("Lỗi khi lấy dữ liệu kho:", err);
+            }
+        };
 
+        fetchInitData();
+    }, []);
 
     const columnsConfig = [
         { field: 'stt', headerName: 'STT', flex: 1, minWidth: 50, editable: false, filterable: false },
@@ -132,17 +201,6 @@ const GoodIssueReportPage = () => {
         { field: 'category', headerName: 'Phân loại xuất', flex: 2, minWidth: 200, editable: false, filterable: false },
     ];
 
-    //   const data = receiptNotes.map((receipt) => ({
-    //     grnId: receipt.grnId,
-    //     receiptCode: receipt.grnCode,
-    //     category: receipt.category || 'không có dữ liệu',
-    //     createdDate: receipt.receiptDate,
-    //     createBy: receipt.createdBy,
-    //     reference: {
-    //       id: receipt.poId || "N/A",
-    //       type: "PURCHASE_ORDER"
-    //     }
-    //   }));
     const data = [
         {
             id: 1,
@@ -471,6 +529,104 @@ const GoodIssueReportPage = () => {
                             setFilters={setQuantityFilters}
                             setCurrentPage={setCurrentPage}
                         />
+
+                        {/* Filter by good category */}
+                        <Button
+                            onClick={(e) => setItemTypeAnchorEl(e.currentTarget)}
+                            size="sm"
+                            variant={selectedItemType ? "outlined" : "contained"}
+                            sx={{
+                                ...(selectedItemType
+                                    ? {
+                                        backgroundColor: "#ffffff",
+                                        boxShadow: "none",
+                                        borderColor: "#089456",
+                                        textTransform: "none",
+                                        color: "#089456",
+                                        px: 1.5,
+                                        "&:hover": {
+                                            backgroundColor: "#0894561A",
+                                            borderColor: "#089456",
+                                            boxShadow: "none",
+                                        },
+                                    }
+                                    : {
+                                        backgroundColor: "#0ab067",
+                                        boxShadow: "none",
+                                        textTransform: "none",
+                                        color: "#ffffff",
+                                        px: 1.5,
+                                        "&:hover": {
+                                            backgroundColor: "#089456",
+                                            borderColor: "#089456",
+                                            boxShadow: "none",
+                                        },
+                                    }),
+                            }}
+                        >
+                            <span className="flex items-center gap-[5px]">
+                                {selectedItemType === "PRODUCT"
+                                    ? "Sản phẩm"
+                                    : selectedItemType === "MATERIAL"
+                                        ? "Vật tư"
+                                        : "Loại hàng hóa"}
+                                <FaAngleDown className="h-4 w-4" />
+                            </span>
+                        </Button>
+
+                        <Menu
+                            anchorEl={itemTypeAnchorEl}
+                            open={Boolean(itemTypeAnchorEl)}
+                            onClose={() => setItemTypeAnchorEl(null)}
+                            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                        >
+                            {[
+                                { label: "Tất cả", value: "" },
+                                { label: "Sản phẩm", value: "PRODUCT" },
+                                { label: "Vật tư", value: "MATERIAL" },
+                            ].map((option) => (
+                                <MenuItem
+                                    key={option.value}
+                                    onClick={() => {
+                                        setSelectedItemType(option.value);
+                                        setItemTypeAnchorEl(null);
+                                        setCurrentPage(0);
+                                    }}
+                                    sx={{ paddingLeft: "7px", minWidth: "150px" }}
+                                >
+                                    <Checkbox
+                                        color="success"
+                                        size="small"
+                                        checked={selectedItemType === option.value}
+                                    />
+                                    <ListItemText primary={option.label} />
+                                </MenuItem>
+                            ))}
+
+                            {selectedItemType && (
+                                <div className="flex justify-end">
+                                    <Button
+                                        variant="text"
+                                        size="medium"
+                                        onClick={() => {
+                                            setSelectedItemType("");
+                                            setCurrentPage(0);
+                                            setItemTypeAnchorEl(null);
+                                        }}
+                                        sx={{
+                                            color: "#000000DE",
+                                            "&:hover": {
+                                                backgroundColor: "transparent",
+                                                textDecoration: "underline",
+                                            },
+                                        }}
+                                    >
+                                        Xóa
+                                    </Button>
+                                </div>
+                            )}
+                        </Menu>
+
                     </div>
                     <div className="py-2 flex items-center justify-between gap-2">
                         {/* Items per page */}

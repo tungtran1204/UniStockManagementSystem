@@ -121,5 +121,17 @@ public class IssueNoteController {
         }
     }
 
+    @GetMapping("/report")
+    public ResponseEntity<Map<String, Object>> getExportReport(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Page<IssueNoteReportDTO> paged = issueNoteService.getExportReportPaginated(page, size);
+        Map<String, Object> response = new HashMap<>();
+        response.put("content", paged.getContent());
+        response.put("totalPages", paged.getTotalPages());
+        response.put("totalElements", paged.getTotalElements());
+        return ResponseEntity.ok(response);
+    }
 
 }
