@@ -15,7 +15,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
-import { FaPlus, FaTrash, FaArrowLeft } from "react-icons/fa";
+import { FaPlus, FaTrash, FaArrowLeft, FaSearch } from "react-icons/fa";
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -37,7 +37,6 @@ import TableSearch from '@/components/TableSearch';
 import { getPartnersByType /* ... */ } from "@/features/user/partner/partnerService";
 import { getSaleOrders, uploadPaperEvidence } from "./issueNoteService";
 import { getTotalQuantityOfProduct } from "../saleorders/saleOrdersService";
-
 
 // Import useIssueNote có chứa addIssueNote
 import useIssueNote from "./useIssueNote";
@@ -98,7 +97,7 @@ const AddIssueNote = () => {
         const mapped = response.content.map((order) => ({
           id: order.orderId,
           orderCode: order.orderCode,
-          orderName: order.note || "Không có ghi chú",
+          orderName: order.partnerName,
           partnerCode: order.partnerCode,
           partnerName: order.partnerName,
           orderDate: order.orderDate,
@@ -247,6 +246,7 @@ const AddIssueNote = () => {
         })),
       });
     }
+    console.log("New products set from selected order:", newProducts);
     setProducts(newProducts);
     handleCloseChooseOrderModal();
   };
@@ -431,6 +431,8 @@ const AddIssueNote = () => {
         return;
       }
 
+      console.log("Products state:", products);
+
       // Prepare details with proper validation
       const details = products.flatMap(prod => 
         prod.inStock
@@ -442,6 +444,8 @@ const AddIssueNote = () => {
             unitId: 1 // Assuming default unit, should be dynamic in real app
           }))
       );
+
+      console.log("Calculated details to send:", details);
 
       if (details.length === 0) {
         alert("Vui lòng nhập ít nhất một dòng sản phẩm với số lượng xuất hợp lệ!");
@@ -463,7 +467,7 @@ const AddIssueNote = () => {
         createdBy: 1 // Should be dynamic in real app
       };
 
-      console.log("Sending payload:", payload); // Debug log
+      console.log("Sending payload:", payload);
 
       const result = await addIssueNote(payload);
       if (result) {
@@ -589,37 +593,46 @@ const AddIssueNote = () => {
                 <Typography variant="medium" className="mb-1 text-black">
                   Tham chiếu chứng từ gốc
                 </Typography>
-                <TextField
-                  select
-                  hiddenLabel
-                  color="success"
-                  value={referenceDocument}
-                  onChange={(e) => {
-                    const sel = orders.find(o => o.orderCode === e.target.value);
-                    if (sel) handleOrderSelected(sel);
+                <Autocomplete
+                  options={orders}
+                  getOptionLabel={(option) =>
+                    `${option.orderCode} - ${option.orderName}`
+                  }
+                  value={orders.find((o) => o.orderCode === referenceDocument) || null}
+                  onChange={(event, newValue) => {
+                    if (newValue) {
+                      handleOrderSelected(newValue);
+                    } else {
+                      setReferenceDocument("");
+                    }
                   }}
-                  fullWidth
-                  size="small"
-                  InputProps={{
-                    endAdornment: (
-                      <IconButton
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenChooseOrderModal();
-                        }}
-                        size="small"
-                      >
-                        <FaPlus fontSize="small" />
-                      </IconButton>
-                    ),
-                  }}
-                >
-                  {orders.map((o) => (
-                    <MenuItem key={o.id} value={o.orderCode}>
-                      {o.orderCode} - {o.orderName}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Chọn chứng từ gốc"
+                      variant="outlined"
+                      size="small"
+                      color="success"
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            <IconButton
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenChooseOrderModal();
+                              }}
+                              size="small"
+                            >
+                              <FaSearch fontSize="small" />
+                            </IconButton>
+                            {params.InputProps.endAdornment}
+                          </>
+                        )
+                      }}
+                    />
+                  )}
+                />
               </div>
               <div>
                 <Typography variant="medium" className="mb-1 text-black">

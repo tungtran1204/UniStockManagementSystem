@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { createIssueNote, getNextCode, getSaleOrders } from "./issueNoteService";
+import { createIssueNote, getIssueNote, getIssueNotes, getNextCode, getSaleOrders } from "./issueNoteService";
 
 
 const useIssueNote = (page = 0, size = 10) => {
@@ -18,6 +18,36 @@ const useIssueNote = (page = 0, size = 10) => {
     } catch (err) {
       console.error("Lỗi khi lấy Sale Orders:", err);
       setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchIssueNotes = async () => {
+    setLoading(true);
+    try {
+      const data = await getIssueNotes(page, size);
+      console.log("Dữ liệu issue notes:", data);
+      setIssueNotes(data.content || []);
+      setTotalPages(data.totalPages);
+      setTotalElements(data.totalElements);
+    } catch (err) {
+      console.error("Lỗi khi lấy Issue Notes:", err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchIssueNoteDetail = async (id) => {
+    setLoading(true);
+    try {
+      const data = await getIssueNote(id);
+      return data;
+    } catch (err) {
+      console.error("Lỗi khi lấy chi tiết Issue Note:", err);
+      setError(err);
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -48,7 +78,7 @@ const useIssueNote = (page = 0, size = 10) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, size]);
 
-  return { saleOrders, loading, error, fetchSaleOrders, addIssueNote, fetchNextCode };
+  return { saleOrders, loading, error, fetchSaleOrders, addIssueNote, fetchNextCode, fetchIssueNotes, fetchIssueNoteDetail };
 };
 
 export default useIssueNote;

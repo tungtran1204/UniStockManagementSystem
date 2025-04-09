@@ -1,40 +1,38 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-import {
-  Card,
-  Tooltip,
-  CardBody,
-  Typography,
-  Button,
-  Input,
-} from "@material-tailwind/react";
-import { FaPlus } from "react-icons/fa";
 import ReactPaginate from "react-paginate";
-import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
-import AddIssueNote from "../receiptNote/AddReceiptNote";
+import { Card, CardBody, Typography, Tooltip } from "@material-tailwind/react";
+import { ArrowLeftIcon, ArrowRightIcon, EyeIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
+import { getIssueNotes } from "./issueNoteService";
 
 const IssueNotePage = () => {
   const [issueNotes, setIssueNotes] = useState([]);
-  const [openAddModal, setOpenAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(5);
+  // Sử dụng 10 bản ghi mỗi trang như ReceiptNotePage
+  const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const [showImportPopup, setShowImportPopup] = useState(false);
   const navigate = useNavigate();
-
 
   useEffect(() => {
     fetchPaginatedIssueNotes(currentPage, pageSize);
   }, [currentPage, pageSize]);
 
-  const fetchPaginatedIssueNotes = async (page, size) => {
-    // Fetch issue notes from API
-    // Update state with fetched data
+  const fetchPaginatedIssueNotes = async (page, size, search = "") => {
+    try {
+      // API trả về dạng: { totalPages, content: [ { ginId, ginCode, description, category, issueDate, soId, createdBy, details, ... } ] }
+      const data = await getIssueNotes(page, size);
+      setIssueNotes(data.content || []);
+      setTotalPages(data.totalPages);
+      setTotalElements(data.totalElements);
+    } catch (error) {
+      console.error("Error fetching issue notes:", error);
+    }
   };
 
   const handlePageChange = (selectedItem) => {
@@ -42,28 +40,78 @@ const IssueNotePage = () => {
   };
 
   const handleAdd = async () => {
-    // const code = await getNextCode();
-    // navigate("/user/sale-orders/add", { state: { nextCode: code } });
     navigate("/user/issueNote/add");
   };
 
+  const handleViewIssue = (row) => {
+    // Điều hướng đến trang chi tiết phiếu xuất; sử dụng ginId làm id
+    navigate(`/user/issueNote/${row.id}`);
+  };
+
+  const handleSearch = () => {
+    setCurrentPage(0);
+    fetchPaginatedIssueNotes(0, pageSize, searchTerm);
+  };
+
+  // Lọc dữ liệu theo từ khóa dựa trên ginCode hoặc description
   const filteredIssueNotes = issueNotes.filter(
     (note) =>
-      note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      note.description.toLowerCase().includes(searchTerm.toLowerCase())
+      (note.ginCode ? note.ginCode.toLowerCase() : "").includes(searchTerm.toLowerCase()) ||
+      (note.description ? note.description.toLowerCase() : "").includes(searchTerm.toLowerCase())
   );
 
+  // Map dữ liệu cho bảng; nếu không có ginId, tạo id dự phòng
+  const data = filteredIssueNotes.map((note, index) => ({
+    id: note.ginId ? note.ginId : `${currentPage}-${index}`,
+    ginCode: note.ginCode || "N/A",
+    category: note.category || "N/A",
+    description: note.description || "Không có ghi chú",
+    issueDate: note.issueDate,
+    createdBy: note.createdBy || "Đang tải...",
+    reference: note.soId // Dùng soId làm tham chiếu (Sales Order id)
+  }));
+
+  // Các cột hiển thị giống ReceiptNotePage nhưng thay đổi tên trường cho phù hợp với IssueNote
   const columnsConfig = [
-    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
-    { field: 'title', headerName: 'Tiêu đề', flex: 2, minWidth: 200, editable: false },
-    { field: 'description', headerName: 'Mô tả', flex: 2, minWidth: 200, editable: false },
+    { field: 'ginCode', headerName: 'Mã phiếu xuất', flex: 1.5, minWidth: 150 },
+    { field: 'category', headerName: 'Loại hàng hóa', flex: 2, minWidth: 100 },
+    { field: 'description', headerName: 'Mô tả', flex: 2, minWidth: 150 },
     {
-      field: 'createdAt',
-      headerName: 'Ngày tạo',
+      field: 'issueDate',
+      headerName: 'Ngày lập phiếu',
       flex: 1.5,
       minWidth: 150,
-      editable: false,
-      renderCell: (params) => new Date(params.value).toLocaleDateString("vi-VN"),
+      renderCell: (params) => {
+        if (!params.value) return "Không có dữ liệu";
+        return new Date(params.value).toLocaleDateString("vi-VN");
+      },
+    },
+    {
+      field: 'createdBy',
+      headerName: 'Người tạo phiếu',
+      flex: 1.5,
+      minWidth: 100,
+      renderCell: (params) => params.value,
+    },
+    {
+      field: 'reference',
+      headerName: 'Tham chiếu',
+      flex: 1.5,
+      minWidth: 150,
+      renderCell: (params) => {
+        const soId = params.value;
+        if (soId) {
+          return (
+            <span
+              onClick={() => navigate(`/user/saleOrder/${soId}`)}
+              className="text-blue-600 hover:underline cursor-pointer"
+            >
+              SO{soId}
+            </span>
+          );
+        }
+        return " - ";
+      },
     },
     {
       field: 'actions',
@@ -71,15 +119,13 @@ const IssueNotePage = () => {
       flex: 0.5,
       minWidth: 100,
       renderCell: (params) => (
-        <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-          <Tooltip content="Chỉnh sửa">
+        <div className="flex justify-center w-full">
+          <Tooltip content="Xem chi tiết">
             <button
-              onClick={() => {
-                handleEdit(params.row);
-              }}
+              onClick={() => handleViewIssue(params.row)}
               className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
             >
-              <BiSolidEdit className="h-5 w-5" />
+              <EyeIcon className="h-5 w-5" />
             </button>
           </Tooltip>
         </div>
@@ -87,29 +133,18 @@ const IssueNotePage = () => {
     },
   ];
 
-  const data = filteredIssueNotes.map((note, index) => ({
-    id: note.id,
-    index: currentPage * pageSize + index + 1,
-    title: note.title,
-    description: note.description,
-    createdAt: note.createdAt,
-  }));
-
   return (
-    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+    <div className="mb-8 flex flex-col gap-8" style={{ height: 'calc(100vh - 100px)' }}>
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
-
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
             title="Danh sách phiếu xuất kho"
             addButtonLabel="Thêm phiếu xuất"
-            onAdd={() => navigate("/user/issueNote/add")}
+            onAdd={handleAdd}
             onImport={() => setShowImportPopup(true)}
             onExport={() => { /* export Excel */ }}
           />
-          {/* Items per page and search */}
           <div className="py-2 flex items-center justify-between gap-2">
-            {/* Items per page */}
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-light">
                 Hiển thị
@@ -122,45 +157,37 @@ const IssueNotePage = () => {
                 }}
                 className="border text-sm rounded px-2 py-1"
               >
-                {[5, 10, 20, 50].map(size => (
-                  <option key={size} value={size}>{size}</option>
+                {[5, 10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
                 ))}
               </select>
               <Typography variant="small" color="blue-gray" className="font-normal">
                 bản ghi mỗi trang
               </Typography>
             </div>
-
-            {/* Search input */}
             <TableSearch
               value={searchTerm}
               onChange={setSearchTerm}
-              onSearch={() => {
-                // Thêm hàm xử lý tìm kiếm vào đây nếu có
-                console.log("Tìm kiếm kho:", searchTerm);
-              }}
-              placeholder="Tìm kiếm kho"
+              onSearch={handleSearch}
+              placeholder="Tìm kiếm phiếu xuất"
             />
-
           </div>
-
-          <Table
-            data={data}
-            columnsConfig={columnsConfig}
-            enableSelection={false}
-          />
-
-          <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
+          <div className="w-full overflow-x-auto">
+            <Table data={data} columnsConfig={columnsConfig} enableSelection={false} />
+          </div>
+          <div className="flex items-center justify-between border-t border-blue-gray-50 py-4 mt-2">
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-normal">
-                Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
+                Trang {currentPage + 1} / {totalPages || 1} • {totalElements || 0} bản ghi
               </Typography>
             </div>
             <ReactPaginate
               previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
               nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
               breakLabel="..."
-              pageCount={totalPages}
+              pageCount={totalPages || 1}
               marginPagesDisplayed={2}
               pageRangeDisplayed={5}
               onPageChange={handlePageChange}
@@ -176,10 +203,7 @@ const IssueNotePage = () => {
             />
           </div>
         </CardBody>
-
-
       </Card>
-
     </div>
   );
 };

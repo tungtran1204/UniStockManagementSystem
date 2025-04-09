@@ -67,8 +67,6 @@ public class IssueNoteController {
      */
     @GetMapping("/{issueNoteId}")
     public ResponseEntity<IssueNoteDTO> getIssueNoteById(@PathVariable Long issueNoteId) {
-        // Tuỳ triển khai, bạn có thể ném ngoại lệ nếu không tìm thấy
-        // hoặc trả về null => 404
         IssueNoteDTO noteDTO = null;
         try {
             noteDTO = issueNoteService.getIssueNoteById(issueNoteId);

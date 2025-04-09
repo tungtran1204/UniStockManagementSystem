@@ -52,6 +52,7 @@ import SaleOrderReportPage from "../features/user/report/SaleOrderReportPage";
 import GoodReceiptReportPage from "../features/user/report/GoodReceiptReportPage";
 import GoodIssueReportPage from "../features/user/report/GoodIssueReportPage";
 import StockMovementReportPage from "../features/user/report/StockMovementReportPage";
+import ViewIssueNote from "../features/user/issueNote/ViewIssueNote";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -389,6 +390,11 @@ export const routes = [
       {
         path: "/user/receiptNote/general",
         element: <AddReceiptNoteGeneral />,
+        roles: ["USER"],
+      },
+      {
+        path: "/user/issueNote/:id",
+        element: <ViewIssueNote />,
         roles: ["USER"],
       }
     ],
