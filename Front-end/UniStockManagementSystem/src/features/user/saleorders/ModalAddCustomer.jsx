@@ -7,9 +7,8 @@ import {
   Typography,
   Input,
   Button,
-  IconButton,
 } from "@material-tailwind/react";
-import { TextField, MenuItem, Divider, FormControl, InputLabel, OutlinedInput, Chip, Select, Button as MuiButton } from "@mui/material";
+import { TextField, Divider, IconButton, Button as MuiButton } from "@mui/material";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { createPartner, getPartnerCodeByType } from "../partner/partnerService";
 
@@ -101,8 +100,7 @@ const ModalAddCustomer = ({ onClose, onSuccess }) => {
           Thêm đối tác khách hàng
         </Typography>
         <IconButton
-          size="sm"
-          variant="text"
+          size="small"
           onClick={onClose}
         >
           <XMarkIcon className="h-5 w-5 stroke-2" />

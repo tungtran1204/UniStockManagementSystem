@@ -4,18 +4,29 @@ import {
   CardBody,
   Typography,
   Button,
-  Input,
   Select,
   Option,
-  Textarea,
 } from "@material-tailwind/react";
+import {
+  TextField,
+  MenuItem,
+  Button as MuiButton,
+  Divider
+} from '@mui/material';
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
+import "dayjs/locale/vi"; // Import Tiếng Việt
 import { useLocation, useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
-import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, ArrowRightIcon, ListBulletIcon } from "@heroicons/react/24/outline";
+import { InformationCircleIcon } from "@heroicons/react/24/solid";
+import { FaArrowLeft } from "react-icons/fa";
 import PageHeader from '@/components/PageHeader';
 import { getPurchaseOrderById } from "../purchaseOrder/purchaseOrderService";
 import { getWarehouseList } from "../warehouse/warehouseService";
 import ProductRow from "./ProductRow";
+import FileUploadBox from '@/components/FileUploadBox';
 import { createReceiptNote, uploadPaperEvidence as uploadPaperEvidenceService } from "./receiptNoteService";
 
 // Hàm lấy ngày hiện tại YYYY-MM-DD
@@ -331,7 +342,7 @@ const AddReceiptNote = () => {
           quantity: remaining > 0 ? remaining : 0,
           remainingQuantity: 0,
           warehouse: itemWarehouses[item.materialId || item.productId] || "",
-        };        
+        };
       });
       setRowsData(initialRowsData);
     }
@@ -416,29 +427,32 @@ const AddReceiptNote = () => {
           />
 
           {/* Thông tin chung */}
-          <Typography variant="h6" className="mb-2 text-gray-700 text-sm font-semibold">
+          <Typography variant="h6" className="flex items-center mb-4 text-black">
+            <InformationCircleIcon className="h-5 w-5 mr-2" />
             Thông tin chung
           </Typography>
-          <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-3 gap-x-12 gap-y-4 mb-4">
             <div>
-              <Typography variant="small">Phân loại nhập kho <span className="text-red-500">*</span></Typography>
-              <Select
-                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
-                labelProps={{
-                  className: "before:content-none after:content-none",
-                }}
+              <Typography variant="medium" className="mb-1 text-black">
+                Phân loại nhập kho <span className="text-red-500">*</span>
+              </Typography>
+              <TextField
+                select
+                hiddenLabel
+                color="success"
                 value={category}
-                onChange={(value) => {
-                  setCategory(value);
-                  handleReferenceDocumentChange(value);
+                onChange={(e) => {
+                  setCategory(e.target.value);
+                  handleReferenceDocumentChange(e.target.value);
                 }}
-                required
+                fullWidth
+                size="small"
               >
-                {/* <Option value="Thành phẩm sản xuất">Thành phẩm sản xuất</Option>
-                <Option value="Hàng hóa trả lại">Hàng hóa trả lại</Option> */}
-                <Option value="Vật tư mua bán">Vật tư mua bán</Option>
-                <Option value="Hàng hóa gia công">Hàng hóa gia công</Option>
-              </Select>
+                <MenuItem value="Thành phầm sản xuất">Thành phầm sản xuất</MenuItem>
+                <MenuItem value="Hàng hóa trả lại">Hàng hóa trả lại</MenuItem>
+                <MenuItem value="Vật tư mua bán">Vật tư mua bán</MenuItem>
+                <MenuItem value="Hàng hóa gia công">Hàng hóa gia công</MenuItem>
+              </TextField>
               {!category && (
                 <Typography variant="small" className="text-red-500 mt-1">
                   Vui lòng chọn phân loại nhập kho
@@ -446,173 +460,232 @@ const AddReceiptNote = () => {
               )}
             </div>
             <div>
-              <Typography variant="small">Tham chiếu chứng từ gốc</Typography>
-              <Input
+              <Typography variant="medium" className="mb-1 text-black">
+                Tham chiếu chứng từ gốc
+              </Typography>
+              <TextField
+                hiddenLabel
+                color="success"
                 value={
                   [order?.poCode, saleOrderCode].filter(Boolean).join(" - ")
                 }
+                fullWidth
                 disabled
-                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
-                labelProps={{
-                  className: "before:content-none after:content-none",
+                size="small"
+                sx={{
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  },
                 }}
               />
             </div>
             <div>
-              <Typography variant="small">Ngày tạo phiếu <span className="text-red-500">*</span></Typography>
-              <Input
-                type="date"
-                value={orderDate}
-                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
-                labelProps={{
-                  className: "before:content-none after:content-none",
-                }}
-                onChange={(e) => setOrderDate(e.target.value)}
-                required
-              />
+              <Typography variant="medium" className="mb-1 text-black">
+                Ngày lập phiếu
+              </Typography>
+              <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+                <style>
+                  {`.MuiPickersCalendarHeader-label { text-transform: capitalize !important; }`}
+                </style>
+                <DatePicker
+                  value={orderDate ? dayjs(orderDate) : null}
+                  onChange={(newValue) => {
+                    if (newValue) {
+                      setOrderDate(newValue.format("YYYY-MM-DD"));
+                    }
+                  }}
+                  format="DD/MM/YYYY"
+                  dayOfWeekFormatter={(weekday) => `${weekday.format("dd")}`}
+                  slotProps={{
+                    textField: {
+                      hiddenLabel: true,
+                      fullWidth: true,
+                      size: "small",
+                      color: "success",
+                    },
+                    day: {
+                      sx: () => ({
+                        "&.Mui-selected": {
+                          backgroundColor: "#0ab067 !important",
+                          color: "white",
+                        },
+                        "&.Mui-selected:hover": {
+                          backgroundColor: "#089456 !important",
+                        },
+                        "&:hover": {
+                          backgroundColor: "#0894561A !important",
+                        },
+                      }),
+                    },
+                  }}
+                />
+              </LocalizationProvider>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-4">
             <div>
-              <Typography variant="small">Tên đối tác</Typography>
-              <Input
+              <Typography variant="medium" className="mb-1 text-black">Tên đối tác</Typography>
+              <TextField
+                fullWidth
+                size="small"
+                color="success"
+                variant="outlined"
+                disabled
                 value={order.supplierName || ''}
-                disabled
-                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
-                labelProps={{
-                  className: "before:content-none after:content-none",
+                sx={{
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  },
                 }}
               />
             </div>
             <div>
-              <Typography variant="small">Địa chỉ</Typography>
-              <Input
+              <Typography variant="medium" className="mb-1 text-black">Địa chỉ</Typography>
+              <TextField
+                fullWidth
+                size="small"
+                color="success"
+                variant="outlined"
+                disabled
                 value={order.supplierAddress || ''}
-                disabled
-                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
-                labelProps={{
-                  className: "before:content-none after:content-none",
+                sx={{
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  },
                 }}
               />
             </div>
             <div>
-              <Typography variant="small">Người liên hệ</Typography>
-              <Input
+              <Typography variant="medium" className="mb-1 text-black">Người liên hệ</Typography>
+              <TextField
+                fullWidth
+                size="small"
+                color="success"
+                variant="outlined"
+                disabled
                 value={order.supplierContactName || ''}
-                disabled
-                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
-                labelProps={{
-                  className: "before:content-none after:content-none",
+                sx={{
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  },
                 }}
               />
             </div>
             <div>
-              <Typography variant="small">Số điện thoại</Typography>
-              <Input
-                value={order.supplierPhone || 'không có thông tin'}
+              <Typography variant="medium" className="mb-1 text-black">Số điện thoại</Typography>
+              <TextField
+                fullWidth
+                size="small"
+                color="success"
+                variant="outlined"
                 disabled
-                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
-                labelProps={{
-                  className: "before:content-none after:content-none",
+                value={order.supplierPhone || 'không có thông tin'}
+                sx={{
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  },
                 }}
               />
             </div>
           </div>
           {/* Diễn giải & Kèm theo */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-4">
             <div>
-              <Typography variant="small">Diễn giải</Typography>
-              <Textarea
-                className="!border-t-blue-gray-200 focus:!border-t-gray-900"
-                labelProps={{
-                  className: "before:content-none after:content-none",
-                }}
+              <Typography variant="medium" className="mb-1 text-black">
+                Diễn giải
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                hiddenLabel
+                placeholder="Diễn giải"
+                multiline
+                rows={4}
+                color="success"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Nhập diễn giải cho phiếu nhập kho"
               />
             </div>
             <div>
-              <Typography variant="small">Kèm theo</Typography>
-              <div className="border border-dashed border-gray-400 p-4 rounded-md text-center">
-                <p className="text-gray-500 text-xs">Kéo thả tối đa 3 file, mỗi file không quá 5MB</p>
-                <p className="text-xs">Hoặc</p>
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                  accept=".pdf,.jpg,.png,.docx,.xlsx"
-                  className="mt-2 text-xs"
-                />
-              </div>
-              {/* Hiển thị danh sách file đã chọn */}
-              {files.length > 0 && (
-                <div className="mt-2">
-                  <Typography variant="small" className="font-semibold">
-                    File đã chọn ({files.length}/3):
-                  </Typography>
-                  <div className="grid grid-cols-3 gap-2 mt-1 text-sm text-gray-700">
-                    {files.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between border p-1 rounded-md text-xs bg-gray-100"
-                      >
-                        <span className="truncate max-w-[80px]">{file.name}</span>
-                        <Button
-                          size="sm"
-                          color="red"
-                          variant="text"
-                          onClick={() => handleRemoveFile(index)}
-                          className="p-1 min-w-[20px] h-5"
-                        >
-                          ✖
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <Typography variant="medium" className="mb-1 text-black">
+                Kèm theo
+              </Typography>
+              <FileUploadBox
+                files={files}
+                setFiles={setFiles}
+                maxFiles={3}
+              />
             </div>
           </div>
           {/* Danh sách sản phẩm */}
-          <div className="px-4 py-2 flex items-center gap-4 mb-4">
-            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-              Hiển thị
-            </Typography>
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(0);
-              }}
-              className="border rounded px-2 py-1"
-            >
-              {[5, 10, 20, 50].map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
+          <Typography
+            variant="h6"
+            className="flex items-center mb-4 mt-8 text-black"
+          >
+            <ListBulletIcon className="h-5 w-5 mr-2" />
+            Danh sách sản phẩm
+          </Typography>
 
-            <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">
-              kết quả mỗi trang
-            </Typography>
+          <div className="py-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Typography variant="small" color="blue-gray" className="font-light">
+                Hiển thị
+              </Typography>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(0);
+                }}
+                className="border rounded px-2 py-1"
+              >
+                {[5, 10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                bản ghi mỗi trang
+              </Typography>
+            </div>
+            {/* <TableSearch
+              onSearch={() => {
+                // Tìm kiếm (nếu cần)
+              }}
+              placeholder="Tìm kiếm"
+            /> */}
           </div>
           {/* Product table - Using new table template */}
-          <div className="overflow-auto border rounded">
-            <table className="w-full table-auto text-sm">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 border">STT</th>
-                  <th className="p-2 border">Mã hàng</th>
-                  <th className="p-2 border">Tên hàng</th>
-                  <th className="p-2 border">Đơn vị</th>
-                  <th className="p-2 border">Nhập kho <span className="text-red-500">*</span></th>
-                  <th className="p-2 border">Số lượng đặt</th>
-                  <th className="p-2 border">Số lượng đã nhập</th>
-                  <th className="p-2 border">Số lượng còn phải nhập</th>
-                  <th className="p-2 border">Số lượng nhập kho <span className="text-red-500">*</span></th>
+          <div className="border border-gray-200 rounded mb-4 overflow-x-auto border-[rgba(224,224,224,1)]">
+            <table className="w-full min-w-max text-left border-collapse border-[rgba(224,224,224,1)]">
+              <thead className="bg-[#f5f5f5] border-b border-[rgba(224,224,224,1)]">
+                <tr>
+                  <th className="px-4 py-2 text-sm font-medium text-center text-[#000000DE] border-r border-[rgba(224,224,224,1)]">STT</th>
+                  <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Mã hàng</th>
+                  <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Tên hàng</th>
+                  <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Đơn vị</th>
+                  <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Nhập kho</th>
+                  <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Số lượng đặt</th>
+                  <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Số lượng đã nhập</th>
+                  <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Số lượng còn phải nhập</th>
+                  <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Số lượng nhập kho</th>
                 </tr>
               </thead>
               <tbody>
@@ -647,10 +720,9 @@ const AddReceiptNote = () => {
             </table>
           </div>
 
-
           {/* Phân trang */}
           {totalElements > 0 && (
-            <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
+            <div className="flex items-center justify-between pb-4">
               <div className="flex items-center gap-2">
                 <Typography variant="small" color="blue-gray" className="font-normal">
                   Trang {currentPage + 1} / {totalPages || 1} • {totalElements || 0} bản ghi
@@ -678,23 +750,30 @@ const AddReceiptNote = () => {
           )}
 
           {/* Button actions */}
-          <div className="mt-6 border-t pt-4 flex justify-between">
-            <div className="flex items-center">
-              <Button
-                size="sm"
-                color="red"
-                variant="text"
-                onClick={() => navigate("/user/receiptNote")}
-                className="mr-4 flex items-center"
-              >
-                <ArrowLeftIcon className="h-4 w-4 mr-1" />
-                Quay lại danh sách
-              </Button>
-            </div>
+          <Divider />
+          <div className="flex justify-between my-4">
+            <MuiButton
+              color="info"
+              size="medium"
+              variant="outlined"
+              sx={{
+                color: '#616161',
+                borderColor: '#9e9e9e',
+                '&:hover': {
+                  backgroundColor: '#f5f5f5',
+                  borderColor: '#757575',
+                },
+              }}
+              onClick={() => navigate("/user/receiptNote")}
+              className="flex items-center gap-2"
+            >
+              <FaArrowLeft className="h-3 w-3" /> Quay lại
+            </MuiButton>
+
             <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                color="blue"
+              <MuiButton
+                size="medium"
+                color="error"
                 variant="outlined"
                 onClick={() => {
                   if (window.confirm("Bạn có chắc muốn hủy thao tác này?")) {
@@ -703,25 +782,17 @@ const AddReceiptNote = () => {
                 }}
               >
                 Hủy
-              </Button>
+              </MuiButton>
               <Button
-                size="sm"
-                color="green"
+                size="lg"
+                color="white"
+                variant="text"
+                className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                ripple={true}
                 onClick={handleSaveReceipt}
                 disabled={isSubmitting || Object.keys(quantityErrors).length > 0 || !referenceDocument}
-                className="flex items-center"
               >
-                {isSubmitting ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Đang lưu...
-                  </>
-                ) : (
-                  "Lưu phiếu nhập"
-                )}
+                Lưu
               </Button>
             </div>
           </div>
