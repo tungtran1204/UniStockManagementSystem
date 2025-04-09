@@ -276,3 +276,17 @@ export const getAllActiveMaterials = async () => {
   }
 };
 
+// lấy danh sách loại vật tư đang sử dụng
+export const fetchActiveMaterialTypes = async () => {
+  try {
+    const response = await axios.get(
+      `${import.meta.env.VITE_API_URL}/user/material-types/active`,
+      { headers: authHeader() }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi khi lấy danh sách loại vật tư đang sử dụng:", error);
+    throw error;
+  }
+};
+

@@ -50,7 +50,7 @@ const GoodIssueReportPage = () => {
     
         const fetchReport = () => {
             // Lấy toàn bộ dữ liệu: page = 0, size = 10000
-            getGoodReceiptReportPaginated(0, 10000)
+            getGoodIssueReportPaginated(0, 10000)
                 .then((res) => {
                     const data = res.data.content.map((item, index) => ({
                         id: index + 1,

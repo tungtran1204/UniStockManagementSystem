@@ -10,4 +10,5 @@ import java.util.List;
 public interface MaterialTypeRepository extends JpaRepository<MaterialType, Long> {
     boolean existsByName(String name);
     boolean existsByNameAndMaterialTypeIdNot(String name, Long materialTypeId);
+    List<MaterialType> findAllByIsUsingTrue();
 }
