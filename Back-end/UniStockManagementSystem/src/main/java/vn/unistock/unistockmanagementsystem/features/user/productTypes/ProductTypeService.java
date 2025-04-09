@@ -7,6 +7,9 @@ import org.springframework.stereotype.Service;
 import vn.unistock.unistockmanagementsystem.entities.ProductType;
 import vn.unistock.unistockmanagementsystem.features.user.productTypes.ProductTypeRepository;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class ProductTypeService {
@@ -37,5 +40,12 @@ public class ProductTypeService {
         productType.setStatus(true);
         ProductType savedProductType = productTypeRepository.save(productType);
         return productTypeMapper.toDTO(savedProductType);
+    }
+
+    public List<ProductTypeDTO> getActiveProductTypes() {
+        return productTypeRepository.findAllByStatusTrue()
+                .stream()
+                .map(productTypeMapper::toDTO)
+                .collect(Collectors.toList());
     }
 }

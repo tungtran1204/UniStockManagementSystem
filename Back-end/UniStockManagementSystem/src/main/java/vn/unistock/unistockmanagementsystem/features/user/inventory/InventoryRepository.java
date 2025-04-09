@@ -38,15 +38,19 @@ public interface InventoryRepository extends JpaRepository<Inventory,Long> {
     //query for inventory report
     @Query("""
 SELECT new vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryReportDTO(
-    COALESCE(m.materialCode, p.productCode),
-    COALESCE(m.materialName, p.productName),
-    COALESCE(m.isUsing, p.isProductionActive),
-    COALESCE(u1.unitName, u2.unitName),
+    CASE WHEN m IS NOT NULL THEN m.materialCode ELSE p.productCode END,
+    CASE WHEN m IS NOT NULL THEN m.materialName ELSE p.productName END,
+    CASE WHEN m IS NOT NULL THEN m.isUsing ELSE p.isProductionActive END,
+    CASE WHEN m IS NOT NULL THEN u1.unitName ELSE u2.unitName END,
     SUM(CASE WHEN i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.AVAILABLE THEN i.quantity ELSE 0 END),
     SUM(CASE WHEN i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.RESERVED THEN i.quantity ELSE 0 END),
     SUM(i.quantity),
     w.warehouseCode,
-    w.warehouseName
+    w.warehouseName,
+    w.warehouseId,
+    CASE WHEN m IS NOT NULL THEN 'MATERIAL' ELSE 'PRODUCT' END,
+    CASE WHEN p IS NOT NULL THEN p.productType.typeId ELSE NULL END,
+    CASE WHEN m IS NOT NULL THEN m.materialType.materialTypeId ELSE NULL END
 )
 FROM Inventory i
 LEFT JOIN i.material m
@@ -54,10 +58,17 @@ LEFT JOIN i.product p
 LEFT JOIN m.unit u1
 LEFT JOIN p.unit u2
 JOIN i.warehouse w
-GROUP BY m.materialCode, p.productCode, m.materialName, p.productName,
-         m.isUsing, p.isProductionActive,
-         u1.unitName, u2.unitName,
-         w.warehouseCode, w.warehouseName
+GROUP BY 
+    CASE WHEN m IS NOT NULL THEN m.materialCode ELSE p.productCode END,
+    CASE WHEN m IS NOT NULL THEN m.materialName ELSE p.productName END,
+    CASE WHEN m IS NOT NULL THEN m.isUsing ELSE p.isProductionActive END,
+    CASE WHEN m IS NOT NULL THEN u1.unitName ELSE u2.unitName END,
+    w.warehouseCode,
+    w.warehouseName,
+    w.warehouseId,
+    CASE WHEN m IS NOT NULL THEN 'MATERIAL' ELSE 'PRODUCT' END,
+    CASE WHEN p IS NOT NULL THEN p.productType.typeId ELSE NULL END,
+    CASE WHEN m IS NOT NULL THEN m.materialType.materialTypeId ELSE NULL END
 """)
     List<InventoryReportDTO> getInventoryReportRaw();
 

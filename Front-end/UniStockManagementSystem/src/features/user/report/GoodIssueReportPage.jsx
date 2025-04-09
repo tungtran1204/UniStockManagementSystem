@@ -14,14 +14,16 @@ import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
+import QuantityFilterButton from "@/components/QuantityFilterButton";
 import DateFilterButton from "@/components/DateFilterButton";
 import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Import Tiếng Việt
-
+import { getGoodIssueReportPaginated } from "./reportService";
+import { getWarehouseList } from "../warehouse/warehouseService";
 
 const GoodIssueReportPage = () => {
     const [currentPage, setCurrentPage] = useState(0);
-    const [pageSize, setPageSize] = useState(10);
+    const [pageSize, setPageSize] = useState(5);
     const [searchTerm, setSearchTerm] = useState("");
     const navigate = useNavigate();
     const [startDate, setStartDate] = useState(null);
@@ -30,12 +32,48 @@ const GoodIssueReportPage = () => {
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [selectedWarehouses, setSelectedWarehouses] = useState([]);
     const [warehouseAnchorEl, setWarehouseAnchorEl] = useState(null);
+    const [quantityAnchorEl, setQuantityAnchorEl] = useState(null);
+    const [quantityFilters, setQuantityFilters] = useState({
+        itemQuantity: { label: "Số lượng", type: "range", min: null, max: null },
+    });
+    const [reportData, setReportData] = useState([]);
+        const [totalPages, setTotalPages] = useState(1);
+        const [totalElements, setTotalElements] = useState(0);
+    
+    //    const [warehouseList, setWarehouses] = useState([]);
+    
 
-
-    // // Fetch data on component mount and when page or size changes
-    // useEffect(() => {
-    //     fetchPaginatedReceiptNotes(currentPage, pageSize);
-    // }, [currentPage, pageSize]);
+    // Fetch report data
+        useEffect(() => {
+            fetchReport(currentPage, pageSize);
+        }, [currentPage, pageSize]);
+    
+        const fetchReport = () => {
+            // Lấy toàn bộ dữ liệu: page = 0, size = 10000
+            getGoodIssueReportPaginated(0, 10000)
+                .then((res) => {
+                    const data = res.data.content.map((item, index) => ({
+                        id: index + 1,
+                        stt: index + 1,
+                        receiptCode: item.grnCode,
+                        receiptDate: item.receiptDate,
+                        itemCode: item.materialCode || item.productCode,
+                        itemName: item.materialName || item.productName,
+                        itemUnit: item.unitName,
+                        itemQuantity: item.quantity,
+                        toWarehouse: item.warehouseName,
+                        category: item.category,
+                    }));
+                    setReportData(data);
+                })
+                .catch(() => {
+                    setReportData([]);
+                });
+        };
+    
+        useEffect(() => {
+            fetchReport();
+        }, []);
 
     // Handle page change
     const handlePageChange = (selectedPage) => {
@@ -230,7 +268,15 @@ const GoodIssueReportPage = () => {
         const matchesWarehouse =
             selectedWarehouses.length === 0 || selectedWarehouses.includes(item.fromWarehouse);
 
-        return matchesSearch && matchesStart && matchesEnd && matchesCategory && matchesWarehouse;
+        const matchesQuantity = (itemQuantity) => {
+            const { min, max, type } = quantityFilters.itemQuantity;
+            if (type === "lt") return max == null || itemQuantity <= max;
+            if (type === "gt") return min == null || itemQuantity >= min;
+            if (type === "eq") return min == null || itemQuantity === min;
+            return (min == null || itemQuantity >= min) && (max == null || itemQuantity <= max);
+        };
+
+        return matchesSearch && matchesStart && matchesEnd && matchesCategory && matchesWarehouse && matchesQuantity(item.itemQuantity);
     });
 
     const pageCount = Math.ceil(filteredData.length / pageSize);
@@ -450,6 +496,15 @@ const GoodIssueReportPage = () => {
                                 </div>
                             )}
                         </Menu>
+
+                        {/* Filter by quantity */}
+                        <QuantityFilterButton
+                            anchorEl={quantityAnchorEl}
+                            setAnchorEl={setQuantityAnchorEl}
+                            filters={quantityFilters}
+                            setFilters={setQuantityFilters}
+                            setCurrentPage={setCurrentPage}
+                        />
                     </div>
                     <div className="py-2 flex items-center justify-between gap-2">
                         {/* Items per page */}
@@ -488,20 +543,19 @@ const GoodIssueReportPage = () => {
                         <div className="flex items-center gap-2">
                             <Typography variant="small" color="blue-gray" className="font-normal">
                                 {/* Trang {currentPage + 1} / {totalPages || 1} • {totalElements || 0} bản ghi */}
-                                Trang {currentPage + 1} / {1} • {0} bản ghi
+                                Trang {currentPage + 1} / {pageCount || 1} • {filteredData.length} bản ghi
                             </Typography>
                         </div>
                         <ReactPaginate
                             previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
                             nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
                             breakLabel="..."
-                            // pageCount={totalPages || 1}
-                            pageCount={1}
+                            pageCount={pageCount || 1}
                             marginPagesDisplayed={2}
                             pageRangeDisplayed={5}
                             onPageChange={handlePageChangeWrapper}
                             containerClassName="flex items-center gap-1"
-                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067]"
+                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                             pageLinkClassName="flex items-center justify-center w-full h-full"
                             previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                             nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
