@@ -30,6 +30,8 @@ const usePartnerType = () => {
       }
     };
 
+    
+
   return {
     partnerTypes,
     fetchPartnerTypes,

@@ -9,6 +9,7 @@ const StatusFilterButton = ({
     setSelectedStatuses,
     allStatuses,
     buttonLabel = "Trạng thái",
+    setCurrentPage,
 }) => {
     const open = Boolean(anchorEl);
 
@@ -16,8 +17,10 @@ const StatusFilterButton = ({
         const exists = selectedStatuses.find((s) => s.value === status.value);
         if (exists) {
             setSelectedStatuses((prev) => prev.filter((s) => s.value !== status.value));
+            setCurrentPage?.(0);
         } else {
             setSelectedStatuses((prev) => [...prev, status]);
+            setCurrentPage?.(0);
         }
     };
 

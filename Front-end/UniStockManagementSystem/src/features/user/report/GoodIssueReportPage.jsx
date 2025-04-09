@@ -18,7 +18,8 @@ import QuantityFilterButton from "@/components/QuantityFilterButton";
 import DateFilterButton from "@/components/DateFilterButton";
 import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Import Tiếng Việt
-
+import { getGoodIssueReportPaginated } from "./reportService";
+import { getWarehouseList } from "../warehouse/warehouseService";
 
 const GoodIssueReportPage = () => {
     const [currentPage, setCurrentPage] = useState(0);
@@ -35,11 +36,44 @@ const GoodIssueReportPage = () => {
     const [quantityFilters, setQuantityFilters] = useState({
         itemQuantity: { label: "Số lượng", type: "range", min: null, max: null },
     });
+    const [reportData, setReportData] = useState([]);
+        const [totalPages, setTotalPages] = useState(1);
+        const [totalElements, setTotalElements] = useState(0);
+    
+    //    const [warehouseList, setWarehouses] = useState([]);
+    
 
-    // // Fetch data on component mount and when page or size changes
-    // useEffect(() => {
-    //     fetchPaginatedReceiptNotes(currentPage, pageSize);
-    // }, [currentPage, pageSize]);
+    // Fetch report data
+        useEffect(() => {
+            fetchReport(currentPage, pageSize);
+        }, [currentPage, pageSize]);
+    
+        const fetchReport = () => {
+            // Lấy toàn bộ dữ liệu: page = 0, size = 10000
+            getGoodIssueReportPaginated(0, 10000)
+                .then((res) => {
+                    const data = res.data.content.map((item, index) => ({
+                        id: index + 1,
+                        stt: index + 1,
+                        receiptCode: item.grnCode,
+                        receiptDate: item.receiptDate,
+                        itemCode: item.materialCode || item.productCode,
+                        itemName: item.materialName || item.productName,
+                        itemUnit: item.unitName,
+                        itemQuantity: item.quantity,
+                        toWarehouse: item.warehouseName,
+                        category: item.category,
+                    }));
+                    setReportData(data);
+                })
+                .catch(() => {
+                    setReportData([]);
+                });
+        };
+    
+        useEffect(() => {
+            fetchReport();
+        }, []);
 
     // Handle page change
     const handlePageChange = (selectedPage) => {

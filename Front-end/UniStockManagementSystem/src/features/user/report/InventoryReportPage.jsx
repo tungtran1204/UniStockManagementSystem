@@ -10,58 +10,61 @@ import {
     ListItemText,
 } from '@mui/material';
 import { FaAngleDown } from "react-icons/fa";
-import ClearIcon from '@mui/icons-material/Clear';
-import { PiLessThanOrEqualBold, PiGreaterThanOrEqualBold } from "react-icons/pi";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
 import QuantityFilterButton from "@/components/QuantityFilterButton";
 import StatusFilterButton from "@/components/StatusFilterButton";
-import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Import Tiếng Việt
 
 import { getInventoryReportPaginated } from "./reportService";
 import { getWarehouseList } from "../warehouse/warehouseService";
+import { fetchActiveProductTypes } from "../productType/productTypeService";
+import { fetchActiveMaterialTypes } from "../materialType/materialTypeService";
 
 const InventoryReportPage = () => {
     const [currentPage, setCurrentPage] = useState(0);
-    const [pageSize, setPageSize] = useState(5);
+    const [pageSize, setPageSize] = useState(20);
     const [searchTerm, setSearchTerm] = useState("");
     const navigate = useNavigate();
     const [quantityAnchorEl, setQuantityAnchorEl] = useState(null);
     const [quantityFilters, setQuantityFilters] = useState({
-        itemRealQuantity: { label: "Tồn kho", type: "range", min: null, max: null },
-        itemReservedQuantity: { label: "Đang giữ chỗ", type: "range", min: null, max: null },
-        itemAvailableQuantity: { label: "Có sẵn", type: "range", min: null, max: null },
+        itemRealQuantity: { label: "Tồn kho", type: "range", min: 0, max: null },
+        itemReservedQuantity: { label: "Đang giữ chỗ", type: "range", min: 0, max: null },
+        itemAvailableQuantity: { label: "Có sẵn", type: "range", min: 0, max: null },
     });
     const [selectedWarehouses, setSelectedWarehouses] = useState([]);
     const [warehouseAnchorEl, setWarehouseAnchorEl] = useState(null);
     const [statusAnchorEl, setStatusAnchorEl] = useState(null);
     const [selectedStatuses, setSelectedStatuses] = useState([]);
+    // const [itemTypeAnchorEl, setItemTypeAnchorEl] = useState(null);
+    // const [selectedItemType, setSelectedItemType] = useState(""); // "", "PRODUCT", "MATERIAL"
+    const [materialTypeAnchorEl, setMaterialTypeAnchorEl] = useState(null);
+    const [productTypeAnchorEl, setProductTypeAnchorEl] = useState(null);
+
     const [reportData, setReportData] = useState([]);
     const [totalPages, setTotalPages] = useState(1);
     const [totalElements, setTotalElements] = useState(0);
 
     const [warehouseList, setWarehouses] = useState([]);
+    const [productTypeList, setProductTypeList] = useState([]);
+    const [selectedProductTypes, setSelectedProductTypes] = useState([]);
+    const [materialTypeList, setMaterialTypeList] = useState([]);
+    const [selectedMaterialTypes, setSelectedMaterialTypes] = useState([]);
 
-    useEffect(() => {
-        fetchReport(currentPage, pageSize);
-    }, [currentPage, pageSize]);
-
-    useEffect(() => {
-        fetchReport(currentPage, pageSize);
-    }, [currentPage, pageSize, searchTerm, selectedWarehouses, selectedStatuses, quantityFilters]);
-
-    const fetchReport = async (page, size) => {
+    const fetchReport = async (page, size, itemType) => {
         try {
             const response = await getInventoryReportPaginated({
                 page,
                 size,
                 search: searchTerm,
                 warehouses: selectedWarehouses,
-                statuses: selectedStatuses,
+                statuses: selectedStatuses.map((s) => s.value),
                 quantityFilters,
+                itemType,
+                productTypeIds: selectedProductTypes.map((p) => p.typeId),
+                materialTypeIds: selectedMaterialTypes.map((m) => m.materialTypeId),
             });
             const content = response.data.content.map((item, index) => ({
                 id: index + 1 + page * size,
@@ -74,17 +77,35 @@ const InventoryReportPage = () => {
                 itemReservedQuantity: item.reservedQuantity,
                 itemAvailableQuantity: item.availableQuantity,
                 inWarehouse: item.warehouseName,
-                image: "",
             }));
             setReportData(content);
             setTotalPages(response.data.totalPages);
             setTotalElements(response.data.totalElements);
         } catch (error) {
+            console.error("❌ Lỗi khi gọi API báo cáo tồn kho:", error); // ✅ thêm log
             setReportData([]);
             setTotalPages(1);
             setTotalElements(0);
         }
     };
+    useEffect(() => {
+        const inferredItemType = selectedProductTypes.length > 0
+            ? "PRODUCT"
+            : selectedMaterialTypes.length > 0
+                ? "MATERIAL"
+                : "";
+
+        fetchReport(currentPage, pageSize, inferredItemType);
+    }, [
+        currentPage,
+        pageSize,
+        searchTerm,
+        selectedWarehouses,
+        selectedStatuses,
+        quantityFilters,
+        selectedProductTypes,
+        selectedMaterialTypes
+    ]);
 
     // Handle page change
     const handlePageChange = (selectedPage) => {
@@ -98,22 +119,53 @@ const InventoryReportPage = () => {
 
     // Handle search
     const handleSearch = () => {
-        // Reset to first page when searching
         setCurrentPage(0);
-        fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
+        const inferredItemType = selectedProductTypes.length > 0
+            ? "PRODUCT"
+            : selectedMaterialTypes.length > 0
+                ? "MATERIAL"
+                : "";
+        fetchReport(0, pageSize, inferredItemType);
+    };
+
+    // handle validate quantity filter
+    const updateQuantityFilter = (field, type, value) => {
+        const raw = value === "" ? null : Number(value);
+        if (raw !== null && (isNaN(raw) || raw < 0)) return; // loại bỏ ký tự hoặc số âm
+        setQuantityFilters(prev => ({
+            ...prev,
+            [field]: {
+                ...prev[field],
+                [type]: raw
+            }
+        }));
+    };
+
+    // handle change status
+    const handleStatusChange = (status) => {
+        const updatedStatuses = selectedStatuses.includes(status)
+            ? selectedStatuses.filter(s => s !== status)
+            : [...selectedStatuses, status];
+        setSelectedStatuses(updatedStatuses);
+    };
+
+    const fetchInitData = async () => {
+        try {
+            const response = await getWarehouseList();
+            const activeWarehouses = (response?.data || response || []).filter(wh => wh.isActive);
+            setWarehouses(activeWarehouses);
+
+            const productTypes = await fetchActiveProductTypes();
+            setProductTypeList(productTypes);
+
+            const materialTypes = await fetchActiveMaterialTypes();
+            setMaterialTypeList(materialTypes);
+        } catch (err) {
+            console.error("Lỗi khi lấy dữ liệu:", err);
+        }
     };
 
     useEffect(() => {
-        const fetchInitData = async () => {
-            try {
-                const response = await getWarehouseList();
-                const activeWarehouses = (response?.data || response || []).filter(wh => wh.isActive);
-                setWarehouses(activeWarehouses);
-            } catch (err) {
-                console.error("Lỗi khi lấy dữ liệu kho:", err);
-            }
-        };
-
         fetchInitData();
     }, []);
 
@@ -243,6 +295,103 @@ const InventoryReportPage = () => {
                             />
                         </div>
 
+                        {/* Filter by good category */}
+                        {/* <Button
+                            onClick={(e) => setItemTypeAnchorEl(e.currentTarget)}
+                            size="sm"
+                            variant={selectedItemType ? "outlined" : "contained"}
+                            sx={{
+                                ...(selectedItemType
+                                    ? {
+                                        backgroundColor: "#ffffff",
+                                        boxShadow: "none",
+                                        borderColor: "#089456",
+                                        textTransform: "none",
+                                        color: "#089456",
+                                        px: 1.5,
+                                        "&:hover": {
+                                            backgroundColor: "#0894561A",
+                                            borderColor: "#089456",
+                                            boxShadow: "none",
+                                        },
+                                    }
+                                    : {
+                                        backgroundColor: "#0ab067",
+                                        boxShadow: "none",
+                                        textTransform: "none",
+                                        color: "#ffffff",
+                                        px: 1.5,
+                                        "&:hover": {
+                                            backgroundColor: "#089456",
+                                            borderColor: "#089456",
+                                            boxShadow: "none",
+                                        },
+                                    }),
+                            }}
+                        >
+                            <span className="flex items-center gap-[5px]">
+                                {selectedItemType === "PRODUCT"
+                                    ? "Sản phẩm"
+                                    : selectedItemType === "MATERIAL"
+                                        ? "Vật tư"
+                                        : "Loại hàng hóa"}
+                                <FaAngleDown className="h-4 w-4" />
+                            </span>
+                        </Button>
+
+                        <Menu
+                            anchorEl={itemTypeAnchorEl}
+                            open={Boolean(itemTypeAnchorEl)}
+                            onClose={() => setItemTypeAnchorEl(null)}
+                            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                        >
+                            {[
+                                { label: "Tất cả", value: "" },
+                                { label: "Sản phẩm", value: "PRODUCT" },
+                                { label: "Vật tư", value: "MATERIAL" },
+                            ].map((option) => (
+                                <MenuItem
+                                    key={option.value}
+                                    onClick={() => {
+                                        setSelectedItemType(option.value);
+                                        setItemTypeAnchorEl(null);
+                                        setCurrentPage(0);
+                                    }}
+                                    sx={{ paddingLeft: "7px", minWidth: "150px" }}
+                                >
+                                    <Checkbox
+                                        color="success"
+                                        size="small"
+                                        checked={selectedItemType === option.value}
+                                    />
+                                    <ListItemText primary={option.label} />
+                                </MenuItem>
+                            ))}
+
+                            {selectedItemType && (
+                                <div className="flex justify-end">
+                                    <Button
+                                        variant="text"
+                                        size="medium"
+                                        onClick={() => {
+                                            setSelectedItemType("");
+                                            setCurrentPage(0);
+                                            setItemTypeAnchorEl(null);
+                                        }}
+                                        sx={{
+                                            color: "#000000DE",
+                                            "&:hover": {
+                                                backgroundColor: "transparent",
+                                                textDecoration: "underline",
+                                            },
+                                        }}
+                                    >
+                                        Xóa
+                                    </Button>
+                                </div>
+                            )}
+                        </Menu> */}
+
                         {/* Filter by quantity */}
                         <QuantityFilterButton
                             anchorEl={quantityAnchorEl}
@@ -352,7 +501,198 @@ const InventoryReportPage = () => {
                             setSelectedStatuses={setSelectedStatuses}
                             allStatuses={allStatuses}
                             buttonLabel="Trạng thái"
+                            setCurrentPage={setCurrentPage}
                         />
+
+                        <Button
+                            onClick={(e) => setProductTypeAnchorEl(e.currentTarget)}
+                            size="sm"
+                            variant={selectedProductTypes.length > 0 ? "outlined" : "contained"}
+                            sx={{
+                                ...(selectedProductTypes.length > 0
+                                    ? {
+                                        backgroundColor: "#ffffff",
+                                        boxShadow: "none",
+                                        borderColor: "#089456",
+                                        textTransform: "none",
+                                        color: "#089456",
+                                        px: 1.5,
+                                        "&:hover": {
+                                            backgroundColor: "#0894561A",
+                                            borderColor: "#089456",
+                                            boxShadow: "none",
+                                        },
+                                    }
+                                    : {
+                                        backgroundColor: "#0ab067",
+                                        boxShadow: "none",
+                                        textTransform: "none",
+                                        color: "#ffffff",
+                                        px: 1.5,
+                                        "&:hover": {
+                                            backgroundColor: "#089456",
+                                            borderColor: "#089456",
+                                            boxShadow: "none",
+                                        },
+                                    }),
+                            }}
+                        >
+                            {selectedProductTypes.length > 0 ? (
+                                <span className="flex items-center gap-[5px]">
+                                    {selectedProductTypes[0]?.typeName}
+                                    {selectedProductTypes.length > 1 && (
+                                        <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin">+{selectedProductTypes.length - 1}</span>
+                                    )}
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-[5px]">
+                                    Dòng sản phẩm <FaAngleDown className="h-4 w-4" />
+                                </span>
+                            )}
+                        </Button>
+                        <Menu
+                            anchorEl={productTypeAnchorEl}
+                            open={Boolean(productTypeAnchorEl)}
+                            onClose={() => setProductTypeAnchorEl(null)}
+                            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                        >
+                            {productTypeList.map((pt) => (
+                                <MenuItem key={pt.typeId}
+                                    onClick={() => {
+                                        const updated = selectedProductTypes.includes(pt)
+                                            ? selectedProductTypes.filter(p => p !== pt)
+                                            : [...selectedProductTypes, pt];
+                                        setSelectedProductTypes(updated);
+                                        setCurrentPage(0);
+                                    }}
+                                    sx={{ paddingLeft: "7px", minWidth: "150px" }}
+                                >
+                                    <Checkbox color="success" size="small" checked={selectedProductTypes.some(p => p.typeId === pt.typeId)} />
+                                    <ListItemText primary={pt.typeName} />
+                                </MenuItem>
+                            ))}
+                            {selectedProductTypes.length > 0 && (
+                                <div className="flex justify-end">
+                                    <Button
+                                        variant="text"
+                                        size="medium"
+                                        onClick={() => {
+                                            setSelectedProductTypes([]);
+                                            setCurrentPage(0);
+                                        }}
+                                        sx={{
+                                            color: "#000000DE",
+                                            "&:hover": {
+                                                backgroundColor: "transparent",
+                                                textDecoration: "underline",
+                                            },
+                                        }}
+                                    >
+                                        Xóa
+                                    </Button>
+                                </div>
+                            )}
+                        </Menu>
+
+                        {/* Filter by material type */}
+                        <Button
+                            onClick={(e) => setMaterialTypeAnchorEl(e.currentTarget)}
+                            size="sm"
+                            variant={selectedMaterialTypes.length > 0 ? "outlined" : "contained"}
+                            sx={{
+                                ...(selectedMaterialTypes.length > 0
+                                    ? {
+                                        backgroundColor: "#ffffff",
+                                        boxShadow: "none",
+                                        borderColor: "#089456",
+                                        textTransform: "none",
+                                        color: "#089456",
+                                        px: 1.5,
+                                        "&:hover": {
+                                            backgroundColor: "#0894561A",
+                                            borderColor: "#089456",
+                                            boxShadow: "none",
+                                        },
+                                    }
+                                    : {
+                                        backgroundColor: "#0ab067",
+                                        boxShadow: "none",
+                                        textTransform: "none",
+                                        color: "#ffffff",
+                                        px: 1.5,
+                                        "&:hover": {
+                                            backgroundColor: "#089456",
+                                            borderColor: "#089456",
+                                            boxShadow: "none",
+                                        },
+                                    }),
+                            }}
+                        >
+                            {selectedMaterialTypes.length > 0 ? (
+                                <span className="flex items-center gap-[5px]">
+                                    {selectedMaterialTypes[0]?.name}
+                                    {selectedMaterialTypes.length > 1 && (
+                                        <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin">
+                                            +{selectedMaterialTypes.length - 1}
+                                        </span>
+                                    )}
+                                </span>
+                            ) : (
+                                <span className="flex items-center gap-[5px]">
+                                    Loại vật tư <FaAngleDown className="h-4 w-4" />
+                                </span>
+                            )}
+                        </Button>
+
+                        <Menu
+                            anchorEl={materialTypeAnchorEl}
+                            open={Boolean(materialTypeAnchorEl)}
+                            onClose={() => setMaterialTypeAnchorEl(null)}
+                            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                        >
+                            {materialTypeList.map((mt) => (
+                                <MenuItem
+                                    key={mt.materialTypeId}
+                                    onClick={() => {
+                                        const updated = selectedMaterialTypes.includes(mt)
+                                            ? selectedMaterialTypes.filter((m) => m !== mt)
+                                            : [...selectedMaterialTypes, mt];
+                                        setSelectedMaterialTypes(updated);
+                                        setCurrentPage(0);
+                                    }}
+                                    sx={{ paddingLeft: "7px", minWidth: "150px" }}
+                                >
+                                    <Checkbox
+                                        color="success"
+                                        size="small"
+                                        checked={selectedMaterialTypes.some((m) => m.materialTypeId === mt.materialTypeId)}
+                                    />
+                                    <ListItemText primary={mt.name} />
+                                </MenuItem>
+                            ))}
+                            {selectedMaterialTypes.length > 0 && (
+                                <div className="flex justify-end">
+                                    <Button
+                                        variant="text"
+                                        size="medium"
+                                        onClick={() => {
+                                            setSelectedMaterialTypes([]);
+                                            setCurrentPage(0);
+                                        }}
+                                        sx={{
+                                            color: "#000000DE",
+                                            "&:hover": {
+                                                backgroundColor: "transparent",
+                                                textDecoration: "underline",
+                                            },
+                                        }}
+                                    >
+                                        Xoá
+                                    </Button>
+                                </div>
+                            )}
+                        </Menu>
+
 
                     </div>
                     <div className="py-2 flex items-center justify-between gap-2">
