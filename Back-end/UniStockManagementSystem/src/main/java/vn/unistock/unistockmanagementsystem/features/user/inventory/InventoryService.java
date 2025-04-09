@@ -36,7 +36,9 @@ public class InventoryService {
             Double maxReserved,
             Double minTotal,
             Double maxTotal,
-            String itemType // <-- THÊM THAM SỐ NÀY
+            String itemType,
+            List<Long> productTypeIds,
+            List<Long> materialTypeIds
     ) {
         Pageable pageable = PageRequest.of(page, size);
         List<InventoryReportDTO> all = inventoryRepository.getInventoryReportRaw();
@@ -53,6 +55,25 @@ public class InventoryService {
                 .filter(dto -> minTotal == null || dto.getTotalQuantity() >= minTotal)
                 .filter(dto -> maxTotal == null || dto.getTotalQuantity() <= maxTotal)
                 .filter(dto -> itemType == null || itemType.isEmpty() || itemType.equalsIgnoreCase(dto.getItemType()))
+                // Ép buộc lọc theo itemType nếu có truyền vào
+                .filter(dto -> {
+                    if (itemType != null && !itemType.isEmpty()) {
+                        return itemType.equalsIgnoreCase(dto.getItemType());
+                    }
+                    return true;
+                })
+                .filter(dto -> {
+                    if ("PRODUCT".equalsIgnoreCase(dto.getItemType())) {
+                        return productTypeIds == null || productTypeIds.isEmpty() || productTypeIds.contains(dto.getProductTypeId());
+                    }
+                    return true;
+                })
+                .filter(dto -> {
+                    if ("MATERIAL".equalsIgnoreCase(dto.getItemType())) {
+                        return materialTypeIds == null || materialTypeIds.isEmpty() || materialTypeIds.contains(dto.getMaterialTypeId());
+                    }
+                    return true;
+                })
                 .toList();
 
         int start = (int) pageable.getOffset();

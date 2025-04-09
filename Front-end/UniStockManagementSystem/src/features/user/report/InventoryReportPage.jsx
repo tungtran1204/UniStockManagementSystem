@@ -38,8 +38,8 @@ const InventoryReportPage = () => {
     const [warehouseAnchorEl, setWarehouseAnchorEl] = useState(null);
     const [statusAnchorEl, setStatusAnchorEl] = useState(null);
     const [selectedStatuses, setSelectedStatuses] = useState([]);
-    const [itemTypeAnchorEl, setItemTypeAnchorEl] = useState(null);
-    const [selectedItemType, setSelectedItemType] = useState(""); // "", "PRODUCT", "MATERIAL"
+    // const [itemTypeAnchorEl, setItemTypeAnchorEl] = useState(null);
+    // const [selectedItemType, setSelectedItemType] = useState(""); // "", "PRODUCT", "MATERIAL"
     const [materialTypeAnchorEl, setMaterialTypeAnchorEl] = useState(null);
     const [productTypeAnchorEl, setProductTypeAnchorEl] = useState(null);
 
@@ -52,11 +52,6 @@ const InventoryReportPage = () => {
     const [selectedProductTypes, setSelectedProductTypes] = useState([]);
     const [materialTypeList, setMaterialTypeList] = useState([]);
     const [selectedMaterialTypes, setSelectedMaterialTypes] = useState([]);
-
-    useEffect(() => {
-        fetchReport(currentPage, pageSize, selectedItemType);
-    }, [currentPage, pageSize, searchTerm, selectedWarehouses, selectedStatuses, quantityFilters, selectedItemType]);
-
 
     const fetchReport = async (page, size, itemType) => {
         try {
@@ -93,6 +88,24 @@ const InventoryReportPage = () => {
             setTotalElements(0);
         }
     };
+    useEffect(() => {
+        const inferredItemType = selectedProductTypes.length > 0
+            ? "PRODUCT"
+            : selectedMaterialTypes.length > 0
+                ? "MATERIAL"
+                : "";
+
+        fetchReport(currentPage, pageSize, inferredItemType);
+    }, [
+        currentPage,
+        pageSize,
+        searchTerm,
+        selectedWarehouses,
+        selectedStatuses,
+        quantityFilters,
+        selectedProductTypes,
+        selectedMaterialTypes
+    ]);
 
     // Handle page change
     const handlePageChange = (selectedPage) => {
@@ -107,7 +120,12 @@ const InventoryReportPage = () => {
     // Handle search
     const handleSearch = () => {
         setCurrentPage(0);
-        fetchReport(0, pageSize, selectedItemType);
+        const inferredItemType = selectedProductTypes.length > 0
+            ? "PRODUCT"
+            : selectedMaterialTypes.length > 0
+                ? "MATERIAL"
+                : "";
+        fetchReport(0, pageSize, inferredItemType);
     };
 
     // handle validate quantity filter
@@ -278,7 +296,7 @@ const InventoryReportPage = () => {
                         </div>
 
                         {/* Filter by good category */}
-                        <Button
+                        {/* <Button
                             onClick={(e) => setItemTypeAnchorEl(e.currentTarget)}
                             size="sm"
                             variant={selectedItemType ? "outlined" : "contained"}
@@ -372,8 +390,7 @@ const InventoryReportPage = () => {
                                     </Button>
                                 </div>
                             )}
-                        </Menu>
-
+                        </Menu> */}
 
                         {/* Filter by quantity */}
                         <QuantityFilterButton

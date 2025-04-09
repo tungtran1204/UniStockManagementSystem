@@ -48,7 +48,9 @@ SELECT new vn.unistock.unistockmanagementsystem.features.user.inventory.Inventor
     w.warehouseCode,
     w.warehouseName,
     w.warehouseId,
-    CASE WHEN m IS NOT NULL THEN 'MATERIAL' ELSE 'PRODUCT' END
+    CASE WHEN m IS NOT NULL THEN 'MATERIAL' ELSE 'PRODUCT' END,
+    CASE WHEN p IS NOT NULL THEN p.productType.typeId ELSE NULL END,
+    CASE WHEN m IS NOT NULL THEN m.materialType.materialTypeId ELSE NULL END
 )
 FROM Inventory i
 LEFT JOIN i.material m
@@ -64,10 +66,11 @@ GROUP BY
     w.warehouseCode,
     w.warehouseName,
     w.warehouseId,
-    CASE WHEN m IS NOT NULL THEN 'MATERIAL' ELSE 'PRODUCT' END
+    CASE WHEN m IS NOT NULL THEN 'MATERIAL' ELSE 'PRODUCT' END,
+    CASE WHEN p IS NOT NULL THEN p.productType.typeId ELSE NULL END,
+    CASE WHEN m IS NOT NULL THEN m.materialType.materialTypeId ELSE NULL END
 """)
     List<InventoryReportDTO> getInventoryReportRaw();
-
 
     default Page<InventoryReportDTO> getInventoryReport(Pageable pageable) {
         List<InventoryReportDTO> all = getInventoryReportRaw();

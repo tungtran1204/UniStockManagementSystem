@@ -38,14 +38,17 @@ public class InventoryController {
             @RequestParam(required = false) Double maxReserved,
             @RequestParam(required = false) Double minTotal,
             @RequestParam(required = false) Double maxTotal,
-            @RequestParam(required = false) String itemType
+            @RequestParam(required = false) String itemType,
+            @RequestParam(required = false) List<Long> productTypeIds,       // ✅ thêm
+            @RequestParam(required = false) List<Long> materialTypeIds
     ) {
         return ResponseEntity.ok(
                 inventoryService.getInventoryReport(
                         page, size, search, warehouseIds, statuses,
                         minAvailable, maxAvailable,
                         minReserved, maxReserved,
-                        minTotal, maxTotal, itemType
+                        minTotal, maxTotal, itemType,
+                        productTypeIds, materialTypeIds
                 )
         );
     }
