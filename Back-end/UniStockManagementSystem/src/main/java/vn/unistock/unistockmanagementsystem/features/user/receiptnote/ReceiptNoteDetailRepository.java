@@ -32,7 +32,12 @@ public interface ReceiptNoteDetailRepository extends JpaRepository<GoodReceiptDe
         null, null,
         n.grnCode,
         n.category,
-        n.receiptDate
+        n.receiptDate,
+        CASE\s
+            WHEN m IS NOT NULL AND p IS NULL THEN 'MATERIAL'
+            WHEN p IS NOT NULL AND m IS NULL THEN 'PRODUCT'
+            ELSE 'UNKNOWN'
+            END
     )
     FROM GoodReceiptDetail d
     JOIN d.goodReceiptNote n

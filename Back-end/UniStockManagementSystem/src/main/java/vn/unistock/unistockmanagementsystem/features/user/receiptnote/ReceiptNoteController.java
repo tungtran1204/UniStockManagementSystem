@@ -90,9 +90,19 @@ public class ReceiptNoteController {
     @GetMapping("/report")
     public ResponseEntity<Map<String, Object>> getImportReportPaginated(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String itemType, // "PRODUCT" | "MATERIAL"
+            @RequestParam(required = false) List<Long> warehouseIds,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) List<String> categories,
+            @RequestParam(required = false) Double minQuantity,
+            @RequestParam(required = false) Double maxQuantity
     ) {
-        Page<ReceiptNoteDetailViewDTO> paged = receiptNoteService.getImportReportPaginated(page, size);
+        Page<ReceiptNoteDetailViewDTO> paged = receiptNoteService.getImportReportPaginated(
+                page, size, search, itemType, warehouseIds, startDate, endDate, categories, minQuantity, maxQuantity
+        );
         Map<String, Object> response = new HashMap<>();
         response.put("content", paged.getContent());
         response.put("totalPages", paged.getTotalPages());
