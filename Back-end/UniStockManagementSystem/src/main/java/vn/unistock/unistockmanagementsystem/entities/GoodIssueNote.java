@@ -45,5 +45,27 @@ public class GoodIssueNote {
 
     @OneToMany(mappedBy = "goodIssueNote", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GoodIssueDetail> details;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private GinStatus status = GinStatus.PENDING;
+
+    public enum GinStatus {
+        PENDING("Chờ nhận"),
+        IN_PROGRESS("Đã nhập một phần"),
+        COMPLETED("Hoàn thành"),
+        CANCELED("Hủy");
+
+        private final String label;
+
+        GinStatus(String label) {
+            this.label = label;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+    }
+
 }
 

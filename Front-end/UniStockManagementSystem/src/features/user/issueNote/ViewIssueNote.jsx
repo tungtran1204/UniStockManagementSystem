@@ -347,7 +347,7 @@ const ViewIssueNote = () => {
               </Typography>
               {data.soId ? (
                 <Link
-                  to={`/user/saleOrder/${data.soId}`}
+                  to={`/user/sale-orders/${data.soId}`}
                   className="text-blue-600 hover:underline text-sm block mt-1"
                 >
                   {soReference || `SO${data.soId}`}

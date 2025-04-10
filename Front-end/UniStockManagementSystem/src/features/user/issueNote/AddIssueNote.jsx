@@ -97,6 +97,8 @@ const AddIssueNote = () => {
         const mapped = response.content.map((order) => ({
           id: order.orderId,
           orderCode: order.orderCode,
+          // Ở đây, giả sử order.orderDetails chứa thông tin của từng sản phẩm,
+          // nhưng đối với việc hiển thị đơn hàng, bạn có thể hiển thị partnerName làm tên đơn hàng
           orderName: order.partnerName,
           partnerCode: order.partnerCode,
           partnerName: order.partnerName,
@@ -203,6 +205,7 @@ const AddIssueNote = () => {
         ? dayjs(selectedOrder.orderDate).format("YYYY-MM-DD")
         : ""
     );
+    // Giả sử orderDetails chứa thông tin gồm: quantity, receivedQuantity (SL đã xuất) cho sản phẩm
     setDescription(selectedOrder.orderName || "");
     setAddress(selectedOrder.address || "");
     setContactName(selectedOrder.contactName || "");
@@ -219,16 +222,10 @@ const AddIssueNote = () => {
         console.error("Lỗi getTotalQuantityOfProduct:", err);
       }
 
-      // Nếu rỗng => 1 row default (warehouseId=null => dễ gây lỗi 500)
+      // Nếu rỗng => không tạo row với warehouseId=null (để tránh lỗi)
       if (!inStockArr || inStockArr.length === 0) {
-        inStockArr = [
-          {
-            warehouseId: null,
-            warehouseName: "",
-            quantity: 0,
-            exportQuantity: 0,
-          },
-        ];
+        console.error("Không có dữ liệu tồn kho cho sản phẩm có ID:", detail.productId);
+        continue;
       }
 
       newProducts.push({
@@ -238,11 +235,15 @@ const AddIssueNote = () => {
         productName: detail.productName || "",
         unitName: detail.unitName || "",
         orderQuantity: detail.quantity || 0,
+        exportedQuantity: detail.receivedQuantity || 0,
+        // SL còn lại = SL đặt - SL đã xuất
+        pendingQuantity: (detail.quantity || 0) - (detail.receivedQuantity || 0),
         inStock: inStockArr.map((wh) => ({
           warehouseId: wh.warehouseId,
           warehouseName: wh.warehouseName || "",
           quantity: wh.quantity || 0,
           exportQuantity: 0,
+          error: ""
         })),
       });
     }
@@ -266,12 +267,15 @@ const AddIssueNote = () => {
         productName: "",
         unitName: "",
         orderQuantity: 1,
+        exportedQuantity: 0,
+        pendingQuantity: 1,
         inStock: [
           {
             warehouseId: null,
             warehouseName: "",
             quantity: 0,
             exportQuantity: 0,
+            error: ""
           },
         ],
       },
@@ -310,7 +314,7 @@ const AddIssueNote = () => {
     if (displayedProducts.length === 0) {
       return (
         <tr>
-          <td colSpan={9} className="text-center py-3 text-gray-500">
+          <td colSpan={11} className="text-center py-3 text-gray-500">
             Chưa có sản phẩm nào
           </td>
         </tr>
@@ -321,50 +325,42 @@ const AddIssueNote = () => {
       return prod.inStock.map((wh, whIndex) => {
         const isFirstRow = whIndex === 0;
         const rowSpan = prod.inStock.length;
+        // Tính giá trị max cho ô SL xuất nếu category là "Bán hàng"
+        const maxExport =
+          typeof wh.quantity === "number" && typeof prod.pendingQuantity === "number"
+            ? Math.min(wh.quantity, prod.pendingQuantity)
+            : undefined;
 
         return (
           <tr key={`${prod.id}-wh-${whIndex}`} className="border-b hover:bg-gray-50">
             {isFirstRow && (
-              <td
-                rowSpan={rowSpan}
-                className="px-3 py-2 border-r text-center text-sm"
-              >
-                {currentPage * pageSize + (prodIndex + 1)}
-              </td>
+              <>
+                <td rowSpan={rowSpan} className="px-3 py-2 border-r text-center text-sm">
+                  {currentPage * pageSize + (prodIndex + 1)}
+                </td>
+                <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
+                  {prod.productCode}
+                </td>
+                <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
+                  {prod.productName}
+                </td>
+                <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
+                  {prod.unitName}
+                </td>
+                {/* Cột SL Đặt */}
+                <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm text-center">
+                  {prod.orderQuantity}
+                </td>
+                {/* Cột SL đã xuất */}
+                <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm text-center">
+                  {prod.exportedQuantity}
+                </td>
+                {/* Cột SL còn phải xuất */}
+                <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm text-center">
+                  {prod.pendingQuantity}
+                </td>
+              </>
             )}
-            {isFirstRow && (
-              <td
-                rowSpan={rowSpan}
-                className="px-3 py-2 border-r text-sm"
-              >
-                {prod.productCode}
-              </td>
-            )}
-            {isFirstRow && (
-              <td
-                rowSpan={rowSpan}
-                className="px-3 py-2 border-r text-sm"
-              >
-                {prod.productName}
-              </td>
-            )}
-            {isFirstRow && (
-              <td
-                rowSpan={rowSpan}
-                className="px-3 py-2 border-r text-sm"
-              >
-                {prod.unitName}
-              </td>
-            )}
-            {isFirstRow && (
-              <td
-                rowSpan={rowSpan}
-                className="px-3 py-2 border-r text-sm text-center"
-              >
-                {prod.orderQuantity}
-              </td>
-            )}
-
             <td className="px-3 py-2 border-r text-sm">
               {wh.warehouseName || "(Chưa có kho)"}
             </td>
@@ -372,34 +368,84 @@ const AddIssueNote = () => {
               {wh.quantity}
             </td>
             <td className="px-3 py-2 border-r text-sm w-24">
-              <input
-                type="number"
-                className="border p-1 text-right w-[60px]"
-                value={wh.exportQuantity || 0}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  setProducts((prev) =>
-                    prev.map((p) => {
-                      if (p.id === prod.id) {
-                        const newInStock = [...p.inStock];
-                        newInStock[whIndex] = {
-                          ...newInStock[whIndex],
-                          exportQuantity: val
-                        };
-                        return { ...p, inStock: newInStock };
+              <div>
+                <input
+                  type="number"
+                  className="border p-1 text-right w-[60px]"
+                  value={wh.exportQuantity || 0}
+                  // Nếu Category là "Bán hàng", thiết lập max cho ô nhập
+                  max={category === "Bán hàng" ? maxExport : undefined}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    if (category === "Bán hàng") {
+                      const maxAllowed = maxExport;
+                      if (maxAllowed !== undefined && val > maxAllowed) {
+                        // Cập nhật error message thay vì alert
+                        setProducts((prev) =>
+                          prev.map((p) => {
+                            if (p.id === prod.id) {
+                              const newInStock = p.inStock.map((ins, i) => {
+                                if (i === whIndex) {
+                                  return {
+                                    ...ins,
+                                    // Không cập nhật exportQuantity khi giá trị không hợp lệ
+                                    error: `Số lượng xuất không được vượt quá Tồn kho (${wh.quantity}) và SL còn phải xuất (${prod.pendingQuantity}).`
+                                  };
+                                }
+                                return ins;
+                              });
+                              return { ...p, inStock: newInStock };
+                            }
+                            return p;
+                          })
+                        );
+                        return;
+                      } else {
+                        // Nếu hợp lệ, cập nhật exportQuantity và xóa error nếu có
+                        setProducts((prev) =>
+                          prev.map((p) => {
+                            if (p.id === prod.id) {
+                              const newInStock = p.inStock.map((ins, i) => {
+                                if (i === whIndex) {
+                                  return {
+                                    ...ins,
+                                    exportQuantity: val,
+                                    error: ""
+                                  };
+                                }
+                                return ins;
+                              });
+                              return { ...p, inStock: newInStock };
+                            }
+                            return p;
+                          })
+                        );
                       }
-                      return p;
-                    })
-                  );
-                }}
-              />
+                    } else {
+                      // Với các category khác, chỉ cập nhật exportQuantity
+                      setProducts((prev) =>
+                        prev.map((p) => {
+                          if (p.id === prod.id) {
+                            const newInStock = [...p.inStock];
+                            newInStock[whIndex] = {
+                              ...newInStock[whIndex],
+                              exportQuantity: val
+                            };
+                            return { ...p, inStock: newInStock };
+                          }
+                          return p;
+                        })
+                      );
+                    }
+                  }}
+                />
+                {wh.error && (
+                  <div className="text-red-500 text-xs mt-1">{wh.error}</div>
+                )}
+              </div>
             </td>
-
             {isFirstRow && (
-              <td
-                rowSpan={rowSpan}
-                className="px-3 py-2 text-center text-sm"
-              >
+              <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm">
                 <Tooltip title="Xóa sản phẩm">
                   <IconButton
                     size="small"
@@ -434,7 +480,7 @@ const AddIssueNote = () => {
       console.log("Products state:", products);
 
       // Prepare details with proper validation
-      const details = products.flatMap(prod => 
+      const details = products.flatMap(prod =>
         prod.inStock
           .filter(wh => wh.warehouseId && wh.exportQuantity > 0)
           .map(wh => ({
@@ -452,7 +498,6 @@ const AddIssueNote = () => {
         return;
       }
 
-      // Thay vì lấy soId từ referenceDocument, ta sử dụng soId lưu ở state
       console.log("Reference Document:", referenceDocument);
       console.log("soId state:", soId);
 
@@ -478,7 +523,6 @@ const AddIssueNote = () => {
             console.log("Upload result:", uploadResult);
           } catch (uploadError) {
             console.error("Error uploading paper evidence:", uploadError);
-            // Bạn có thể xử lý lỗi upload tùy ý (ví dụ: thông báo cho người dùng)
           }
         }
         alert("Tạo phiếu xuất kho thành công!");
@@ -586,7 +630,7 @@ const AddIssueNote = () => {
             </div>
           </div>
 
-          {/* Form tuỳ category */}
+          {/* Form tùy theo Category */}
           {category === "Bán hàng" && (
             <div className="grid grid-cols-3 gap-x-12 gap-y-4 mb-4">
               <div>
@@ -649,10 +693,8 @@ const AddIssueNote = () => {
                   sx={{
                     '& .MuiInputBase-root.Mui-disabled': {
                       bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
-                      },
-                    },
+                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
+                    }
                   }}
                 />
               </div>
@@ -671,10 +713,8 @@ const AddIssueNote = () => {
                   sx={{
                     '& .MuiInputBase-root.Mui-disabled': {
                       bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
-                      },
-                    },
+                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
+                    }
                   }}
                 />
               </div>
@@ -693,10 +733,8 @@ const AddIssueNote = () => {
                   sx={{
                     '& .MuiInputBase-root.Mui-disabled': {
                       bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
-                      },
-                    },
+                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
+                    }
                   }}
                 />
               </div>
@@ -715,10 +753,8 @@ const AddIssueNote = () => {
                   sx={{
                     '& .MuiInputBase-root.Mui-disabled': {
                       bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
-                      },
-                    },
+                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
+                    }
                   }}
                 />
               </div>
@@ -817,10 +853,8 @@ const AddIssueNote = () => {
                   sx={{
                     '& .MuiInputBase-root.Mui-disabled': {
                       bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
-                      },
-                    },
+                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
+                    }
                   }}
                 />
               </div>
@@ -838,10 +872,8 @@ const AddIssueNote = () => {
                   sx={{
                     '& .MuiInputBase-root.Mui-disabled': {
                       bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
-                      },
-                    },
+                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
+                    }
                   }}
                 />
               </div>
@@ -859,10 +891,8 @@ const AddIssueNote = () => {
                   sx={{
                     '& .MuiInputBase-root.Mui-disabled': {
                       bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
-                      },
-                    },
+                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
+                    }
                   }}
                 />
               </div>
@@ -930,10 +960,8 @@ const AddIssueNote = () => {
                   sx={{
                     '& .MuiInputBase-root.Mui-disabled': {
                       bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
-                      },
-                    },
+                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
+                    }
                   }}
                 />
               </div>
@@ -951,10 +979,8 @@ const AddIssueNote = () => {
                   sx={{
                     '& .MuiInputBase-root.Mui-disabled': {
                       bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
-                      },
-                    },
+                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
+                    }
                   }}
                 />
               </div>
@@ -972,10 +998,8 @@ const AddIssueNote = () => {
                   sx={{
                     '& .MuiInputBase-root.Mui-disabled': {
                       bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
-                      },
-                    },
+                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
+                    }
                   }}
                 />
               </div>
@@ -1020,35 +1044,7 @@ const AddIssueNote = () => {
             Danh sách sản phẩm
           </Typography>
 
-          <div className="py-2 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Typography variant="small" color="blue-gray" className="font-light">
-                Hiển thị
-              </Typography>
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setCurrentPage(0);
-                }}
-                className="border text-sm rounded px-2 py-1"
-              >
-                {[5, 10, 20, 50].map(size => (
-                  <option key={size} value={size}>{size}</option>
-                ))}
-              </select>
-              <Typography variant="small" color="blue-gray" className="font-normal">
-                bản ghi mỗi trang
-              </Typography>
-            </div>
-            <TableSearch
-              onSearch={() => {
-                // Tìm kiếm (nếu cần)
-              }}
-              placeholder="Tìm kiếm"
-            />
-          </div>
-
+          {/* Update header bảng */}
           <div className="border rounded mb-4 overflow-x-auto">
             <table className="w-full border-collapse text-sm">
               <thead className="bg-gray-50 border-b">
@@ -1058,6 +1054,8 @@ const AddIssueNote = () => {
                   <th className="px-3 py-2 border-r">Tên hàng</th>
                   <th className="px-3 py-2 border-r">Đơn vị</th>
                   <th className="px-3 py-2 border-r">SL Đặt</th>
+                  <th className="px-3 py-2 border-r">SL đã xuất</th>
+                  <th className="px-3 py-2 border-r">SL còn phải xuất</th>
                   <th className="px-3 py-2 border-r">Kho</th>
                   <th className="px-3 py-2 border-r">Tồn kho</th>
                   <th className="px-3 py-2 border-r">SL xuất</th>
@@ -1068,29 +1066,32 @@ const AddIssueNote = () => {
             </table>
           </div>
 
-          <div className="flex gap-2 mb-4">
-            <MuiButton
-              size="small"
-              variant="outlined"
-              onClick={handleAddRow}
-            >
-              <div className='flex items-center gap-2'>
-                <FaPlus className="h-4 w-4" />
-                <span>Thêm dòng</span>
-              </div>
-            </MuiButton>
-            <MuiButton
-              size="small"
-              variant="outlined"
-              color="error"
-              onClick={handleRemoveAllRows}
-            >
-              <div className='flex items-center gap-2'>
-                <FaTrash className="h-4 w-4" />
-                <span>Xoá hết dòng</span>
-              </div>
-            </MuiButton>
-          </div>
+          {/* Chỉ hiển thị nút thêm dòng và xoá hết dòng nếu Category không phải "Bán hàng" */}
+          {category !== "Bán hàng" && (
+            <div className="flex gap-2 mb-4">
+              <MuiButton
+                size="small"
+                variant="outlined"
+                onClick={handleAddRow}
+              >
+                <div className='flex items-center gap-2'>
+                  <FaPlus className="h-4 w-4" />
+                  <span>Thêm dòng</span>
+                </div>
+              </MuiButton>
+              <MuiButton
+                size="small"
+                variant="outlined"
+                color="error"
+                onClick={handleRemoveAllRows}
+              >
+                <div className='flex items-center gap-2'>
+                  <FaTrash className="h-4 w-4" />
+                  <span>Xoá hết dòng</span>
+                </div>
+              </MuiButton>
+            </div>
+          )}
 
           {totalElements > 0 && (
             <div className="flex items-center justify-between pt-4">
@@ -1129,10 +1130,7 @@ const AddIssueNote = () => {
                 height: '36px',
                 color: '#616161',
                 borderColor: '#9e9e9e',
-                '&:hover': {
-                  backgroundColor: '#f5f5f5',
-                  borderColor: '#757575',
-                },
+                '&:hover': { backgroundColor: '#f5f5f5', borderColor: '#757575' }
               }}
               onClick={() => navigate("/user/issueNote")}
               className="flex items-center gap-2"
@@ -1140,11 +1138,7 @@ const AddIssueNote = () => {
               <FaArrowLeft className="h-3 w-3" /> Quay lại
             </MuiButton>
             <div className="flex items-center justify-end gap-2 pb-2">
-              <MuiButton
-                size="medium"
-                color="error"
-                variant="outlined"
-              >
+              <MuiButton size="medium" color="error" variant="outlined">
                 Hủy
               </MuiButton>
               <Button
