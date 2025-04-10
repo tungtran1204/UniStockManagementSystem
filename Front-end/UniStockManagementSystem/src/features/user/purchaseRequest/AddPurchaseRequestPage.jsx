@@ -21,6 +21,8 @@ import axios from "axios";
 import { createPurchaseRequest } from "./PurchaseRequestService";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
+import { getAllMaterials } from "@/features/user/materials/materialService";
+
 
 const SUPPLIER_TYPE_ID = 2;
 
@@ -119,18 +121,9 @@ const AddPurchaseRequestPage = () => {
   useEffect(() => {
     const fetchMaterials = async () => {
       try {
-        const headers = authHeader();
-        if (!headers) throw new Error("No authentication token");
-        const response = await axios.get("http://localhost:8080/api/unistock/user/materials", {
-          headers,
-          withCredentials: true,
-        });
-        if (response.data && Array.isArray(response.data.content)) {
-          const mappedMaterials = response.data.content.map((material) => ({
-            ...material,
-            unitName: material.unitName,
-          }));
-          setMaterials(mappedMaterials);
+        const response = await getAllMaterials(0, 1000);
+        if (response && Array.isArray(response.materials)) {
+          setMaterials(response.materials);
         }
       } catch (error) {
         console.error("Lỗi khi lấy danh sách vật tư:", error);

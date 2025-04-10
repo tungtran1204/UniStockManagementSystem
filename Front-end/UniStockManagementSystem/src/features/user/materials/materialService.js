@@ -10,7 +10,6 @@ const authHeader = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-
 // Lấy danh sách nguyên vật liệu phân trang
 export const getAllMaterials = async (page = 0, size = 10) => {
   try {
@@ -18,8 +17,8 @@ export const getAllMaterials = async (page = 0, size = 10) => {
       headers: authHeader(),
       params: {
         page: page,
-        size: size
-      }
+        size: size,
+      },
     });
 
     console.log("📌 [getAllMaterials] API Response:", response.data);
@@ -27,26 +26,29 @@ export const getAllMaterials = async (page = 0, size = 10) => {
     if (response.data && response.data.content) {
       const categories = await fetchMaterialCategories(); // Lấy danh mục để ánh xạ
       return {
-        materials: response.data.content.map(material => {
+        materials: response.data.content.map((material) => {
           let typeName = material.typeName || "Không có danh mục";
           if (material.typeId) {
-            const category = categories.find(cat => cat.materialTypeId === material.typeId);
+            const category = categories.find(
+              (cat) => cat.materialTypeId === material.typeId
+            );
             typeName = category ? category.name : typeName;
           }
           return {
             ...material,
-            typeName: typeName
+            typeName: typeName,
           };
         }),
         totalPages: response.data.totalPages || 1,
-        totalElements: response.data.totalElements || response.data.content.length
+        totalElements:
+          response.data.totalElements || response.data.content.length,
       };
     } else {
       console.warn("⚠️ API không trả về dữ liệu hợp lệ!");
       return {
         materials: [],
         totalPages: 1,
-        totalElements: 0
+        totalElements: 0,
       };
     }
   } catch (error) {
@@ -59,7 +61,7 @@ export const getAllMaterials = async (page = 0, size = 10) => {
 export const getMaterialById = async (materialId) => {
   try {
     const response = await axios.get(`${API_URL}/${materialId}`, {
-      headers: authHeader()
+      headers: authHeader(),
     });
     return response.data;
   } catch (error) {
@@ -91,44 +93,6 @@ export const createMaterial = async (formData) => {
 };
 
 // Cập nhật nguyên vật liệu
-const handleUpdateMaterial = async () => {
-  if (!editedMaterial.materialId) {
-    alert("❌ Không tìm thấy ID nguyên vật liệu!");
-    return;
-  }
-
-  try {
-    setLoading(true);
-
-    const formData = new FormData();
-    formData.append("materialCode", editedMaterial.materialCode);
-    formData.append("materialName", editedMaterial.materialName);
-    formData.append("description", editedMaterial.description || "");
-    formData.append("unitId", editedMaterial.unitId || "");
-    formData.append("typeId", editedMaterial.materialTypeId || ""); // ✅ Đổi `materialTypeId` thành `typeId`
-
-    if (editedMaterial.image) {
-      formData.append("image", editedMaterial.image);
-    }
-
-    await axios.put(
-      `${import.meta.env.VITE_API_URL}/user/materials/${editedMaterial.materialId}`,
-      formData,
-      { headers: authHeader() }
-    );
-
-    alert("✅ Cập nhật thành công!");
-    onUpdate();
-    onClose();
-
-  } catch (error) {
-    console.error("❌ Lỗi khi cập nhật nguyên vật liệu:", error);
-    alert(error.response?.data?.message || "Lỗi khi cập nhật nguyên vật liệu!");
-  } finally {
-    setLoading(false);
-  }
-};
-
 export const updateMaterial = async (id, formData) => {
   try {
     const response = await axios.put(
@@ -168,12 +132,15 @@ export const toggleMaterialStatus = async (materialId) => {
 // Lấy danh sách đơn vị
 export const fetchUnits = async () => {
   try {
-    const response = await axios.get(`${import.meta.env.VITE_API_URL}/user/units`, {
-      headers: authHeader()
-    });
+    const response = await axios.get(
+      `${import.meta.env.VITE_API_URL}/user/units`,
+      {
+        headers: authHeader(),
+      }
+    );
     return response.data;
   } catch (error) {
-    console.error('❌ Lỗi khi lấy danh sách đơn vị:', error);
+    console.error("❌ Lỗi khi lấy danh sách đơn vị:", error);
     throw error;
   }
 };
@@ -181,13 +148,16 @@ export const fetchUnits = async () => {
 // Lấy danh sách danh mục nguyên vật liệu
 export const fetchMaterialCategories = async () => {
   try {
-    const response = await axios.get(`${import.meta.env.VITE_API_URL}/user/material-types`, {
-      headers: authHeader()
-    });
+    const response = await axios.get(
+      `${import.meta.env.VITE_API_URL}/user/material-types`,
+      {
+        headers: authHeader(),
+      }
+    );
     console.log("Fetched material categories:", response.data);
     return response.data;
   } catch (error) {
-    console.error('❌ Lỗi khi lấy danh sách danh mục nguyên vật liệu:', error);
+    console.error("❌ Lỗi khi lấy danh sách danh mục nguyên vật liệu:", error);
     throw error;
   }
 };
@@ -206,6 +176,31 @@ export const checkMaterialCodeExists = async (materialCode) => {
   }
 };
 
+// Preview import vật tư
+export const previewImport = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await axios.post(
+      `${API_URL}/preview-import`,
+      formData,
+      {
+        headers: {
+          ...authHeader(),
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    console.log("✅ [previewImport] Xem trước dữ liệu thành công:", response.data);
+    return response.data; // Mảng MaterialPreviewDTO
+  } catch (error) {
+    console.error("❌ Lỗi khi kiểm tra file:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || "Lỗi khi xem trước dữ liệu từ file");
+  }
+};
+
 // Import Excel
 export const importExcel = async (file) => {
   try {
@@ -213,17 +208,17 @@ export const importExcel = async (file) => {
     formData.append("file", file);
 
     const response = await axios.post(
-      `${import.meta.env.VITE_API_URL}/user/materials/import`,
+      `${API_URL}/import`,
       formData,
       {
         headers: {
           ...authHeader(),
-          "Content-Type": "multipart/form-data"
+          "Content-Type": "multipart/form-data",
         },
       }
     );
 
-    console.log("✅ [importExcel] Import thành công");
+    console.log("✅ [importExcel] Import thành công:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Lỗi khi import file:", error.response?.data || error.message);
@@ -234,30 +229,30 @@ export const importExcel = async (file) => {
 // Export Excel
 export const exportExcel = async () => {
   try {
-    const response = await axios.get(API_URL, { headers: authHeader() });
-    const materials = response.data;
-
-    const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet("Nguyên vật liệu");
-
-    sheet.columns = [
-      { header: "STT", key: "stt", width: 10 },
-      { header: "Mã NVL", key: "materialCode", width: 15 },
-      { header: "Tên nguyên vật liệu", key: "materialName", width: 25 },
-      { header: "Mô tả", key: "description", width: 30 },
-      { header: "Giá", key: "price", width: 15 },
-      { header: "Đơn vị", key: "unitName", width: 15 },
-      { header: "Danh mục", key: "categoryName", width: 20 },
-    ];
-
-    materials.forEach((material, index) => {
-      sheet.addRow({ stt: index + 1, ...material });
+    const response = await axios.get(`${API_URL}/export`, {
+      headers: authHeader(),
+      responseType: "blob",
     });
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    saveAs(new Blob([buffer]), "Nguyen_vat_lieu.xlsx");
+    console.log("✅ [exportExcel] Xuất file Excel vật tư thành công");
+    return response.data;
   } catch (error) {
-    console.error("❌ Lỗi khi export Excel:", error);
+    console.error("❌ Lỗi khi xuất Excel vật tư:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+
+// Tải template vật tư
+export const downloadMaterialTemplate = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/template`, {
+      responseType: "blob", // Để nhận dữ liệu nhị phân
+      headers: authHeader(),
+    });
+    console.log("✅ [downloadMaterialTemplate] Tải template thành công");
+    return response.data;
+  } catch (error) {
+    console.error("❌ Lỗi khi tải template:", error.response?.data || error.message);
     throw error;
   }
 };

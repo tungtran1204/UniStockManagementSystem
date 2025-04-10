@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import vn.unistock.unistockmanagementsystem.entities.Product;
 import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsDTO;
 import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +30,6 @@ public class ProductsController {
     private final AzureBlobService azureBlobService;
     private final ExcelService excelService;
 
-    // 🟢 API lấy tất cả sản phẩm
     @GetMapping
     public ResponseEntity<Page<ProductsDTO>> getAllProducts(
             @RequestParam(defaultValue = "0") int page,
@@ -37,30 +38,51 @@ public class ProductsController {
         return ResponseEntity.ok(productsService.getAllProducts(page, size));
     }
 
-    // 🟢 API lấy thông tin sản phẩm theo ID
     @GetMapping("/{id}")
     public ResponseEntity<ProductsDTO> getProductById(@PathVariable Long id) {
         return ResponseEntity.ok(productsService.getProductById(id));
     }
 
-    // 🟢 API import sản phẩm từ file Excel
-    @PostMapping("/import")
-    public ResponseEntity<String> importProducts(@RequestParam("file") MultipartFile file) {
+    @PostMapping(value = "/preview-import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<List<ProductPreviewDTO>> previewImportProducts(
+            @RequestParam("file") MultipartFile file) {
         try {
-            excelService.importProducts(file);
-            return ResponseEntity.ok("✅ Import sản phẩm thành công!");
+            List<ProductPreviewDTO> previewList = excelService.previewImportProducts(file);
+            return ResponseEntity.ok(previewList);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("❌ Lỗi: " + e.getMessage());
+            log.error("❌ Lỗi khi preview import sản phẩm:", e);
+            ProductPreviewDTO error = new ProductPreviewDTO();
+            error.setValid(false);
+            error.setErrorMessage("Lỗi khi kiểm tra file: " + e.getMessage());
+            return ResponseEntity.badRequest().body(List.of(error));
         }
     }
 
-    // 🟢 API bật/tắt trạng thái sản xuất
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> importProducts(@RequestParam("file") MultipartFile file) {
+        try {
+            List<ProductPreviewDTO> previewList = excelService.previewImportProducts(file);
+            boolean hasErrors = previewList.stream().anyMatch(dto -> !dto.isValid());
+            if (hasErrors) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("❌ File chứa dòng không hợp lệ, không thể import.");
+            }
+
+            String result = excelService.importProducts(file);
+            return ResponseEntity.ok("✅ " + result);
+        } catch (Exception e) {
+            log.error("❌ Lỗi khi import sản phẩm:", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("❌ Lỗi: " + e.getMessage());
+        }
+    }
+
     @PatchMapping("/{id}/toggle-production")
     public ResponseEntity<ProductsDTO> toggleProductionStatus(@PathVariable Long id) {
         return ResponseEntity.ok(productsService.toggleProductionStatus(id));
     }
 
-    // 🟢 API THÊM SẢN PHẨM MỚI
     @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createProduct(
             @RequestParam("productCode") String productCode,
@@ -72,11 +94,9 @@ public class ProductsController {
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam("materials") String materialsJson) throws IOException {
         try {
-            // Parse JSON materials
             ObjectMapper objectMapper = new ObjectMapper();
             List<ProductMaterialsDTO> materials = objectMapper.readValue(materialsJson, new TypeReference<List<ProductMaterialsDTO>>() {});
 
-            // Tạo ProductsDTO
             ProductsDTO dto = new ProductsDTO();
             dto.setProductCode(productCode);
             dto.setProductName(productName);
@@ -87,7 +107,6 @@ public class ProductsController {
             dto.setImage(image);
             dto.setMaterials(materials);
 
-            // Gọi service để tạo sản phẩm và định mức
             Product createdProduct = productsService.createProduct(dto, "Admin");
             return ResponseEntity.ok(createdProduct);
         } catch (Exception e) {
@@ -107,7 +126,6 @@ public class ProductsController {
         return ResponseEntity.ok(response);
     }
 
-    // 🟢 API CẬP NHẬT SẢN PHẨM
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateProduct(
             @PathVariable Long id,
@@ -120,16 +138,12 @@ public class ProductsController {
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam(value = "materials", required = false) String materialsJson) throws IOException {
         try {
-            // Parse JSON materials nếu có
             List<ProductMaterialsDTO> materials = null;
             if (materialsJson != null && !materialsJson.trim().isEmpty()) {
                 ObjectMapper objectMapper = new ObjectMapper();
                 materials = objectMapper.readValue(materialsJson, new TypeReference<List<ProductMaterialsDTO>>() {});
-            } else {
-                log.warn("materialsJson is null or empty, setting materials to null in DTO");
             }
 
-            // Tạo ProductsDTO
             ProductsDTO dto = new ProductsDTO();
             dto.setProductCode(productCode);
             dto.setProductName(productName);
@@ -140,12 +154,48 @@ public class ProductsController {
             dto.setImage(image);
             dto.setMaterials(materials);
 
-            // Gọi service để cập nhật sản phẩm và định mức
             ProductsDTO updatedProduct = productsService.updateProduct(id, dto, image);
             return ResponseEntity.ok(updatedProduct);
         } catch (Exception e) {
             log.error("Lỗi khi cập nhật sản phẩm với định mức: ", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lỗi khi cập nhật sản phẩm: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/template")
+    public ResponseEntity<byte[]> downloadTemplate() {
+        try {
+            ByteArrayInputStream stream = excelService.generateProductImportTemplate();
+            byte[] content = stream.readAllBytes();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Disposition", "attachment; filename=template_import_sanpham.xlsx");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(content);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportProducts() {
+        try {
+            ByteArrayInputStream stream = excelService.exportProductsToExcel();
+            byte[] content = stream.readAllBytes();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Disposition", "attachment; filename=products_export.xlsx");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(content);
+        } catch (IOException e) {
+            log.error("❌ Lỗi khi export danh sách sản phẩm:", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 }

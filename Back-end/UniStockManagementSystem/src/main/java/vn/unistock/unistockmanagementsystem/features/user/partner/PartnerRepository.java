@@ -22,4 +22,23 @@ public interface PartnerRepository extends JpaRepository<Partner, Long> {
     @Query("SELECT mp.partner FROM MaterialPartner mp WHERE mp.material.materialId = :materialId")
     List<Partner> findPartnersByMaterialId(@Param("materialId") Long materialId);
 
+    @Query("SELECT p FROM Partner p JOIN p.partnerTypes pt WHERE pt.partnerType.typeId = 2")
+    List<Partner> findAllSuppliers();
+
+    @Query("""
+    SELECT COUNT(p) > 0
+    FROM Partner p
+    JOIN p.partnerTypes pt
+    WHERE LOWER(p.partnerName) = LOWER(:partnerName)
+      AND pt.partnerType.typeId = :partnerTypeId""")
+    boolean existsByPartnerNameAndPartnerTypeId(@Param("partnerName") String partnerName, @Param("partnerTypeId") Long partnerTypeId);
+
+    @Query("""
+    SELECT p FROM Partner p
+    JOIN p.partnerTypes pt
+    WHERE LOWER(p.partnerName) = LOWER(:partnerName)
+      AND pt.partnerType.typeId = :partnerTypeId""")
+    Optional<Partner> findByPartnerNameAndPartnerTypeId(@Param("partnerName") String partnerName, @Param("partnerTypeId") Long partnerTypeId);
+
+
 }
