@@ -41,4 +41,9 @@ public class MaterialTypeController {
     public ResponseEntity<MaterialTypeDTO> toggleStatus(@PathVariable Long id) {
         return ResponseEntity.ok(materialTypeService.toggleStatus(id));
     }
+
+    @GetMapping("/active")
+    public ResponseEntity<List<MaterialTypeDTO>> getActiveMaterialTypes() {
+        return ResponseEntity.ok(materialTypeService.getActiveMaterialTypes());
+    }
 }

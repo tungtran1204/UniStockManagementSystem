@@ -203,6 +203,9 @@ const ModalEditUser = ({ open, onClose, user, fetchUsers }) => {
             <span className="text-red-500"> *</span>
           </Typography>
           <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+            <style>
+              {`.MuiPickersCalendarHeader-label { text-transform: capitalize !important; }`}
+            </style>
             <DatePicker
               value={dateOfBirth}
               onChange={(newValue) => setDateOfBirth(newValue)}
@@ -328,7 +331,7 @@ const ModalEditUser = ({ open, onClose, user, fetchUsers }) => {
                     key={r.id}
                     onClick={() => handleRoleChange(r.id)}
                     className={`text-xs shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out ${selectedRoles.has(r.id) ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
-                   disabled={!isAdmin} // Disable role selection if current role is "ADMIN"
+                    disabled={!isAdmin} // Disable role selection if current role is "ADMIN"
                   >
                     {r.name}
                   </Button>

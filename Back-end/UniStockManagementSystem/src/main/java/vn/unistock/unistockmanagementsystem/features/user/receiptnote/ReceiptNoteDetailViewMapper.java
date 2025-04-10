@@ -19,5 +19,8 @@ public interface ReceiptNoteDetailViewMapper {
     @Mapping(source = "product.productName", target = "productName")
     @Mapping(source = "unit.unitId", target = "unitId")
     @Mapping(source = "unit.unitName", target = "unitName")
+    @Mapping(source = "goodReceiptNote.grnCode", target = "grnCode")
+    @Mapping(source = "goodReceiptNote.category", target = "category")
+    @Mapping(source = "goodReceiptNote.receiptDate", target = "receiptDate")
     ReceiptNoteDetailViewDTO toViewDTO(GoodReceiptDetail entity);
 }

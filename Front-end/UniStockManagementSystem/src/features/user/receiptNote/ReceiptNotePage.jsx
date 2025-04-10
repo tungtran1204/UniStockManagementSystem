@@ -3,13 +3,20 @@ import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { Button, Card, CardHeader, CardBody, Typography, Tooltip } from "@material-tailwind/react";
 import { FaPlus, FaEye } from "react-icons/fa";
-import { ArrowRightIcon, ArrowLeftIcon, EyeIcon } from "@heroicons/react/24/outline";
+import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import {
+  IconButton,
+} from '@mui/material';
+import {
+  VisibilityOutlined,
+} from '@mui/icons-material';
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
 import useUser from "../../admin/users/useUser";
 import usePurchaseOrder from "../purchaseOrder/usePurchaseOrder";
 import useReceiptNote from "./useReceiptNote";
+import { getNextCode } from "./receiptNoteService";
 import {
   Menu,
   MenuHandler,
@@ -161,11 +168,13 @@ const ReceiptNotePage = () => {
       renderCell: (params) => (
         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
           <Tooltip content="Xem chi tiết">
-            <button className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+            <IconButton
+              size="small"
+              color="primary"
               onClick={() => handleViewReceipt(params.row)}
             >
-              <EyeIcon className="h-5 w-5" />
-            </button>
+              <VisibilityOutlined />
+            </IconButton>
           </Tooltip>
         </div>
       ),
@@ -190,7 +199,15 @@ const ReceiptNotePage = () => {
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
             title="Danh sách phiếu nhập kho"
-            showAdd={false}
+            addButtonLabel="Thêm phiếu nhập"
+            onAdd={async () => {
+              try {
+                const code = await getNextCode();
+                navigate("/user/receiptNote/general", { state: { nextCode: code } });
+              } catch (error) {
+                console.error("Không lấy được mã phiếu nhập:", error);
+              }
+            }}
             customButtons={
               <Menu placement="bottom-end">
                 <MenuHandler>
@@ -216,7 +233,7 @@ const ReceiptNotePage = () => {
                   </MenuItem>
                   <MenuItem
                     className="hover:bg-green-900/10 rounded-[4px]"
-                    onClick={() => navigate("/user/receiptNote/manual", { state: { category: "Thành phẩm sản xuất" } })}
+                    onClick={() => navigate("/user/receiptNote/general")}
                   >
                     <span className="text-gray-700 hover:text-green-900">Thành phẩm sản xuất</span>
                   </MenuItem>

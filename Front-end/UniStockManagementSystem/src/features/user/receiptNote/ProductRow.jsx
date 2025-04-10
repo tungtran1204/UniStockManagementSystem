@@ -1,9 +1,44 @@
 import React, { useState, useEffect } from "react";
 import {
   Input,
-  Select,
-  Option
 } from "@material-tailwind/react";
+import { TextField, Autocomplete, IconButton } from '@mui/material';
+import Select from "react-select";
+
+const customStyles = {
+  control: (provided, state) => ({
+    ...provided,
+    minWidth: 150,
+    // Thiết lập viền duy nhất cho control:
+    border: state.isFocused ? "1px solid black" : "1px solid #ccc",
+    boxShadow: "none",
+    "&:hover": {
+      border: "1px solid black",
+    },
+  }),
+  menuList: (provided) => ({
+    ...provided,
+  }),
+  option: (provided, state) => ({
+    ...provided,
+    backgroundColor: state.isFocused
+      ? "#f3f4f6"
+      : state.isSelected
+        ? "#e5e7eb"
+        : "transparent",
+    color: "#000",
+    cursor: "pointer",
+    "&:active": {
+      backgroundColor: "#e5e7eb",
+    },
+  }),
+  menuPortal: (base) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+};
+
+
 
 // Hàm kiểm tra số lượng nhập hợp lệ
 const isValidQuantity = (inputQty, orderedQty, receivedQty) => {
@@ -18,9 +53,14 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
   const [warehouse, setWarehouse] = useState(defaultWarehouseCode || '');
   const [quantity, setQuantity] = useState('');
   const [quantityError, setQuantityError] = useState('');
-  const [remainingQuantity, setRemainingQuantity] = useState(
-    Math.max(0, item.orderedQuantity - item.receivedQuantity)
-  );
+  const [remainingQuantity, setRemainingQuantity] = useState(0);
+
+  useEffect(() => {
+    if (item.quantity !== undefined && item.quantity !== null) {
+      setQuantity(item.quantity.toString());
+    }
+  }, [item.quantity]);
+
 
   useEffect(() => {
     setWarehouse(defaultWarehouseCode);
@@ -91,52 +131,77 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
   const isFullyReceived = (item.orderedQuantity - item.receivedQuantity) <= 0;
 
   return (
-    <tr>
-      <td className="p-2 border text-center">{currentPage * pageSize + index + 1}</td>
-      <td className="p-2 border">{item.materialCode || item.productCode}</td>
-      <td className="p-2 border">{item.materialName || item.productName}</td>
-      <td className="p-2 border text-center">{item.unit}</td>
+    <tr className="border-b last:border-b-0 border-[rgba(224,224,224,1)]">
+      <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-20 border-r border-[rgba(224,224,224,1)]">{currentPage * pageSize + index + 1}</td>
+      <td className="px-2 py-2 text-sm w-36 border-r text-[#000000DE] border-[rgba(224,224,224,1)]">{item.materialCode || item.productCode}</td>
+      <td className="px-2 py-2 text-sm w-72 border-r text-[#000000DE] border-[rgba(224,224,224,1)]">{item.materialName || item.productName}</td>
+      <td className="px-2 py-2 text-sm w-36 border-r text-[#000000DE] border-[rgba(224,224,224,1)]">{item.unit}</td>
 
       {isFullyReceived ? (
         <>
-          <td className="p-2 border text-center text-gray-400" colSpan={2}>
+          <td className="px-2 py-2 text-sm text-center text-gray-500 border-r border-[rgba(224,224,224,1)]" colSpan={2}>
             Đã nhập đủ
           </td>
-          <td className="p-2 border text-center">{item.receivedQuantity}</td>
-          <td className="p-2 border text-center">0</td>
+          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{item.receivedQuantity}</td>
+          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">0</td>
         </>
       ) : (
         <>
-          <td className="p-2 border">
-            <Select
-              value={warehouse}
-              onChange={(value) => handleWarehouseChange(value)}
-              className="!border-t-blue-gray-200 focus:!border-t-gray-900 min-w-[150px]"
-              labelProps={{
-                className: "before:content-none after:content-none",
+          <td className="px-2 py-2 text-sm text-[#000000DE] w-60 border-r border-[rgba(224,224,224,1)]">
+            <Autocomplete
+              options={warehouses}
+              size="small"
+              getOptionLabel={(option) => `${option.warehouseCode} - ${option.warehouseName}`}
+              value={
+                warehouses.find(w => w.warehouseCode === warehouse) || null
+              }
+              onChange={(event, selected) =>
+                handleWarehouseChange(selected?.warehouseCode || '')
+              }
+              fullWidth
+              slotProps={{
+                paper: {
+                  sx: {
+                    maxHeight: 300,
+                    overflowY: "auto",
+                  },
+                },
               }}
-            >
-              {warehouses.map((warehouse) => (
-                <Option key={warehouse.warehouseId} value={warehouse.warehouseCode}>
-                  {warehouse.warehouseCode} - {warehouse.warehouseName}
-                </Option>
-              ))}
-            </Select>
+              sx={{
+                '& .MuiInputBase-root.Mui-disabled': {
+                  bgcolor: '#eeeeee',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    border: 'none',
+                  },
+                },
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  color="success"
+                  hiddenLabel
+                  placeholder="Chọn kho nhập"
+                />
+              )}
+            />
           </td>
-          <td className="p-2 border text-center">{item.orderedQuantity}</td>
-          <td className="p-2 border text-center">{item.receivedQuantity}</td>
-          <td className="p-2 border text-center">{remainingQuantity}</td>
-          <td className="p-2 border">
+          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{item.orderedQuantity}</td>
+          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{item.receivedQuantity}</td>
+          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{remainingQuantity}</td>
+          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-40 border-r border-[rgba(224,224,224,1)]">
             <div>
-              <Input
-                type="text"
-                inputMode="numeric"
+              <TextField
+                type="number"
+                size="small"
+                fullWidth
                 value={quantity}
                 onChange={handleQuantityChange}
-                className={`!border-t-blue-gray-200 focus:!border-t-gray-900 ${quantityError ? "border-red-t-500" : ""}`}
-                labelProps={{
-                  className: "before:content-none after:content-none",
+                InputProps={{
+                  min: 1,
                 }}
+                color="success"
+                hiddenLabel
+                placeholder="Số lượng"
               />
               {quantityError && (
                 <p className="text-red-500 text-xs mt-1">{quantityError}</p>

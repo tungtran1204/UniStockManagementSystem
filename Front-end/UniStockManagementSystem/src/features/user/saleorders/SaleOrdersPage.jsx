@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from "react";
 import {
   Card,
-  CardHeader,
   CardBody,
   Typography,
-  Button,
   Tooltip,
-  Input,
 } from "@material-tailwind/react";
+import {
+  IconButton,
+} from '@mui/material';
+import {
+  VisibilityOutlined
+} from '@mui/icons-material';
 import useSaleOrder from "./useSaleOrder";
 import ReactPaginate from "react-paginate";
-import { ArrowRightIcon, ArrowLeftIcon, EyeIcon } from "@heroicons/react/24/outline";
+import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
@@ -94,11 +97,13 @@ const SaleOrdersPage = () => {
       renderCell: (params) => (
         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
           <Tooltip content="Xem chi tiết">
-            <button className="p-1 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+            <IconButton
+              size="small"
+              color="primary"
               onClick={() => handleEditOrder(params.row)}
             >
-              <EyeIcon className="h-5 w-5" />
-            </button>
+              <VisibilityOutlined />
+            </IconButton>
           </Tooltip>
         </div>
       ),

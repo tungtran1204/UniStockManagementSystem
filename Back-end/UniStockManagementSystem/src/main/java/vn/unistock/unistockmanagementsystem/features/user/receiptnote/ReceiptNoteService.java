@@ -4,10 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import vn.unistock.unistockmanagementsystem.entities.*;
 import vn.unistock.unistockmanagementsystem.features.admin.user.UserRepository;
 import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryRepository;
+import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryTransactionRepository;
 import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.products.ProductsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderDTO;
@@ -54,6 +52,7 @@ public class ReceiptNoteService {
     @Autowired private PurchaseOrderService purchaseOrderService;
     @Autowired private ReceiptNoteDetailViewMapper detailViewMapper;
     @Autowired private PurchaseOrderDetailRepository purchaseOrderDetailRepository;
+    @Autowired private ReceiptNoteDetailRepository detailRepository;
 
     public Page<ReceiptNoteDTO> getAllReceiptNote(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "receiptDate"));
@@ -104,6 +103,12 @@ public class ReceiptNoteService {
                     .createdBy(currentUser)
                     .details(new ArrayList<>())
                     .build();
+
+            // lưu đối tác nếu nhập hàng bán bị trả lại
+            if (grnDto.getPartnerId() != null) {
+                Partner partner = Partner.builder().partnerId(grnDto.getPartnerId()).build();
+                grn.setPartner(partner);
+            }
 
             boolean hasSaleOrder = false;
             if (grnDto.getPoId() != null) {
@@ -294,4 +299,53 @@ public class ReceiptNoteService {
             throw new RuntimeException("Failed to upload files: " + e.getMessage(), e);
         }
     }
+
+    public Page<ReceiptNoteDetailViewDTO> getImportReportPaginated(
+            int page,
+            int size,
+            String search,
+            String itemType,
+            List<Long> warehouseIds,
+            String startDateStr,
+            String endDateStr,
+            List<String> categories,
+            Double minQuantity,
+            Double maxQuantity
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        List<ReceiptNoteDetailViewDTO> all = detailRepository.getReceiptImportReportRaw();
+
+        return new PageImpl<>(
+                all.stream()
+                        .filter(dto -> search == null || search.isBlank()
+                                || (dto.getProductCode() != null && dto.getProductCode().toLowerCase().contains(search.toLowerCase()))
+                                || (dto.getProductName() != null && dto.getProductName().toLowerCase().contains(search.toLowerCase()))
+                                || (dto.getMaterialCode() != null && dto.getMaterialCode().toLowerCase().contains(search.toLowerCase()))
+                                || (dto.getMaterialName() != null && dto.getMaterialName().toLowerCase().contains(search.toLowerCase()))
+                                || (dto.getGrnCode() != null && dto.getGrnCode().toLowerCase().contains(search.toLowerCase()))
+                        )
+                        .filter(dto -> itemType == null || itemType.isBlank()
+                                || itemType.equalsIgnoreCase(dto.getItemType())
+                        )
+                        .filter(dto -> !"UNKNOWN".equals(dto.getItemType()))
+                        .filter(dto -> warehouseIds == null || warehouseIds.isEmpty() || warehouseIds.contains(dto.getWarehouseId()))
+                        .filter(dto -> categories == null || categories.isEmpty() || categories.contains(dto.getCategory()))
+                        .filter(dto -> {
+                            if (dto.getReceiptDate() == null) return false;
+                            if (startDateStr != null && !startDateStr.isBlank()) {
+                                LocalDateTime start = LocalDateTime.parse(startDateStr + "T00:00:00");
+                                if (dto.getReceiptDate().isBefore(start)) return false;
+                            }
+                            if (endDateStr != null && !endDateStr.isBlank()) {
+                                LocalDateTime end = LocalDateTime.parse(endDateStr + "T23:59:59");
+                                if (dto.getReceiptDate().isAfter(end)) return false;
+                            }
+                            return true;
+                        })
+                        .filter(dto -> minQuantity == null || dto.getQuantity() >= minQuantity)
+                        .filter(dto -> maxQuantity == null || dto.getQuantity() <= maxQuantity)
+                        .toList()
+                , pageable, all.size());
+    }
+
 }

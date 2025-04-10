@@ -29,7 +29,7 @@ export function Sidenav({routes }) {
 
   return (
     <aside
-      className={`fixed mt-[65px] inset-y-0 overflow-y-auto left-0 z-50 h-screen w-[240px] bg-white shadow-none border-r border-gray-200 transition-transform duration-300 ${openSidenav ? "translate-x-0" : "-translate-x-full"
+      className={`fixed mt-[65px] inset-y-0 overflow-y-auto left-0 z-50 h-[calc(100vh-62px)] w-[250px] bg-white shadow-none border-r border-gray-200 transition-transform duration-300 ${openSidenav ? "translate-x-0" : "-translate-x-full"
         }`}
     >
       {/* Menu */}

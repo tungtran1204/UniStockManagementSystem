@@ -5,10 +5,10 @@ import {
   CardBody,
   Typography,
   Button,
-  Input,
-  Textarea
 } from "@material-tailwind/react";
+import { TextField, Button as MuiButton, IconButton } from '@mui/material';
 import PageHeader from '@/components/PageHeader';
+import FilePreviewDialog from "@/components/FilePreviewDialog";
 import useReceiptNote from "./useReceiptNote";
 import useUser from "../../admin/users/useUser";
 import jsPDF from "jspdf";
@@ -16,6 +16,14 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import robotoFont from '@/assets/fonts/Roboto-Regular-normal.js';
+import robotoBoldFont from '@/assets/fonts/Roboto-Regular-bold.js';
+import Table from "@/components/Table";
+import ReactPaginate from "react-paginate";
+import { ArrowLeftIcon, ArrowRightIcon, ListBulletIcon } from "@heroicons/react/24/outline";
+import { InformationCircleIcon } from "@heroicons/react/24/solid";
+import { FaArrowLeft } from "react-icons/fa";
+import { XMarkIcon } from "@heroicons/react/24/solid";
+import dayjs from "dayjs";
 
 const ViewReceiptNote = () => {
   const { id } = useParams();
@@ -25,16 +33,106 @@ const ViewReceiptNote = () => {
   const [data, setData] = useState(null);
   const [creator, setCreator] = useState("Đang tải...");
   const [loading, setLoading] = useState(true);
+  const [partnerName, setPartnerName] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [address, setAddress] = useState("");
+  const [partnerPhone, setPartnerPhone] = useState("");
+  const [category, setCategory] = useState(data?.category);
+
+  // State phân trang cho bảng
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+
+  //preview file
+  const [previewFile, setPreviewFile] = useState(null);
+
+  const handlePreview = (file) => {
+    console.log("Preview file: ", file);
+    setPreviewFile(file);
+  };
+
+  const handleClosePreview = () => {
+    setPreviewFile(null);
+  };
+
+  const viewColumnsConfig = [
+    {
+      field: 'index',
+      headerName: 'STT',
+      minWidth: 50,
+      renderCell: (params) => {
+        const row = params.row;
+        return <div className="text-center">{row.index + 1}</div>;
+      }
+    },
+    {
+      field: 'code',
+      headerName: 'Mã hàng',
+      minWidth: 100,
+      renderCell: (params) => {
+        const row = params.row;
+        return <div className="text-center">{row.materialCode || row.productCode || ""}</div>;
+      }
+    },
+    {
+      field: 'name',
+      headerName: 'Tên hàng',
+      minWidth: 150,
+      renderCell: (params) => {
+        const row = params.row;
+        return <div className="text-center">{row.materialName || row.productName || ""}</div>;
+      }
+    },
+    {
+      field: 'unitName',
+      headerName: 'Đơn vị',
+      minWidth: 80,
+      renderCell: (params) => {
+        const row = params.row;
+        return <div className="text-center">{row.unitName || "-"}</div>;
+      }
+    },
+    {
+      field: 'quantity',
+      headerName: 'Số lượng',
+      minWidth: 80,
+      renderCell: (params) => {
+        const row = params.row;
+        const quantity = row.quantity;
+        return <div className="text-center">{!isNaN(quantity) ? quantity : ""}</div>;
+      }
+    },
+    {
+      field: 'warehouse',
+      headerName: 'Nhập kho',
+      minWidth: 150,
+      renderCell: (params) => {
+        const row = params.row;
+        return (
+          <div className="text-center">
+            {row.warehouseCode && row.warehouseName
+              ? `${row.warehouseCode} - ${row.warehouseName}`
+              : ""}
+          </div>
+        );
+      }
+    },
+  ];
+
 
   useEffect(() => {
     const fetchDetail = async () => {
       try {
         const receipt = await getReceiptNote(id);
         setData(receipt);
-        console.log("Phiếu nhập: ",receipt);
+        console.log("Phiếu nhập: ", receipt);
         if (receipt.createdBy) {
           const user = await getUserById(receipt.createdBy);
           setCreator(user.username || user.email || "Không xác định");
+          setPartnerName(receipt.partnerName || "");
+          setContactName(receipt.contactName || "");
+          setAddress(receipt.address || "");
+          setPartnerPhone(receipt.phone || "");
         }
       } catch (err) {
         console.error("Lỗi khi tải phiếu nhập kho:", err);
@@ -45,29 +143,31 @@ const ViewReceiptNote = () => {
     fetchDetail();
   }, [id]);
 
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  };
+  const formatDate = (dateStr) => dayjs(dateStr).format("DD/MM/YYYY");
+
+  // Nếu đang tải hoặc không có data, hiển thị thông báo thích hợp
+  if (loading) return <Typography>Đang tải dữ liệu...</Typography>;
+  if (!data) return <Typography className="text-red-500">Không tìm thấy phiếu nhập</Typography>;
+
+  // Phân trang cho bảng danh sách hàng hóa
+  const totalItems = data.details ? data.details.length : 0;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const displayedItems = data.details ? data.details.slice(currentPage * pageSize, (currentPage + 1) * pageSize) : [];
+  const displayedItemsWithIndex = displayedItems.map((item, idx) => ({
+    ...item,
+    index: currentPage * pageSize + idx,
+    id: item.id !== undefined ? item.id : currentPage * pageSize + idx,
+  }));
+
 
   const handleExportPDF = () => {
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    doc.addFileToVFS("Roboto-Bold.ttf", robotoBoldFont);
+    doc.addFont("Roboto-Bold.ttf", "Roboto", "bold");
+    doc.setFont("Roboto", "bold");
     doc.addFileToVFS("Roboto-Regular.ttf", robotoFont);
     doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
-    doc.setFont("Roboto");
-    // doc.addImage(
-    //   '/path/to/logo.png', // bạn sẽ cần convert ảnh thành base64 hoặc import bằng Vite
-    //   'PNG',
-    //   50, 90, // vị trí X, Y
-    //   100, 100, // kích thước width, height
-    //   undefined,
-    //   'NONE',
-    //   0.1 // opacity (0.0 – 1.0)
-    // );
+    doc.setFont("Roboto", "normal");
 
     doc.setFontSize(14);
     doc.text("CÔNG TY TNHH THIÊN NGỌC AN", 14, 20);
@@ -81,13 +181,19 @@ const ViewReceiptNote = () => {
     doc.setFontSize(10);
     doc.text(`Số phiếu: ${data.grnCode}`, 14, 48);
     doc.text(`Loại hàng hóa: ${data.category}`, 14, 60);
-    doc.text(`Diễn giải: ${data.description || "Không có"}`, 14, 66);
+    const descriptionText = `Diễn giải: ${data.description || "Không có"}`;
+    const splitDescription = doc.splitTextToSize(descriptionText, 180); // 180mm là chiều rộng tối đa mong muốn
+    doc.text(splitDescription, 14, 66);
     doc.text(`Ngày tạo: ${formatDate(data.receiptDate)}`, 140, 48);
     doc.text(`Người tạo: ${creator}`, 140, 54);
-   
+
+    const descriptionLineCount = splitDescription.length;
+    const descriptionHeight = descriptionLineCount * 5; // khoảng cách dòng
+
+    const baseY = 66 + descriptionHeight;
 
     autoTable(doc, {
-      startY: 74,
+      startY: baseY,
       head: [[
         { content: "STT", styles: { halign: 'center' } },
         { content: "Mã hàng", styles: { halign: 'center' } },
@@ -102,38 +208,36 @@ const ViewReceiptNote = () => {
         { content: item.materialName || item.productName, styles: { halign: 'left' } },
         { content: item.unitName || "-", styles: { halign: 'center' } },
         { content: item.quantity, styles: { halign: 'center' } },
-        { content: item.warehouseName , styles: { halign: 'center' } }
+        { content: item.warehouseName, styles: { halign: 'center' } }
       ]),
       styles: {
         font: "Roboto",
         fontSize: 10,
         cellPadding: { top: 2, right: 2, bottom: 2, left: 2 },
-        valign: 'middle'
+        valign: 'middle',
+        lineWidth: 0.2,
       },
       headStyles: {
-        fillColor: [230, 230, 230],
+        fillColor: [240, 240, 240],
         textColor: 20,
-        fontStyle: 'bold',
-        fontSize: 10
+        fontSize: 10,
+        lineWidth: 0.2,
       },
-      alternateRowStyles: { fillColor: [245, 245, 245] },
+      bodyStyles: {
+        textColor: 20,
+        lineWidth: 0.2,
+      },
+      alternateRowStyles: { fillColor: [255, 255, 255] },
       tableLineWidth: 0.2,
       tableLineColor: 200,
       margin: { top: 0, left: 14, right: 14 },
     });
 
-    // doc.setTextColor(200, 0, 0); // đỏ đậm
-    // doc.setFontSize(40);
-    // doc.setFont("Roboto", "bold");
-    // doc.text("ĐÃ NHẬP KHO", 105, 150, {
-    //   align: "center",
-    //   angle: -20
-    // });
-
     const finalY = doc.lastAutoTable.finalY + 12;
-    doc.text("Người giao hàng", 20, finalY);
-    doc.text("Nhân viên kho nhận hàng", 150, finalY);
-    doc.text("Thủ kho", 20, finalY + 30);
+    // Căn đều 3 cột trên cùng 1 hàng
+    doc.text("Người giao hàng", 15, finalY);
+    doc.text("Nhân viên kho nhận hàng", 90, finalY);
+    doc.text("Thủ kho", 180, finalY);
 
     doc.save(`PhieuNhap_${data.grnCode}.pdf`);
   };
@@ -183,29 +287,90 @@ const ViewReceiptNote = () => {
               </Button>
             }
           />
-          <Typography variant="h6" className="mb-2 text-gray-700 text-sm font-semibold">
+          <Typography variant="h6" className="flex items-center mb-4 text-black">
+            <InformationCircleIcon className="h-5 w-5 mr-2" />
             Thông tin chung
           </Typography>
 
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
-              <Typography variant="small">Mã phiếu nhập</Typography>
-              <Input value={data.grnCode} disabled className="bg-gray-100" />
+              <Typography variant="medium" className="mb-1 text-black">Mã phiếu nhập</Typography>
+              <TextField
+                fullWidth
+                size="small"
+                color="success"
+                variant="outlined"
+                disabled
+                value={data.grnCode}
+                sx={{
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  },
+                }}
+              />
             </div>
             <div>
-              <Typography variant="small">Loại hàng hóa</Typography>
-              <Input value={data.category || ""} disabled className="bg-gray-100" />
+              <Typography variant="medium" className="mb-1 text-black">Phân loại hàng nhập kho</Typography>
+              <TextField
+                fullWidth
+                size="small"
+                color="success"
+                variant="outlined"
+                disabled
+                value={data.category}
+                sx={{
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  },
+                }}
+              />
             </div>
             <div>
-              <Typography variant="small">Ngày tạo phiếu</Typography>
-              <Input value={formatDate(data.receiptDate)} disabled className="bg-gray-100" />
+              <Typography variant="medium" className="mb-1 text-black">Ngày tạo phiếu</Typography>
+              <TextField
+                fullWidth
+                size="small"
+                color="success"
+                variant="outlined"
+                disabled
+                value={formatDate(data.receiptDate)}
+                sx={{
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  },
+                }}
+              />
             </div>
             <div>
-              <Typography variant="small">Người tạo</Typography>
-              <Input value={creator} disabled className="bg-gray-100" />
+              <Typography variant="medium" className="mb-1 text-black">Người tạo phiếu</Typography>
+              <TextField
+                fullWidth
+                size="small"
+                color="success"
+                variant="outlined"
+                disabled
+                value={creator}
+                sx={{
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  },
+                }}
+              />
             </div>
             <div>
-              <Typography variant="small">Tham chiếu chứng từ</Typography>
+              <Typography variant="medium" className="mb-1 text-black">Tham chiếu chứng từ</Typography>
               {data.poId ? (
                 <Link
                   to={`/user/purchaseOrder/${data.poId}`}
@@ -214,79 +379,226 @@ const ViewReceiptNote = () => {
                   Xem chứng từ
                 </Link>
               ) : (
-                <Input value="Không có" disabled className="bg-gray-100" />
+                <TextField
+                  fullWidth
+                  size="small"
+                  color="success"
+                  variant="outlined"
+                  disabled
+                  value="Không có"
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
+                />
+
               )}
             </div>
-          </div>
-
-          {/* Diễn giải và file đính kèm */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
-              <Typography variant="small">Diễn giải</Typography>
-              <Textarea value={data.description || "Không có"} disabled className="bg-gray-100" />
-            </div>
-            <div>
-              <Typography variant="small">File đính kèm</Typography>
+              <Typography variant="medium" className="mb-1 text-black">File đính kèm</Typography>
               {data.paperEvidence && data.paperEvidence.length > 0 ? (
-                <ul className="list-disc list-inside text-sm text-blue-700">
+                <div className="grid grid-cols-3 gap-2 w-fit mt-2 text-sm text-gray-800">
                   {data.paperEvidence.map((url, index) => (
-                    <li key={index}>
-                      <a href={url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                    <MuiButton
+                      key={index}
+                      variant="outlined"
+                      color="primary"
+                      disableElevation
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'start',
+                        padding: 0,
+                      }}
+                      className="text-xs w-full gap-2"
+                    >
+                      <span
+                        className="truncate max-w-[100%] px-2 py-1"
+                        onClick={() => handlePreview(url)}
+                      >
                         {url.split("/").pop()}
-                      </a>
-                    </li>
+                      </span>
+                    </MuiButton>
                   ))}
-                </ul>
+                </div>
               ) : (
                 <Typography variant="small" className="text-gray-600">Không có</Typography>
               )}
+              <FilePreviewDialog
+                file={previewFile}
+                open={!!previewFile}
+                onClose={handleClosePreview}
+                showDownload={true}
+              />
             </div>
           </div>
 
-          <Typography variant="h6" className="mb-2 text-gray-700 text-sm font-semibold">
+          {/* Diễn giải */}
+          <div className="grid grid-cols-1 gap-4 mb-6">
+            <div>
+              <Typography variant="medium" className="mb-1 text-black">Diễn giải nhập kho</Typography>
+              <TextField
+                fullWidth
+                size="small"
+                hiddenLabel
+                multiline
+                rows={4}
+                color="success"
+                value={data.description || "Không có"}
+                disabled
+                sx={{
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  },
+                }}
+              />
+            </div>
+          </div>
+
+          {(data.category === "Hàng hóa trả lại") && (
+            <div>
+              <Typography variant="h6" className="flex items-center mb-4 text-black">
+                <InformationCircleIcon className="h-5 w-5 mr-2" />
+                Thông tin đối tác trả hàng
+              </Typography>
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div className="col-span-2">
+                  <Typography variant="medium" className="mb-1 text-black">
+                    Tên đối tác
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    disabled
+                    value={partnerName}
+                    InputProps={{
+                      style: { backgroundColor: '#f5f5f5' }
+                    }}
+                  />
+                </div>
+                <div>
+                  <Typography variant="medium" className="mb-1 text-black">
+                    Người liên hệ
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    disabled
+                    value={contactName}
+                    InputProps={{
+                      style: { backgroundColor: '#f5f5f5' }
+                    }}
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <Typography variant="medium" className="mb-1 text-black">
+                    Địa chỉ
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    disabled
+                    value={address}
+                    InputProps={{
+                      style: { backgroundColor: '#f5f5f5' }
+                    }}
+                  />
+                </div>
+                <div>
+                  <Typography variant="medium" className="mb-1 text-black">
+                    Số điện thoại
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    disabled
+                    value={partnerPhone}
+                    InputProps={{
+                      style: { backgroundColor: '#f5f5f5' }
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+
+          <Typography variant="h6" className="flex items-center mb-4 text-black">
+            <ListBulletIcon className="h-5 w-5 mr-2" />
             Danh sách hàng hóa
           </Typography>
           <div className="overflow-auto border rounded">
-            <table className="w-full table-auto text-sm">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-2 border">STT</th>
-                  <th className="p-2 border">Mã hàng</th>
-                  <th className="p-2 border">Tên hàng</th>
-                  <th className="p-2 border">Đơn vị</th>
-                  <th className="p-2 border">Số lượng</th>
-                  <th className="p-2 border">Nhập kho</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.details && data.details.length > 0 ? (
-                  data.details.map((item, index) => (
-                    <tr key={index}>
-                      <td className="p-2 border text-center">{index + 1}</td>
-                      <td className="p-2 border text-center">{item.materialCode || item.productCode}</td>
-                      <td className="p-2 border text-center">{item.materialName || item.productName}</td>
-                      <td className="p-2 border text-center">{item.unitName || "-"}</td>
-                      <td className="p-2 border text-center">{item.quantity}</td>
-                      <td className="p-2 border text-center">{item.warehouseCode} - {item.warehouseName}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="5" className="p-4 text-center text-gray-500">Không có dữ liệu hàng hóa</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+            <Table
+              data={displayedItemsWithIndex}
+              columnsConfig={viewColumnsConfig}
+              enableSelection={false}
+            />
           </div>
 
+          {/* Phân trang cho bảng danh sách hàng hóa */}
+          {totalItems > 0 && (
+            <div className="flex items-center justify-between pt-4">
+              <div className="flex items-center gap-2">
+                <Typography variant="small" color="blue-gray" className="font-normal">
+                  Trang {currentPage + 1} / {totalPages} • {totalItems} bản ghi
+                </Typography>
+              </div>
+              <ReactPaginate
+                previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
+                nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
+                breakLabel="..."
+                pageCount={totalPages}
+                marginPagesDisplayed={2}
+                pageRangeDisplayed={5}
+                onPageChange={({ selected }) => setCurrentPage(selected)}
+                containerClassName="flex items-center gap-1"
+                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                pageLinkClassName="flex items-center justify-center w-full h-full"
+                previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
+                activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
+                forcePage={currentPage}
+                disabledClassName="opacity-50 cursor-not-allowed"
+              />
+            </div>
+          )}
+
           <div className="mt-6 border-t pt-4 flex justify-end">
-            <Button
-              size="sm"
-              color="blue"
+            <MuiButton
+              color="info"
+              size="medium"
+              variant="outlined"
+              sx={{
+                height: '36px',
+                color: '#616161',
+                borderColor: '#9e9e9e',
+                '&:hover': {
+                  backgroundColor: '#f5f5f5',
+                  borderColor: '#757575',
+                },
+              }}
               onClick={() => navigate("/user/receiptNote")}
+              className="flex items-center gap-2"
             >
-              Quay lại danh sách
-            </Button>
+              <FaArrowLeft className="h-3 w-3" /> Quay lại
+            </MuiButton>
           </div>
         </CardBody>
       </Card>

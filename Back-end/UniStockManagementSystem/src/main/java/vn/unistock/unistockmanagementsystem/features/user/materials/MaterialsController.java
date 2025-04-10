@@ -130,7 +130,90 @@ public class MaterialsController {
 
         return ResponseEntity.ok(materialsService.updateMaterial(id, materialDTO, image));
     }
+    
+    @GetMapping("/active")
+    public ResponseEntity<List<MaterialsDTO>> getActiveMaterials() {
+        List<MaterialsDTO> activeMaterials = materialsService.getAllActiveMaterials();
+        return ResponseEntity.ok(activeMaterials);
+    }
+    
+    @PostMapping(value = "/preview-import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<List<MaterialPreviewDTO>> previewImport(@RequestParam("file") MultipartFile file) {
+        try {
+            return ResponseEntity.ok(materialExcelService.previewImportMaterials(file));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(List.of(
+                    new MaterialPreviewDTO() {{
+                        setValid(false);
+                        setErrorMessage("Lỗi khi kiểm tra file: " + e.getMessage());
+                    }}
+            ));
+        }
+    }
 
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> importMaterials(@RequestParam("file") MultipartFile file) {
+        try {
+            List<MaterialPreviewDTO> previewList = materialExcelService.previewImportMaterials(file);
+            boolean hasErrors = previewList.stream().anyMatch(dto -> !dto.isValid());
+            if (hasErrors) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("❌ File chứa dòng không hợp lệ, không thể import.");
+            }
+
+            String result = materialExcelService.importMaterials(file);
+            return ResponseEntity.ok("✅ " + result);
+        } catch (Exception e) {
+            log.error("❌ Lỗi khi import vật tư:", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("❌ Lỗi: " + e.getMessage());
+        }
+    }
+
+
+
+    @GetMapping("/template")
+    public ResponseEntity<byte[]> downloadTemplate() {
+        try {
+            ByteArrayInputStream stream = materialExcelService.generateMaterialImportTemplate();
+            byte[] content = stream.readAllBytes();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Disposition", "attachment; filename=template_import_vattu.xlsx");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(content);
+        } catch (IOException e) {
+            log.error("❌ Lỗi khi tạo file template import vật tư: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportMaterials() {
+        try {
+            ByteArrayInputStream stream = materialExcelService.exportMaterialsToExcel();
+            byte[] content = stream.readAllBytes();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("Content-Disposition", "attachment; filename=danh_sach_vat_tu.xlsx");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(content);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/active")
+    public ResponseEntity<List<MaterialsDTO>> getActiveMaterials() {
+        List<MaterialsDTO> activeMaterials = materialsService.getAllActiveMaterials();
+        return ResponseEntity.ok(activeMaterials);
+    }
     @PostMapping(value = "/preview-import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<List<MaterialPreviewDTO>> previewImport(@RequestParam("file") MultipartFile file) {
         try {

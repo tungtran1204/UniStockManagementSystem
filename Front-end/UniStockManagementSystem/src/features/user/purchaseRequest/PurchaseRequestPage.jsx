@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from "react";
 import {
     Card,
-    CardHeader,
     CardBody,
     Typography,
-    Button,
     Tooltip,
-    Input,
 } from "@material-tailwind/react";
 import { BiCartAdd, BiSolidEdit } from "react-icons/bi"; // Đảm bảo import BiSolidEdit từ react-icons/bi
-import { EyeIcon } from "@heroicons/react/24/outline";
+import {
+    IconButton,
+} from '@mui/material';
+import {
+    VisibilityOutlined,
+    AddShoppingCartRounded
+} from '@mui/icons-material';
 import ReactPaginate from "react-paginate";
-import { ArrowRightIcon, ArrowLeftIcon, KeyIcon } from "@heroicons/react/24/outline";
+import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
 import usePurchaseRequest from "./usePurchaseRequest";
 import usePurchaseOrder from "../purchaseOrder/usePurchaseOrder";
@@ -113,10 +116,10 @@ const PurchaseRequestPage = () => {
             renderCell: (params) => (
                 <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                     ${params.value === 'Đã duyệt'
-                        ? 'bg-green-100 text-green-800'
+                        ? 'bg-green-50 text-green-800'
                         : params.value === 'Từ chối'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-yellow-100 text-yellow-800'
+                            ? 'bg-red-50 text-red-800'
+                            : 'bg-yellow-100 text-amber-800'
                     }`
                 }>
                     {params.value}
@@ -141,31 +144,32 @@ const PurchaseRequestPage = () => {
             minWidth: 50,
             renderCell: (params) => (
                 <div className="flex gap-2 justify-center items-center w-full">
-                    <Tooltip content="Chi tiết">
-                        <button
-                            className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+                    <Tooltip content="Xem chi tiết">
+                        <IconButton
+                            size="small"
+                            color="primary"
                             onClick={() => navigate(`/user/purchase-request/${params.id}`)}
                         >
-                            <BiSolidEdit className="h-5 w-5" />
-                        </button>
+                            <VisibilityOutlined />
+                        </IconButton>
                     </Tooltip>
 
                     {/* Nút tạo đơn hàng nếu đã duyệt */}
                     {params.row.status === 'Đã duyệt' && (
                         <Tooltip content="Tạo đơn mua hàng">
-                            <button
-                                className="p-1.5 rounded-full bg-green-500 hover:bg-green-600 text-white"
+                            <IconButton
+                                size="small"
+                                color="success"
                                 onClick={() => handleCreatePurchaseOrder(params.row.id)}
                             >
-                                <BiCartAdd className="h-5 w-5" />
-                            </button>
+                                <AddShoppingCartRounded />
+                            </IconButton>
                         </Tooltip>
                     )}
                 </div>
             ),
         },
     ];
-
 
     const data = purchaseRequests.map((request, index) => ({
         id: request.id,

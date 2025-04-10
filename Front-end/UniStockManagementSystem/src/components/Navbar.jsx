@@ -28,24 +28,50 @@ const getPageInfo = (pathname) => {
       // Nếu khớp đường dẫn, trả về tên
       if (page.path === pathname) {
         return {
-          layoutName: route.title || route.layout, // Lấy title nếu có, nếu không lấy layout
+          layoutName: page.layout || route.title || route.layout, // Lấy title nếu có, nếu không lấy layout
           pageName: page.name || pathname, // Lấy name nếu có, nếu không dùng pathname
         };
       }
+
+      // Kiểm tra path động dạng /:id
+      if (page.path?.includes(":")) {
+        const basePath = page.path.split("/:")[0];
+        const regex = new RegExp(`^${basePath}/\\d+$`); // chỉ chấp nhận ID là số
+        if (regex.test(pathname)) {
+          return {
+            layoutName: page.layout || route.title || route.layout,
+            pageName: page.name || pathname,
+          };
+        }
+      }
+
       // Kiểm tra subPages nếu có
       if (page.subPages) {
         for (const subPage of page.subPages) {
           if (subPage.path === pathname) {
             return {
               layoutName: route.title || route.layout,
-              pageName: subPage.name || pathname,
+              pageName: page.name || pathname,
+              subPageName: subPage.name || pathname,
             };
+          }
+
+          if (subPage.path?.includes(":")) {
+            const basePath = subPage.path.split("/:")[0];
+            const regex = new RegExp(`^${basePath}/\\d+$`);
+            if (regex.test(pathname)) {
+              return {
+                layoutName: subPage.layout || route.title || route.layout,
+                pageName: page.name || pathname,
+                subPageName: subPage.name || pathname,
+              };
+            }
           }
         }
       }
     }
   }
-  return { layoutName: "Trang", pageName: "Không xác định" }; // Mặc định nếu không tìm thấy
+  return { layoutName: "Trang", pageName: "Không xác định", subPageName: "Không xác định" }; // Mặc định nếu không tìm thấy
 };
 export function Navbar({ brandName, routes }) {
   const [controller, dispatch] = useMaterialTailwindController();
@@ -53,7 +79,7 @@ export function Navbar({ brandName, routes }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const { layoutName, pageName } = getPageInfo(pathname);
+  const { layoutName, pageName, subPageName } = getPageInfo(pathname);
 
   const handleLogout = () => {
     logout();
@@ -107,7 +133,7 @@ export function Navbar({ brandName, routes }) {
             </Breadcrumbs>
 
             <Typography variant="h6" color="blue-gray">
-              {pageName}
+              {subPageName || pageName}
             </Typography>
           </div>
         </div>

@@ -3,7 +3,14 @@ import { InboxArrowDownIcon } from "@heroicons/react/24/solid";
 import Table from "@/components/Table";
 import { useNavigate, useLocation } from "react-router-dom";
 import ReactPaginate from "react-paginate";
-import { ArrowLeftIcon, ArrowRightIcon, EyeIcon, ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
+import {
+  IconButton,
+} from '@mui/material';
+import {
+  VisibilityOutlined,
+  AddShoppingCartRounded
+} from '@mui/icons-material';
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import {
@@ -134,15 +141,15 @@ const PurchaseOrderPage = () => {
   const getStatusClass = (statusCode) => {
     switch (statusCode) {
       case "COMPLETED":
-        return "bg-green-100 text-green-800";
+        return "bg-green-50 text-green-800";
       case "IN_PROGRESS":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-yellow-100 text-amber-800";
       case "PENDING":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-50 text-blue-800";
       case "CANCELED":
-        return "bg-red-100 text-red-800";
+        return "bg-red-50 text-red-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-50 text-gray-800";
     }
   };
 
@@ -228,23 +235,25 @@ const PurchaseOrderPage = () => {
         <div className="flex space-x-2">
           {/* Nút Xem Chi Tiết */}
           <Tooltip content="Xem chi tiết">
-            <button
-              className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+            <IconButton
+              size="small"
+              color="primary"
               onClick={() => viewOrderDetail(params.row.id)}
             >
-              <EyeIcon className="h-5 w-5" />
-            </button>
+              <VisibilityOutlined />
+            </IconButton>
           </Tooltip>
 
           {/* Nút Nhập kho */}
           {params.row.status !== "COMPLETED" && (
             <Tooltip content="Nhập kho">
-              <button
-                className="p-1.5 rounded-full bg-green-500 hover:bg-green-600 text-white"
+              <IconButton
+                size="small"
+                color="success"
                 onClick={() => handleCreateReceipt(params.row)}
               >
-                <InboxArrowDownIcon className="h-5 w-5" />
-              </button>
+                <InboxArrowDownIcon className="h-6 w-6" />
+              </IconButton>
             </Tooltip>
           )}
         </div>
@@ -315,74 +324,6 @@ const PurchaseOrderPage = () => {
             enableSelection={false}
           />
 
-          {/* <th className="p-2 border">
-                    <div className="flex items-center justify-between">
-                      Trạng thái
-                      <Menu>
-                        <MenuHandler>
-                          <button className="ml-2">
-                            <ChevronDownIcon className="h-4 w-4 text-blue-500" />
-                          </button>
-                        </MenuHandler>
-                        <MenuList>
-                          <MenuItem onClick={() => setSelectedStatus("")}>Tất cả</MenuItem>
-                          {statuses.map((status) => (
-                            <MenuItem key={status} onClick={() => setSelectedStatus(status)}>
-                              {status}
-                            </MenuItem>
-                          ))}
-                        </MenuList>
-                      </Menu>
-                    </div>
-                  </th>
-
-                  <th className="p-2 border">Hành động</th>
-                </tr>
-              </thead>
-              <tbody>
-                {!loading && filteredOrders.length === 0 && (
-                  <tr>
-                    <td colSpan="8" className="p-4 text-center">Không có dữ liệu</td>
-                  </tr>
-                )}
-                {filteredOrders.map((order) => (
-                  <tr key={order.poId} className="text-center">
-                    <td className="p-2 border">
-                      <input
-                        type="checkbox"
-                        checked={selectedOrders.includes(order.poId)}
-                        onChange={() => toggleSelectOrder(order.poId)}
-                      />
-                    </td>
-                    <td className="p-2 border">{order.poCode}</td>
-                    <td className="p-2 border">{order.supplierName || "không có thông tin"}</td>
-                    <td className="p-2 border">{order.supplierContactName || "không có thông tin"}</td>
-                    <td className="p-2 border">{order.supplierPhone || "không có thông tin"}</td>
-                    <td className="p-2 border">
-                      {new Date(order.orderDate).toLocaleDateString('vi-VN')}
-                    </td>
-                    <td className="p-2 border font-semibold text-sm">{order.status.label || 'Chờ nhận'}</td>
-                    <td className="p-2 border">
-                      <div className="flex justify-center items-center space-x-4 w-full">
-                        <EyeIcon
-                          className="h-5 w-5 text-blue-500 cursor-pointer"
-                          title="Xem chi tiết"
-                          onClick={() => viewOrderDetail(order.poId)}
-                        />
-                        <InboxArrowDownIcon
-                          className="h-5 w-5 text-green-500 cursor-pointer"
-                          title="Nhập kho"
-                          onClick={() => handleCreateReceipt(order)} // Truyền cả đối tượng order
-                        />
-                      </div>
-                    </td>
-
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div> */}
-
           <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
             <Typography variant="small" color="blue-gray" className="font-normal">
               Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
@@ -405,7 +346,7 @@ const PurchaseOrderPage = () => {
               forcePage={currentPage}
               disabledClassName="opacity-50 cursor-not-allowed"
             />
-            </div>
+          </div>
         </CardBody>
       </Card>
     </div>
