@@ -150,4 +150,17 @@ export const cancelSaleOrder = async (orderId, reason) => {
   }
 };
 
+export const setPreparingStatus = async (orderId) => {
+  try {
+    const response = await axios.put(
+      `${API_URL}/${orderId}/set-preparing`,
+      {},
+      { headers: authHeader() }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("❌ [setPreparingStatus] Lỗi khi chuyển trạng thái đơn hàng:", error);
+    throw error;
+  }
+};
 

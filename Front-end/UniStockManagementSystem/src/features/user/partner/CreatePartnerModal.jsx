@@ -5,13 +5,16 @@ import {
     DialogBody,
     DialogFooter,
     Typography,
-    Input,
     Button,
-    IconButton,
 } from "@material-tailwind/react";
-import { TextField, MenuItem, Divider, FormControl, InputLabel, OutlinedInput, Chip, Select, Button as MuiButton } from "@mui/material";
+import {
+    TextField,
+    Divider,
+    Button as MuiButton,
+    IconButton,
+    Autocomplete
+} from "@mui/material";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import MultiSelectDropdown from "@/components/MultiSelectDropdown";
 import { createPartner, fetchPartnerTypes, getPartnerCodeByType } from "./partnerService";
 
 const CreatePartnerModal = ({ onClose, onSuccess }) => {
@@ -28,14 +31,28 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
         address: "",
         phone: "",
         email: "",
+        contactName: "",
         partnerTypeIds: [],
     });
 
     useEffect(() => {
         const loadPartnerTypes = async () => {
-            const data = await fetchPartnerTypes();
-            setPartnerTypes(data.map((pt) => ({ value: pt.typeId, label: pt.typeName })));
+            try {
+                const [data] = await Promise.all([
+                    fetchPartnerTypes()
+                ]);
+                console.log("📦 fetchPartnerTypes result:", data);
+
+                setPartnerTypes(data.content.map((pt) => ({
+                    value: pt.typeId,
+                    label: pt.typeName,
+                })));
+            } catch (error) {
+                console.error("❌ Lỗi khi loadPartnerTypes:", error);
+                setPartnerTypes([]);
+            }
         };
+
         loadPartnerTypes();
     }, []);
 
@@ -61,13 +78,18 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
         return isValid;
     };
 
-    const handlePartnerTypeChange = async (ids) => {
+    const handlePartnerTypeChange = async (selectedOptions) => {
         setErrorPartnerCodes("");
-        setNewPartner({ ...newPartner, partnerTypeIds: ids });
+        const selectedIds = selectedOptions.map(option => option.value);
 
-        if (ids.length > 0) {
+        setNewPartner(prev => ({
+            ...prev,
+            partnerTypeIds: selectedIds
+        }));
+
+        if (selectedIds.length > 0) {
             try {
-                const codes = await Promise.all(ids.map(id => getPartnerCodeByType(id)));
+                const codes = await Promise.all(selectedIds.map(id => getPartnerCodeByType(id)));
                 setPartnerCodes(codes);
             } catch (error) {
                 setPartnerCodes([]);
@@ -86,11 +108,12 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
                 address: newPartner.address,
                 phone: newPartner.phone,
                 email: newPartner.email,
+                contactName: newPartner.contactName,
                 partnerCodes: partnerCodes,
             };
 
             await createPartner(partnerData);
-            onSuccess();
+            onSuccess("Tạo đối tác thành công");
             onClose();
         } catch (error) {
             console.error("Lỗi khi tạo đối tác:", error);
@@ -115,8 +138,7 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
                     Thêm đối tác
                 </Typography>
                 <IconButton
-                    size="sm"
-                    variant="text"
+                    size="small"
                     onClick={onClose}
                 >
                     <XMarkIcon className="h-5 w-5 stroke-2" />
@@ -151,12 +173,32 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
                         Nhóm đối tác
                         <span className="text-red-500"> *</span>
                     </Typography>
-                    <MultiSelectDropdown
+                    <Autocomplete
+                        multiple
                         options={partnerTypes}
-                        selectedOptions={newPartner.partnerTypeIds}
-                        setSelectedOptions={handlePartnerTypeChange}
-                        setLabelString="Chọn nhóm đối tác"
-                        error={errorPartnerCodes}
+                        size="small"
+                        getOptionLabel={(option) => option.label || ""}
+                        value={
+                            partnerTypes.filter((s) =>
+                                newPartner.partnerTypeIds?.includes(s.value)
+                            )
+                        }
+                        onChange={(event, selectedOptions) => {
+                            handlePartnerTypeChange(selectedOptions);
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                color="success"
+                                hiddenLabel
+                                {...params}
+                                placeholder="Chọn nhóm đối tác"
+                            />
+                        )}
+                        slotProps={{
+                            popper: {
+                                sx: { zIndex: 9999 }, // Cố định z-index trong Popper
+                            },
+                        }}
                     />
                 </div>
 
@@ -189,10 +231,8 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
                         placeholder="Người liên hệ"
                         variant="outlined"
                         color="success"
-                    // value={newPartner.email}
-                    // onChange={(e) => setNewPartner({ ...newPartner, email: e.target.value })}
-                    // error={!!errorEmail}
-                    // helperText={errorEmail}
+                        value={newPartner.contactName}
+                        onChange={(e) => setNewPartner({ ...newPartner, contactName: e.target.value })}
                     />
                 </div>
 

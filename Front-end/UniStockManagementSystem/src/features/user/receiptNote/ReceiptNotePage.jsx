@@ -47,44 +47,6 @@ const ReceiptNotePage = () => {
   }, [currentPage, pageSize]);
 
   // Fetch thông tin user và đơn hàng
-  useEffect(() => {
-    const fetchUserAndOrderData = async () => {
-      for (const receipt of receiptNotes) {
-        // Xử lý người tạo phiếu
-        if (receipt.createdBy && !usernames[receipt.createdBy]) {
-          try {
-            const user = await getUserById(receipt.createdBy);
-            setUsernames(prev => ({
-              ...prev,
-              [receipt.createdBy]: user.username || user.email || "N/A"
-            }));
-          } catch (error) {
-            console.error("❌ Lỗi khi lấy thông tin người dùng:", error);
-          }
-        }
-
-        // Xử lý đơn hàng tham chiếu
-        if (receipt.poId && !purchaseOrders[receipt.poId]) {
-          console.log(`📢 Gọi API lấy đơn hàng với ID: ${receipt.poId}`);
-          try {
-            const order = await getPurchaseOrderById(receipt.poId);
-            console.log("✅ Kết quả từ API:", order);
-
-            setPurchaseOrders(prev => ({
-              ...prev,
-              [receipt.poId]: order.poCode || "N/A"
-            }));
-          } catch (error) {
-            console.error("❌ Lỗi khi lấy thông tin đơn hàng:", error);
-          }
-        }
-      }
-    };
-
-    if (receiptNotes.length > 0) {
-      fetchUserAndOrderData();
-    }
-  }, [receiptNotes, getUserById, getPurchaseOrderById]);
 
   // Handle page change
   const handlePageChange = (selectedPage) => {
@@ -124,9 +86,12 @@ const ReceiptNotePage = () => {
       field: 'createBy',
       headerName: 'Người tạo phiếu',
       flex: 1.5,
-      minWidth: 100,
+      minWidth: 150,
       editable: false,
-      renderCell: (params) => usernames[params.value] || "Đang tải...",
+      renderCell: (params) => {
+        const user = usernames[params.value];
+        return user || "Không có dữ liệu";
+      },
     },
     {
       field: 'reference',
@@ -135,30 +100,28 @@ const ReceiptNotePage = () => {
       minWidth: 150,
       editable: false,
       renderCell: (params) => {
-        const { id, type } = params.value || {};
-        const label = purchaseOrders[id] || " - ";
-
-        const getPathByType = (type, id) => {
-          switch (type) {
-            case "PURCHASE_ORDER":
-              return `/user/purchaseOrder/${id}`;
-            default:
-              return null;
-          }
+        const receipt = params.row;
+        const label = receipt.poCode || receipt.ginCode || "-";
+    
+        const getPath = () => {
+          if (receipt.poId && receipt.poCode) return `/user/purchaseOrder/${receipt.poId}`;
+          if (receipt.ginId && receipt.ginCode) return `/user/issueNote/${receipt.ginId}`;
+          return null;
         };
-
-        const path = getPathByType(type, id);
-        if (!path) return label;
-
-        return (
+    
+        const path = getPath();
+    
+        return path ? (
           <span
             onClick={() => navigate(path)}
             className="text-blue-600 hover:underline cursor-pointer"
           >
             {label}
           </span>
+        ) : (
+          <span>{label}</span>
         );
-      }
+      },
     },
     {
       field: 'actions',
@@ -187,11 +150,11 @@ const ReceiptNotePage = () => {
     category: receipt.category || 'không có dữ liệu',
     createdDate: receipt.receiptDate,
     createBy: receipt.createdBy,
-    reference: {
-      id: receipt.poId || "N/A",
-      type: "PURCHASE_ORDER"
-    }
-  }));
+    poId: receipt.poId,
+    ginId: receipt.ginId,
+    poCode: receipt.poCode,
+    ginCode: receipt.ginCode,
+  }));  
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>

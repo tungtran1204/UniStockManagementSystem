@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ProductTypeRepository extends JpaRepository<ProductType, Long> {
+    boolean existsByTypeNameIgnoreCase(String typeName);
     Optional<ProductType> findByTypeName(String typeName);
     List<ProductType> findAllByStatusTrue();
 

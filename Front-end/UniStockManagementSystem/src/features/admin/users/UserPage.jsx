@@ -2,16 +2,20 @@ import React, { useEffect, useState } from "react";
 import useUser from "./useUser";
 import {
   Card,
-  CardHeader,
   CardBody,
   Typography,
   Avatar,
   Switch,
   Tooltip,
-  Button,
-  Input,
 } from "@material-tailwind/react";
-import { FaPlus, FaEdit } from "react-icons/fa";
+import {
+  TextField,
+  Divider,
+  Button as MuiButton,
+  IconButton,
+  Autocomplete
+} from "@mui/material";
+import ModeEditOutlineOutlinedIcon from '@mui/icons-material/ModeEditOutlineOutlined';
 import ModalAddUser from "./ModalAddUser";
 import ModalEditUser from "./ModalEditUser";
 import { getUserById } from "./userService";
@@ -86,11 +90,11 @@ const UserPage = () => {
       renderCell: (params) => (
         <div className="flex items-center gap-4 py-3">
           <Avatar
-  src={(params.row.userDetail && params.row.userDetail.profilePicture) || "/img/bruce-mars.jpeg"}
-  alt={params.row.email}
-  size="sm"
-  variant="rounded"
-/>
+            src={(params.row.userDetail && params.row.userDetail.profilePicture) || "/img/bruce-mars.jpeg"}
+            alt={params.row.email}
+            size="sm"
+            variant="rounded"
+          />
 
           <div>
             <Typography variant="small" color="blue-gray" className="font-semibold">
@@ -137,9 +141,13 @@ const UserPage = () => {
             }}
             disabled={params.row.roleNames.includes("ADMIN")}
           />
-          <Typography className="text-xs font-semibold text-blue-gray-600">
-            {params.row.isActive ? "Đang hoạt động" : "Không hoạt động"}
-          </Typography>
+          <div
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                  ${params.row.isActive ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
+              }`}
+          >
+            {params.row.isActive ? "Đang hoạt động" : "Ngừng hoạt động"}
+          </div>
         </div>
       ),
     },
@@ -153,23 +161,17 @@ const UserPage = () => {
       renderCell: (params) => (
         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
           <Tooltip content="Chỉnh sửa">
-            <button
+            <IconButton
+              size="small"
               onClick={() => {
                 handleEditUser(params.row);
               }}
-              className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+              color="primary"
             >
-              <BiSolidEdit className="h-5 w-5" />
-            </button>
+              <ModeEditOutlineOutlinedIcon />
+            </IconButton>
           </Tooltip>
         </div>
-        // <Button
-        //   variant="text"
-        //   color="blue"
-        //   onClick={() => handleEditUser(params.row)}
-        // >
-        //   Xem
-        // </Button>
       ),
     },
   ];
