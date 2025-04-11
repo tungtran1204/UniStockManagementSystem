@@ -29,7 +29,9 @@ import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -98,8 +100,13 @@ public class IssueNoteService {
                     .category(issueNoteDto.getCategory())
                     .issueDate(issueNoteDto.getIssueDate())
                     .createdBy(currentUser)
-                    .details(new ArrayList<>())
+                    .details(new ArrayList<>()) // Khởi tạo details rỗng
                     .build();
+
+            if (issueNoteDto.getPartnerId() != null) {
+                Partner partner = Partner.builder().partnerId(issueNoteDto.getPartnerId()).build();
+                issueNote.setPartner(partner);
+            }
 
             // Xử lý salesOrder nếu có soId
             if (issueNoteDto.getSoId() != null) {
@@ -107,8 +114,7 @@ public class IssueNoteService {
                         .orElseThrow(() -> new RuntimeException("Sales order not found with ID: " + issueNoteDto.getSoId()));
                 issueNote.setSalesOrder(salesOrder);
             }
-            issueNote = issueNoteRepository.save(issueNote);
-            List<GoodIssueDetail> details = new ArrayList<>();
+            issueNote = issueNoteRepository.save(issueNote); // Lưu GoodIssueNote lần đầu
 
             // Duyệt từng dòng chi tiết xuất kho
             for (IssueNoteDetailDTO detailDto : issueNoteDto.getDetails()) {
@@ -153,35 +159,41 @@ public class IssueNoteService {
                     throw new RuntimeException("Phải có thông tin về vật tư hoặc sản phẩm để xuất kho");
                 }
 
-                details.add(detail);
+                // Thêm detail vào tập hợp details hiện tại của issueNote
+                issueNote.getDetails().add(detail);
             }
 
             // Lưu các dòng chi tiết
-            issueNoteDetailRepository.saveAll(details);
-            issueNote.setDetails(details);
+            issueNoteDetailRepository.saveAll(issueNote.getDetails());
 
             // ***** PHẦN MỚI: Cập nhật số lượng nhận (receivedQuantity) của sản phẩm trong đơn hàng *****
             if (issueNoteDto.getSoId() != null) {
-                // Lấy đơn hàng từ phiếu xuất kho đã set
                 SalesOrder salesOrder = issueNote.getSalesOrder();
-                // Duyệt từng dòng chi tiết xuất kho trong request
+                // Gộp số lượng xuất cho cùng một sản phẩm nếu xuất từ nhiều kho khác nhau
+                Map<Long, Integer> exportQuantities = new HashMap<>();
                 for (IssueNoteDetailDTO detailDto : issueNoteDto.getDetails()) {
                     if (detailDto.getProductId() != null) {
-                        // Tìm dòng chi tiết đơn hàng tương ứng với sản phẩm
-                        SalesOrderDetail salesOrderDetail = salesOrder.getDetails().stream()
-                                .filter(d -> d.getProduct().getProductId().equals(detailDto.getProductId()))
-                                .findFirst()
-                                .orElseThrow(() -> new RuntimeException("Sales order detail not found for product ID: " + detailDto.getProductId()));
-                        // Tính số lượng xuất của dòng phiếu xuất kho (chuyển về kiểu số nguyên nếu cần)
-                        int exportQuantity = detailDto.getQuantity().intValue();
-                        // Cập nhật receivedQuantity (và remainingQuantity sẽ được tính lại tự động qua @PreUpdate)
-                        salesOrderDetail.setReceivedQuantity(salesOrderDetail.getReceivedQuantity() + exportQuantity);
+                        exportQuantities.merge(detailDto.getProductId(), detailDto.getQuantity().intValue(), Integer::sum);
                     }
                 }
-                // Lưu lại đơn hàng (nếu cascade không tự động cập nhật các chi tiết)
+                logger.debug("Export quantities grouped by productId: {}", exportQuantities);
+                for (Map.Entry<Long, Integer> entry : exportQuantities.entrySet()) {
+                    Long productId = entry.getKey();
+                    int totalExport = entry.getValue();
+                    SalesOrderDetail salesOrderDetail = salesOrder.getDetails().stream()
+                            .filter(d -> d.getProduct().getProductId().equals(productId))
+                            .findFirst()
+                            .orElseThrow(() -> new RuntimeException("Sales order detail not found for product ID: " + productId));
+                    logger.debug("Before update: SalesOrderDetail for product ID {} has receivedQuantity={}", productId, salesOrderDetail.getReceivedQuantity());
+                    salesOrderDetail.setReceivedQuantity(salesOrderDetail.getReceivedQuantity() + totalExport);
+                    logger.debug("After update: SalesOrderDetail for product ID {} has receivedQuantity={}", productId, salesOrderDetail.getReceivedQuantity());
+                }
                 salesOrderRepository.save(salesOrder);
             }
             // ***** KẾT THÚC PHẦN MỚI *****
+
+            // Lưu lại issueNote để đảm bảo đồng bộ
+            issueNote = issueNoteRepository.save(issueNote);
 
             // Trả về DTO
             return issueNoteMapper.toDTO(issueNote);
@@ -191,18 +203,19 @@ public class IssueNoteService {
         }
     }
 
-
     // Cập nhật tồn kho và ghi nhận giao dịch xuất kho (giảm số lượng tồn)
     private void updateInventoryAndTransactionForExport(Warehouse warehouse, Material material, Product product, Double quantity, GoodIssueNote issueNote) {
         if (material != null) {
             Inventory inventory = inventoryRepository.findByWarehouseAndMaterial(warehouse, material)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy tồn kho cho vật tư có ID: " + material.getMaterialId()));
+            logger.debug("Material [{}] - Warehouse [{}]: Current inventory quantity = {}", material.getMaterialId(), warehouse.getWarehouseId(), inventory.getQuantity());
             if (inventory.getQuantity() < quantity) {
                 throw new RuntimeException("Không đủ số lượng tồn kho cho vật tư có ID: " + material.getMaterialId());
             }
             inventory.setQuantity(inventory.getQuantity() - quantity);
             inventory.setLastUpdated(LocalDateTime.now());
             inventoryRepository.save(inventory);
+            logger.debug("Material [{}] - Warehouse [{}]: New inventory quantity = {}", material.getMaterialId(), warehouse.getWarehouseId(), inventory.getQuantity());
 
             InventoryTransaction transaction = InventoryTransaction.builder()
                     .warehouse(warehouse)
@@ -213,17 +226,20 @@ public class IssueNoteService {
                     .referenceType(InventoryTransaction.NoteType.GOOD_ISSUE_NOTE)
                     .build();
             inventoryTransactionRepository.save(transaction);
+            logger.info("Created export transaction for material ID {}", material.getMaterialId());
         }
 
         if (product != null) {
             Inventory inventory = inventoryRepository.findByWarehouseAndProduct(warehouse, product)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy tồn kho cho sản phẩm có ID: " + product.getProductId()));
+            logger.debug("Product [{}] - Warehouse [{}]: Current inventory quantity = {}", product.getProductId(), warehouse.getWarehouseId(), inventory.getQuantity());
             if (inventory.getQuantity() < quantity) {
                 throw new RuntimeException("Không đủ số lượng tồn kho cho sản phẩm có ID: " + product.getProductId());
             }
             inventory.setQuantity(inventory.getQuantity() - quantity);
             inventory.setLastUpdated(LocalDateTime.now());
             inventoryRepository.save(inventory);
+            logger.debug("Product [{}] - Warehouse [{}]: New inventory quantity = {}", product.getProductId(), warehouse.getWarehouseId(), inventory.getQuantity());
 
             InventoryTransaction transaction = InventoryTransaction.builder()
                     .warehouse(warehouse)
@@ -234,6 +250,7 @@ public class IssueNoteService {
                     .referenceType(InventoryTransaction.NoteType.GOOD_ISSUE_NOTE)
                     .build();
             inventoryTransactionRepository.save(transaction);
+            logger.info("Created export transaction for product ID {}", product.getProductId());
         }
     }
 
@@ -297,10 +314,5 @@ public class IssueNoteService {
         dto.setPaperEvidence(files);
 
         return dto;
-    }
-    //issue report
-    public Page<IssueNoteReportDTO> getExportReportPaginated(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return issueNoteDetailRepository.getIssueNoteReport(pageable);
     }
 }
