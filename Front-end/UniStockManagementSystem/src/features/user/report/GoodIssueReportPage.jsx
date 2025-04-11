@@ -23,7 +23,7 @@ import { getWarehouseList } from "../warehouse/warehouseService";
 
 const GoodIssueReportPage = () => {
     const [currentPage, setCurrentPage] = useState(0);
-    const [pageSize, setPageSize] = useState(5);
+    const [pageSize, setPageSize] = useState(20);
     const [searchTerm, setSearchTerm] = useState("");
     const navigate = useNavigate();
     const [startDate, setStartDate] = useState(null);

@@ -1,9 +1,9 @@
 import axios from "axios";
 
+//báo cáo tồn kho
 const API_URL_IN_RP = "http://localhost:8080/api/unistock/user/inventory";
 //const API_URL_IN_RP = `${import.meta.env.VITE_API_URL}/user/inventory`;
 
-// Helper function to get the authorization header
 const authHeader = () => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -52,7 +52,7 @@ export const getInventoryReportPaginated = ({
   });
 };
 
-
+//báo cáo nhập kho
 const API_URL_GRN_RP = "http://localhost:8080/api/unistock/user/receiptnote";
 //const API_URL_GRN_RP = `${import.meta.env.VITE_API_URL}/user/receiptnote`;
 export const getGoodReceiptReportPaginated = ({
@@ -93,7 +93,7 @@ export const getGoodReceiptReportPaginated = ({
   });
 };
 
-
+//báo cáo xuất kho
 const API_URL_GIN_RP = "http://localhost:8080/api/unistock/user/issuenote";
 //const API_URL_GIN_RP = `${import.meta.env.VITE_API_URL}/user/issuenote`;
 export const getGoodIssueReportPaginated = ({
@@ -136,3 +136,47 @@ export const getGoodIssueReportPaginated = ({
     },
   });
 };
+
+//báo cáo xuất nhập tồn
+export const getStockMovementReportPaginated = ({
+  page = 0,
+  size = 20,
+  search = "",
+  startDate = null,
+  endDate = null,
+  itemType = "",
+  hasMovementOnly = null,
+  quantityFilters = {},
+}) => {
+  const token = localStorage.getItem("token");
+  const params = new URLSearchParams();
+
+  params.append("page", page);
+  params.append("size", size);
+  if (search) params.append("search", search);
+  if (startDate) params.append("startDate", startDate);
+  if (endDate) params.append("endDate", endDate);
+  if (itemType) params.append("itemType", itemType);
+  if (hasMovementOnly !== null) params.append("hasMovementOnly", hasMovementOnly);
+
+  // Gửi các filter số lượng
+  const quantityMap = {
+    beginQuantity: ["minBegin", "maxBegin"],
+    inQuantity: ["minIn", "maxIn"],
+    outQuantity: ["minOut", "maxOut"],
+    endQuantity: ["minEnd", "maxEnd"],
+  };
+
+  for (const [key, [minKey, maxKey]] of Object.entries(quantityMap)) {
+    const filter = quantityFilters[key];
+    if (filter) {
+      if (filter.min != null) params.append(minKey, filter.min);
+      if (filter.max != null) params.append(maxKey, filter.max);
+    }
+  }
+
+  return axios.get(`http://localhost:8080/api/unistock/user/stockmovement/report?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
