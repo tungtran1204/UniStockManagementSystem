@@ -11,7 +11,8 @@ import {
     Tooltip,
     Switch,
 } from "@material-tailwind/react";
-import { BiSolidEdit } from "react-icons/bi";
+import { IconButton } from "@mui/material";
+import ModeEditOutlineOutlinedIcon from '@mui/icons-material/ModeEditOutlineOutlined';
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
 import PageHeader from '@/components/PageHeader';
@@ -72,9 +73,13 @@ const ProductTypePage = () => {
                         onChange={() => toggleStatus(params.row.id, params.value)}
                         disabled={loading}
                     />
-                    <Typography className="text-xs font-semibold text-blue-gray-600">
-                        {params.value ? "Hoạt động" : "Vô hiệu hóa"}
-                    </Typography>
+                    <div
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                      ${params.value ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
+                            }`}
+                    >
+                        {params.value ? "Đang hoạt động" : "Ngừng hoạt động"}
+                    </div>
                 </div>
             ),
         },
@@ -86,16 +91,17 @@ const ProductTypePage = () => {
             renderCell: (params) => (
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
                     <Tooltip content="Chỉnh sửa">
-                        <button
+                        <IconButton
+                            size="small"
                             onClick={() => {
+                                console.log("👉 params.row trước khi chỉnh sửa:", params.row);
                                 setEditProductType(params.row);
                                 setShowEditPopup(true);
                             }}
-                            className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
-                            disabled={loading}
+                            color="primary"
                         >
-                            <BiSolidEdit className="h-5 w-5" />
-                        </button>
+                            <ModeEditOutlineOutlinedIcon />
+                        </IconButton>
                     </Tooltip>
                 </div>
             ),

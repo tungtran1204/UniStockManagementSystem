@@ -362,6 +362,8 @@ export const routes = [
         roles: ["USER"],
       },
       {
+        layout: "Sản phẩm",
+        name: "Chi tiết sản phẩm",
         path: "/user/products/:id",
         element: <DetailProductPage />,
         roles: ["USER"],
@@ -381,13 +383,15 @@ export const routes = [
         roles: ["USER"],
       },
       {
-        icon: <TableCellsIcon {...icon} />,
-        name: "Thêm nguyên vật liệu",
+        layout: "Vật tư",
+        name: "Thêm vật tư",
         path: "/user/materials/add",
         element: <AddMaterialPage />,
         roles: ["USER"],
       },
       {
+        layout: "Vật tư",
+        name: "Chi tiết vật tư",
         path: "/user/materials/:id",
         element: <DetailMaterialPage />,
         roles: ["USER"],

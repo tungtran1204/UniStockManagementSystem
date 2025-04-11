@@ -2,16 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     Card,
-    CardHeader,
     CardBody,
     Button,
-    Input,
     Typography,
 } from "@material-tailwind/react";
-import { TextField, Button as MuiButton } from '@mui/material';
-import { FaSave, FaTimes } from "react-icons/fa";
-import Select from "react-select";
-import MultiSelectDropdown from "@/components/MultiSelectDropdown";
+import { TextField, Button as MuiButton, Autocomplete, IconButton, Divider } from '@mui/material';
 import { checkMaterialCodeExists, fetchUnits, fetchMaterialCategories, createMaterial } from "./materialService";
 import PageHeader from '@/components/PageHeader';
 import ImageUploadBox from '@/components/ImageUploadBox';
@@ -84,13 +79,24 @@ const AddMaterialPage = () => {
                 setMaterialCategories(categoriesData);
 
                 // Map lại dữ liệu suppliers theo định dạng mới
-                const mappedSuppliers = suppliersData.partners.map((supplier) => ({
-                    value: supplier.partnerId,
-                    label: supplier.partnerName,
-                    partnerCode: supplier.partnerCode,
-                    phone: supplier.phone,
-                    address: supplier.address
-                }));
+                // ✅ Map suppliers đúng định dạng (lọc theo partnerType và partnerCode)
+                const mappedSuppliers = (suppliersData?.partners || [])
+                    .map((s) => {
+                        const t = s.partnerTypes.find(
+                            (pt) => pt.partnerType.typeId === SUPPLIER_TYPE_ID
+                        );
+                        console.log("supplier: ", s);
+                        return {
+                            value: s.partnerId,
+                            label: s.partnerName,
+                            partnerCode: t?.partnerCode || "",
+                            address: s.address,
+                            phone: s.phone,
+                            contactName: s.contactName,
+                        };
+                    })
+                    .filter((s) => s.code !== "");
+
                 setSuppliers(mappedSuppliers);
 
             } catch (error) {
@@ -245,23 +251,25 @@ const AddMaterialPage = () => {
                                     Đơn vị
                                     <span className="text-red-500"> *</span>
                                 </Typography>
-                                <Select
-                                    placeholder="Chọn đơn vị"
-                                    options={units.map((unit) => ({
-                                        value: unit.unitId.toString(),
-                                        label: unit.unitName,
-                                    }))}
-                                    styles={customStyles}
-                                    value={units
-                                        .map((unit) => ({
-                                            value: unit.unitId.toString(),
-                                            label: unit.unitName,
-                                        }))
-                                        .find((option) => option.value === newMaterial.unitId?.toString()) || null}
-                                    onChange={(selected) => {
-                                        setNewMaterial(prev => ({ ...prev, unitId: selected ? selected.value : "" }));
+                                <Autocomplete
+                                    options={units}
+                                    size="small"
+                                    getOptionLabel={(option) => option.unitName || ""}
+                                    value={
+                                        units.find((unit) => unit.unitId === newMaterial.unitId) || null
+                                    }
+                                    onChange={(event, selectedUnit) => {
+                                        setNewMaterial(prev => ({ ...prev, unitId: selectedUnit ? selectedUnit.unitId : "" }));
                                         setValidationErrors(prev => ({ ...prev, unitId: "" }));
                                     }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            color="success"
+                                            hiddenLabel
+                                            {...params}
+                                            placeholder="Đơn vị"
+                                        />
+                                    )}
                                 />
                                 {validationErrors.unitId && (
                                     <Typography className="text-xs text-red-500 mt-1">
@@ -319,23 +327,27 @@ const AddMaterialPage = () => {
                                     Danh mục
                                     <span className="text-red-500"> *</span>
                                 </Typography>
-                                <Select
-                                    placeholder="Chọn danh mục"
-                                    options={materialCategories.map((category) => ({
-                                        value: category.materialTypeId.toString(),
-                                        label: category.name,
-                                    }))}
-                                    styles={customStyles}
-                                    value={materialCategories
-                                        .map((category) => ({
-                                            value: category.materialTypeId.toString(),
-                                            label: category.name,
-                                        }))
-                                        .find((option) => option.value === newMaterial.typeId?.toString()) || null}
-                                    onChange={(selected) => {
-                                        setNewMaterial(prev => ({ ...prev, typeId: selected ? selected.value : "" }));
+                                <Autocomplete
+                                    options={materialCategories}
+                                    size="small"
+                                    getOptionLabel={(option) => option.name || ""}
+                                    value={
+                                        materialCategories.find(
+                                            (type) => type.materialTypeId === newMaterial.typeId
+                                        ) || null
+                                    }
+                                    onChange={(event, selectedType) => {
+                                        setNewMaterial(prev => ({ ...prev, typeId: selectedType ? selectedType.materialTypeId : "" }));
                                         setValidationErrors(prev => ({ ...prev, typeId: "" }));
                                     }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            color="success"
+                                            hiddenLabel
+                                            {...params}
+                                            placeholder="Danh mục"
+                                        />
+                                    )}
                                 />
                                 {validationErrors.typeId && (
                                     <Typography className="text-xs text-red-500 mt-1">
@@ -349,14 +361,27 @@ const AddMaterialPage = () => {
                                     Nhà cung cấp
                                     <span className="text-red-500"> *</span>
                                 </Typography>
-                                <Select
-                                    isMulti
-                                    placeholder="Chọn nhà cung cấp"
+                                <Autocomplete
+                                    multiple
                                     options={suppliers}
-                                    value={suppliers.filter(s => newMaterial.supplierIds.includes(s.value))}
-                                    onChange={handleSupplierChange}
-                                    styles={customStyles}
-                                    className="w-full"
+                                    size="small"
+                                    getOptionLabel={(option) => `${option.partnerCode} - ${option.label}`}
+                                    value={
+                                        suppliers.filter((s) =>
+                                            newMaterial.supplierIds.includes(s.value)
+                                        )
+                                    }
+                                    onChange={(event, selectedOptions) => {
+                                        handleSupplierChange(selectedOptions);
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            color="success"
+                                            hiddenLabel
+                                            {...params}
+                                            placeholder="Chọn nhà cung cấp"
+                                        />
+                                    )}
                                 />
                                 {(validationErrors.supplierIds || supplierError) && (
                                     <Typography className="text-xs text-red-500 mt-1">
@@ -395,8 +420,8 @@ const AddMaterialPage = () => {
                             </div>
                         </div>
                     </div>
-
-                    <div className="flex justify-end gap-2 mt-8 pb-2">
+                    <Divider sx={{ marginY: '16px' }} />
+                    <div className="flex justify-end gap-2 pb-2">
                         <MuiButton
                             size="medium"
                             color="error"

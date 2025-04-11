@@ -43,4 +43,5 @@ public interface PartnerRepository extends JpaRepository<Partner, Long> {
     Optional<Partner> findByPartnerNameAndPartnerTypeId(@Param("partnerName") String partnerName, @Param("partnerTypeId") Long partnerTypeId);
 
 
+    boolean existsByPartnerNameAndPartnerId(String partnerName, Long partnerId);
 }

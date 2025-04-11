@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import useMaterial from "./useMaterial";
 import { Button, Card, Typography } from "@material-tailwind/react";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
-import { EyeIcon } from "@heroicons/react/24/outline";
+import { IconButton } from "@mui/material";
+import { VisibilityOutlined } from '@mui/icons-material';
 import ReactPaginate from "react-paginate";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
@@ -19,7 +20,6 @@ import {
     CardBody,
     Tooltip,
     Switch,
-    Input
 } from "@material-tailwind/react";
 import ImportMaterialModal from "./ImportMaterialModal"; // Thêm import này
 
@@ -172,9 +172,13 @@ const MaterialPage = () => {
                             checked={params.value}
                             onChange={() => handleToggleStatus(params.row.id)}
                         />
-                        <Typography className="text-xs font-semibold text-blue-gray-600">
-                            {params.value ? "Đang sử dụng" : "Ngừng sử dụng"}
-                        </Typography>
+                        <div
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                      ${params.value ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
+                                }`}
+                        >
+                            {params.value ? "Đang hoạt động" : "Ngừng hoạt động"}
+                        </div>
                     </div>
                 );
             },
@@ -187,12 +191,13 @@ const MaterialPage = () => {
             renderCell: (params) => (
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
                     <Tooltip content="Xem chi tiết">
-                        <button
+                        <IconButton
+                            size="small"
                             onClick={() => navigate(`/user/materials/${params.row.id}`)}
-                            className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+                            color="primary"
                         >
-                            <EyeIcon className="h-5 w-5" />
-                        </button>
+                            <VisibilityOutlined />
+                        </IconButton>
                     </Tooltip>
                 </div>
             ),
