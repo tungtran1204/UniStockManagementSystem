@@ -166,4 +166,8 @@ AND i.warehouse.warehouseName NOT LIKE '%phế liệu%'
     Double getTotalQuantityAcrossWarehousesByMaterial(@Param("materialId") Long materialId);
 
 
+    Optional<Inventory> findByProduct_ProductIdAndWarehouse_WarehouseIdAndStatus(Long productId, Long warehouseId, Inventory.InventoryStatus status);
+
+    Optional<Inventory> findByMaterial_MaterialIdAndWarehouse_WarehouseIdAndStatus(Long materialId, Long warehouseId, Inventory.InventoryStatus status);
+
 }

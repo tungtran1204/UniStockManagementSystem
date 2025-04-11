@@ -37,6 +37,7 @@ import {
   getTotalQuantityOfProduct,
   getProductMaterialsByProduct,
   cancelSaleOrder,
+  setPreparingStatus,
 } from "./saleOrdersService";
 import ModalAddCustomer from "./ModalAddCustomer";
 import PageHeader from "@/components/PageHeader";
@@ -1546,19 +1547,44 @@ const EditSaleOrderPage = () => {
               )}
 
               {canCreatePurchaseRequestState && mode === MODE_DINHMUC && originalData?.status !== "CANCELLED" && (
-                <Button
-                  size="lg"
-                  color="white"
-                  variant="text"
-                  className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
-                  ripple={true}
-                  onClick={handleCreatePurchaseRequest}
-                >
-                  <div className="flex items-center gap-2">
-                    <FaCheck />
-                    <span>Tạo yêu cầu mua vật tư</span>
-                  </div>
-                </Button>
+                materialRequirements.every((mat) => mat.quantityToBuy === 0) ? (
+                  <Button
+                    size="lg"
+                    color="white"
+                    variant="text"
+                    className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                    ripple={true}
+                    onClick={async () => {
+                      try {
+                        await setPreparingStatus(orderId);
+                        alert("Đơn hàng đã được chuyển sang trạng thái 'Đang chuẩn bị vật tư'.");
+                        navigate("/user/sale-orders");
+                      } catch (err) {
+                        console.error("Lỗi khi chuyển trạng thái đơn hàng:", err);
+                        alert("Không thể chuyển trạng thái đơn hàng.");
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <FaCheck />
+                      <span>Chuẩn bị vật tư</span>
+                    </div>
+                  </Button>
+                ) : (
+                  <Button
+                    size="lg"
+                    color="white"
+                    variant="text"
+                    className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                    ripple={true}
+                    onClick={handleCreatePurchaseRequest}
+                  >
+                    <div className="flex items-center gap-2">
+                      <FaCheck />
+                      <span>Tạo yêu cầu mua vật tư</span>
+                    </div>
+                  </Button>
+                )
               )}
             </div>
           </div>
