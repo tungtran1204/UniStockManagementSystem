@@ -39,6 +39,10 @@ public class GoodReceiptNote {
     @JoinColumn(name = "po_id", nullable = true)
     private PurchaseOrder purchaseOrder;
 
+    @ManyToOne
+    @JoinColumn(name = "gin_id")
+    private GoodIssueNote goodIssueNote;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
