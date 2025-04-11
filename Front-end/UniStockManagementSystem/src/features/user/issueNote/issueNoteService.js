@@ -22,6 +22,33 @@ export const getSaleOrders = async (page, size) => {
   }
 };
 
+export const getMaterials = async (page, size) => {
+  try {
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}/user/materials`, {
+      params: { page, size },
+      headers: authHeader(),
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ [getSaleOrders] Lỗi khi lấy danh sách đơn hàng:", error);
+    throw error;
+  }
+};
+
+export const getIssueNotes = async (page, size) => {
+  try {
+    const response = await axios.get(API_URL, {
+      params: { page, size },
+      headers: authHeader(),
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ [getIssueNotes] Lỗi khi lấy danh sách phiếu xuất kho:", error);
+    throw error;
+  }
+};
+
+
 export const createIssueNote = async (issueNote) => {
     try {
       const response = await axios.post(API_URL, issueNote, {
@@ -29,7 +56,7 @@ export const createIssueNote = async (issueNote) => {
       });
       return response.data;
     } catch (error) {
-      console.error("Error creating receipt note:", error);
+      console.error("Lỗi khi tạo phiếu xuất kho:", error);
       throw error;
     }
   };
@@ -41,7 +68,7 @@ export const createIssueNote = async (issueNote) => {
       });
       return response.data; 
     } catch (error) {
-      console.error("Error getting next receipt note code:", error);
+      console.error("Lỗi khi tạo mã phiếu xuất kho mới:", error);
       throw error;
     }
   };
@@ -69,3 +96,32 @@ export const createIssueNote = async (issueNote) => {
       throw error;
     }
   };
+
+  export const getIssueNote = async (id) => {
+    try {
+      const response = await axios.get(`${API_URL}/${id}`, {
+        headers: authHeader(),
+      });
+      return response.data;
+    } catch (error) {
+      console.error("❌ [getIssueNote] Lỗi khi lấy chi tiết phiếu xuất kho:", error);
+      throw error;
+    }
+  };
+
+  export const getTotalQuantityOfMaterial = async (materialId) => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/user/inventory/material/${materialId}/warehouses`,
+        {
+          headers: authHeader(),
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Lỗi khi lấy tồn kho vật tư:", error);
+      throw error;
+    }
+  };
+  
+ 

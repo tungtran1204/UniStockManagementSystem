@@ -19,6 +19,8 @@ public class SalesOrderDetailDTO {
     private String productCode;
     private String productName; // Added for UI display
     private Integer quantity;
+    private Integer receivedQuantity;
+    private Integer remainingQuantity;
     private String unitName; // Đơn vị tính
 
 
