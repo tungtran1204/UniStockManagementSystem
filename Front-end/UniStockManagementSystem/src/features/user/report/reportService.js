@@ -138,6 +138,8 @@ export const getGoodIssueReportPaginated = ({
 };
 
 //báo cáo xuất nhập tồn
+const API_URL_SM_RP = "http://localhost:8080/api/unistock/user/stockmovement";
+//const API_URL_SM_RP = `${import.meta.env.VITE_API_URL}/user/stockmovement`;
 export const getStockMovementReportPaginated = ({
   page = 0,
   size = 20,
@@ -175,7 +177,7 @@ export const getStockMovementReportPaginated = ({
     }
   }
 
-  return axios.get(`http://localhost:8080/api/unistock/user/stockmovement/report?${params.toString()}`, {
+  return axios.get(`${API_URL_SM_RP}/report?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 };
