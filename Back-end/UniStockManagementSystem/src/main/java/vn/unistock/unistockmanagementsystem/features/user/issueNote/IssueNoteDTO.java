@@ -14,6 +14,11 @@ public class IssueNoteDTO {
     private String ginCode;
     private String description;
     private String category;
+    private Long partnerId;
+    private String partnerName;
+    private String address;
+    private String contactName;
+    private String phone;
     private LocalDateTime issueDate;
     private Long soId;
     private Long createdBy;

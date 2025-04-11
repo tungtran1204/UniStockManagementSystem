@@ -103,6 +103,11 @@ public class IssueNoteService {
                     .details(new ArrayList<>()) // Khởi tạo details rỗng
                     .build();
 
+            if (issueNoteDto.getPartnerId() != null) {
+                Partner partner = Partner.builder().partnerId(issueNoteDto.getPartnerId()).build();
+                issueNote.setPartner(partner);
+            }
+
             // Xử lý salesOrder nếu có soId
             if (issueNoteDto.getSoId() != null) {
                 SalesOrder salesOrder = salesOrderRepository.findById(issueNoteDto.getSoId())

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardBody,
@@ -12,7 +12,7 @@ import {
   IconButton,
   Button as MuiButton,
   Tooltip
-} from '@mui/material';
+} from "@mui/material";
 import ClearRoundedIcon from '@mui/icons-material/ClearRounded';
 import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
@@ -24,30 +24,32 @@ import {
 } from "@heroicons/react/24/outline";
 import { InformationCircleIcon } from "@heroicons/react/24/solid";
 
-import PageHeader from '@/components/PageHeader';
+import PageHeader from "@/components/PageHeader";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Import Tiếng Việt
 
-import FileUploadBox from '@/components/FileUploadBox';
+import FileUploadBox from "@/components/FileUploadBox";
 import ModalAddPartner from "./ModalAddPartner";
 import ModalChooseOrder from "./ModalChooseOrder";
-import TableSearch from '@/components/TableSearch';
+import TableSearch from "@/components/TableSearch";
 
-import { getPartnersByType /* ... */ } from "@/features/user/partner/partnerService";
+import { getPartnersByType } from "@/features/user/partner/partnerService";
 import { getSaleOrders, uploadPaperEvidence } from "./issueNoteService";
 import { getTotalQuantityOfProduct } from "../saleorders/saleOrdersService";
 
-// Import useIssueNote có chứa addIssueNote
+// Import hook hiện có (issue note)
 import useIssueNote from "./useIssueNote";
+
 
 const OUTSOURCE_TYPE_ID = 3;
 const SUPPLIER_TYPE_ID = 2;
 
 const AddIssueNote = () => {
   const navigate = useNavigate();
-  const { fetchNextCode, addIssueNote } = useIssueNote();
+  const { fetchNextCode, addIssueNote, materials } = useIssueNote();
+  // Sử dụng hook lấy danh sách material (NVL)
 
   // ------------------ STATE: Thông tin chung ------------------
   const [issueNoteCode, setIssueNoteCode] = useState("");
@@ -60,7 +62,6 @@ const AddIssueNote = () => {
   const [address, setAddress] = useState("");
   const [partnerCode, setPartnerCode] = useState("");
   const [partnerName, setPartnerName] = useState("");
-  const [isFocused, setIsFocused] = useState(false);
   // Thêm state soId để lưu orderId khi chọn đơn hàng
   const [soId, setSoId] = useState(null);
 
@@ -73,7 +74,9 @@ const AddIssueNote = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [isCreatePartnerPopupOpen, setIsCreatePartnerPopupOpen] = useState(false);
 
-  // ------------------ STATE: Danh sách sản phẩm + inStock ------------------
+  // ------------------ STATE: Danh sách sản phẩm / Nguyên vật liệu ------------------
+  // Khi category = "Trả lại hàng mua" thì state này sẽ lưu danh sách NVL, 
+  // còn với các category khác lưu danh sách sản phẩm theo cấu trúc ban đầu.
   const [products, setProducts] = useState([]);
 
   // ------------------ Lấy mã phiếu + đặt ngày mặc định ------------------
@@ -99,8 +102,6 @@ const AddIssueNote = () => {
         const mapped = response.content.map((order) => ({
           id: order.orderId,
           orderCode: order.orderCode,
-          // Ở đây, giả sử order.orderDetails chứa thông tin của từng sản phẩm,
-          // nhưng đối với việc hiển thị đơn hàng, bạn có thể hiển thị partnerName làm tên đơn hàng
           orderName: order.partnerName,
           partnerCode: order.partnerCode,
           partnerName: order.partnerName,
@@ -191,6 +192,16 @@ const AddIssueNote = () => {
     if (category === "Trả lại hàng mua") {
       fetchSuppliers();
     }
+    // Reset các thông tin liên quan khi đổi category
+    setReferenceDocument("");
+    setSoId(null);
+    setPartnerCode("");
+    setPartnerName("");
+    setContactName("");
+    setAddress("");
+    setDescription("");
+    setProducts([]);
+    setFiles([]);
   }, [category]);
 
   // ------------------ Handle chọn đơn hàng ------------------
@@ -199,7 +210,7 @@ const AddIssueNote = () => {
 
   const handleOrderSelected = async (selectedOrder) => {
     if (!selectedOrder) {
-      // Nếu user nhấn clear
+      // Nếu người dùng xoá chọn
       setReferenceDocument("");
       setSoId(null);
       setPartnerCode("");
@@ -213,7 +224,7 @@ const AddIssueNote = () => {
     }
 
     setReferenceDocument(selectedOrder.orderCode);
-    setSoId(selectedOrder.id); // Lưu orderId vào state soId
+    setSoId(selectedOrder.id);
     setPartnerCode(selectedOrder.partnerCode);
     setPartnerName(selectedOrder.partnerName);
     setCreateDate(
@@ -221,12 +232,11 @@ const AddIssueNote = () => {
         ? dayjs(selectedOrder.orderDate).format("YYYY-MM-DD")
         : ""
     );
-    // Giả sử orderDetails chứa thông tin gồm: quantity, receivedQuantity (SL đã xuất) cho sản phẩm
     setDescription(selectedOrder.orderName || "");
     setAddress(selectedOrder.address || "");
     setContactName(selectedOrder.contactName || "");
 
-    // Tạo mảng products[] = 1 item/sp, inStock[] = ds kho
+    // Tạo mảng products cho sản phẩm từ đơn hàng
     const newProducts = [];
     for (const detail of selectedOrder.orderDetails) {
       let inStockArr = [];
@@ -238,7 +248,6 @@ const AddIssueNote = () => {
         console.error("Lỗi getTotalQuantityOfProduct:", err);
       }
 
-      // Nếu rỗng => không tạo row với warehouseId=null (để tránh lỗi)
       if (!inStockArr || inStockArr.length === 0) {
         console.error("Không có dữ liệu tồn kho cho sản phẩm có ID:", detail.productId);
         continue;
@@ -252,7 +261,6 @@ const AddIssueNote = () => {
         unitName: detail.unitName || "",
         orderQuantity: detail.quantity || 0,
         exportedQuantity: detail.receivedQuantity || 0,
-        // SL còn lại = SL đặt - SL đã xuất
         pendingQuantity: (detail.quantity || 0) - (detail.receivedQuantity || 0),
         inStock: inStockArr.map((wh) => ({
           warehouseId: wh.warehouseId,
@@ -272,30 +280,47 @@ const AddIssueNote = () => {
   const handleOpenCreatePartnerPopup = () => setIsCreatePartnerPopupOpen(true);
   const handleCloseCreatePartnerPopup = () => setIsCreatePartnerPopupOpen(false);
 
-  // ------------------ Thêm/Xoá dòng sản phẩm ------------------
+  // ------------------ Thêm/Xoá dòng ------------------
   const handleAddRow = () => {
-    setProducts((prev) => [
-      ...prev,
-      {
-        id: `new-${prev.length + 1}`,
-        productId: null,
-        productCode: "",
-        productName: "",
-        unitName: "",
-        orderQuantity: 1,
-        exportedQuantity: 0,
-        pendingQuantity: 1,
-        inStock: [
-          {
-            warehouseId: null,
-            warehouseName: "",
-            quantity: 0,
-            exportQuantity: 0,
-            error: ""
-          },
-        ],
-      },
-    ]);
+    if (category === "Trả lại hàng mua") {
+      // Tạo row cho NVL
+      setProducts((prev) => [
+        ...prev,
+        {
+          id: `new-${prev.length + 1}`,
+          materialId: null,
+          materialCode: "",
+          materialName: "",
+          unitName: "",
+          quantity: 0,
+          error: ""
+        },
+      ]);
+    } else {
+      // Row sản phẩm như cũ
+      setProducts((prev) => [
+        ...prev,
+        {
+          id: `new-${prev.length + 1}`,
+          productId: null,
+          productCode: "",
+          productName: "",
+          unitName: "",
+          orderQuantity: 1,
+          exportedQuantity: 0,
+          pendingQuantity: 1,
+          inStock: [
+            {
+              warehouseId: null,
+              warehouseName: "",
+              quantity: 0,
+              exportQuantity: 0,
+              error: ""
+            },
+          ],
+        },
+      ]);
+    }
   };
 
   const handleRemoveAllRows = () => setProducts([]);
@@ -303,12 +328,14 @@ const AddIssueNote = () => {
     setProducts((prev) => prev.filter((p) => p.id !== rowId));
   };
 
-  // ------------------ Pagination cho products ------------------
+  // ------------------ Pagination cho sản phẩm (áp dụng khi hiển thị bảng sản phẩm) ------------------
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-
-  const totalPages = Math.ceil(products.length / pageSize);
-  const totalElements = products.length;
+  const totalPages = Math.ceil(
+    category === "Trả lại hàng mua" ? products.length : products.length / pageSize
+  );
+  const totalElements =
+    category === "Trả lại hàng mua" ? products.length : products.length;
 
   useEffect(() => {
     if (currentPage >= totalPages) {
@@ -320,14 +347,15 @@ const AddIssueNote = () => {
     setCurrentPage(selected);
   };
 
-  const displayedProducts = products.slice(
-    currentPage * pageSize,
-    (currentPage + 1) * pageSize
-  );
-
   // ------------------ Render bảng sản phẩm ------------------
+  // Hàm render cho các sản phẩm (không phải NVL)
   const renderTableBody = () => {
-    if (displayedProducts.length === 0) {
+    // Nếu không có sản phẩm để phân trang
+    const displayed = products.slice(
+      currentPage * pageSize,
+      (currentPage + 1) * pageSize
+    );
+    if (displayed.length === 0) {
       return (
         <tr>
           <td colSpan={11} className="text-center py-3 text-gray-500">
@@ -337,11 +365,10 @@ const AddIssueNote = () => {
       );
     }
 
-    return displayedProducts.flatMap((prod, prodIndex) => {
+    return displayed.flatMap((prod, prodIndex) => {
       return prod.inStock.map((wh, whIndex) => {
         const isFirstRow = whIndex === 0;
         const rowSpan = prod.inStock.length;
-        // Tính giá trị max cho ô SL xuất nếu category là "Bán hàng"
         const maxExport =
           typeof wh.quantity === "number" && typeof prod.pendingQuantity === "number"
             ? Math.min(wh.quantity, prod.pendingQuantity)
@@ -363,15 +390,12 @@ const AddIssueNote = () => {
                 <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
                   {prod.unitName}
                 </td>
-                {/* Cột SL Đặt */}
                 <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm text-center">
                   {prod.orderQuantity}
                 </td>
-                {/* Cột SL đã xuất */}
                 <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm text-center">
                   {prod.exportedQuantity}
                 </td>
-                {/* Cột SL còn phải xuất */}
                 <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm text-center">
                   {prod.pendingQuantity}
                 </td>
@@ -389,14 +413,12 @@ const AddIssueNote = () => {
                   type="number"
                   className="border p-1 text-right w-[60px]"
                   value={wh.exportQuantity || 0}
-                  // Nếu Category là "Bán hàng", thiết lập max cho ô nhập
                   max={category === "Bán hàng" ? maxExport : undefined}
                   onChange={(e) => {
                     const val = Number(e.target.value);
                     if (category === "Bán hàng") {
                       const maxAllowed = maxExport;
                       if (maxAllowed !== undefined && val > maxAllowed) {
-                        // Cập nhật error message thay vì alert
                         setProducts((prev) =>
                           prev.map((p) => {
                             if (p.id === prod.id) {
@@ -404,7 +426,6 @@ const AddIssueNote = () => {
                                 if (i === whIndex) {
                                   return {
                                     ...ins,
-                                    // Không cập nhật exportQuantity khi giá trị không hợp lệ
                                     error: `Số lượng xuất không được vượt quá Tồn kho (${wh.quantity}) và SL còn phải xuất (${prod.pendingQuantity}).`
                                   };
                                 }
@@ -417,7 +438,6 @@ const AddIssueNote = () => {
                         );
                         return;
                       } else {
-                        // Nếu hợp lệ, cập nhật exportQuantity và xóa error nếu có
                         setProducts((prev) =>
                           prev.map((p) => {
                             if (p.id === prod.id) {
@@ -438,7 +458,6 @@ const AddIssueNote = () => {
                         );
                       }
                     } else {
-                      // Với các category khác, chỉ cập nhật exportQuantity
                       setProducts((prev) =>
                         prev.map((p) => {
                           if (p.id === prod.id) {
@@ -479,10 +498,118 @@ const AddIssueNote = () => {
     });
   };
 
+  // Hàm render bảng cho NVL (khi category = "Trả lại hàng mua")
+  const renderMaterialTableBody = () => {
+    if (products.length === 0) {
+      return (
+        <tr>
+          <td colSpan={6} className="text-center py-3 text-gray-500">
+            Chưa có nguyên vật liệu nào
+          </td>
+        </tr>
+      );
+    }
+
+    return products.map((row, index) => (
+      <tr key={row.id} className="border-b hover:bg-gray-50">
+        <td className="px-3 py-2 border-r text-center text-sm">
+          {index + 1}
+        </td>
+        <td className="px-3 py-2 border-r text-sm">
+          <Autocomplete
+            options={materials || []}
+            getOptionLabel={(option) =>
+              `${option.materialCode} - ${option.materialName}`
+            }
+            value={
+              materials.find((mat) => mat.materialId === row.materialId) ||
+              null
+            }
+            onChange={(event, newValue) => {
+              if (newValue) {
+                setProducts((prev) =>
+                  prev.map((p) => {
+                    if (p.id === row.id) {
+                      return {
+                        ...p,
+                        materialId: newValue.materialId,
+                        materialCode: newValue.materialCode,
+                        materialName: newValue.materialName,
+                        unitName: newValue.unitName,
+                        unitId: newValue.unitId,
+                      };
+                    }
+                    return p;
+                  })
+                );
+              } else {
+                setProducts((prev) =>
+                  prev.map((p) => {
+                    if (p.id === row.id) {
+                      return {
+                        ...p,
+                        materialId: null,
+                        materialCode: "",
+                        materialName: "",
+                        unitName: "",
+                        unitId: undefined,
+                      };
+                    }
+                    return p;
+                  })
+                );
+              }
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Chọn NVL"
+                variant="outlined"
+                size="small"
+                color="success"
+              />
+            )}
+          />
+        </td>
+        <td className="px-3 py-2 border-r text-sm">{row.materialName}</td>
+        <td className="px-3 py-2 border-r text-sm">{row.unitName}</td>
+        <td className="px-3 py-2 border-r text-sm">
+          <input
+            type="number"
+            className="border p-1 w-20 text-right"
+            value={row.quantity || 0}
+            onChange={(e) => {
+              const val = Number(e.target.value);
+              setProducts((prev) =>
+                prev.map((p) => {
+                  if (p.id === row.id) return { ...p, quantity: val };
+                  return p;
+                })
+              );
+            }}
+          />
+          {row.error && (
+            <div className="text-red-500 text-xs mt-1">{row.error}</div>
+          )}
+        </td>
+        <td className="px-3 py-2 text-center text-sm">
+          <Tooltip title="Xóa nguyên vật liệu">
+            <IconButton
+              size="small"
+              color="error"
+              onClick={() => handleDeleteRow(row.id)}
+            >
+              <FaTrash />
+            </IconButton>
+          </Tooltip>
+        </td>
+      </tr>
+    ));
+  };
+
   // ------------------ Xử lý khi ấn Lưu ------------------
   const handleSave = async () => {
     try {
-      // Validate required fields
       if (!category) {
         alert("Vui lòng chọn phân loại xuất kho.");
         return;
@@ -493,49 +620,56 @@ const AddIssueNote = () => {
         return;
       }
 
-      console.log("Products state:", products);
-
-      // Prepare details with proper validation
-      const details = products.flatMap(prod =>
-        prod.inStock
-          .filter(wh => wh.warehouseId && wh.exportQuantity > 0)
-          .map(wh => ({
-            warehouseId: wh.warehouseId,
-            productId: prod.productId,
-            quantity: wh.exportQuantity,
-            unitId: 1 // Assuming default unit, should be dynamic in real app
-          }))
-      );
-
-      console.log("Calculated details to send:", details);
+      let details = [];
+      if (category === "Trả lại hàng mua") {
+        details = products
+          .filter((row) => row.materialId && row.quantity > 0)
+          .map((row) => ({
+            materialId: row.materialId,
+            quantity: row.quantity,
+            unitId: row.unitId || 1,
+          }));
+      } else {
+        details = products.flatMap((prod) =>
+          prod.inStock
+            .filter((wh) => wh.warehouseId && wh.exportQuantity > 0)
+            .map((wh) => ({
+              warehouseId: wh.warehouseId,
+              productId: prod.productId,
+              quantity: wh.exportQuantity,
+              unitId: 1,
+            }))
+        );
+      }
 
       if (details.length === 0) {
-        alert("Vui lòng nhập ít nhất một dòng sản phẩm với số lượng xuất hợp lệ!");
+        alert(
+          "Vui lòng nhập ít nhất một dòng sản phẩm với số lượng xuất hợp lệ!"
+        );
         return;
       }
 
-      console.log("Reference Document:", referenceDocument);
-      console.log("soId state:", soId);
-
-      // Prepare payload with proper date format
       const payload = {
         ginCode: issueNoteCode,
         category,
-        issueDate: `${createdDate}T00:00:00`, // Full ISO format
+        issueDate: `${createdDate}T00:00:00`,
         description,
         details,
-        soId: soId, // Sử dụng soId từ state đã được lưu khi chọn đơn hàng
-        createdBy: 1 // Should be dynamic in real app
+        soId: soId,
+        createdBy: 1,
       };
 
       console.log("Sending payload:", payload);
 
       const result = await addIssueNote(payload);
       if (result) {
-        // Nếu có file để upload, gọi service uploadPaperEvidence
         if (files && files.length > 0) {
           try {
-            const uploadResult = await uploadPaperEvidence(result.ginId, "GOOD_ISSUE_NOTE", files);
+            const uploadResult = await uploadPaperEvidence(
+              result.ginId,
+              "GOOD_ISSUE_NOTE",
+              files
+            );
             console.log("Upload result:", uploadResult);
           } catch (uploadError) {
             console.error("Error uploading paper evidence:", uploadError);
@@ -551,7 +685,10 @@ const AddIssueNote = () => {
   };
 
   return (
-    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh - 100px)' }}>
+    <div
+      className="mb-8 flex flex-col gap-12"
+      style={{ height: "calc(100vh - 100px)" }}
+    >
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
@@ -569,9 +706,7 @@ const AddIssueNote = () => {
             Thông tin chung
           </Typography>
 
-          <div
-            className="grid gap-x-12 gap-y-4 mb-4 grid-cols-3"
-          >
+          <div className="grid gap-x-12 gap-y-4 mb-4 grid-cols-3">
             {/* Phân loại */}
             <div>
               <Typography variant="medium" className="mb-1 text-black">
@@ -582,21 +717,7 @@ const AddIssueNote = () => {
                 hiddenLabel
                 color="success"
                 value={category}
-                onChange={(e) => {
-                  const newCategory = e.target.value;
-                  setCategory(newCategory);
-
-                  // 🔁 Reset dữ liệu liên quan
-                  setReferenceDocument("");
-                  setSoId(null);
-                  setPartnerCode("");
-                  setPartnerName("");
-                  setContactName("");
-                  setAddress("");
-                  setDescription("");
-                  setProducts([]);
-                  setFiles([]);
-                }}
+                onChange={(e) => setCategory(e.target.value)}
                 fullWidth
                 size="small"
               >
@@ -624,10 +745,10 @@ const AddIssueNote = () => {
                 value={issueNoteCode}
                 disabled
                 sx={{
-                  '& .MuiInputBase-root.Mui-disabled': {
-                    bgcolor: '#eeeeee',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      border: 'none',
+                  "& .MuiInputBase-root.Mui-disabled": {
+                    bgcolor: "#eeeeee",
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      border: "none",
                     },
                   },
                 }}
@@ -639,9 +760,6 @@ const AddIssueNote = () => {
                 Ngày lập phiếu
               </Typography>
               <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
-                <style>
-                  {`.MuiPickersCalendarHeader-label { text-transform: capitalize !important; }`}
-                </style>
                 <DatePicker
                   value={createdDate ? dayjs(createdDate) : null}
                   onChange={(newValue) => {
@@ -657,20 +775,6 @@ const AddIssueNote = () => {
                       fullWidth: true,
                       size: "small",
                       color: "success",
-                    },
-                    day: {
-                      sx: () => ({
-                        "&.Mui-selected": {
-                          backgroundColor: "#0ab067 !important",
-                          color: "white",
-                        },
-                        "&.Mui-selected:hover": {
-                          backgroundColor: "#089456 !important",
-                        },
-                        "&:hover": {
-                          backgroundColor: "#0894561A !important",
-                        },
-                      }),
                     },
                   }}
                 />
@@ -690,8 +794,13 @@ const AddIssueNote = () => {
                   disableClearable
                   clearIcon={null}
                   size="small"
-                  getOptionLabel={(option) => `${option.orderCode} - ${option.orderName}`}
-                  value={orders.find((o) => o.orderCode === referenceDocument) || null}
+                  getOptionLabel={(option) =>
+                    `${option.orderCode} - ${option.orderName}`
+                  }
+                  value={
+                    orders.find((o) => o.orderCode === referenceDocument) ||
+                    null
+                  }
                   onChange={(event, selectedOrder) => {
                     if (selectedOrder) {
                       handleOrderSelected(selectedOrder);
@@ -716,7 +825,6 @@ const AddIssueNote = () => {
                             >
                               <FaSearch fontSize="small" />
                             </IconButton>
-
                             {partnerCode && (
                               <IconButton
                                 onClick={(e) => {
@@ -730,7 +838,7 @@ const AddIssueNote = () => {
                             )}
                             {params.InputProps.endAdornment}
                           </div>
-                        )
+                        ),
                       }}
                     />
                   )}
@@ -749,10 +857,12 @@ const AddIssueNote = () => {
                   value={partnerCode}
                   disabled
                   sx={{
-                    '& .MuiInputBase-root.Mui-disabled': {
-                      bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
-                    }
+                    "& .MuiInputBase-root.Mui-disabled": {
+                      bgcolor: "#eeeeee",
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        border: "none",
+                      },
+                    },
                   }}
                 />
               </div>
@@ -769,10 +879,10 @@ const AddIssueNote = () => {
                   value={partnerName}
                   disabled
                   sx={{
-                    '& .MuiInputBase-root.Mui-disabled': {
-                      bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
-                    }
+                    "& .MuiInputBase-root.Mui-disabled": {
+                      bgcolor: "#eeeeee",
+                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                    },
                   }}
                 />
               </div>
@@ -789,10 +899,10 @@ const AddIssueNote = () => {
                   value={contactName}
                   disabled
                   sx={{
-                    '& .MuiInputBase-root.Mui-disabled': {
-                      bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
-                    }
+                    "& .MuiInputBase-root.Mui-disabled": {
+                      bgcolor: "#eeeeee",
+                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                    },
                   }}
                 />
               </div>
@@ -809,10 +919,10 @@ const AddIssueNote = () => {
                   value={address}
                   disabled
                   sx={{
-                    '& .MuiInputBase-root.Mui-disabled': {
-                      bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
-                    }
+                    "& .MuiInputBase-root.Mui-disabled": {
+                      bgcolor: "#eeeeee",
+                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                    },
                   }}
                 />
               </div>
@@ -861,8 +971,10 @@ const AddIssueNote = () => {
                   disableClearable
                   clearIcon={null}
                   size="small"
-                  getOptionLabel={(option) => `${option.code} - ${option.name}`}
-                  value={outsources.find(o => o.code === partnerCode) || null}
+                  getOptionLabel={(option) =>
+                    `${option.code} - ${option.name}`
+                  }
+                  value={outsources.find((o) => o.code === partnerCode) || null}
                   onChange={(event, sel) => {
                     if (sel) {
                       setPartnerCode(sel.code);
@@ -890,7 +1002,6 @@ const AddIssueNote = () => {
                             >
                               <FaPlus fontSize="small" />
                             </IconButton>
-
                             {partnerCode && (
                               <IconButton
                                 onClick={(e) => {
@@ -898,7 +1009,7 @@ const AddIssueNote = () => {
                                   setPartnerCode("");
                                   setPartnerName("");
                                   setAddress("");
-                                  setContactName(""); // clear
+                                  setContactName("");
                                 }}
                                 size="small"
                               >
@@ -907,7 +1018,7 @@ const AddIssueNote = () => {
                             )}
                             {params.InputProps.endAdornment}
                           </div>
-                        )
+                        ),
                       }}
                     />
                   )}
@@ -925,10 +1036,10 @@ const AddIssueNote = () => {
                   value={partnerName}
                   disabled
                   sx={{
-                    '& .MuiInputBase-root.Mui-disabled': {
-                      bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
-                    }
+                    "& .MuiInputBase-root.Mui-disabled": {
+                      bgcolor: "#eeeeee",
+                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                    },
                   }}
                 />
               </div>
@@ -944,10 +1055,10 @@ const AddIssueNote = () => {
                   value={contactName}
                   disabled
                   sx={{
-                    '& .MuiInputBase-root.Mui-disabled': {
-                      bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
-                    }
+                    "& .MuiInputBase-root.Mui-disabled": {
+                      bgcolor: "#eeeeee",
+                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                    },
                   }}
                 />
               </div>
@@ -963,10 +1074,10 @@ const AddIssueNote = () => {
                   value={address}
                   disabled
                   sx={{
-                    '& .MuiInputBase-root.Mui-disabled': {
-                      bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
-                    }
+                    "& .MuiInputBase-root.Mui-disabled": {
+                      bgcolor: "#eeeeee",
+                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                    },
                   }}
                 />
               </div>
@@ -985,7 +1096,7 @@ const AddIssueNote = () => {
                   clearIcon={null}
                   size="small"
                   getOptionLabel={(option) => option.code || ""}
-                  value={suppliers.find(o => o.code === partnerCode) || null}
+                  value={suppliers.find((o) => o.code === partnerCode) || null}
                   onChange={(event, sel) => {
                     if (sel) {
                       setPartnerCode(sel.code);
@@ -997,7 +1108,7 @@ const AddIssueNote = () => {
                   slotProps={{
                     paper: {
                       sx: {
-                        maxHeight: 300, // Giới hạn chiều cao dropdown
+                        maxHeight: 300,
                         overflowY: "auto",
                       },
                     },
@@ -1021,7 +1132,6 @@ const AddIssueNote = () => {
                             >
                               <FaPlus fontSize="small" />
                             </IconButton>
-
                             {partnerCode && (
                               <IconButton
                                 onClick={(e) => {
@@ -1029,7 +1139,7 @@ const AddIssueNote = () => {
                                   setPartnerCode("");
                                   setPartnerName("");
                                   setAddress("");
-                                  setContactName(""); // clear
+                                  setContactName("");
                                 }}
                                 size="small"
                               >
@@ -1038,7 +1148,7 @@ const AddIssueNote = () => {
                             )}
                             {params.InputProps.endAdornment}
                           </div>
-                        )
+                        ),
                       }}
                     />
                   )}
@@ -1056,10 +1166,10 @@ const AddIssueNote = () => {
                   value={partnerName}
                   disabled
                   sx={{
-                    '& .MuiInputBase-root.Mui-disabled': {
-                      bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
-                    }
+                    "& .MuiInputBase-root.Mui-disabled": {
+                      bgcolor: "#eeeeee",
+                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                    },
                   }}
                 />
               </div>
@@ -1075,10 +1185,10 @@ const AddIssueNote = () => {
                   value={contactName}
                   disabled
                   sx={{
-                    '& .MuiInputBase-root.Mui-disabled': {
-                      bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
-                    }
+                    "& .MuiInputBase-root.Mui-disabled": {
+                      bgcolor: "#eeeeee",
+                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                    },
                   }}
                 />
               </div>
@@ -1094,10 +1204,10 @@ const AddIssueNote = () => {
                   value={address}
                   disabled
                   sx={{
-                    '& .MuiInputBase-root.Mui-disabled': {
-                      bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
-                    }
+                    "& .MuiInputBase-root.Mui-disabled": {
+                      bgcolor: "#eeeeee",
+                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                    },
                   }}
                 />
               </div>
@@ -1126,11 +1236,7 @@ const AddIssueNote = () => {
               <Typography variant="medium" className="mb-1 text-black">
                 Kèm theo
               </Typography>
-              <FileUploadBox
-                files={files}
-                setFiles={setFiles}
-                maxFiles={3}
-              />
+              <FileUploadBox files={files} setFiles={setFiles} maxFiles={3} />
             </div>
           </div>
 
@@ -1139,40 +1245,53 @@ const AddIssueNote = () => {
             className="flex items-center mb-4 text-black"
           >
             <ListBulletIcon className="h-5 w-5 mr-2" />
-            Danh sách sản phẩm
+            Danh sách{" "}
+            {category === "Trả lại hàng mua" ? "Nguyên vật liệu" : "sản phẩm"}
           </Typography>
 
-          {/* Update header bảng */}
-          <div className="border rounded mb-4 overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="px-3 py-2 border-r">STT</th>
-                  <th className="px-3 py-2 border-r">Mã hàng</th>
-                  <th className="px-3 py-2 border-r">Tên hàng</th>
-                  <th className="px-3 py-2 border-r">Đơn vị</th>
-                  <th className="px-3 py-2 border-r">SL Đặt</th>
-                  <th className="px-3 py-2 border-r">SL đã xuất</th>
-                  <th className="px-3 py-2 border-r">SL còn phải xuất</th>
-                  <th className="px-3 py-2 border-r">Kho</th>
-                  <th className="px-3 py-2 border-r">Tồn kho</th>
-                  <th className="px-3 py-2 border-r">SL xuất</th>
-                  <th className="px-3 py-2">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>{renderTableBody()}</tbody>
-            </table>
-          </div>
+          {category === "Trả lại hàng mua" ? (
+            <div className="border rounded mb-4 overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-3 py-2 border-r">STT</th>
+                    <th className="px-3 py-2 border-r">Mã NVL</th>
+                    <th className="px-3 py-2 border-r">Tên NVL</th>
+                    <th className="px-3 py-2 border-r">Đơn vị</th>
+                    <th className="px-3 py-2 border-r">SL</th>
+                    <th className="px-3 py-2">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>{renderMaterialTableBody()}</tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="border rounded mb-4 overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-3 py-2 border-r">STT</th>
+                    <th className="px-3 py-2 border-r">Mã hàng</th>
+                    <th className="px-3 py-2 border-r">Tên hàng</th>
+                    <th className="px-3 py-2 border-r">Đơn vị</th>
+                    <th className="px-3 py-2 border-r">SL Đặt</th>
+                    <th className="px-3 py-2 border-r">SL đã xuất</th>
+                    <th className="px-3 py-2 border-r">SL còn phải xuất</th>
+                    <th className="px-3 py-2 border-r">Kho</th>
+                    <th className="px-3 py-2 border-r">Tồn kho</th>
+                    <th className="px-3 py-2 border-r">SL xuất</th>
+                    <th className="px-3 py-2">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>{renderTableBody()}</tbody>
+              </table>
+            </div>
+          )}
 
-          {/* Chỉ hiển thị nút thêm dòng và xoá hết dòng nếu Category không phải "Bán hàng" */}
           {category !== "Bán hàng" && (
             <div className="flex gap-2 mb-4">
-              <MuiButton
-                size="small"
-                variant="outlined"
-                onClick={handleAddRow}
-              >
-                <div className='flex items-center gap-2'>
+              <MuiButton size="small" variant="outlined" onClick={handleAddRow}>
+                <div className="flex items-center gap-2">
                   <FaPlus className="h-4 w-4" />
                   <span>Thêm dòng</span>
                 </div>
@@ -1183,7 +1302,7 @@ const AddIssueNote = () => {
                 color="error"
                 onClick={handleRemoveAllRows}
               >
-                <div className='flex items-center gap-2'>
+                <div className="flex items-center gap-2">
                   <FaTrash className="h-4 w-4" />
                   <span>Xoá hết dòng</span>
                 </div>
@@ -1194,7 +1313,11 @@ const AddIssueNote = () => {
           {totalElements > 0 && (
             <div className="flex items-center justify-between pt-4">
               <div className="flex items-center gap-2">
-                <Typography variant="small" color="blue-gray" className="font-normal">
+                <Typography
+                  variant="small"
+                  color="blue-gray"
+                  className="font-normal"
+                >
                   Trang {currentPage + 1} / {totalPages} • {totalElements} sản phẩm
                 </Typography>
               </div>
@@ -1225,10 +1348,10 @@ const AddIssueNote = () => {
               size="medium"
               variant="outlined"
               sx={{
-                height: '36px',
-                color: '#616161',
-                borderColor: '#9e9e9e',
-                '&:hover': { backgroundColor: '#f5f5f5', borderColor: '#757575' }
+                height: "36px",
+                color: "#616161",
+                borderColor: "#9e9e9e",
+                "&:hover": { backgroundColor: "#f5f5f5", borderColor: "#757575" },
               }}
               onClick={() => navigate("/user/issueNote")}
               className="flex items-center gap-2"

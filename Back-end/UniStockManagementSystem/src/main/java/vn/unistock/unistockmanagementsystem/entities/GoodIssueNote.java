@@ -38,6 +38,11 @@ public class GoodIssueNote {
 
     @CreationTimestamp
     private LocalDateTime issueDate;
+
+    @ManyToOne
+    @JoinColumn(name = "partner_id")
+    private Partner partner;
+
     @ManyToOne
     @JoinColumn(name = "created_by", nullable = false)
     @NotNull(message = "Created by is required")
