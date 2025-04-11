@@ -64,6 +64,7 @@ import GoodReceiptReportPage from "../features/user/report/GoodReceiptReportPage
 import GoodIssueReportPage from "../features/user/report/GoodIssueReportPage";
 import StockMovementReportPage from "../features/user/report/StockMovementReportPage";
 import PartnerReportPage from "../features/user/report/PartnerReportPage";
+import ViewIssueNote from "../features/user/issueNote/ViewIssueNote";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -325,7 +326,7 @@ export const routes = [
         element: <ProfilePage />,
       },
       {
-        icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
+        layout: "Bán hàng", // Sử dụng icon tương tự như trang quản lý kho
         name: "Thêm đơn hàng",
         path: "/user/sale-orders/add",
         element: <AddSaleOrderPage />, // Trang quản lý đơn hàng 
@@ -333,15 +334,14 @@ export const routes = [
       },
 
       {
-        icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
-        name: "Sửa đơn hàng",
+        layout: "Bán hàng", // Sử dụng icon tương tự như trang quản lý kho
+        name: "CHi tiết đơn hàng",
         path: "/user/sale-orders/:orderId",
         element: <EditSaleOrderPage />, // Trang quản lý đơn hàng 
         roles: ["USER"],
       },
-
       {
-        icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
+        layout: "Nhập kho", // Sử dụng icon tương tự như trang quản lý kho
         name: "Thêm phiếu nhập",
         path: "/user/receiptNote/add",
         element: <AddReceiptNote />, // Trang quản lý đơn hàng 
@@ -362,52 +362,71 @@ export const routes = [
         roles: ["USER"],
       },
       {
+        layout: "Sản phẩm",
+        name: "Chi tiết sản phẩm",
         path: "/user/products/:id",
         element: <DetailProductPage />,
         roles: ["USER"],
       },
       {
+        layout: "Mua hàng",
+        name: "Chi tiết đơn đặt hàng",
         path: "/user/purchaseOrder/:orderId",
         element: <PurchaseOrderDetail />,
         roles: ["USER"],
       },
       {
-        icon: <TableCellsIcon {...icon} />,
+        layout: "Mua hàng",
         name: "Thêm yêu cầu mua vật tư",
         path: "/user/purchase-request/add",
         element: <AddPurchaseRequestPage />,
         roles: ["USER"],
       },
       {
-        icon: <TableCellsIcon {...icon} />,
-        name: "Thêm nguyên vật liệu",
+        layout: "Vật tư",
+        name: "Thêm vật tư",
         path: "/user/materials/add",
         element: <AddMaterialPage />,
         roles: ["USER"],
       },
       {
+        layout: "Vật tư",
+        name: "Chi tiết vật tư",
         path: "/user/materials/:id",
         element: <DetailMaterialPage />,
         roles: ["USER"],
       },
       {
+        layout: "Mua hàng",
+        name: "Chi tiết yêu cầu mua",
         path: "/user/purchase-request/:id",
         element: <DetailPurchaseRequestPage />,
         roles: ["USER"],
       },
       {
+        layout: "Nhập kho",
+        name: "Chi tiết phiếu nhập kho",
         path: "/user/receiptNote/:id",
         element: <ViewReceiptNote />,
         roles: ["USER"],
       },
       {
+        layout: "Nhập kho",
+        name: "Thêm phiếu nhập kho",
         path: "/user/receiptNote/manual",
         element: <AddReceiptNoteManually />,
         roles: ["USER"],
       },
       {
+        layout: "Nhập kho", // Sử dụng icon tương tự như trang quản lý kho
+        name: "Thêm phiếu nhập",
         path: "/user/receiptNote/general",
         element: <AddReceiptNoteGeneral />,
+        roles: ["USER"],
+      },
+      {
+        path: "/user/issueNote/:id",
+        element: <ViewIssueNote />,
         roles: ["USER"],
       }
     ],

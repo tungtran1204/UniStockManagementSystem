@@ -10,11 +10,13 @@ import {
   Textarea,
   Typography,
 } from "@material-tailwind/react";
-import Select, { components } from "react-select";
-import { TextField, Button as MuiButton } from '@mui/material';
+import {
+  HighlightOffRounded,
+  ClearRounded
+} from '@mui/icons-material';
+import { TextField, Button as MuiButton, Autocomplete, IconButton, Divider } from '@mui/material';
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
-
 import { getPartnersByType } from "@/features/user/partner/partnerService";
 import { getProducts } from "./saleOrdersService";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
@@ -27,52 +29,6 @@ import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 
 const CUSTOMER_TYPE_ID = 1;
-
-const AddCustomerDropdownIndicator = (props) => {
-  return (
-    <div style={{ display: "flex", alignItems: "center" }}>
-      <div
-        style={{ cursor: "pointer", padding: "0 8px" }}
-        onClick={(e) => {
-          console.log("FaPlus clicked to open modal");
-          e.stopPropagation();
-          props.selectProps.onAddCustomer();
-        }}
-      >
-        <FaPlus />
-      </div>
-      <components.DropdownIndicator {...props} />
-    </div>
-  );
-};
-
-const customStyles = {
-  control: (provided, state) => ({
-    ...provided,
-    minWidth: 200,
-    borderColor: state.isFocused ? "black" : provided.borderColor,
-    boxShadow: state.isFocused ? "0 0 0 1px black" : "none",
-    "&:hover": {
-      borderColor: "black",
-    },
-  }),
-  menuList: (provided) => ({
-    ...provided,
-  }),
-  option: (provided, state) => ({
-    ...provided,
-    backgroundColor: state.isFocused
-      ? "#f3f4f6"
-      : state.isSelected
-        ? "#e5e7eb"
-        : "transparent",
-    color: "#000",
-    cursor: "pointer",
-    "&:active": {
-      backgroundColor: "#e5e7eb",
-    },
-  }),
-};
 
 const AddSaleOrderPage = () => {
   const location = useLocation();
@@ -382,16 +338,53 @@ const AddSaleOrderPage = () => {
                   Mã khách hàng
                   <span className="text-red-500"> *</span>
                 </Typography>
-                <Select
-                  ref={selectRef}
+                <Autocomplete
                   options={customers}
-                  value={customers.find((c) => c.code === customerCode) || null}
-                  onChange={handleCustomerChange}
-                  isSearchable
-                  styles={customStyles}
-                  placeholder="Chọn khách hàng"
-                  components={{ DropdownIndicator: AddCustomerDropdownIndicator }}
-                  onAddCustomer={handleOpenCreatePartnerPopup}
+                  disableClearable
+                  clearIcon={null}
+                  size="small"
+                  getOptionLabel={(option) => option.label}
+                  value={customers.find(o => o.code === customerCode) || null}
+                  onChange={(event, selected) =>
+                    handleCustomerChange(selected)
+                  }
+                  renderInput={(params) => (
+                    <TextField
+                      color="success"
+                      hiddenLabel
+                      {...params}
+                      placeholder="Mã khách hàng"
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <div className="flex items-center space-x-1">
+                            <IconButton
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenCreatePartnerPopup();
+                              }}
+                              size="small"
+                            >
+                              <FaPlus fontSize="small" />
+                            </IconButton>
+
+                            {customerCode && (
+                              <IconButton
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOrderSelected(null);
+                                }}
+                                size="small"
+                              >
+                                <ClearRounded fontSize="18px" />
+                              </IconButton>
+                            )}
+                            {params.InputProps.endAdornment}
+                          </div>
+                        )
+                      }}
+                    />
+                  )}
                 />
                 {customerError && (
                   <Typography color="red" className="text-xs mt-1">
@@ -453,15 +446,43 @@ const AddSaleOrderPage = () => {
                   Ngày lập phiếu
                   <span className="text-red-500"> *</span>
                 </Typography>
-                <Input
-                  type="date"
-                  value={orderDate}
-                  onChange={(e) => setOrderDate(e.target.value)}
-                  className="!border-t-blue-gray-200 focus:!border-t-gray-900"
-                  labelProps={{
-                    className: "before:content-none after:content-none",
-                  }}
-                />
+                <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+                  <style>
+                    {`.MuiPickersCalendarHeader-label { text-transform: capitalize !important; }`}
+                  </style>
+                  <DatePicker
+                    value={orderDate ? dayjs(orderDate) : null}
+                    onChange={(newValue) => {
+                      if (newValue) {
+                        setOrderDate(newValue.format("YYYY-MM-DD"));
+                      }
+                    }}
+                    format="DD/MM/YYYY"
+                    dayOfWeekFormatter={(weekday) => `${weekday.format("dd")}`}
+                    slotProps={{
+                      textField: {
+                        hiddenLabel: true,
+                        fullWidth: true,
+                        size: "small",
+                        color: "success",
+                      },
+                      day: {
+                        sx: () => ({
+                          "&.Mui-selected": {
+                            backgroundColor: "#0ab067 !important",
+                            color: "white",
+                          },
+                          "&.Mui-selected:hover": {
+                            backgroundColor: "#089456 !important",
+                          },
+                          "&:hover": {
+                            backgroundColor: "#0894561A !important",
+                          },
+                        }),
+                      },
+                    }}
+                  />
+                </LocalizationProvider>
               </div>
               <div>
                 <Typography variant="medium" className="mb-1 text-black">
@@ -537,8 +558,8 @@ const AddSaleOrderPage = () => {
             </div>
           </div>
 
-          {/* Thêm ô tìm kiếm và hiển thị số dòng mỗi trang */}
-          <div className="flex items-center gap-4 mb-4">
+          <div className="py-2 flex items-center justify-between gap-2">
+            {/* Items per page */}
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-normal">
                 Hiển thị
@@ -551,44 +572,38 @@ const AddSaleOrderPage = () => {
                 }}
                 className="border rounded px-2 py-1"
               >
-                {[5, 10, 20, 50].map(size => (
-                  <option key={size} value={size}>{size}</option>
+                {[5, 10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
                 ))}
               </select>
               <Typography variant="small" color="blue-gray" className="font-normal">
                 dòng mỗi trang
               </Typography>
             </div>
-            <div className="flex-1">
-              <Input
-                label="Tìm kiếm trong danh sách"
-                value={tableSearchQuery}
-                onChange={(e) => setTableSearchQuery(e.target.value)}
-                className="w-full"
-                icon={
-                  tableSearchQuery && (
-                    <button
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
-                      onClick={() => setTableSearchQuery("")}
-                    >
-                      <FaTimes className="h-4 w-4 text-gray-500 hover:text-gray-700" />
-                    </button>
-                  )
-                }
-              />
-            </div>
 
+            {/* Search input */}
+            <TableSearch
+              value={tableSearchQuery}
+              onChange={setTableSearchQuery}
+              onSearch={() => {
+                // Thêm hàm xử lý tìm kiếm vào đây nếu có
+                (e) => setTableSearchQuery(e.target.value)
+              }}
+              placeholder="Tìm kiếm"
+            />
           </div>
 
           {/* Bảng chi tiết hàng */}
-          <div className="border border-gray-200 rounded mb-4">
-            <table className="w-full text-left min-w-max border-collapse">
-              <thead className="bg-gray-50 border-b border-gray-200">
+          <div className="border border-gray-200 rounded mb-4 overflow-x-auto border-[rgba(224,224,224,1)]">
+            <table className="w-full min-w-max text-left border-collapse border-[rgba(224,224,224,1)]">
+              <thead className="bg-[#f5f5f5] border-b border-[rgba(224,224,224,1)]">
                 <tr>
                   {["STT", "Mã hàng", "Tên hàng", "Đơn vị", "Số lượng", "Thao tác"].map((head) => (
                     <th
                       key={head}
-                      className="px-4 py-2 text-sm font-semibold text-gray-600 border-r last:border-r-0"
+                      className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)] last:border-r-0"
                     >
                       {head}
                     </th>
@@ -598,17 +613,42 @@ const AddSaleOrderPage = () => {
               <tbody>
                 {getPaginatedData().length > 0 ? (
                   getPaginatedData().map((item, index) => (
-                    <tr key={item.id} className="border-b last:border-b-0 hover:bg-gray-50">
-                      <td className="px-4 py-2 text-sm text-gray-700 border-r">{currentPage * pageSize + index + 1}</td>
-                      <td className="px-4 py-2 text-sm border-r">
-                        <Select
-                          placeholder="Chọn sản phẩm"
-                          isSearchable
+                    <tr key={item.id} className="border-b last:border-b-0 border-[rgba(224,224,224,1)]">
+                      <td className="px-2 py-2 text-sm text-[#000000DE] text-center w-10 border-r border-[rgba(224,224,224,1)]">{currentPage * pageSize + index + 1}</td>
+                      <td className="px-2 py-2 text-sm w-72 border-r border-[rgba(224,224,224,1)]">
+                        <Autocomplete
                           options={products}
-                          styles={customStyles}
-                          className="w-68"
+                          size="small"
+                          getOptionLabel={(option) => option.label}
                           value={products.find((p) => p.value === item.productCode) || null}
-                          onChange={(selectedOption) => handleSelectProduct(item.id, selectedOption)}
+                          onChange={(event, selected) =>
+                            handleSelectProduct(item.id, selected)
+                          }
+                          fullWidth
+                          slotProps={{
+                            paper: {
+                              sx: {
+                                maxHeight: 300,
+                                overflowY: "auto",
+                              },
+                            },
+                          }}
+                          sx={{
+                            '& .MuiInputBase-root.Mui-disabled': {
+                              bgcolor: '#eeeeee',
+                              '& .MuiOutlinedInput-notchedOutline': {
+                                border: 'none',
+                              },
+                            },
+                          }}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              color="success"
+                              hiddenLabel
+                              placeholder="Chọn sản phẩm"
+                            />
+                          )}
                         />
                         {itemsErrors[item.id] && itemsErrors[item.id].productError && (
                           <Typography color="red" className="text-xs mt-1">
@@ -616,44 +656,23 @@ const AddSaleOrderPage = () => {
                           </Typography>
                         )}
                       </td>
-                      <td className="px-4 py-2 text-sm border-r">
-                        <Input
-                          className="w-32 text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
-                          disabled
-                          value={item.productName}
-                          onChange={(e) =>
-                            setItems((prev) =>
-                              prev.map((row) =>
-                                row.id === item.id ? { ...row, productName: e.target.value } : row
-                              )
-                            )
-                          }
-                        />
+                      <td className="px-4 py-2 text-sm w-96 border-r border-[rgba(224,224,224,1)]">
+                        {item.productName}
                       </td>
-                      <td className="px-4 py-2 text-sm border-r">
-                        <Input
-                          className="w-16 text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
-                          disabled
-                          value={item.unitName}
-                          onChange={(e) =>
-                            setItems((prev) =>
-                              prev.map((row) =>
-                                row.id === item.id ? { ...row, unitName: e.target.value } : row
-                              )
-                            )
-                          }
-                        />
+                      <td className="px-4 py-2 text-sm w-40 border-r border-[rgba(224,224,224,1)]">
+                        {item.unitName}
                       </td>
-                      <td className="px-4 py-2 text-sm">
-                        <Input
-                          type="text"
-                          inputMode="numeric"
-                          className="!border-t-blue-gray-200 focus:!border-t-gray-900"
-                          labelProps={{
-                            className: "before:content-none after:content-none",
-                          }}
+                      <td className="px-4 py-2 text-sm w-40 border-r border-[rgba(224,224,224,1)]">
+                        <TextField
+                          type="number"
+                          size="small"
+                          fullWidth
+                          inputProps={{ min: 0 }}
                           value={item.quantity}
                           onChange={(e) => handleQuantityChange(item.id, e.target.value)}
+                          color="success"
+                          hiddenLabel
+                          placeholder="Số lượng"
                         />
                         {itemsErrors[item.id] && itemsErrors[item.id].quantityError && (
                           <Typography color="red" className="text-xs mt-1">
@@ -661,11 +680,10 @@ const AddSaleOrderPage = () => {
                           </Typography>
                         )}
                       </td>
-                      <td className="px-4 py-2 text-sm text-center">
-                        <Button
-                          color="red"
-                          variant="text"
-                          size="sm"
+                      <td className="px-4 py-2 text-sm w-24 text-center">
+                        <IconButton
+                          size="small"
+                          color="error"
                           onClick={() => {
                             setItems((prev) => prev.filter((_, i) => i !== (currentPage * pageSize + index)));
                             if (getPaginatedData().length === 1 && currentPage > 0) {
@@ -673,8 +691,8 @@ const AddSaleOrderPage = () => {
                             }
                           }}
                         >
-                          Xóa
-                        </Button>
+                          <HighlightOffRounded />
+                        </IconButton>
                       </td>
                     </tr>
                   ))
@@ -690,7 +708,7 @@ const AddSaleOrderPage = () => {
           </div>
 
           {getFilteredItems().length > 0 && (
-            <div className="flex items-center justify-between border-t border-blue-gray-50 p-4">
+            <div className="flex items-center justify-between pb-4">
               <div className="flex items-center gap-2">
                 <Typography variant="small" color="blue-gray" className="font-normal">
                   Trang {currentPage + 1} / {Math.ceil(getFilteredItems().length / pageSize)} •{" "}
@@ -742,7 +760,7 @@ const AddSaleOrderPage = () => {
               </div>
             </MuiButton>
           </div>
-
+          <Divider />
           {/* Thông báo lỗi chung (nếu có) và nút Lưu / Hủy */}
           <div className="flex flex-col gap-2">
             {globalError && (
@@ -750,7 +768,7 @@ const AddSaleOrderPage = () => {
                 {globalError}
               </Typography>
             )}
-            <div className="flex items-center justify-end gap-2 pb-2">
+            <div className="flex items-center justify-end gap-2 py-4">
               <MuiButton
                 size="medium"
                 color="error"

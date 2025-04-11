@@ -27,13 +27,30 @@ public interface InventoryRepository extends JpaRepository<Inventory,Long> {
 """)
     Double getTotalQuantityByProductId(@Param("productId") Long productId);
 
-
     @Query("SELECT new vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryByWarehouseDTO(" +
             "i.warehouse.warehouseId, i.warehouse.warehouseName, i.quantity) " +
             "FROM Inventory i " +
             "WHERE i.product.productId = :productId AND i.quantity > 0 " +
             "AND i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.AVAILABLE")
     List<InventoryByWarehouseDTO> findInventoryByProductId(@Param("productId") Long productId);
+
+
+    @Query("SELECT new vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryByWarehouseDTO(" +
+            "i.warehouse.warehouseId, i.warehouse.warehouseName, i.quantity) " +
+            "FROM Inventory i " +
+            "WHERE i.material.materialId = :materialId AND i.quantity > 0 " +
+            "AND i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.AVAILABLE")
+    List<InventoryByWarehouseDTO> findInventoryByMaterialId(@Param("materialId") Long materialId);
+
+    @Query("""
+    SELECT COALESCE(SUM(i.quantity), 0)
+    FROM Inventory i
+    WHERE i.material.materialId = :materialId 
+      AND i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.AVAILABLE
+""")
+    Double getTotalQuantityByMaterialId(@Param("materialId") Long materialId);
+
+
 
     //query for inventory report
     @Query("""

@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
 import { Button, Typography } from "@mui/material";
-import { Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material";
-import { XCircleIcon, XMarkIcon } from "@heroicons/react/24/solid";
+import { IconButton } from "@mui/material";
+import { XMarkIcon } from "@heroicons/react/24/solid";
+import FilePreviewDialog from "@/components/FilePreviewDialog";
 
 const FileUploadBox = ({ files, setFiles, maxFiles = 3 }) => {
     const inputRef = useRef();
@@ -85,57 +86,48 @@ const FileUploadBox = ({ files, setFiles, maxFiles = 3 }) => {
                     <Typography variant="body" sx={{ fontWeight: 600 }}>
                         File đã chọn ({files.length}/{maxFiles}):
                     </Typography>
-                    <div className="grid grid-cols-3 gap-2 mt-1 text-sm text-gray-700 w-fit">
+                    <div className="grid grid-cols-3 gap-4 mt-1 text-sm text-gray-700 w-fit">
                         {files.map((file, index) => (
                             <Button
                                 key={index}
                                 variant="outlined"
-                                className="flex items-center justify-between border rounded text-xs"
+                                color="primary"
+                                disableElevation
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'between',
+                                    padding: 0, // bỏ padding mặc định
+                                }}
+                                className="text-xs w-full gap-2" // tuỳ chỉnh tailwind cho text và layout
                             >
-                                <span className="truncate max-w-[75%]" onClick={() => handlePreview(file)}>{file.name}</span>
-                                <XCircleIcon
-                                    className="h-5 w-5 text-red-500 hover:text-red-600"
-                                    onClick={() => handleRemove(index)}>
-                                </XCircleIcon>
+                                <span
+                                    className="truncate max-w-[75%] py-1"
+                                    onClick={() => handlePreview(file)}
+                                >
+                                    {file.name}
+                                </span>
+                                <IconButton
+                                    size="small"
+                                    variant="text"
+                                    onClick={() => handleRemove(index)}
+                                    sx={{
+                                        margin: '1px', // bỏ padding mặc định
+                                    }}
+                                >
+                                    <XMarkIcon className="h-5 w-5 stroke-2" />
+                                </IconButton>
                             </Button>
                         ))}
                     </div>
                 </div>
             )}
-            <Dialog open={!!previewFile} onClose={handleClosePreview} maxWidth="md" fullWidth>
-                <div className="flex justify-between items-center mr-6">
-                    <DialogTitle>{previewFile?.name}</DialogTitle>
-                    <IconButton
-                        size="sm"
-                        variant="text"
-                        onClick={handleClosePreview}
-                    >
-                        <XMarkIcon className="h-6 w-6 stroke-2" />
-                    </IconButton>
-                </div>
-                <DialogContent dividers>
-                    {previewFile && getPreviewType(previewFile) === "image" && (
-                        <img
-                            src={URL.createObjectURL(previewFile)}
-                            alt="preview"
-                            className="max-h-[500px] mx-auto"
-                        />
-                    )}
-
-                    {previewFile && getPreviewType(previewFile) === "pdf" && (
-                        <iframe
-                            src={URL.createObjectURL(previewFile)}
-                            title="PDF Preview"
-                            width="100%"
-                            height="500px"
-                        />
-                    )}
-
-                    {previewFile && getPreviewType(previewFile) === "other" && (
-                        <Typography>Không hỗ trợ xem trước loại file này.</Typography>
-                    )}
-                </DialogContent>
-            </Dialog>
+            <FilePreviewDialog
+                file={previewFile}
+                open={!!previewFile}
+                onClose={handleClosePreview}
+                showDownload={false}
+            />
         </div>
     );
 };

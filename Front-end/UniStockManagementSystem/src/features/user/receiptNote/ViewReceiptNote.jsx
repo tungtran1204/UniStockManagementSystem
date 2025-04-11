@@ -5,11 +5,10 @@ import {
   CardBody,
   Typography,
   Button,
-  Input,
-  Textarea
 } from "@material-tailwind/react";
-import { TextField, Button as MuiButton } from '@mui/material';
+import { TextField, Button as MuiButton, IconButton } from '@mui/material';
 import PageHeader from '@/components/PageHeader';
+import FilePreviewDialog from "@/components/FilePreviewDialog";
 import useReceiptNote from "./useReceiptNote";
 import useUser from "../../admin/users/useUser";
 import jsPDF from "jspdf";
@@ -17,13 +16,14 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import robotoFont from '@/assets/fonts/Roboto-Regular-normal.js';
+import robotoBoldFont from '@/assets/fonts/Roboto-Regular-bold.js';
 import Table from "@/components/Table";
 import ReactPaginate from "react-paginate";
-import { ArrowLeftIcon, ArrowRightIcon, ListBulletIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, ArrowRightIcon, ListBulletIcon } from "@heroicons/react/24/outline";
+import { InformationCircleIcon } from "@heroicons/react/24/solid";
 import { FaArrowLeft } from "react-icons/fa";
 import { XMarkIcon } from "@heroicons/react/24/solid";
 import dayjs from "dayjs";
-import { Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material";
 
 const ViewReceiptNote = () => {
   const { id } = useParams();
@@ -45,40 +45,6 @@ const ViewReceiptNote = () => {
 
   //preview file
   const [previewFile, setPreviewFile] = useState(null);
-
-  const getPreviewURL = (file) => {
-    if (!file) return "";
-    if (file instanceof File) return URL.createObjectURL(file);
-    if (typeof file === "string") return file;
-    return "";
-  };
-
-
-  const getPreviewType = (file) => {
-    if (!file) return "other";
-
-    let filename = "";
-
-    // Nếu là File object thì dùng file.name
-    if (file instanceof File) {
-      filename = file.name;
-    }
-    // Nếu là string URL thì lấy phần cuối đường dẫn
-    else if (typeof file === "string") {
-      const parts = file.split('/');
-      filename = parts[parts.length - 1].split('?')[0]; // tránh bị query string làm sai định dạng
-    } else {
-      return "other";
-    }
-
-    const extension = filename.split('.').pop().toLowerCase();
-
-    if (['jpg', 'jpeg', 'png', 'gif'].includes(extension)) return "image";
-    if (extension === 'pdf') return "pdf";
-    if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(extension)) return "office";
-
-    return "other";
-  };
 
   const handlePreview = (file) => {
     console.log("Preview file: ", file);
@@ -196,9 +162,12 @@ const ViewReceiptNote = () => {
 
   const handleExportPDF = () => {
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    doc.addFileToVFS("Roboto-Bold.ttf", robotoBoldFont);
+    doc.addFont("Roboto-Bold.ttf", "Roboto", "bold");
+    doc.setFont("Roboto", "bold");
     doc.addFileToVFS("Roboto-Regular.ttf", robotoFont);
     doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
-    doc.setFont("Roboto");
+    doc.setFont("Roboto", "normal");
 
     doc.setFontSize(14);
     doc.text("CÔNG TY TNHH THIÊN NGỌC AN", 14, 20);
@@ -212,13 +181,19 @@ const ViewReceiptNote = () => {
     doc.setFontSize(10);
     doc.text(`Số phiếu: ${data.grnCode}`, 14, 48);
     doc.text(`Loại hàng hóa: ${data.category}`, 14, 60);
-    doc.text(`Diễn giải: ${data.description || "Không có"}`, 14, 66);
+    const descriptionText = `Diễn giải: ${data.description || "Không có"}`;
+    const splitDescription = doc.splitTextToSize(descriptionText, 180); // 180mm là chiều rộng tối đa mong muốn
+    doc.text(splitDescription, 14, 66);
     doc.text(`Ngày tạo: ${formatDate(data.receiptDate)}`, 140, 48);
     doc.text(`Người tạo: ${creator}`, 140, 54);
 
+    const descriptionLineCount = splitDescription.length;
+    const descriptionHeight = descriptionLineCount * 5; // khoảng cách dòng
+
+    const baseY = 66 + descriptionHeight;
 
     autoTable(doc, {
-      startY: 74,
+      startY: baseY,
       head: [[
         { content: "STT", styles: { halign: 'center' } },
         { content: "Mã hàng", styles: { halign: 'center' } },
@@ -239,24 +214,30 @@ const ViewReceiptNote = () => {
         font: "Roboto",
         fontSize: 10,
         cellPadding: { top: 2, right: 2, bottom: 2, left: 2 },
-        valign: 'middle'
+        valign: 'middle',
+        lineWidth: 0.2,
       },
       headStyles: {
-        fillColor: [230, 230, 230],
+        fillColor: [240, 240, 240],
         textColor: 20,
-        fontStyle: 'bold',
-        fontSize: 10
+        fontSize: 10,
+        lineWidth: 0.2,
       },
-      alternateRowStyles: { fillColor: [245, 245, 245] },
+      bodyStyles: {
+        textColor: 20,
+        lineWidth: 0.2,
+      },
+      alternateRowStyles: { fillColor: [255, 255, 255] },
       tableLineWidth: 0.2,
       tableLineColor: 200,
       margin: { top: 0, left: 14, right: 14 },
     });
 
     const finalY = doc.lastAutoTable.finalY + 12;
-    doc.text("Người giao hàng", 20, finalY);
-    doc.text("Nhân viên kho nhận hàng", 150, finalY);
-    doc.text("Thủ kho", 20, finalY + 30);
+    // Căn đều 3 cột trên cùng 1 hàng
+    doc.text("Người giao hàng", 15, finalY);
+    doc.text("Nhân viên kho nhận hàng", 90, finalY);
+    doc.text("Thủ kho", 180, finalY);
 
     doc.save(`PhieuNhap_${data.grnCode}.pdf`);
   };
@@ -306,13 +287,13 @@ const ViewReceiptNote = () => {
               </Button>
             }
           />
-          <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
+          <Typography variant="h6" className="flex items-center mb-4 text-black">
             <InformationCircleIcon className="h-5 w-5 mr-2" />
             Thông tin chung
           </Typography>
 
           <div className="grid grid-cols-3 gap-4 mb-4">
-            <div className>
+            <div>
               <Typography variant="medium" className="mb-1 text-black">Mã phiếu nhập</Typography>
               <TextField
                 fullWidth
@@ -321,12 +302,12 @@ const ViewReceiptNote = () => {
                 variant="outlined"
                 disabled
                 value={data.grnCode}
-                InputProps={{
-                  style: { backgroundColor: '#f5f5f5' }
-                }}
                 sx={{
-                  '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#e0e0e0',
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
                   },
                 }}
               />
@@ -340,12 +321,12 @@ const ViewReceiptNote = () => {
                 variant="outlined"
                 disabled
                 value={data.category}
-                InputProps={{
-                  style: { backgroundColor: '#f5f5f5' }
-                }}
                 sx={{
-                  '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#e0e0e0',
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
                   },
                 }}
               />
@@ -359,12 +340,12 @@ const ViewReceiptNote = () => {
                 variant="outlined"
                 disabled
                 value={formatDate(data.receiptDate)}
-                InputProps={{
-                  style: { backgroundColor: '#f5f5f5' }
-                }}
                 sx={{
-                  '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#e0e0e0',
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
                   },
                 }}
               />
@@ -378,12 +359,12 @@ const ViewReceiptNote = () => {
                 variant="outlined"
                 disabled
                 value={creator}
-                InputProps={{
-                  style: { backgroundColor: '#f5f5f5' }
-                }}
                 sx={{
-                  '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#e0e0e0',
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
                   },
                 }}
               />
@@ -405,14 +386,14 @@ const ViewReceiptNote = () => {
                   variant="outlined"
                   disabled
                   value="Không có"
-                  InputProps={{
-                    style: { backgroundColor: '#f5f5f5' }
-                  }}
                   sx={{
-                  '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#e0e0e0',
-                  },
-                }}
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
                 />
 
               )}
@@ -420,109 +401,39 @@ const ViewReceiptNote = () => {
             <div>
               <Typography variant="medium" className="mb-1 text-black">File đính kèm</Typography>
               {data.paperEvidence && data.paperEvidence.length > 0 ? (
-                <div className="grid grid-cols-3 gap-2 mt-1 text-sm text-gray-700 w-fit mt-2 text-sm text-gray-800">
+                <div className="grid grid-cols-3 gap-2 w-fit mt-2 text-sm text-gray-800">
                   {data.paperEvidence.map((url, index) => (
-                    <Button
+                    <MuiButton
                       key={index}
                       variant="outlined"
-                      className="flex items-center justify-between text-xs px-2 py-1 h-9 min-h-0 leading-none"
-                      onClick={() => handlePreview(url)}
+                      color="primary"
+                      disableElevation
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'start',
+                        padding: 0,
+                      }}
+                      className="text-xs w-full gap-2"
                     >
-                      <span className="truncate max-w-[75%]">{url.split("/").pop()}</span>
-                    </Button>
+                      <span
+                        className="truncate max-w-[100%] px-2 py-1"
+                        onClick={() => handlePreview(url)}
+                      >
+                        {url.split("/").pop()}
+                      </span>
+                    </MuiButton>
                   ))}
                 </div>
               ) : (
                 <Typography variant="small" className="text-gray-600">Không có</Typography>
               )}
-              <Dialog open={!!previewFile} onClose={handleClosePreview} maxWidth="md" fullWidth>
-                <div className="flex justify-between items-center mr-6">
-                  <DialogTitle>{previewFile?.name}</DialogTitle>
-                  <IconButton
-                    size="sm"
-                    variant="text"
-                    onClick={handleClosePreview}
-                  >
-                    <XMarkIcon className="h-6 w-6 stroke-2" />
-                  </IconButton>
-                </div>
-                <DialogContent dividers>
-                  {previewFile && (() => {
-                    const type = getPreviewType(previewFile);
-                    const url = getPreviewURL(previewFile);
-
-                    const renderActions = (
-                      <div className="mt-4 flex justify-center gap-4">
-                        <MuiButton
-                          color="info"
-                          size="medium"
-                          variant="outlined"
-                          sx={{
-                            height: '36px',
-                            color: "blue-gray",
-                          }}
-                          onClick={() => window.open(url, '_blank')}
-                          className="flex items-center gap-2"
-                        >
-                          Tải về
-                        </MuiButton>
-                      </div>
-                    );
-
-                    switch (type) {
-                      case "image":
-                        return (
-                          <>
-                            <img
-                              src={url}
-                              alt="Image Preview"
-                              style={{
-                                display: "block",
-                                maxWidth: "100%",
-                                maxHeight: "80vh",
-                                width: "auto",
-                                height: "auto",
-                                margin: "0 auto"
-                              }}
-                            />
-                            {renderActions}
-                          </>
-                        );
-                      case "pdf":
-                        return (
-                          <>
-                            <iframe
-                              src={url}
-                              title="PDF Preview"
-                              style={{ width: "100%", height: "80vh", border: "none" }}
-                            />
-                            {renderActions}
-                          </>
-                        );
-                      default:
-                        return (
-                          <div className="text-center">
-                            <Typography>Không thể xem trước file.</Typography>
-                            <MuiButton
-                              color="info"
-                              size="medium"
-                              variant="outlined"
-                              sx={{
-                                height: '36px',
-                                color: "blue-gray",
-                              }}
-                              onClick={() => window.open(url, '_blank')}
-                              className="flex items-center gap-2"
-                            >
-                              Tải về
-                            </MuiButton>
-                          </div>
-                        );
-                    }
-                  })()}
-                </DialogContent>
-
-              </Dialog>
+              <FilePreviewDialog
+                file={previewFile}
+                open={!!previewFile}
+                onClose={handleClosePreview}
+                showDownload={true}
+              />
             </div>
           </div>
 
@@ -539,12 +450,12 @@ const ViewReceiptNote = () => {
                 color="success"
                 value={data.description || "Không có"}
                 disabled
-                InputProps={{
-                  style: { backgroundColor: '#f5f5f5' }
-                }}
                 sx={{
-                  '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#e0e0e0',
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
                   },
                 }}
               />
@@ -553,7 +464,7 @@ const ViewReceiptNote = () => {
 
           {(data.category === "Hàng hóa trả lại") && (
             <div>
-              <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
+              <Typography variant="h6" className="flex items-center mb-4 text-black">
                 <InformationCircleIcon className="h-5 w-5 mr-2" />
                 Thông tin đối tác trả hàng
               </Typography>
@@ -628,7 +539,7 @@ const ViewReceiptNote = () => {
           )}
 
 
-          <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
+          <Typography variant="h6" className="flex items-center mb-4 text-black">
             <ListBulletIcon className="h-5 w-5 mr-2" />
             Danh sách hàng hóa
           </Typography>

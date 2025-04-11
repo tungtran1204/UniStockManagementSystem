@@ -6,9 +6,8 @@ import {
     DialogFooter,
     Typography,
     Button,
-    IconButton,
 } from "@material-tailwind/react";
-import { TextField, Divider, Button as MuiButton } from "@mui/material";
+import { TextField, Divider, Button as MuiButton, IconButton } from "@mui/material";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import useWarehouse from "./useWarehouse";
 
@@ -82,8 +81,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
           Thêm kho
         </Typography>
         <IconButton
-          size="sm"
-          variant="text"
+          size="small"
           onClick={onClose}
         >
           <XMarkIcon className="h-5 w-5 stroke-2" />

@@ -11,6 +11,7 @@ import vn.unistock.unistockmanagementsystem.entities.PartnerByTypeKey;
 import vn.unistock.unistockmanagementsystem.entities.PartnerType;
 import vn.unistock.unistockmanagementsystem.features.user.partner.partnerByType.PartnerByTypeRepository;
 import vn.unistock.unistockmanagementsystem.features.user.partner.partnerByType.PartnerByTypeService;
+import vn.unistock.unistockmanagementsystem.features.user.partnerType.PartnerTypeDTO;
 import vn.unistock.unistockmanagementsystem.features.user.partnerType.PartnerTypeRepository;
 import vn.unistock.unistockmanagementsystem.features.user.partnerType.PartnerTypeService;
 
@@ -86,4 +87,40 @@ public class PartnerService {
                 .collect(Collectors.toList());
     }
 
+    public Object updatePartner(PartnerDTO partnerDTO) {
+        Partner existingPartner = partnerRepository.findById(partnerDTO.getPartnerId())
+                .orElseThrow(() -> new IllegalArgumentException("PARTNER_NOT_FOUND"));
+
+        // Kiểm tra tên trùng với đối tác khác
+        if (partnerDTO.getPartnerCodes() == null || partnerDTO.getPartnerCodes().isEmpty()) {
+            throw new IllegalArgumentException("NO_PARTNER_TYPE");
+        }
+
+        if (!partnerRepository.existsByPartnerNameAndPartnerId(
+                partnerDTO.getPartnerName(), partnerDTO.getPartnerId())) {
+            throw new IllegalArgumentException("DUPLICATE_NAME");
+        }
+
+        // Cập nhật thông tin cơ bản
+        existingPartner.setPartnerName(partnerDTO.getPartnerName());
+        existingPartner.setContactName(partnerDTO.getContactName());
+        existingPartner.setPhone(partnerDTO.getPhone());
+        existingPartner.setEmail(partnerDTO.getEmail());
+        existingPartner.setAddress(partnerDTO.getAddress());
+
+        // Cập nhật danh sách nhóm đối tác (xóa cũ → thêm mới)
+        // 1. Xóa toàn bộ nhóm cũ
+        existingPartner.getPartnerTypes().clear();
+
+        // 2. Tạo lại từ danh sách partnerCodes mới
+        Set<PartnerByType> newTypes = partnerDTO.getPartnerCodes().stream()
+                .map(code -> partnerByTypeService.createPartnerByCode(existingPartner, code))
+                .collect(Collectors.toSet());
+
+        existingPartner.getPartnerTypes().addAll(newTypes);
+
+        // Lưu lại
+        Partner updated = partnerRepository.save(existingPartner);
+        return partnerMapper.toDTO(updated);
+    }
 }

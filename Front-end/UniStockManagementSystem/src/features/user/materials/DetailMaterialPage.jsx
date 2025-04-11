@@ -7,7 +7,7 @@ import {
   Input,
   Typography,
 } from "@material-tailwind/react";
-import { TextField, Button as MuiButton, Divider } from '@mui/material';
+import { TextField, Button as MuiButton, Autocomplete, IconButton, Divider } from '@mui/material';
 import { FaEdit, FaArrowLeft, FaSave, FaTimes, FaTimesCircle } from "react-icons/fa";
 import Select from "react-select";
 import { fetchUnits, fetchMaterialCategories, getMaterialById, updateMaterial } from "./materialService";
@@ -46,14 +46,23 @@ const DetailMaterialPage = () => {
         ]);
 
         // Map suppliers data
-        const mappedSuppliers = suppliersData.partners.map((supplier) => ({
-          value: supplier.partnerId,
-          label: supplier.partnerName,
-          partnerCode: supplier.partnerCode,
-          phone: supplier.phone,
-          address: supplier.address
-        }));
-        console.log("Mapped suppliers:", mappedSuppliers);
+        const mappedSuppliers = (suppliersData?.partners || [])
+          .map((s) => {
+            const t = s.partnerTypes.find(
+              (pt) => pt.partnerType.typeId === SUPPLIER_TYPE_ID
+            );
+            console.log("supplier: ", s);
+            return {
+              value: s.partnerId,
+              label: s.partnerName,
+              partnerCode: t?.partnerCode || "",
+              address: s.address,
+              phone: s.phone,
+              contactName: s.contactName,
+            };
+          })
+          .filter((s) => s.code !== "");
+
         setSuppliers(mappedSuppliers);
 
         // Sử dụng supplierIds trực tiếp từ materialData
@@ -212,28 +221,33 @@ const DetailMaterialPage = () => {
                   Đơn vị
                   {isEditing && <span className="text-red-500"> *</span>}
                 </Typography>
-                <Select
-                  isDisabled={!isEditing}
-                  placeholder="Chọn đơn vị"
-                  options={units.map((unit) => ({
-                    value: unit.unitId.toString(),
-                    label: unit.unitName,
-                  }))}
-                  value={units
-                    .map((unit) => ({
-                      value: unit.unitId.toString(),
-                      label: unit.unitName,
-                    }))
-                    .find((option) => option.value === editedMaterial?.unitId?.toString())}
-                  onChange={(selected) => {
-                    if (isEditing) {
-                      setEditedMaterial(prev => ({
-                        ...prev,
-                        unitId: selected ? selected.value : ""
-                      }));
-                    }
+                <Autocomplete
+                  options={units}
+                  disabled={!isEditing}
+                  size="small"
+                  getOptionLabel={(option) => option.unitName || ""}
+                  value={
+                    units.find((unit) => unit.unitId === editedMaterial.unitId) || null
+                  }
+                  onChange={(event, selectedUnit) => {
+                    setEditedMaterial(prev => ({ ...prev, unitId: selectedUnit ? selectedUnit.unitId : "" }));
                   }}
-                  styles={customStyles}
+                  renderInput={(params) => (
+                    <TextField
+                      color="success"
+                      hiddenLabel
+                      {...params}
+                      placeholder="Đơn vị"
+                    />
+                  )}
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
                 />
                 {validationErrors.unitId && (
                   <Typography className="text-xs text-red-500 mt-1">{validationErrors.unitId}</Typography>
@@ -316,28 +330,35 @@ const DetailMaterialPage = () => {
                   Danh mục
                   {isEditing && <span className="text-red-500"> *</span>}
                 </Typography>
-                <Select
-                  isDisabled={!isEditing}
-                  placeholder="Chọn danh mục"
-                  options={materialCategories.map((category) => ({
-                    value: category.materialTypeId.toString(),
-                    label: category.name,
-                  }))}
-                  value={materialCategories
-                    .map((category) => ({
-                      value: category.materialTypeId.toString(),
-                      label: category.name,
-                    }))
-                    .find((option) => option.value === editedMaterial?.typeId?.toString())}
-                  onChange={(selected) => {
-                    if (isEditing) {
-                      setEditedMaterial(prev => ({
-                        ...prev,
-                        typeId: selected ? selected.value : ""
-                      }));
-                    }
+                <Autocomplete
+                  options={materialCategories}
+                  disabled={!isEditing}
+                  size="small"
+                  getOptionLabel={(option) => option.name || ""}
+                  value={
+                    materialCategories.find(
+                      (type) => type.materialTypeId === editedMaterial.typeId
+                    ) || null
+                  }
+                  onChange={(event, selectedType) => {
+                    setEditedMaterial(prev => ({ ...prev, typeId: selectedType ? selectedType.materialTypeId : "" }));
                   }}
-                  styles={customStyles}
+                  renderInput={(params) => (
+                    <TextField
+                      color="success"
+                      hiddenLabel
+                      {...params}
+                      placeholder="Danh mục"
+                    />
+                  )}
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
                 />
                 {validationErrors.typeId && (
                   <Typography className="text-xs text-red-500 mt-1">{validationErrors.typeId}</Typography>
@@ -349,13 +370,18 @@ const DetailMaterialPage = () => {
                   Nhà cung cấp
                   {isEditing && <span className="text-red-500"> *</span>}
                 </Typography>
-                <Select
-                  isMulti
-                  isDisabled={!isEditing}
-                  placeholder="Chọn nhà cung cấp"
+                <Autocomplete
+                  multiple
+                  disabled={!isEditing}
                   options={suppliers}
-                  value={suppliers.filter(s => editedMaterial.supplierIds?.includes(s.value))}
-                  onChange={(selectedOptions) => {
+                  size="small"
+                  getOptionLabel={(option) => `${option.partnerCode} - ${option.label}`}
+                  value={
+                    suppliers.filter((s) =>
+                      editedMaterial.supplierIds.includes(s.value)
+                    )
+                  }
+                  onChange={(event, selectedOptions) => {
                     if (isEditing) {
                       const selectedIds = selectedOptions ? selectedOptions.map(option => option.value) : [];
                       setEditedMaterial(prev => ({
@@ -364,11 +390,24 @@ const DetailMaterialPage = () => {
                       }));
                     }
                   }}
-                  styles={customStyles}
-                  className="w-full"
+                  renderInput={(params) => (
+                    <TextField
+                      color="success"
+                      hiddenLabel
+                      {...params}
+                      placeholder="Chọn nhà cung cấp"
+                    />
+                  )}
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
                 />
               </div>
-
               <div>
                 <Typography variant="medium" className="mb-1 text-black">
                   Hình ảnh nguyên vật liệu

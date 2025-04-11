@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useProduct from "./useProduct";
-import { Button, IconButton } from "@material-tailwind/react";
+import { Button } from "@material-tailwind/react";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
-import { FaEdit, FaFileExcel, FaPlus } from "react-icons/fa";
-import { EyeIcon } from "@heroicons/react/24/outline";
+import {
+  IconButton,
+} from '@mui/material';
+import {
+  VisibilityOutlined,
+} from '@mui/icons-material';
 import ReactPaginate from "react-paginate";
 import axios from "axios";
 import {
@@ -16,12 +20,10 @@ import {
 } from "./productService";
 import {
   Card,
-  CardHeader,
   CardBody,
   Typography,
   Tooltip,
   Switch,
-  Input,
 } from "@material-tailwind/react";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
@@ -177,9 +179,13 @@ const ProductPage = () => {
               checked={params.value}
               onChange={() => handleToggleStatus(params.row.id)}
             />
-            <Typography className="text-xs font-semibold text-blue-gray-600">
+            <div
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                      ${params.value ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
+                }`}
+            >
               {params.value ? "Đang sản xuất" : "Ngừng sản xuất"}
-            </Typography>
+            </div>
           </div>
         );
       },
@@ -192,14 +198,15 @@ const ProductPage = () => {
       renderCell: (params) => (
         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
           <Tooltip content="Xem chi tiết">
-            <button
+            <IconButton
+              size="small"
+              color="primary"
               onClick={() => navigate(`/user/products/${params.row.id}`)}
-              className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
             >
-              <EyeIcon className="h-5 w-5" />
-            </button>
+              <VisibilityOutlined />
+            </IconButton>
           </Tooltip>
-        </div>  
+        </div>
       ),
     },
   ];

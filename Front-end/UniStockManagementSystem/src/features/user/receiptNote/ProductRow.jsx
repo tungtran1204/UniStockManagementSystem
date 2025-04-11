@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   Input,
 } from "@material-tailwind/react";
+import { TextField, Autocomplete, IconButton } from '@mui/material';
 import Select from "react-select";
 
 const customStyles = {
@@ -130,60 +131,77 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
   const isFullyReceived = (item.orderedQuantity - item.receivedQuantity) <= 0;
 
   return (
-    <tr>
-      <td className="p-2 border text-center">{currentPage * pageSize + index + 1}</td>
-      <td className="p-2 border">{item.materialCode || item.productCode}</td>
-      <td className="p-2 border">{item.materialName || item.productName}</td>
-      <td className="p-2 border text-center">{item.unit}</td>
+    <tr className="border-b last:border-b-0 border-[rgba(224,224,224,1)]">
+      <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-20 border-r border-[rgba(224,224,224,1)]">{currentPage * pageSize + index + 1}</td>
+      <td className="px-2 py-2 text-sm w-36 border-r text-[#000000DE] border-[rgba(224,224,224,1)]">{item.materialCode || item.productCode}</td>
+      <td className="px-2 py-2 text-sm w-72 border-r text-[#000000DE] border-[rgba(224,224,224,1)]">{item.materialName || item.productName}</td>
+      <td className="px-2 py-2 text-sm w-36 border-r text-[#000000DE] border-[rgba(224,224,224,1)]">{item.unit}</td>
 
       {isFullyReceived ? (
         <>
-          <td className="p-2 border text-center text-gray-400" colSpan={2}>
+          <td className="px-2 py-2 text-sm text-center text-gray-500 border-r border-[rgba(224,224,224,1)]" colSpan={2}>
             Đã nhập đủ
           </td>
-          <td className="p-2 border text-center">{item.receivedQuantity}</td>
-          <td className="p-2 border text-center">0</td>
+          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{item.receivedQuantity}</td>
+          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">0</td>
         </>
       ) : (
         <>
-         <td className="px-4 py-2 text-sm border-r">
-            <Select
-              isSearchable
-              options={warehouses.map(w => ({
-                value: w.warehouseCode,
-                label: `${w.warehouseCode} - ${w.warehouseName}`
-              }))}
-              styles={customStyles}
-              menuPortalTarget={document.body}       // Render menu vào document.body
-              menuPosition="fixed"                   // Sử dụng vị trí fixed để tránh bị cắt
-              className="w-full px-2 py-1 rounded text-sm"
+          <td className="px-2 py-2 text-sm text-[#000000DE] w-60 border-r border-[rgba(224,224,224,1)]">
+            <Autocomplete
+              options={warehouses}
+              size="small"
+              getOptionLabel={(option) => `${option.warehouseCode} - ${option.warehouseName}`}
               value={
-                warehouses.find(w => w.warehouseCode === warehouse)
-                  ? {
-                    value: warehouse,
-                    label: `${warehouse} - ${warehouses.find(w => w.warehouseCode === warehouse)?.warehouseName}`
-                  }
-                  : null
+                warehouses.find(w => w.warehouseCode === warehouse) || null
               }
-              onChange={(option) => handleWarehouseChange(option?.value || '')}
+              onChange={(event, selected) =>
+                handleWarehouseChange(selected?.warehouseCode || '')
+              }
+              fullWidth
+              slotProps={{
+                paper: {
+                  sx: {
+                    maxHeight: 300,
+                    overflowY: "auto",
+                  },
+                },
+              }}
+              sx={{
+                '& .MuiInputBase-root.Mui-disabled': {
+                  bgcolor: '#eeeeee',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    border: 'none',
+                  },
+                },
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  color="success"
+                  hiddenLabel
+                  placeholder="Chọn kho nhập"
+                />
+              )}
             />
-
-
           </td>
-          <td className="p-2 border text-center">{item.orderedQuantity}</td>
-          <td className="p-2 border text-center">{item.receivedQuantity}</td>
-          <td className="p-2 border text-center">{remainingQuantity}</td>
-          <td className="p-2 border">
+          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{item.orderedQuantity}</td>
+          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{item.receivedQuantity}</td>
+          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{remainingQuantity}</td>
+          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-40 border-r border-[rgba(224,224,224,1)]">
             <div>
-              <Input
-                type="text"
-                inputMode="numeric"
+              <TextField
+                type="number"
+                size="small"
+                fullWidth
                 value={quantity}
                 onChange={handleQuantityChange}
-                className={`!border-t-blue-gray-200 focus:!border-t-gray-900 ${quantityError ? "border-red-t-500" : ""}`}
-                labelProps={{
-                  className: "before:content-none after:content-none",
+                InputProps={{
+                  min: 1,
                 }}
+                color="success"
+                hiddenLabel
+                placeholder="Số lượng"
               />
               {quantityError && (
                 <p className="text-red-500 text-xs mt-1">{quantityError}</p>

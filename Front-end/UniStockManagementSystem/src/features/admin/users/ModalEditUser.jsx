@@ -6,10 +6,9 @@ import {
   DialogFooter,
   Typography,
   Button,
-  IconButton,
   Switch,
 } from "@material-tailwind/react";
-import { TextField, Divider, Button as MuiButton } from "@mui/material";
+import { TextField, Divider, Button as MuiButton, IconButton } from "@mui/material";
 import { updateUser, checkEmailExists } from "./userService";
 import { getAllRoles } from "../roles/roleService";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -170,8 +169,7 @@ const ModalEditUser = ({ open, onClose, user, fetchUsers }) => {
           Chỉnh sửa người dùng
         </Typography>
         <IconButton
-          size="sm"
-          variant="text"
+          size="small"
           onClick={onClose}
         >
           <XMarkIcon className="h-5 w-5 stroke-2" />
@@ -203,6 +201,9 @@ const ModalEditUser = ({ open, onClose, user, fetchUsers }) => {
             <span className="text-red-500"> *</span>
           </Typography>
           <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+            <style>
+              {`.MuiPickersCalendarHeader-label { text-transform: capitalize !important; }`}
+            </style>
             <DatePicker
               value={dateOfBirth}
               onChange={(newValue) => setDateOfBirth(newValue)}
@@ -324,14 +325,14 @@ const ModalEditUser = ({ open, onClose, user, fetchUsers }) => {
               {roles
                 .filter((r) => r.name !== "USER" && (isAdmin || r.name !== "ADMIN")) // Exclude "USER" role and "ADMIN" role if not admin
                 .map((r) => (
-                  <Button
+                  <MuiButton
                     key={r.id}
                     onClick={() => handleRoleChange(r.id)}
-                    className={`text-xs shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out ${selectedRoles.has(r.id) ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
-                   disabled={!isAdmin} // Disable role selection if current role is "ADMIN"
+                    variant={selectedRoles.has(r.id) ? "contained" : "outlined"}
+                    disabled={!isAdmin} // Disable role selection if current role is "ADMIN"
                   >
                     {r.name}
-                  </Button>
+                  </MuiButton>
                 ))}
               {roles.filter((r) => r.name !== "USER" && (isAdmin || r.name !== "ADMIN")).length === 0 && (
                 <p className="text-sm text-gray-500">Không có sẵn vai trò.</p>
@@ -339,58 +340,7 @@ const ModalEditUser = ({ open, onClose, user, fetchUsers }) => {
 
             </div>
           </div>
-
-          <div>
-            <Typography variant="medium" className="text-black">
-              Trạng thái
-              <span className="text-red-500"> *</span>
-            </Typography>
-            <Switch
-              label={isActive ? "Đang hoạt động" : "Vô hiệu hóa"}
-              checked={isActive}
-              onChange={() => setIsActive(!isActive)}
-              color="green"
-            />
-          </div>
         </div>
-
-        {/* <Input label="Số điện thoại" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
-        <Input label="Địa chỉ" value={address} onChange={(e) => setAddress(e.target.value)} />
-        <Input label="Ngày sinh" type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
-
-        <div>
-          <Input label="Email" type="email" value={email} onChange={(e) => handleCheckEmail(e.target.value)} required />
-          {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}
-        </div>
-
-        <div className="relative">
-          <Input label="Mật khẩu (Để trống nếu không muốn thay đổi)" type={showPassword ? "text" : "password"} value={password} onChange={(e) => handlePasswordChange(e.target.value)} />
-          <button type="button" className="absolute inset-y-0 right-3 flex items-center text-gray-600" onClick={() => setShowPassword(!showPassword)}>
-            {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
-          </button>
-          {passwordError && <p className="text-red-500 text-xs mt-1">{passwordError}</p>}
-        </div>
-
-        <div>
-          <p className="text-sm font-semibold text-gray-700">Chọn Vai Trò:</p>
-          <div className="flex flex-wrap gap-2">
-            {roles
-              .filter((r) => r.name !== "USER" && (isAdmin || r.name !== "ADMIN")) // Exclude "USER" role and "ADMIN" role if not admin
-              .map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => handleRoleChange(r.id)}
-                  className={`px-4 py-2 text-sm rounded-lg transition-all ${selectedRoles.has(r.id) ? "bg-blue-500 text-white shadow-md" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}`}
-                  disabled={isAdmin} // Disable role selection if current role is "ADMIN"
-                >
-                  {r.name}
-                </button>
-              ))}
-            {roles.filter((r) => r.name !== "USER" && (isAdmin || r.name !== "ADMIN")).length === 0 && (
-              <p className="text-sm text-gray-500">Không có sẵn vai trò.</p>
-            )}
-          </div>
-        </div> */}
       </DialogBody>
       <DialogFooter className="pt-0">
         <MuiButton

@@ -20,8 +20,16 @@ public class InventoryService {
         return inventoryRepository.getTotalQuantityByProductId(productId);
     }
 
+    public Double getTotalQuantityOfMaterial(Long materialId) {
+        return inventoryRepository.getTotalQuantityByMaterialId(materialId);
+    }
+
     public List<InventoryByWarehouseDTO> getInventoryDetailsByProduct(Long productId) {
         return inventoryRepository.findInventoryByProductId(productId);
+    }
+
+    public List<InventoryByWarehouseDTO> getInventoryDetailsByMaterial(Long materialId) {
+        return inventoryRepository.findInventoryByMaterialId(materialId);
     }
 
     public Page<InventoryReportDTO> getInventoryReport(

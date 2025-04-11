@@ -2,20 +2,23 @@ import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Card,
-  CardHeader,
   CardBody,
   Button,
   Input,
-  Textarea,
   Typography,
 } from "@material-tailwind/react";
-import { TextField, Button as MuiButton, Divider } from '@mui/material';
-import Select from "react-select";
+import { TextField, Button as MuiButton, Divider, Autocomplete, IconButton } from '@mui/material';
+import {
+  HighlightOffRounded
+} from '@mui/icons-material';
 import { FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
 import { getPartnersByType, getPartnersByMaterial } from "@/features/user/partner/partnerService";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import "dayjs/locale/vi"; // Import Tiếng Việt
 import usePurchaseRequest from "./usePurchaseRequest";
 import axios from "axios";
 import { createPurchaseRequest } from "./PurchaseRequestService";
@@ -238,7 +241,7 @@ const AddPurchaseRequestPage = () => {
       return;
     }
 
-    const material = materials.find((m) => m.materialId === selectedOption.value);
+    const material = selectedOption;
     setItems((prev) =>
       prev.map((item, idx) =>
         idx === index
@@ -405,7 +408,7 @@ const AddPurchaseRequestPage = () => {
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
-            title={"Yêu cầu mua vật tư " + requestCode + (fromSaleOrder && saleOrderCode ? `cho đơn hàng ${saleOrderCode}` : "")}
+            title={"Yêu cầu mua vật tư " + requestCode + (fromSaleOrder && saleOrderCode ? ` cho đơn hàng ${saleOrderCode}` : "")}
             addButtonLabel=""
             onAdd={() => { }}
             onImport={() => {/* Xử lý import nếu có */ }}
@@ -423,38 +426,90 @@ const AddPurchaseRequestPage = () => {
           <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-6">
             <div className="flex flex-col gap-4">
               <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                  Mã phiếu
-                </Typography>
-                <Input
-                  label="Mã phiếu"
-                  value={requestCode || (loading ? "Đang tải..." : "")}
+                <Typography variant="medium" className="mb-1 text-black">Mã phiếu</Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  color="success"
+                  variant="outlined"
                   disabled
-                  className="text-sm"
+                  value={requestCode}
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
                 />
               </div>
               <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                <Typography variant="medium" className="mb-1 text-black">
                   Diễn giải
                 </Typography>
-                <Textarea
-                  label="Diễn giải"
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Diễn giải"
+                  hiddenLabel
+                  multiline
+                  rows={4}
+                  color="success"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="text-sm"
                 />
               </div>
             </div>
             <div>
-              <Typography variant="small" className="mb-2 font-bold text-gray-900">
+              <Typography variant="medium" className="mb-1 text-black">
                 Ngày lập phiếu
               </Typography>
-              <Input
-                type="date"
-                value={requestDate}
-                onChange={(e) => setRequestDate(e.target.value)}
-                className="text-sm"
-              />
+              <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+                <style>
+                  {`.MuiPickersCalendarHeader-label { text-transform: capitalize !important; }`}
+                </style>
+                <DatePicker
+                  value={requestDate ? dayjs(requestDate) : null}
+                  onChange={(newValue) => {
+                    if (newValue) {
+                      setRequestDate(newValue.format("YYYY-MM-DD"));
+                    }
+                  }}
+                  format="DD/MM/YYYY"
+                  dayOfWeekFormatter={(weekday) => `${weekday.format("dd")}`}
+                  slotProps={{
+                    textField: {
+                      hiddenLabel: true,
+                      fullWidth: true,
+                      size: "small",
+                      color: "success",
+                    },
+                    day: {
+                      sx: () => ({
+                        "&.Mui-selected": {
+                          backgroundColor: "#0ab067 !important",
+                          color: "white",
+                        },
+                        "&.Mui-selected:hover": {
+                          backgroundColor: "#089456 !important",
+                        },
+                        "&:hover": {
+                          backgroundColor: "#0894561A !important",
+                        },
+                      }),
+                    },
+                  }}
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
+                />
+              </LocalizationProvider>
             </div>
           </div>
 
@@ -501,69 +556,14 @@ const AddPurchaseRequestPage = () => {
             )}
 
           </div>
-          <div className="border border-gray-200 rounded mb-4">
-            {/* <div className="flex items-center gap-4 mb-4">
-              <div className="flex-1">
-                <Input
-                  label="Tìm kiếm trong danh sách"
-                  value={tableSearchQuery}
-                  onChange={(e) => setTableSearchQuery(e.target.value)}
-                  className="w-full"
-                  icon={
-                    tableSearchQuery && (
-                      <button
-                        className="absolute right-3 top-1/2 -translate-y-1/2"
-                        onClick={() => setTableSearchQuery("")}
-                      >
-                        <FaTimes className="h-4 w-4 text-gray-500 hover:text-gray-700" />
-                      </button>
-                    )
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 mb-4">
-              <Typography variant="small" color="blue-gray" className="font-normal">
-                Hiển thị
-              </Typography>
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setCurrentPage(0);
-                }}
-                className="border rounded px-2 py-1"
-              >
-                {[5, 10, 20, 50].map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-              <Typography variant="small" color="blue-gray" className="font-normal">
-                dòng mỗi trang
-              </Typography>
-            </div>
-            {billOfMaterialsError && (
-              <Typography className="text-xs text-red-500 mb-2 px-2">
-                {billOfMaterialsError}
-              </Typography>
-            )} */}
-
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-gray-50 border-b border-gray-200">
+          <div className="border border-gray-200 rounded mb-4 overflow-x-auto border-[rgba(224,224,224,1)]">
+            <table className="w-full min-w-max text-left border-collapse border-[rgba(224,224,224,1)]">
+              <thead className="bg-[#f5f5f5] border-b border-[rgba(224,224,224,1)]">
                 <tr>
-                  {["STT", "Mã vật tư", "Tên vật tư", "Nhà cung cấp *", "Đơn vị", "Số lượng *", "Thao tác"].map((head) => (
+                  {["STT", "Mã vật tư", "Tên vật tư", "Nhà cung cấp", "Đơn vị", "Số lượng", "Thao tác"].map((head) => (
                     <th
                       key={head}
-                      className={`px-2 py-2 text-sm font-semibold text-gray-600 border-r last:border-r-0 ${head === "STT" ? "w-10" :
-                        head === "Mã vật tư" ? "w-56" :
-                          head === "Tên vật tư" ? "w-48" :
-                            head === "Nhà cung cấp *" ? "w-56" :
-                              head === "Đơn vị" ? "w-10" :
-                                head === "Số lượng *" ? "w-10" : ""
-                        }`}
+                      className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)] last:border-r-0"
                     >
                       {head}
                     </th>
@@ -573,38 +573,54 @@ const AddPurchaseRequestPage = () => {
               <tbody>
                 {getPaginatedData().length > 0 ? (
                   getPaginatedData().map((item, index) => (
-                    <tr key={item.id} className="border-b last:border-b-0 hover:bg-gray-50">
-                      <td className="px-2 py-2 text-sm text-gray-700 w-10 border-r">
+                    <tr key={item.id} className="border-b last:border-b-0 border-[rgba(224,224,224,1)]">
+                      <td className="px-2 py-2 text-sm text-[#000000DE] w-20 border-r border-[rgba(224,224,224,1)]">
                         {currentPage * pageSize + index + 1}
                       </td>
-                      <td className="px-2 py-2 text-sm w-56 border-r">
+                      <td className="px-2 py-2 text-sm w-72 border-r border-[rgba(224,224,224,1)]">
                         {fromSaleOrder ? (
-                          <Input
-                            variant="standard"
-                            value={item.materialCode}
-                            disabled
-                            className="w-56 text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
-                          />
+                          item.materialCode
                         ) : (
-                          <Select
-                            placeholder="Chọn vật tư"
-                            isSearchable
-                            isClearable
-                            options={getAvailableMaterials().map((m) => ({
-                              value: m.materialId,
-                              label: `${m.materialCode} - ${m.materialName}`,
-                            }))}
-                            styles={customStyles}
-                            className="w-56"
+                          <Autocomplete
+                            options={materials}
+                            size="small"
+                            getOptionLabel={(option) => `${option.materialCode} - ${option.materialName}`}
                             value={
                               item.materialId
-                                ? {
-                                  value: item.materialId,
-                                  label: `${item.materialCode} - ${item.materialName}`,
-                                }
+                                ? materials.find((m) => m.materialId === item.materialId) || null
                                 : null
                             }
-                            onChange={(selected) => handleMaterialChange(currentPage * pageSize + index, selected)}
+                            onChange={(event, selected) =>
+                              handleMaterialChange(currentPage * pageSize + index, selected)
+                            }
+                            isOptionEqualToValue={(option, value) =>
+                              option?.materialId === value?.materialId
+                            }
+                            fullWidth
+                            slotProps={{
+                              paper: {
+                                sx: {
+                                  maxHeight: 300,
+                                  overflowY: "auto",
+                                },
+                              },
+                            }}
+                            sx={{
+                              '& .MuiInputBase-root.Mui-disabled': {
+                                bgcolor: '#eeeeee',
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                  border: 'none',
+                                },
+                              },
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                color="success"
+                                hiddenLabel
+                                placeholder="Chọn vật tư"
+                              />
+                            )}
                           />
                         )}
                         {materialErrors[currentPage * pageSize + index] && (
@@ -613,29 +629,33 @@ const AddPurchaseRequestPage = () => {
                           </Typography>
                         )}
                       </td>
-                      <td className="px-2 py-2 text-sm w-48 border-r">
-                        <Input
-                          variant="standard"
-                          value={item.materialName || ""}
-                          disabled
-                          className="w-48 text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
-                        />
+                      <td className="px-2 py-2 text-sm border-r border-[rgba(224,224,224,1)]">
+                        {item.materialName || ""}
                       </td>
-                      <td className="px-2 py-2 text-sm w-56 border-r">
+                      <td className="px-2 py-2 text-sm w-56 border-r border-[rgba(224,224,224,1)]">
                         {fromSaleOrder && materialSuppliers[item.materialId] ? (
                           materialSuppliers[item.materialId].length === 1 ? (
-                            <Input
-                              variant="standard"
-                              value={item.supplierName}
+                            <TextField
+                              size="small"
+                              color="success"
+                              hiddenLabel
+                              fullWidth
+                              value={item.supplierName || ""}
                               disabled
-                              className="w-56 text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
+                              sx={{
+                                '& .MuiInputBase-root.Mui-disabled': {
+                                  bgcolor: '#eeeeee',
+                                  '& .MuiOutlinedInput-notchedOutline': {
+                                    border: 'none',
+                                  },
+                                },
+                              }}
                             />
                           ) : (
-                            <Select
-                              placeholder="Chọn nhà cung cấp"
-                              isSearchable
-                              isClearable
+                            <Autocomplete
                               options={materialSuppliers[item.materialId]}
+                              size="small"
+                              getOptionLabel={(option) => option.name}
                               value={
                                 item.supplierId
                                   ? materialSuppliers[item.materialId].find(
@@ -643,19 +663,44 @@ const AddPurchaseRequestPage = () => {
                                   ) || null
                                   : null
                               }
-                              onChange={(selected) =>
+                              onChange={(event, selected) =>
                                 handleSupplierChange(currentPage * pageSize + index, selected)
                               }
-                              styles={customStyles}
-                              className="w-56"
+                              isOptionEqualToValue={(option, value) =>
+                                option?.value === value?.value
+                              }
+                              fullWidth
+                              slotProps={{
+                                paper: {
+                                  sx: {
+                                    maxHeight: 300,
+                                    overflowY: "auto",
+                                  },
+                                },
+                              }}
+                              sx={{
+                                '& .MuiInputBase-root.Mui-disabled': {
+                                  bgcolor: '#eeeeee',
+                                  '& .MuiOutlinedInput-notchedOutline': {
+                                    border: 'none',
+                                  },
+                                },
+                              }}
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  color="success"
+                                  hiddenLabel
+                                  placeholder="Chọn nhà cung cấp"
+                                />
+                              )}
                             />
                           )
                         ) : (
-                          <Select
-                            placeholder="Chọn nhà cung cấp"
-                            isSearchable
-                            isClearable
+                          <Autocomplete
                             options={materialSuppliers[item.materialId] || suppliers}
+                            size="small"
+                            getOptionLabel={(option) => option.name}
                             value={
                               item.supplierId
                                 ? (materialSuppliers[item.materialId] || suppliers).find(
@@ -663,11 +708,37 @@ const AddPurchaseRequestPage = () => {
                                 ) || null
                                 : null
                             }
-                            onChange={(selected) =>
+                            onChange={(event, selected) =>
                               handleSupplierChange(currentPage * pageSize + index, selected)
                             }
-                            styles={customStyles}
-                            className="w-56"
+                            isOptionEqualToValue={(option, value) =>
+                              option?.value === value?.value
+                            }
+                            fullWidth
+                            slotProps={{
+                              paper: {
+                                sx: {
+                                  maxHeight: 300,
+                                  overflowY: "auto",
+                                },
+                              },
+                            }}
+                            sx={{
+                              '& .MuiInputBase-root.Mui-disabled': {
+                                bgcolor: '#eeeeee',
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                  border: 'none',
+                                },
+                              },
+                            }}
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                color="success"
+                                hiddenLabel
+                                placeholder="Chọn nhà cung cấp"
+                              />
+                            )}
                           />
                         )}
                         {errors[currentPage * pageSize + index] && (
@@ -676,27 +747,34 @@ const AddPurchaseRequestPage = () => {
                           </Typography>
                         )}
                       </td>
-                      <td className="px-2 py-2 text-sm w-10 border-r">
-                        <Input
-                          variant="standard"
-                          value={item.unitName || ""}
-                          disabled
-                          className="w-10 text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
-                        />
+                      <td className="px-2 py-2 text-sm w-36 border-r border-[rgba(224,224,224,1)]">
+                        {item.unitName || ""}
                       </td>
-                      <td className="px-2 py-2 text-sm w-10 border-r">
+                      <td className="px-2 py-2 text-sm w-40 border-r border-[rgba(224,224,224,1)]">
                         <div>
-                          <Input
+                          <TextField
                             type="number"
-                            variant="standard"
+                            size="small"
+                            fullWidth
                             value={item.quantity}
                             onChange={(e) =>
                               handleQuantityChange(currentPage * pageSize + index, e.target.value)
                             }
-                            min={1}
+                            InputProps={{
+                              min: 1,
+                            }}
                             disabled={fromSaleOrder}
-                            className={`w-10 text-sm ${quantityErrors[currentPage * pageSize + index] ? "border-red-500" : ""
-                              } ${fromSaleOrder ? "disabled:opacity-100 disabled:font-normal disabled:text-black" : ""}`}
+                            color="success"
+                            hiddenLabel
+                            placeholder="Số lượng"
+                            sx={{
+                              '& .MuiInputBase-root.Mui-disabled': {
+                                bgcolor: '#eeeeee',
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                  border: 'none',
+                                },
+                              },
+                            }}
                           />
                           {quantityErrors[currentPage * pageSize + index] && (
                             <Typography className="text-xs text-red-500 mt-1">
@@ -705,16 +783,15 @@ const AddPurchaseRequestPage = () => {
                           )}
                         </div>
                       </td>
-                      <td className="px-2 py-2 text-sm text-center w-10">
+                      <td className="px-2 py-2 text-sm text-center w-24">
                         {!fromSaleOrder && (
-                          <Button
-                            color="red"
-                            variant="text"
-                            size="sm"
+                          <IconButton
+                            size="small"
+                            color="error"
                             onClick={() => setItems((prev) => prev.filter((_, i) => i !== currentPage * pageSize + index))}
                           >
-                            Xóa
-                          </Button>
+                            <HighlightOffRounded />
+                          </IconButton>
                         )}
                       </td>
                     </tr>
@@ -734,7 +811,7 @@ const AddPurchaseRequestPage = () => {
             <div className="flex items-center justify-between pb-4">
               <div className="flex items-center gap-2">
                 <Typography variant="small" color="blue-gray" className="font-normal">
-                  Trang {currentPage + 1} / {Math.ceil(items.length / pageSize)} • {items.length} dòng
+                  Trang {currentPage + 1} / {Math.ceil(items.length / pageSize)} • {items.length} bản ghi
                 </Typography>
               </div>
               <ReactPaginate
@@ -785,8 +862,8 @@ const AddPurchaseRequestPage = () => {
               </>
             )}
           </div>
-
-          <div className="flex justify-end gap-2 pb-2">
+          <Divider />
+          <div className="flex justify-end gap-2 py-4">
             <MuiButton
               size="medium"
               color="error"

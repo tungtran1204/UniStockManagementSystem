@@ -11,16 +11,18 @@ import {
   Autocomplete,
   IconButton,
   Button as MuiButton,
-  Tooltip
 } from '@mui/material';
 import { useNavigate, useLocation } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { FaPlus, FaTrash, FaArrowLeft, FaSearch } from "react-icons/fa";
 import {
+  HighlightOffRounded,
+  Search
+} from '@mui/icons-material';
+import {
   ArrowLeftIcon,
   ArrowRightIcon,
   ListBulletIcon,
-  XCircleIcon
 } from "@heroicons/react/24/outline";
 import { InformationCircleIcon } from "@heroicons/react/24/solid";
 import dayjs from "dayjs";
@@ -279,7 +281,7 @@ const AddReceiptNoteGeneral = () => {
 
     try {
       const po = await getPurchaseOrderById(poId);
-      setPartnerId(po.supplierId || null); 
+      setPartnerId(po.supplierId || null);
       setPartnerName(po.supplierName || "");
       setAddress(po.supplierAddress || "");
       setContactName(po.supplierContactName || "");
@@ -514,20 +516,20 @@ const AddReceiptNoteGeneral = () => {
       // Map dữ liệu chi tiết (details)
       if (isReferenceFlow) {
         payload.details = documentItems
-  .filter(row => row.remainingQuantity > 0 && Number(row.quantity) > 0)
-  .map(row => {
-    const warehouse = warehouses.find(w => w.warehouseCode === row.warehouseCode);
-    if (!warehouse) {
-      throw new Error(`Không tìm thấy kho với code: ${row.warehouseCode}`);
-    }
-    return {
-      warehouseId: warehouse.warehouseId,
-      materialId: row.materialId ? Number(row.materialId) : null,
-      productId: row.productId ? Number(row.productId) : null,
-      quantity: Number(row.quantity),
-      unitId: row.unitId ? Number(row.unitId) : null
-    };
-  });
+          .filter(row => row.remainingQuantity > 0 && Number(row.quantity) > 0)
+          .map(row => {
+            const warehouse = warehouses.find(w => w.warehouseCode === row.warehouseCode);
+            if (!warehouse) {
+              throw new Error(`Không tìm thấy kho với code: ${row.warehouseCode}`);
+            }
+            return {
+              warehouseId: warehouse.warehouseId,
+              materialId: row.materialId ? Number(row.materialId) : null,
+              productId: row.productId ? Number(row.productId) : null,
+              quantity: Number(row.quantity),
+              unitId: row.unitId ? Number(row.unitId) : null
+            };
+          });
       } else {
         payload.details = manualItems.map(row => {
           const warehouse = warehouses.find(w => w.warehouseCode === row.warehouse);
@@ -575,19 +577,26 @@ const AddReceiptNoteGeneral = () => {
    */
   const columnsConfig = [
     {
+      field: 'stt',
+      headerName: 'STT',
+      width: 50,
+      editable: false,
+      filterable: false,
+      renderCell: (params) => params.value ?? "",
+    },
+    {
       field: 'item',
       headerName: 'Hàng hoá / Vật tư',
-      minWidth: 250,
-      // Tắt filter/sort tuỳ ý
-      sortable: false,
+      minWidth: 600,
+      editable: false,
+      filterable: false,
       renderCell: (params) => {
         // params.row sẽ chứa { selected, warehouse, quantity, ... }
         // Lấy danh sách hiển thị:
         const dropdownList = getDropdownListByCategory(); // hàm ở trên
-
         return (
           <Autocomplete
-            sx={{ width: '100%' }}
+            sx={{ width: '100%', paddingY: '0.5rem' }}
             size="small"
             options={dropdownList}
             getOptionLabel={(option) => option?.code + " - " + option?.name}
@@ -600,6 +609,7 @@ const AddReceiptNoteGeneral = () => {
             renderInput={(params) => (
               <TextField
                 {...params}
+                color="success"
                 variant="outlined"
                 placeholder="Chọn sản phẩm / vật tư"
                 size="small"
@@ -612,7 +622,9 @@ const AddReceiptNoteGeneral = () => {
     {
       field: 'unit',
       headerName: 'Đơn vị',
-      minWidth: 100,
+      editable: false,
+      filterable: false,
+      minWidth: 200,
       renderCell: (params) => {
         // Hiển thị unit dựa trên params.row.selected
         return (
@@ -623,7 +635,9 @@ const AddReceiptNoteGeneral = () => {
     {
       field: 'warehouse',
       headerName: 'Kho nhập',
-      minWidth: 120,
+      editable: false,
+      filterable: false,
+      minWidth: 300,
       renderCell: (params) => {
         return (
           <Autocomplete
@@ -645,6 +659,7 @@ const AddReceiptNoteGeneral = () => {
             renderInput={(params) => (
               <TextField
                 {...params}
+                color="success"
                 variant="outlined"
                 placeholder="Chọn kho"
                 size="small"
@@ -657,13 +672,16 @@ const AddReceiptNoteGeneral = () => {
     {
       field: 'quantity',
       headerName: 'Số lượng',
-      minWidth: 80,
+      editable: false,
+      filterable: false,
+      minWidth: 200,
       renderCell: (params) => {
         return (
           <div>
             <TextField
               type="number"
               size="small"
+              color="success"
               inputProps={{ min: 0 }}
               value={params.row.quantity}
               onChange={(e) => handleChangeQuantity(params.row.id, e.target.value)}
@@ -677,15 +695,16 @@ const AddReceiptNoteGeneral = () => {
     {
       field: 'actions',
       headerName: 'Hành động',
-      minWidth: 80,
+      editable: false,
+      filterable: false,
+      minWidth: 50,
       renderCell: (params) => (
         <IconButton
-          variant="text"
-          size="5px"
+          size="small"
           color="error"
           onClick={() => handleRemoveRow(params.row.id)}
         >
-          <XCircleIcon className="h-6 w-6 mr-1" />
+          <HighlightOffRounded />
         </IconButton>
       )
     }
@@ -705,6 +724,7 @@ const AddReceiptNoteGeneral = () => {
   const displayedItemsWithIndex = displayedItems.map((item, idx) => ({
     ...item,
     index: currentPage * pageSize + idx,
+    stt: currentPage * pageSize + idx + 1,
   }));
 
   // Tuỳ thuộc category để lấy ds chứng từ
@@ -762,7 +782,7 @@ const AddReceiptNoteGeneral = () => {
           />
 
           {/* Thông tin chung */}
-          <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
+          <Typography variant="h6" className="flex items-center mb-4 text-black">
             <InformationCircleIcon className="h-5 w-5 mr-2" />
             Thông tin chung
           </Typography>
@@ -813,9 +833,9 @@ const AddReceiptNoteGeneral = () => {
                   getOptionDisabled={(option) => option.isHeader === true}
                   renderOption={(props, option) => (
                     <li {...props}>
-                      <div className={`flex justify-between w-full ${option.isHeader ? 'font-semibold text-black text-center' : ''}`}>
-                        <span className="text-gray-600">{option.poCode}</span>
-                        <span className="text-gray-600">{option.orderDate}</span>
+                      <div className={`flex justify-between w-full ${option.isHeader ? 'font-semibold text-gray-900 text-center' : ''}`}>
+                        <span>{option.poCode}</span>
+                        <span>{option.orderDate}</span>
                       </div>
                     </li>
                   )}
@@ -847,7 +867,7 @@ const AddReceiptNoteGeneral = () => {
                           <>
                             <IconButton onClick={() => setIsChooseDocModalOpen(true)}
                               size="small">
-                              <FaSearch fontSize="small" />
+                              <Search fontSize="20px"/>
                             </IconButton>
                             {params.InputProps.endAdornment}
                           </>
@@ -866,6 +886,9 @@ const AddReceiptNoteGeneral = () => {
                 Ngày lập phiếu
               </Typography>
               <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+                <style>
+                  {`.MuiPickersCalendarHeader-label { text-transform: capitalize !important; }`}
+                </style>
                 <DatePicker
                   value={createdDate ? dayjs(createdDate) : null}
                   onChange={(newValue) => {
@@ -915,8 +938,13 @@ const AddReceiptNoteGeneral = () => {
                   variant="outlined"
                   disabled
                   value={partnerName}
-                  InputProps={{
-                    style: { backgroundColor: '#eeeeee' }
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
                   }}
                 />
               </div>
@@ -931,8 +959,13 @@ const AddReceiptNoteGeneral = () => {
                   variant="outlined"
                   disabled
                   value={contactName}
-                  InputProps={{
-                    style: { backgroundColor: '#eeeeee' }
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
                   }}
                 />
               </div>
@@ -948,8 +981,13 @@ const AddReceiptNoteGeneral = () => {
                   variant="outlined"
                   disabled
                   value={address}
-                  InputProps={{
-                    style: { backgroundColor: '#eeeeee' }
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
                   }}
                 />
               </div>
@@ -964,8 +1002,13 @@ const AddReceiptNoteGeneral = () => {
                   variant="outlined"
                   disabled
                   value={partnerPhone}
-                  InputProps={{
-                    style: { backgroundColor: '#eeeeee' }
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
                   }}
                 />
               </div>
@@ -983,7 +1026,7 @@ const AddReceiptNoteGeneral = () => {
                   options={customers}
                   size="small"
                   getOptionLabel={(option) =>
-                    `${option.partnerTypes?.find(pt => pt.partnerCode?.startsWith("KH"))?.partnerCode || ""} - ${option.partnerName|| ""}`
+                    `${option.partnerTypes?.find(pt => pt.partnerCode?.startsWith("KH"))?.partnerCode || ""} - ${option.partnerName || ""}`
                   }
                   isOptionEqualToValue={(option, value) => option.partnerId === value.partnerId} // ✅ thêm dòng này!
                   onChange={(event, selectedOption) => {
@@ -1001,7 +1044,7 @@ const AddReceiptNoteGeneral = () => {
                       setPartnerPhone("");
                     }
                   }}
-                  
+
                   renderOption={(props, option) => (
                     <li {...props}>
                       {option.partnerTypes?.find(pt => pt.partnerCode?.startsWith("KH"))?.partnerCode || ""} - {option.partnerName}
@@ -1030,8 +1073,13 @@ const AddReceiptNoteGeneral = () => {
                   variant="outlined"
                   disabled
                   value={contactName}
-                  InputProps={{
-                    style: { backgroundColor: '#eeeeee' }
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
                   }}
                 />
               </div>
@@ -1047,8 +1095,13 @@ const AddReceiptNoteGeneral = () => {
                   variant="outlined"
                   disabled
                   value={address}
-                  InputProps={{
-                    style: { backgroundColor: '#eeeeee' }
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
                   }}
                 />
               </div>
@@ -1063,8 +1116,13 @@ const AddReceiptNoteGeneral = () => {
                   variant="outlined"
                   disabled
                   value={partnerPhone}
-                  InputProps={{
-                    style: { backgroundColor: '#eeeeee' }
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
                   }}
                 />
               </div>
@@ -1084,6 +1142,7 @@ const AddReceiptNoteGeneral = () => {
                 multiline
                 rows={4}
                 color="success"
+                placeholder="Diễn giải"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
@@ -1102,7 +1161,7 @@ const AddReceiptNoteGeneral = () => {
           </div>
 
           {/* Danh sách sản phẩm */}
-          <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
+          <Typography variant="h6" className="flex items-center mb-4 text-black">
             <ListBulletIcon className="h-5 w-5 mr-2" />
             Danh sách sản phẩm
           </Typography>
@@ -1151,11 +1210,11 @@ const AddReceiptNoteGeneral = () => {
                     <th className="p-2 border">Mã hàng</th>
                     <th className="p-2 border">Tên hàng</th>
                     <th className="p-2 border">Đơn vị</th>
-                    <th className="p-2 border">Kho nhập<span className="text-red-500"> *</span></th>
+                    <th className="p-2 border">Kho nhập</th>
                     <th className="p-2 border">Số lượng đặt</th>
                     <th className="p-2 border">Đã nhận</th>
                     <th className="p-2 border">Còn lại</th>
-                    <th className="p-2 border">Số lượng nhập kho<span className="text-red-500"> *</span></th>
+                    <th className="p-2 border">Số lượng nhập kho</th>
                   </tr>
                 </thead>
                 <tbody>
