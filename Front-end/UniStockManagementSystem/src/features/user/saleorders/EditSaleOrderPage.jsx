@@ -40,9 +40,9 @@ import {
 } from "./saleOrdersService";
 import ModalAddCustomer from "./ModalAddCustomer";
 import PageHeader from "@/components/PageHeader";
-import { canCreatePurchaseRequest } from "@/features/user/purchaseRequest/PurchaseRequestService"
+import { canCreatePurchaseRequest } from "@/features/user/purchaseRequest/PurchaseRequestService";
 import CancelSaleOrderModal from "./CancelSaleOrderModal";
-
+import { getTotalQuantityOfMaterial } from "@/features/user/issueNote/issueNoteService";
 
 // ------------------ 3 MODE ------------------
 const MODE_VIEW = "view";
@@ -51,9 +51,6 @@ const MODE_DINHMUC = "dinhMuc";
 // ---------------------------------------------
 
 const CUSTOMER_TYPE_ID = 2;
-
-
-
 
 const AddCustomerDropdownIndicator = (props) => {
   return (
@@ -109,7 +106,6 @@ const EditSaleOrderPage = () => {
   const navigate = useNavigate();
   const { updateExistingOrder } = useSaleOrder();
 
-
   // ---------------- STATE ĐƠN HÀNG ----------------
   const [orderCode, setOrderCode] = useState("");
   const [orderDate, setOrderDate] = useState(dayjs().format("YYYY-MM-DD"));
@@ -121,8 +117,6 @@ const EditSaleOrderPage = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [description, setDescription] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
-
-
 
   // Mảng dòng sản phẩm
   const [items, setItems] = useState([]);
@@ -179,7 +173,6 @@ const EditSaleOrderPage = () => {
 
     checkCanCreatePurchaseRequest();
   }, [orderId]);
-
 
   // ========== Lấy đơn hàng ==========
   useEffect(() => {
@@ -310,13 +303,11 @@ const EditSaleOrderPage = () => {
     setMode(newMode);
   };
 
-  // Thay thế logic chỉnh sửa từ phiên bản trên main
   const handleEdit = () => {
     if (!originalData) return;
     handleSetMode(MODE_EDIT);
   };
 
-  // Khi chuyển sang chế độ DINHMUC, cập nhật từng item với inStock là mảng chi tiết tồn kho
   const handleXemDinhMuc = async () => {
     const updatedItems = await Promise.all(
       items.map(async (item) => {
@@ -336,10 +327,8 @@ const EditSaleOrderPage = () => {
     );
     setItems(updatedItems);
     handleSetMode(MODE_DINHMUC);
-    // Hiển thị bảng định mức ngay khi xem định mức
     setShowMaterialTable(true);
 
-    // Kiểm tra định mức NVL cho từng sản phẩm
     const newMaterialErrors = {};
     await Promise.all(
       updatedItems.map(async (item) => {
@@ -359,7 +348,6 @@ const EditSaleOrderPage = () => {
     setMaterialErrors(newMaterialErrors);
   };
 
-  // Cập nhật SL muốn dùng cho từng kho, giới hạn không vượt quá số lượng tồn kho của kho và số lượng còn lại của đơn
   const handleDetailUsedQuantityChange = (itemId, detailIndex, val) => {
     setItems((prev) =>
       prev.map((item) => {
@@ -384,6 +372,7 @@ const EditSaleOrderPage = () => {
     );
     setGlobalError("");
   };
+
   const handleCancelSaleOrder = async (reason) => {
     try {
       await cancelSaleOrder(orderId, reason);
@@ -394,7 +383,6 @@ const EditSaleOrderPage = () => {
       alert("Không thể hủy đơn hàng. Vui lòng thử lại sau.");
     }
   };
-
 
   const handleCancelEdit = () => {
     if (!originalData) return;
@@ -411,7 +399,7 @@ const EditSaleOrderPage = () => {
     setGlobalError("");
     setItemsErrors({});
     setCustomerError("");
-    setMaterialErrors({}); // Reset lỗi định mức NVL
+    setMaterialErrors({});
     handleSetMode(MODE_VIEW);
   };
 
@@ -419,7 +407,7 @@ const EditSaleOrderPage = () => {
     if (mode === MODE_EDIT) {
       handleCancelEdit();
     } else if (mode === MODE_DINHMUC) {
-      setMaterialErrors({}); // Reset lỗi định mức NVL
+      setMaterialErrors({});
       handleSetMode(MODE_VIEW);
     } else {
       navigate("/user/sale-orders");
@@ -458,7 +446,7 @@ const EditSaleOrderPage = () => {
     setItems([]);
     setNextId(1);
     setItemsErrors({});
-    setMaterialErrors({}); // Reset lỗi định mức NVL
+    setMaterialErrors({});
     setGlobalError("");
   };
 
@@ -487,7 +475,6 @@ const EditSaleOrderPage = () => {
     );
     setGlobalError("");
 
-    // Kiểm tra định mức NVL khi chọn sản phẩm mới (chỉ trong MODE_DINHMUC)
     if (mode === MODE_DINHMUC && opt.productId) {
       try {
         const materials = await getProductMaterialsByProduct(opt.productId);
@@ -542,7 +529,6 @@ const EditSaleOrderPage = () => {
     setGlobalError("");
   };
 
-  // Giữ nguyên logic tạo yêu cầu mua vật tư từ phiên bản hiện tại của bạn
   const handleCreatePurchaseRequest = async () => {
     if (!orderId) {
       alert("Không tìm thấy đơn hàng để tạo yêu cầu mua vật tư!");
@@ -550,34 +536,21 @@ const EditSaleOrderPage = () => {
     }
 
     try {
-      const materialRequirementsPromises = items.map(async (item) => {
-        if (item.productId && item.produceQuantity > 0) {
-          const materials = await getProductMaterialsByProduct(item.productId);
-          return materials.map((mat) => ({
-            id: `temp-${mat.materialId}-${item.productId}`,
-            materialId: mat.materialId,
-            materialCode: mat.materialCode,
-            materialName: mat.materialName,
-            unitName: mat.unitName,
-            quantity: mat.quantity * item.produceQuantity,
-          }));
-        }
-        return [];
-      });
+      // Lọc các vật tư có quantityToBuy > 0 từ materialRequirements
+      const materialsToBuy = materialRequirements.filter((mat) => mat.quantityToBuy > 0);
 
-      const materialRequirements = (await Promise.all(materialRequirementsPromises)).flat();
-
-      if (materialRequirements.length === 0) {
+      if (materialsToBuy.length === 0) {
         alert("Không có vật tư nào cần mua từ đơn hàng này!");
         return;
       }
 
+      // Chuẩn bị dữ liệu để chuyển sang trang AddPurchaseRequestPage
       const itemsWithSuppliers = await Promise.all(
-        materialRequirements.map(async (item) => {
+        materialsToBuy.map(async (item) => {
           const suppliers = await getPartnersByMaterial(item.materialId);
           const mappedSuppliers = suppliers.map((supplier) => ({
             value: supplier.partnerId,
-            label: supplier.partnerName, // Chỉ hiển thị partnerName
+            label: supplier.partnerName,
             name: supplier.partnerName,
             code: supplier.partnerCode || "",
           }));
@@ -585,13 +558,31 @@ const EditSaleOrderPage = () => {
           const defaultSupplier = mappedSuppliers.length === 1 ? mappedSuppliers[0] : null;
 
           return {
-            ...item,
+            id: `temp-${item.materialId}`,
+            materialId: item.materialId,
+            materialCode: item.materialCode,
+            materialName: item.materialName,
+            unitName: item.unitName,
+            quantity: item.quantityToBuy, // Sử dụng quantityToBuy thay vì requiredQuantity
             supplierId: defaultSupplier ? defaultSupplier.value : "",
-            supplierName: defaultSupplier ? defaultSupplier.name : "", // Chỉ lưu partnerName
+            supplierName: defaultSupplier ? defaultSupplier.name : "",
             suppliers: mappedSuppliers,
           };
         })
       );
+
+      const usedProductsFromWarehouses = items.flatMap((item) =>
+        (item.inStock || []).filter(d => d.usedQuantity > 0).map((d) => ({
+          productId: item.productId,
+          productCode: item.productCode,
+          productName: item.productName,
+          unitName: item.unitName,
+          quantity: d.usedQuantity,
+          warehouseId: d.warehouseId,
+          warehouseName: d.warehouseName,
+        }))
+      );
+
 
       navigate("/user/purchase-request/add", {
         state: {
@@ -599,15 +590,16 @@ const EditSaleOrderPage = () => {
           saleOrderId: orderId,
           saleOrderCode: orderCode,
           initialItems: itemsWithSuppliers,
+          usedProductsFromWarehouses: usedProductsFromWarehouses,
         },
       });
+
     } catch (error) {
       console.error("Lỗi khi chuẩn bị dữ liệu yêu cầu mua vật tư:", error);
       alert("Có lỗi xảy ra khi chuẩn bị dữ liệu yêu cầu mua vật tư!");
     }
   };
 
-  // Thay thế logic lưu đơn hàng từ phiên bản trên main
   const handleSaveOrder = async () => {
     let hasError = false;
     if (!customerCode) {
@@ -684,7 +676,6 @@ const EditSaleOrderPage = () => {
     }
   };
 
-  // Thay thế logic render bảng sản phẩm từ phiên bản trên main
   const renderTableRows = () => {
     if (items.length === 0) {
       return (
@@ -872,7 +863,6 @@ const EditSaleOrderPage = () => {
                 />
               )}
             />
-
             {itemsErrors[item.id]?.productError && (
               <Typography color="red" className="text-xs mt-1">
                 {itemsErrors[item.id].productError}
@@ -957,7 +947,6 @@ const EditSaleOrderPage = () => {
   };
 
   // ===== TÍNH TOÁN NGUYÊN VẬT LIỆU DỰA VÀO SỐ SX =====
-  // Khi ở chế độ DINHMUC và bảng NVL đang hiển thị, mỗi khi items thay đổi thì tính lại định mức
   useEffect(() => {
     if (mode === MODE_DINHMUC && showMaterialTable) {
       const recalcMaterialRequirements = async () => {
@@ -984,8 +973,11 @@ const EditSaleOrderPage = () => {
           }
           return null;
         });
+
         const results = await Promise.all(promises);
         let aggregated = {};
+
+        // Bước 1: Gộp các NVL theo materialCode
         results.forEach((result) => {
           if (result && result.materials) {
             result.materials.forEach((mat) => {
@@ -994,17 +986,44 @@ const EditSaleOrderPage = () => {
                 aggregated[mat.materialCode].requiredQuantity += requiredQty;
               } else {
                 aggregated[mat.materialCode] = {
+                  materialId: mat.materialId, // Thêm materialId để gọi API
                   materialCode: mat.materialCode,
                   materialName: mat.materialName,
                   requiredQuantity: requiredQty,
                   unitName: mat.unitName,
+                  totalInStock: 0, // Sẽ cập nhật sau khi gọi API
+                  quantityToBuy: 0, // Sẽ tính sau khi có totalInStock
                 };
               }
             });
           }
         });
-        setMaterialRequirements(Object.values(aggregated));
+
+        // Bước 2: Gọi API để lấy tổng tồn kho cho từng NVL
+        const materialPromises = Object.values(aggregated).map(async (mat) => {
+          try {
+            const warehouses = await getTotalQuantityOfMaterial(mat.materialId);
+            const totalInStock = warehouses.reduce((sum, w) => sum + (w.quantity || 0), 0);
+            const quantityToBuy = Math.max(mat.requiredQuantity - totalInStock, 0); // Nếu âm thì trả về 0
+            return {
+              ...mat,
+              totalInStock,
+              quantityToBuy,
+            };
+          } catch (error) {
+            console.error(`Lỗi khi lấy tồn kho cho NVL ${mat.materialCode}:`, error);
+            return {
+              ...mat,
+              totalInStock: 0,
+              quantityToBuy: mat.requiredQuantity, // Nếu lỗi, giả định không có tồn kho
+            };
+          }
+        });
+
+        const updatedMaterials = await Promise.all(materialPromises);
+        setMaterialRequirements(updatedMaterials);
       };
+
       recalcMaterialRequirements();
     }
   }, [items, mode, showMaterialTable]);
@@ -1194,7 +1213,7 @@ const EditSaleOrderPage = () => {
                     slotProps={{
                       paper: {
                         sx: {
-                          maxHeight: 300, // Giới hạn chiều cao dropdown
+                          maxHeight: 300,
                           overflowY: "auto",
                         },
                       },
@@ -1339,8 +1358,8 @@ const EditSaleOrderPage = () => {
                       size="medium"
                       variant="outlined"
                       sx={{
-                        color: '#616161',           // text color
-                        borderColor: '#9e9e9e',     // border
+                        color: '#616161',
+                        borderColor: '#9e9e9e',
                         '&:hover': {
                           backgroundColor: '#f5f5f5',
                           borderColor: '#757575',
@@ -1404,7 +1423,7 @@ const EditSaleOrderPage = () => {
                   </MuiButton>
                 </div>
               )}
-              {/* Bảng định mức nguyên vật liệu sẽ xuất hiện ngay bên dưới bảng sản phẩm khi đã xem định mức */}
+              {/* Bảng định mức nguyên vật liệu */}
               {mode === MODE_DINHMUC && showMaterialTable && (
                 <div className="mt-4">
                   <Typography variant="h6" className="flex items-center mb-4 text-black">
@@ -1419,6 +1438,8 @@ const EditSaleOrderPage = () => {
                           <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Tên NVL</th>
                           <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Số lượng</th>
                           <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Đơn vị</th>
+                          <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Tổng tồn kho</th>
+                          <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Số lượng cần mua</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1429,11 +1450,13 @@ const EditSaleOrderPage = () => {
                               <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.materialName}</td>
                               <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.requiredQuantity}</td>
                               <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.unitName}</td>
+                              <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.totalInStock}</td>
+                              <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.quantityToBuy}</td>
                             </tr>
                           ))
                         ) : (
                           <tr>
-                            <td colSpan="4" className="px-4 py-2 text-sm text-gray-500">
+                            <td colSpan="6" className="px-4 py-2 text-sm text-gray-500">
                               Không có nguyên vật liệu nào
                             </td>
                           </tr>
@@ -1498,7 +1521,6 @@ const EditSaleOrderPage = () => {
                   </div>
                 </MuiButton>
               )}
-
 
               {mode === MODE_EDIT && (
                 <div className="flex items-center gap-2">

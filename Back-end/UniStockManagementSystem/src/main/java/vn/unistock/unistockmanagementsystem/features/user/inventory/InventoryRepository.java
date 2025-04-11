@@ -16,30 +16,46 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface InventoryRepository extends JpaRepository<Inventory,Long> {
+public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     Optional<Inventory> findByWarehouseAndMaterial(Warehouse warehouse, Material material);
     Optional<Inventory> findByWarehouseAndProduct(Warehouse warehouse, Product product);
+
     @Query("""
     SELECT COALESCE(SUM(i.quantity), 0)
     FROM Inventory i
     WHERE i.product.productId = :productId 
       AND i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.AVAILABLE
-""")
+    """)
     Double getTotalQuantityByProductId(@Param("productId") Long productId);
 
-    @Query("SELECT new vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryByWarehouseDTO(" +
-            "i.warehouse.warehouseId, i.warehouse.warehouseName, i.quantity) " +
-            "FROM Inventory i " +
-            "WHERE i.product.productId = :productId AND i.quantity > 0 " +
-            "AND i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.AVAILABLE")
+    @Query("""
+    SELECT new vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryByWarehouseDTO(
+        i.warehouse.warehouseId,
+        i.warehouse.warehouseName,
+        SUM(i.quantity)
+    )
+    FROM Inventory i
+    WHERE i.product.productId = :productId
+      AND i.quantity > 0
+      AND i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.AVAILABLE
+      AND i.warehouse.warehouseId <> 3
+    GROUP BY i.warehouse.warehouseId, i.warehouse.warehouseName
+    """)
     List<InventoryByWarehouseDTO> findInventoryByProductId(@Param("productId") Long productId);
 
-
-    @Query("SELECT new vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryByWarehouseDTO(" +
-            "i.warehouse.warehouseId, i.warehouse.warehouseName, i.quantity) " +
-            "FROM Inventory i " +
-            "WHERE i.material.materialId = :materialId AND i.quantity > 0 " +
-            "AND i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.AVAILABLE")
+    @Query("""
+    SELECT new vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryByWarehouseDTO(
+        i.warehouse.warehouseId,
+        i.warehouse.warehouseName,
+        SUM(i.quantity)
+    )
+    FROM Inventory i
+    WHERE i.material.materialId = :materialId
+      AND i.quantity > 0
+      AND i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.AVAILABLE
+      AND i.warehouse.warehouseId <> 3
+    GROUP BY i.warehouse.warehouseId, i.warehouse.warehouseName
+    """)
     List<InventoryByWarehouseDTO> findInventoryByMaterialId(@Param("materialId") Long materialId);
 
     @Query("""
@@ -47,46 +63,82 @@ public interface InventoryRepository extends JpaRepository<Inventory,Long> {
     FROM Inventory i
     WHERE i.material.materialId = :materialId 
       AND i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.AVAILABLE
-""")
+    """)
     Double getTotalQuantityByMaterialId(@Param("materialId") Long materialId);
 
-
-
-    //query for inventory report
+    // Thêm các phương thức mới để lấy bản ghi Inventory theo trạng thái
     @Query("""
-SELECT new vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryReportDTO(
-    CASE WHEN m IS NOT NULL THEN m.materialCode ELSE p.productCode END,
-    CASE WHEN m IS NOT NULL THEN m.materialName ELSE p.productName END,
-    CASE WHEN m IS NOT NULL THEN m.isUsing ELSE p.isProductionActive END,
-    CASE WHEN m IS NOT NULL THEN u1.unitName ELSE u2.unitName END,
-    SUM(CASE WHEN i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.AVAILABLE THEN i.quantity ELSE 0 END),
-    SUM(CASE WHEN i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.RESERVED THEN i.quantity ELSE 0 END),
-    SUM(i.quantity),
-    w.warehouseCode,
-    w.warehouseName,
-    w.warehouseId,
-    CASE WHEN m IS NOT NULL THEN 'MATERIAL' ELSE 'PRODUCT' END,
-    CASE WHEN p IS NOT NULL THEN p.productType.typeId ELSE NULL END,
-    CASE WHEN m IS NOT NULL THEN m.materialType.materialTypeId ELSE NULL END
-)
-FROM Inventory i
-LEFT JOIN i.material m
-LEFT JOIN i.product p
-LEFT JOIN m.unit u1
-LEFT JOIN p.unit u2
-JOIN i.warehouse w
-GROUP BY 
-    CASE WHEN m IS NOT NULL THEN m.materialCode ELSE p.productCode END,
-    CASE WHEN m IS NOT NULL THEN m.materialName ELSE p.productName END,
-    CASE WHEN m IS NOT NULL THEN m.isUsing ELSE p.isProductionActive END,
-    CASE WHEN m IS NOT NULL THEN u1.unitName ELSE u2.unitName END,
-    w.warehouseCode,
-    w.warehouseName,
-    w.warehouseId,
-    CASE WHEN m IS NOT NULL THEN 'MATERIAL' ELSE 'PRODUCT' END,
-    CASE WHEN p IS NOT NULL THEN p.productType.typeId ELSE NULL END,
-    CASE WHEN m IS NOT NULL THEN m.materialType.materialTypeId ELSE NULL END
-""")
+    SELECT i
+    FROM Inventory i
+    WHERE i.material.materialId = :materialId
+      AND i.status = :status
+      AND i.quantity > 0
+    ORDER BY i.quantity DESC
+    """)
+    List<Inventory> findByMaterialIdAndStatus(@Param("materialId") Long materialId, @Param("status") Inventory.InventoryStatus status);
+
+    @Query("""
+    SELECT i
+    FROM Inventory i
+    WHERE i.product.productId = :productId
+      AND i.status = :status
+      AND i.quantity > 0
+    ORDER BY i.quantity DESC
+    """)
+    List<Inventory> findByProductIdAndStatus(@Param("productId") Long productId, @Param("status") Inventory.InventoryStatus status);
+
+    // Thêm phương thức để lấy tổng số lượng theo trạng thái
+    @Query("""
+    SELECT COALESCE(SUM(i.quantity), 0)
+    FROM Inventory i
+    WHERE i.material.materialId = :materialId 
+      AND i.status = :status
+    """)
+    Double sumQuantityByMaterialIdAndStatus(@Param("materialId") Long materialId, @Param("status") Inventory.InventoryStatus status);
+
+    @Query("""
+    SELECT COALESCE(SUM(i.quantity), 0)
+    FROM Inventory i
+    WHERE i.product.productId = :productId 
+      AND i.status = :status
+    """)
+    Double sumQuantityByProductIdAndStatus(@Param("productId") Long productId, @Param("status") Inventory.InventoryStatus status);
+
+    // Các phương thức khác cho báo cáo tồn kho
+    @Query("""
+    SELECT new vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryReportDTO(
+        CASE WHEN m IS NOT NULL THEN m.materialCode ELSE p.productCode END,
+        CASE WHEN m IS NOT NULL THEN m.materialName ELSE p.productName END,
+        CASE WHEN m IS NOT NULL THEN m.isUsing ELSE p.isProductionActive END,
+        CASE WHEN m IS NOT NULL THEN u1.unitName ELSE u2.unitName END,
+        SUM(CASE WHEN i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.AVAILABLE THEN i.quantity ELSE 0 END),
+        SUM(CASE WHEN i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.RESERVED THEN i.quantity ELSE 0 END),
+        SUM(i.quantity),
+        w.warehouseCode,
+        w.warehouseName,
+        w.warehouseId,
+        CASE WHEN m IS NOT NULL THEN 'MATERIAL' ELSE 'PRODUCT' END,
+        CASE WHEN p IS NOT NULL THEN p.productType.typeId ELSE NULL END,
+        CASE WHEN m IS NOT NULL THEN m.materialType.materialTypeId ELSE NULL END
+    )
+    FROM Inventory i
+    LEFT JOIN i.material m
+    LEFT JOIN i.product p
+    LEFT JOIN m.unit u1
+    LEFT JOIN p.unit u2
+    JOIN i.warehouse w
+    GROUP BY 
+        CASE WHEN m IS NOT NULL THEN m.materialCode ELSE p.productCode END,
+        CASE WHEN m IS NOT NULL THEN m.materialName ELSE p.productName END,
+        CASE WHEN m IS NOT NULL THEN m.isUsing ELSE p.isProductionActive END,
+        CASE WHEN m IS NOT NULL THEN u1.unitName ELSE u2.unitName END,
+        w.warehouseCode,
+        w.warehouseName,
+        w.warehouseId,
+        CASE WHEN m IS NOT NULL THEN 'MATERIAL' ELSE 'PRODUCT' END,
+        CASE WHEN p IS NOT NULL THEN p.productType.typeId ELSE NULL END,
+        CASE WHEN m IS NOT NULL THEN m.materialType.materialTypeId ELSE NULL END
+    """)
     List<InventoryReportDTO> getInventoryReportRaw();
 
     default Page<InventoryReportDTO> getInventoryReport(Pageable pageable) {

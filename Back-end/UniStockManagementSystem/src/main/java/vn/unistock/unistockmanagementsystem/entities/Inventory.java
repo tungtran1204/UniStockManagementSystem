@@ -33,6 +33,7 @@ public class Inventory {
     @Column(nullable = false)
     private Double quantity = 0.0;
 
+    @Enumerated(EnumType.STRING)
     private InventoryStatus status;
 
     @Column(name = "last_updated", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
@@ -40,6 +41,5 @@ public class Inventory {
     public enum InventoryStatus {
         AVAILABLE,
         RESERVED
-        // ...
     }
 }

@@ -24,6 +24,24 @@ public interface PartnerRepository extends JpaRepository<Partner, Long> {
 
     @Query("SELECT DISTINCT p FROM Partner p JOIN p.partnerTypes pt WHERE pt.partnerCode LIKE :prefix%")
     List<Partner> findByPartnerCodePrefix(@Param("prefix") String prefix);
+    @Query("SELECT p FROM Partner p JOIN p.partnerTypes pt WHERE pt.partnerType.typeId = 2")
+    List<Partner> findAllSuppliers();
+
+    @Query("""
+    SELECT COUNT(p) > 0
+    FROM Partner p
+    JOIN p.partnerTypes pt
+    WHERE LOWER(p.partnerName) = LOWER(:partnerName)
+      AND pt.partnerType.typeId = :partnerTypeId""")
+    boolean existsByPartnerNameAndPartnerTypeId(@Param("partnerName") String partnerName, @Param("partnerTypeId") Long partnerTypeId);
+
+    @Query("""
+    SELECT p FROM Partner p
+    JOIN p.partnerTypes pt
+    WHERE LOWER(p.partnerName) = LOWER(:partnerName)
+      AND pt.partnerType.typeId = :partnerTypeId""")
+    Optional<Partner> findByPartnerNameAndPartnerTypeId(@Param("partnerName") String partnerName, @Param("partnerTypeId") Long partnerTypeId);
+
 
     boolean existsByPartnerNameAndPartnerId(String partnerName, Long partnerId);
 }
