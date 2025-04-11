@@ -58,7 +58,7 @@ const AddPurchaseRequestPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { addRequest, getNextCode } = usePurchaseRequest();
-  const { fromSaleOrder, saleOrderId, initialItems } = location.state || {};
+  const { fromSaleOrder, saleOrderId, initialItems, usedProductsFromWarehouses = [] } = location.state || {};
   const saleOrderCode = location.state?.saleOrderCode || "";
 
   const [requestCode, setRequestCode] = useState("");
@@ -363,8 +363,12 @@ const AddPurchaseRequestPage = () => {
           quantity: Number(item.quantity),
           partnerId: Number(item.supplierId),
         })),
+        usedProductsFromWarehouses: usedProductsFromWarehouses.map((u) => ({
+          productId: u.productId,
+          warehouseId: u.warehouseId,
+          quantity: u.quantity,
+        }))
       };
-
       await createPurchaseRequest(payload);
       alert("Đã lưu yêu cầu mua vật tư thành công!");
       navigate("/user/purchase-request", { state: { refresh: true } });

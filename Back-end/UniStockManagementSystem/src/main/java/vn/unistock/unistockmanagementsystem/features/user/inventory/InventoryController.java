@@ -30,6 +30,7 @@ public class InventoryController {
         Double totalQty = inventoryService.getTotalQuantityOfMaterial(materialId);
         return ResponseEntity.ok(totalQty);
     }
+
     @GetMapping("/material/{materialId}/warehouses")
     public ResponseEntity<List<InventoryByWarehouseDTO>> getInventoryDetailsByWarehouseM(@PathVariable Long materialId) {
         List<InventoryByWarehouseDTO> details = inventoryService.getInventoryDetailsByMaterial(materialId);

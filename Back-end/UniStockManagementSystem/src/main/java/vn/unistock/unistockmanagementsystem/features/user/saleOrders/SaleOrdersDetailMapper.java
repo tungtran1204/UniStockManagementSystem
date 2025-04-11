@@ -35,8 +35,7 @@ public interface SaleOrdersDetailMapper {
     @Mapping(source = "productId", target = "product.productId")
     @Mapping(source = "remainingQuantity", target = "remainingQuantity")
     @Mapping(source = "quantity", target = "quantity")
-    @Mapping(source = "receivedQuantity", target = "receivedQuantity")
-    @Mapping(source = "productCode",  target = "product.productCode")
+    @Mapping(target = "receivedQuantity", expression = "java(dto.getReceivedQuantity() == null ? 0 : dto.getReceivedQuantity())")    @Mapping(source = "productCode",  target = "product.productCode")
     SalesOrderDetail toEntity(SalesOrderDetailDTO dto);
 
     default List<SalesOrderDetail> toEntityList(List<SalesOrderDetailDTO> dtoList) {
