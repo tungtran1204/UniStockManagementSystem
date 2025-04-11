@@ -16,12 +16,13 @@ import {
     Button,
 } from "@material-tailwind/react";
 import { FaEdit, FaPlus, FaTimes, FaSearch } from "react-icons/fa";
-import { BiExport, BiImport, BiSearch, BiSolidEdit } from "react-icons/bi";
+import ModeEditOutlineOutlinedIcon from '@mui/icons-material/ModeEditOutlineOutlined';
 import ReactPaginate from "react-paginate";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
+import SuccessAlert from "@/components/SuccessAlert";
 import Table from "@/components/Table";
-import { Chip, Stack } from '@mui/material';
+import { Chip, Stack, IconButton } from '@mui/material';
 
 const PartnerPage = () => {
     const {
@@ -40,6 +41,8 @@ const PartnerPage = () => {
     const [showImportPopup, setShowImportPopup] = useState(false);
     const [showCreatePopup, setShowCreatePopup] = useState(false);
     const [showEditPopup, setShowEditPopup] = useState(false);
+    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+    const [successMessage, setSuccessMessage] = useState("");
     const [file, setFile] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedPartner, setSelectedPartner] = useState(null);
@@ -61,11 +64,17 @@ const PartnerPage = () => {
         fetchData();
     }, []);
 
+    const showSuccess = (message) => {
+        setSuccessMessage(message);
+        setShowSuccessAlert(true);
+    };
+
     const handlePageChangeWrapper = (selectedItem) => {
         handlePageChange(selectedItem.selected);
     };
 
     const columnsConfig = [
+        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
         {
             field: 'partnerCode',
             headerName: 'Mã đối tác',
@@ -100,7 +109,7 @@ const PartnerPage = () => {
                         useFlexGap
                         sx={{ flexWrap: 'wrap', gap: 0.5, marginTop: '5px', marginBottom: '5px' }}>
                         {params.value.map((type, index) => (
-                            <Chip key={index} label={type} variant="outlined" color="success" size="small" sx={{ fontFamily: 'Roboto, sans-serif' }} />
+                            <Chip key={index} label={type.name} variant="outlined" color="success" size="small" sx={{ fontFamily: 'Roboto, sans-serif' }} />
                         ))}
                     </Stack>
                 );
@@ -108,66 +117,52 @@ const PartnerPage = () => {
         },
         { field: 'address', headerName: 'Địa chỉ', flex: 2, minWidth: 200, editable: false, filterable: false },
         { field: 'email', headerName: 'Email', flex: 1.5, minWidth: 180, editable: false, filterable: false },
+        { field: 'contactName', headerName: 'Người liên hệ', flex: 1, minWidth: 120, editable: false, filterable: false },
         { field: 'phone', headerName: 'Số điện thoại', flex: 1, minWidth: 120, editable: false, filterable: false },
         {
             field: 'actions',
             headerName: 'Hành động',
-            minWidth: 30,
+            minWidth: 80,
             flex: 0.5,
             renderCell: (params) => (
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
                     <Tooltip content="Chỉnh sửa">
-                        <button
+                        <IconButton
+                            size="small"
                             onClick={() => {
                                 setSelectedPartner(params.row); // ✅ Gán đối tác được chọn
                                 setShowEditPopup(true);
                             }}
-                            className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+                            color="primary"
                         >
-                            <BiSolidEdit className="h-5 w-5" />
-                        </button>
+                            <ModeEditOutlineOutlinedIcon />
+                        </IconButton>
                     </Tooltip>
                 </div>
             ),
         }
     ];
 
-    const data = partners.map((partner) => {
+    const data = partners.map((partner, index) => {
         return {
+            index: (currentPage * pageSize) + index + 1,
             id: partner.partnerId,  // DataGrid cần trường 'id'
             partnerName: partner.partnerName,
             partnerType: Array.isArray(partner.partnerTypes) && partner.partnerTypes.length > 0
-                ? partner.partnerTypes.map(item => item.partnerType?.typeName || 'Không xác định')
+                ? partner.partnerTypes.map(item => ({
+                    id: item.partnerType?.typeId || 'Không xác định',
+                    name: item.partnerType?.typeName || 'Không xác định'
+                }))
                 : [], // Đảm bảo dữ liệu là mảng
-
             partnerCode: Array.isArray(partner.partnerTypes) && partner.partnerTypes.length > 0
                 ? partner.partnerTypes.map(item => item.partnerCode || 'Không có mã')
-                : [], // Đảm bảo dữ liệu là mảng
+                : [], // Đảm bảo dữ liệu là mảng item.partnerCode || 'Không có mã') 
             address: partner.address,
             email: partner.email,
+            contactName: partner.contactName,
             phone: partner.phone,
         };
     });
-    // const handleImport = async () => {
-    //     if (!file) {
-    //         alert("Vui lòng chọn file Excel!");
-    //         return;
-    //     }
-
-    //     setLoading(true);
-    //     try {
-    //         await importExcel(file);
-    //         alert("Import thành công!");
-    //         fetchProducts();
-    //         setShowImportPopup(false);
-    //         setFile(null);
-    //     } catch (error) {
-    //         console.error("Lỗi khi import file:", error);
-    //         alert("Lỗi import file! Kiểm tra lại dữ liệu.");
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // };
 
     return (
         <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -183,9 +178,17 @@ const PartnerPage = () => {
                     {showCreatePopup && (
                         <CreatePartnerModal
                             onClose={() => setShowCreatePopup(false)}
-                            onSuccess={fetchPaginatedPartners} // Có thể gọi API fetch lại danh sách nếu cần
+                            onSuccess={(message) => {
+                                fetchPaginatedPartners();
+                                showSuccess(message || "Tạo đối tác thành công!");
+                            }}
                         />
                     )}
+                    <SuccessAlert
+                        open={showSuccessAlert}
+                        onClose={() => setShowSuccessAlert(false)}
+                        message={successMessage}
+                    />
                     {/* Phần chọn số items/trang */}
                     <div className="py-2 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
@@ -234,7 +237,10 @@ const PartnerPage = () => {
                         <EditPartnerModal
                             partner={selectedPartner} // ✅ Truyền đối tác vào modal
                             onClose={() => setShowEditPopup(false)}
-                            onSuccess={fetchPaginatedPartners}
+                            onSuccess={(message) => {
+                                fetchPaginatedPartners();
+                                showSuccess(message || "Cập nhật đối tác thành công!");
+                            }}
                         />
                     )}
                     {/* Phần phân trang mới sử dụng ReactPaginate */}

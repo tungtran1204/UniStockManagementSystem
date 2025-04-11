@@ -2,15 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     Card,
-    CardHeader,
     CardBody,
     Button,
-    Input,
-    Tooltip,
     Typography,
 } from "@material-tailwind/react";
-import { TextField, Button as MuiButton } from '@mui/material';
-import { FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa";
+import { TextField, Button as MuiButton, Autocomplete, IconButton, Divider } from '@mui/material';
+import {
+    HighlightOffRounded,
+    ClearRounded
+} from '@mui/icons-material';
+import { FaSave, FaArrowLeft, FaPlus, FaTrash } from "react-icons/fa";
 import { checkProductCodeExists, createProduct, fetchUnits, fetchProductTypes } from "./productService";
 import { checkMaterialCodeExists } from "../materials/materialService";
 import Select from "react-select";
@@ -322,6 +323,10 @@ const AddProductPage = () => {
                 }));
                 formData.append("materials", JSON.stringify(materialsData));
 
+                for (const [key, value] of formData.entries()) {
+                    console.log(`[FormData] ${key}:`, value);
+                }
+
                 const response = await axios.post(
                     `${import.meta.env.VITE_API_URL}/user/products/create`,
                     formData,
@@ -409,7 +414,7 @@ const AddProductPage = () => {
         // Cập nhật giá trị
         setNewProduct(prev => ({
             ...prev,
-            unitId: selectedOption ? selectedOption.value : ""
+            unitId: selectedOption ? selectedOption.unitId : ""
         }));
     };
 
@@ -424,7 +429,7 @@ const AddProductPage = () => {
         // Cập nhật giá trị
         setNewProduct(prev => ({
             ...prev,
-            productTypeId: selectedOption ? selectedOption.value : ""
+            productTypeId: selectedOption ? selectedOption.typeId : ""
         }));
     };
 
@@ -500,52 +505,35 @@ const AddProductPage = () => {
             editable: false,
             filterable: false,
             renderCell: (params) => (
-                <Select
-                    placeholder="Chọn nguyên vật liệu"
-                    isSearchable
-                    options={getAvailableMaterials().map((m) => ({
-                        value: m.materialId,
-                        label: `${m.materialCode} - ${m.materialName}`,
-                        material: m,
-                    }))}
-                    styles={{
-                        ...customStyles,
-                        menu: (provided) => ({
-                            ...provided,
-                            zIndex: 9999 // Đảm bảo dropdown hiển thị phía trên các phần tử khác
-                        }),
-                        menuList: (base) => ({
-                            ...base,
-                            maxHeight: '300px', // Tăng chiều cao tối đa của dropdown
-                        }),
-                        menuPortal: (base) => ({
-                            ...base,
-                            zIndex: 9999
-                        })
-                    }}
-                    className="w-full"
+                <Autocomplete
+                    sx={{ width: '100%', paddingY: '0.5rem' }}
+                    options={getAvailableMaterials()}
+                    size="small"
+                    getOptionLabel={(option) =>
+                        `${option.materialCode} - ${option.materialName}`
+                    }
                     value={
                         params.row.materialId
                             ? {
-                                value: params.row.materialId,
-                                label: `${params.row.materialCode} - ${params.row.materialName}`,
+                                materialId: params.row.materialId,
+                                materialCode: params.row.materialCode,
+                                materialName: params.row.materialName,
                             }
                             : null
                     }
-                    onChange={(selected) => {
-                        if (selected) {
-                            const material = selected.material;
-                            handleSelectSuggestion(params.row.index - 1, material);
+                    onChange={(event, selectedMaterial) => {
+                        if (selectedMaterial) {
+                            handleSelectSuggestion(params.row.index - 1, selectedMaterial);
                         }
                     }}
-                    filterOption={(option, inputValue) => {
-                        const label = option.label.toLowerCase();
-                        const search = inputValue.toLowerCase();
-                        return label.includes(search);
-                    }}
-                    menuPosition="fixed" // Giúp dropdown menu không bị cut off
-                    menuPortalTarget={document.body} // Render dropdown vào body
-                    noOptionsMessage={() => "Không tìm thấy vật tư"}
+                    renderInput={(params) => (
+                        <TextField
+                            color="success"
+                            hiddenLabel
+                            {...params}
+                            placeholder="Mã nguyên vật liệu"
+                        />
+                    )}
                 />
             ),
         },
@@ -574,16 +562,14 @@ const AddProductPage = () => {
             filterable: false,
             renderCell: (params) => (
                 <div className="w-full">
-                    <Input
+                    <TextField
                         type="number"
+                        size="small"
+                        color="success"
+                        inputProps={{ min: 1 }}
                         value={params.row.quantity || ''}
                         onChange={(e) => handleQuantityChange(params.row.index - 1, e.target.value)}
-                        min="1"
-                        step="1"
-                        containerProps={{ className: "min-w-[100px]" }}
-                        labelProps={{ className: "hidden" }}
-                        className={`!border !border-gray-300 bg-white text-gray-900 shadow-lg shadow-gray-900/5 ring-4 ring-transparent placeholder:text-gray-500 focus:!border-gray-900 focus:!border-t-gray-900 focus:ring-gray-900/10
-                            ${quantityErrors[params.row.index - 1] ? "!border-red-500" : ""}`}
+                        style={{ width: '100%' }}
                     />
                     {quantityErrors[params.row.index - 1] && (
                         <div className="text-xs text-red-500 mt-1">
@@ -602,17 +588,16 @@ const AddProductPage = () => {
             filterable: false,
             renderCell: (params) => (
                 <div className="flex justify-center w-full">
-                    <Tooltip content="Xoá">
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation(); // Ngăn sự kiện bubble
-                                handleRemoveRow(params.row.index - 1);
-                            }}
-                            className="p-2 rounded-full bg-red-500 hover:bg-red-600 text-white"
-                        >
-                            <FaTrash className="h-3 w-3" />
-                        </button>
-                    </Tooltip>
+                    <IconButton
+                        size="small"
+                        color="error"
+                        onClick={(e) => {
+                            e.stopPropagation(); // Ngăn sự kiện bubble
+                            handleRemoveRow(params.row.index - 1);
+                        }}
+                    >
+                        <HighlightOffRounded />
+                    </IconButton>
                 </div>
             ),
         },
@@ -681,22 +666,24 @@ const AddProductPage = () => {
                                     Đơn vị
                                     <span className="text-red-500"> *</span>
                                 </Typography>
-                                <Select
-                                    placeholder="Chọn đơn vị"
-                                    options={units.map((unit) => ({
-                                        value: unit.unitId.toString(),
-                                        label: unit.unitName,
-                                    }))}
-                                    styles={customStyles}
+                                <Autocomplete
+                                    options={units}
+                                    size="small"
+                                    getOptionLabel={(option) => option.unitName || ""}
                                     value={
-                                        units
-                                            .map((unit) => ({
-                                                value: unit.unitId.toString(),
-                                                label: unit.unitName,
-                                            }))
-                                            .find((option) => option.value === newProduct.unitId?.toString()) || null
+                                        units.find((unit) => unit.unitId === newProduct.unitId) || null
                                     }
-                                    onChange={handleUnitChange}
+                                    onChange={(event, selectedUnit) => {
+                                        handleUnitChange(selectedUnit);
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            color="success"
+                                            hiddenLabel
+                                            {...params}
+                                            placeholder="Đơn vị"
+                                        />
+                                    )}
                                 />
                                 {validationErrors.unitId && (
                                     <Typography className="text-xs text-red-500 mt-1">
@@ -752,22 +739,26 @@ const AddProductPage = () => {
                                     Dòng sản phẩm
                                     <span className="text-red-500"> *</span>
                                 </Typography>
-                                <Select
-                                    placeholder="Chọn dòng sản phẩm"
-                                    options={productTypes.map((type) => ({
-                                        value: type.typeId.toString(),
-                                        label: type.typeName,
-                                    }))}
-                                    styles={customStyles}
+                                <Autocomplete
+                                    options={productTypes}
+                                    size="small"
+                                    getOptionLabel={(option) => option.typeName || ""}
                                     value={
-                                        productTypes
-                                            .map((type) => ({
-                                                value: type.typeId.toString(),
-                                                label: type.typeName,
-                                            }))
-                                            .find((option) => option.value === newProduct.productTypeId?.toString()) || null
+                                        productTypes.find(
+                                            (type) => type.typeId === newProduct.productTypeId
+                                        ) || null
                                     }
-                                    onChange={handleProductTypeChange}
+                                    onChange={(event, selectedType) => {
+                                        handleProductTypeChange(selectedType);
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            color="success"
+                                            hiddenLabel
+                                            {...params}
+                                            placeholder="Dòng sản phẩm"
+                                        />
+                                    )}
                                 />
                                 {validationErrors.productTypeId && (
                                     <Typography className="text-xs text-red-500 mt-1">
@@ -852,7 +843,7 @@ const AddProductPage = () => {
                         <Table data={data} columnsConfig={columnsConfig} enableSelection={false} />
 
                         {filteredTableMaterials.length > 0 && (
-                            <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
+                            <div className="flex items-center justify-between border-t border-blue-gray-50 pt-4">
                                 <div className="flex items-center gap-2">
                                     <Typography variant="small" color="blue-gray" className="font-normal">
                                         Trang {currentPage + 1} / {Math.ceil(filteredTableMaterials.length / pageSize)} •{" "}
@@ -904,27 +895,47 @@ const AddProductPage = () => {
                             </MuiButton>
                         </div>
                     </div>
-
-                    <div className="flex justify-end gap-2 my-4">
+                    <Divider />
+                    <div className="my-4 flex justify-between">
                         <MuiButton
+                            color="info"
                             size="medium"
-                            color="error"
                             variant="outlined"
+                            sx={{
+                                height: '36px',
+                                color: '#616161',
+                                borderColor: '#9e9e9e',
+                                '&:hover': {
+                                    backgroundColor: '#f5f5f5',
+                                    borderColor: '#757575',
+                                },
+                            }}
                             onClick={() => navigate("/user/products")}
+                            className="flex items-center gap-2"
                         >
-                            Hủy
+                            <FaArrowLeft className="h-3 w-3" /> Quay lại
                         </MuiButton>
-                        <Button
-                            size="lg"
-                            color="white"
-                            variant="text"
-                            className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-2 rounded-[4px] transition-all duration-200 ease-in-out"
-                            ripple={true}
-                            onClick={handleCreateProduct}
-                            disabled={isCreateDisabled()}
-                        >
-                            Lưu
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                            <MuiButton
+                                size="medium"
+                                color="error"
+                                variant="outlined"
+                                onClick={() => navigate("/user/products")}
+                            >
+                                Hủy
+                            </MuiButton>
+                            <Button
+                                size="lg"
+                                color="white"
+                                variant="text"
+                                className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-2 rounded-[4px] transition-all duration-200 ease-in-out"
+                                ripple={true}
+                                onClick={handleCreateProduct}
+                                disabled={isCreateDisabled()}
+                            >
+                                Lưu
+                            </Button>
+                        </div>
                     </div>
                 </CardBody>
             </Card>

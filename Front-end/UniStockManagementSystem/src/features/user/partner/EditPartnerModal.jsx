@@ -8,15 +8,15 @@ import {
     Typography,
     Input,
     Button,
-    IconButton,
 } from "@material-tailwind/react";
 import {
     TextField,
     Divider,
-    Button as MuiButton
+    Button as MuiButton,
+    IconButton,
+    Autocomplete
 } from "@mui/material";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import MultiSelectDropdown from "@/components/MultiSelectDropdown";
 
 const EditPartnerModal = ({ partner, onClose, onSuccess }) => {
     const [partnerTypes, setPartnerTypes] = useState([]);
@@ -39,32 +39,41 @@ const EditPartnerModal = ({ partner, onClose, onSuccess }) => {
     useEffect(() => {
         // Tải danh sách nhóm đối tác
         const loadPartnerTypes = async () => {
-            const data = await fetchPartnerTypes();
-            setPartnerTypes(
-                data.map((pt) => ({
+            try {
+                const [data] = await Promise.all([
+                    fetchPartnerTypes()
+                ]);
+                console.log("📦 fetchPartnerTypes result:", data);
+
+                setPartnerTypes(data.content.map((pt) => ({
                     value: pt.typeId,
-                    label: pt.typeName
-                }))
-            );
+                    label: pt.typeName,
+                })));
+            } catch (error) {
+                console.error("❌ Lỗi khi loadPartnerTypes:", error);
+                setPartnerTypes([]);
+            }
         };
+
         loadPartnerTypes();
 
         // Gán thông tin đối tác vào form khi mở modal
+        console.log("partner: ", partner);
         if (partner) {
             setEditPartner({
                 partnerName: partner.partnerName || "",
                 address: partner.address || "",
+                contactName: partner.contactName || "",
                 phone: partner.phone || "",
                 email: partner.email || "",
-                partnerTypeIds: partner.partnerTypes
-                    ? partner.partnerTypes.map(pt => pt.partnerType.typeName)
+                partnerTypeIds: Array.isArray(partner.partnerType)
+                    ? partner.partnerType.map((pt) => pt.id)
                     : [],
-                partnerCodes: partner.partnerTypes
-                    ? partner.partnerTypes.map(pt => pt.partnerCode)
+                partnerCodes: Array.isArray(partner.partnerCode)
+                    ? partner.partnerCode
                     : [],
             });
         }
-        console.log("editpartner: ", partner);
     }, [partner]);
 
     const validatePartner = () => {
@@ -85,17 +94,18 @@ const EditPartnerModal = ({ partner, onClose, onSuccess }) => {
 
         try {
             const updatedData = {
-                partnerId: partner.partnerId,
+                partnerId: partner.id,
                 partnerName: editPartner.partnerName,
                 address: editPartner.address,
+                contactName: editPartner.contactName,
                 phone: editPartner.phone,
                 email: editPartner.email,
                 partnerCodes: editPartner.partnerCodes,
                 partnerTypeIds: editPartner.partnerTypeIds,
             };
-
+            console.log("updatePartner: ", updatedData);
             await updatePartner(updatedData);
-            onSuccess(); // Reload danh sách sau khi cập nhật
+            onSuccess("Cập nhật đối tác thành công!"); // Reload danh sách sau khi cập nhật
             onClose(); // Đóng modal
         } catch (error) {
             console.error("Lỗi khi cập nhật đối tác:", error);
@@ -111,8 +121,7 @@ const EditPartnerModal = ({ partner, onClose, onSuccess }) => {
                     Chỉnh sửa đối tác
                 </Typography>
                 <IconButton
-                    size="sm"
-                    variant="text"
+                    size="small"
                     onClick={onClose}
                 >
                     <XMarkIcon className="h-5 w-5 stroke-2" />
@@ -147,13 +156,36 @@ const EditPartnerModal = ({ partner, onClose, onSuccess }) => {
                         Nhóm đối tác
                         <span className="text-red-500"> *</span>
                     </Typography>
-                    <MultiSelectDropdown
+                    <Autocomplete
+                        multiple
                         options={partnerTypes}
-                        selectedOptions={editPartner.partnerTypeIds}
-                        setSelectedOptions={(ids) => setEditPartner({ ...editPartner, partnerTypeIds: ids })}
-                        setLabelString="Chọn nhóm đối tác"
-                        error={errorPartnerCodes}
+                        size="small"
+                        getOptionLabel={(option) => option.label || ""}
+                        value={
+                            partnerTypes.filter((s) =>
+                                editPartner.partnerTypeIds?.includes(s.value)
+                            )
+                        }
+                        onChange={(event, selectedOptions) => {
+                            console.log("✅ Selected partner types:", selectedOptions);
+                            setEditPartner({ ...editPartner, partnerTypeIds: selectedOptions.value })
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                color="success"
+                                hiddenLabel
+                                {...params}
+                                placeholder="Chọn nhóm đối tác"
+                            />
+                        )}
+                        slotProps={{
+                            popper: {
+                                sx: { zIndex: 9999 }, // Cố định z-index trong Popper
+                            },
+                        }}
                     />
+                    {errorPartnerCodes && <Typography variant="small" color="red">{errorPartnerCodes}</Typography>}
+
                 </div>
 
                 {/* Mã đối tác */}
@@ -185,10 +217,8 @@ const EditPartnerModal = ({ partner, onClose, onSuccess }) => {
                         placeholder="Người liên hệ"
                         variant="outlined"
                         color="success"
-                    // value={newPartner.email}
-                    // onChange={(e) => setNewPartner({ ...newPartner, email: e.target.value })}
-                    // error={!!errorEmail}
-                    // helperText={errorEmail}
+                        value={editPartner.contactName}
+                        onChange={(e) => setEditPartner({ ...editPartner, contactName: e.target.value })}
                     />
                 </div>
 
@@ -272,86 +302,6 @@ const EditPartnerModal = ({ partner, onClose, onSuccess }) => {
                 </Button>
             </DialogFooter>
         </Dialog>
-        // <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        //     <div className="bg-white rounded-lg p-6 w-[500px] text-gray-900">
-        //         <div className="flex justify-between items-center mb-4">
-        //             <Typography variant="h6">Chỉnh sửa đối tác</Typography>
-        //             <button className="text-gray-500 hover:text-gray-700" onClick={onClose}>✕</button>
-        //         </div>
-
-        //         {/* Form chỉnh sửa */}
-        //         <div className="grid grid-cols-2 gap-4 mb-4">
-        //             <div className="col-span-2">
-        //                 <Typography variant="small" className="mb-2">Tên đối tác *</Typography>
-        //                 <Input
-        //                     type="text"
-        //                     value={editPartner.partnerName}
-        //                     onChange={(e) => setEditPartner({ ...editPartner, partnerName: e.target.value })}
-        //                     className="w-full"
-        //                 />
-        //                 {errorPartnerName && <Typography variant="small" color="red">{errorPartnerName}</Typography>}
-        //             </div>
-
-        //             {/* Nhóm đối tác */}
-        //             <div className="col-span-2">
-        //                 <Typography variant="small" className="mb-2">Nhóm đối tác</Typography>
-        //                 <MultiSelectDropdown
-        //                     options={partnerTypes}
-        //                     selectedOptions={editPartner.partnerTypeIds}
-        //                     setSelectedOptions={(ids) => setEditPartner({ ...editPartner, partnerTypeIds: ids })}
-        //                     setLabelString="- Chọn nhóm đối tác -"
-        //                 />
-        //             </div>
-
-        //             {/* Mã đối tác */}
-        //             <div className="col-span-2">
-        //                 <Typography variant="small" className="mb-2">Mã đối tác</Typography>
-        //                 <Input
-        //                     type="text"
-        //                     value={editPartner.partnerCodes.join(", ")}
-        //                     className="disabled:opacity-100"
-        //                     disabled
-        //                 />
-        //             </div>
-
-        //             {/* Email & Số điện thoại */}
-        //             <div className="col-span-1">
-        //                 <Typography variant="small" className="mb-2">Email *</Typography>
-        //                 <Input
-        //                     type="text"
-        //                     value={editPartner.email}
-        //                     onChange={(e) => setEditPartner({ ...editPartner, email: e.target.value })}
-        //                 />
-        //                 {errorEmail && <Typography variant="small" color="red">{errorEmail}</Typography>}
-        //             </div>
-        //             <div className="col-span-1">
-        //                 <Typography variant="small" className="mb-2">Số điện thoại *</Typography>
-        //                 <Input
-        //                     type="text"
-        //                     value={editPartner.phone}
-        //                     onChange={(e) => setEditPartner({ ...editPartner, phone: e.target.value })}
-        //                 />
-        //                 {errorPhone && <Typography variant="small" color="red">{errorPhone}</Typography>}
-        //             </div>
-
-        //             {/* Địa chỉ */}
-        //             <div className="col-span-2">
-        //                 <Typography variant="small" className="mb-2">Địa chỉ *</Typography>
-        //                 <Input
-        //                     type="text"
-        //                     value={editPartner.address}
-        //                     onChange={(e) => setEditPartner({ ...editPartner, address: e.target.value })}
-        //                 />
-        //             </div>
-        //         </div>
-
-        //         {/* Buttons */}
-        //         <div className="flex justify-end gap-2">
-        //             <Button color="gray" onClick={onClose}>Hủy</Button>
-        //             <Button color="blue" onClick={handleUpdatePartner}>Lưu</Button>
-        //         </div>
-        //     </div>
-        // </div>
     );
 };
 

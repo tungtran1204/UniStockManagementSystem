@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from "react";
 import {
-    Dialog,
-    DialogHeader,
-    DialogBody,
-    DialogFooter,
-    Typography,
-    Button,
-    IconButton,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  Typography,
+  Button,
 } from "@material-tailwind/react";
-import { TextField, Divider, Button as MuiButton } from "@mui/material";
+import { TextField, Divider, Button as MuiButton, IconButton } from "@mui/material";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import useWarehouse from "./useWarehouse";
 
@@ -90,8 +89,7 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, fetchWarehouses }) => {
           Chỉnh sửa kho
         </Typography>
         <IconButton
-          size="sm"
-          variant="text"
+          size="small"
           onClick={onClose}
         >
           <XMarkIcon className="h-5 w-5 stroke-2" />

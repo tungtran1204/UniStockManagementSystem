@@ -6,10 +6,9 @@ import {
   DialogFooter,
   Switch,
   Button,
-  IconButton,
   Typography,
 } from "@material-tailwind/react";
-import { TextField, Divider, Button as MuiButton } from "@mui/material";
+import { TextField, Divider, Button as MuiButton, IconButton } from "@mui/material";
 import { getAllRoles } from "../roles/roleService";
 import { checkEmailExists, createUser } from "../users/userService";
 import { XMarkIcon } from "@heroicons/react/24/outline";
@@ -147,8 +146,7 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
           Thêm người dùng
         </Typography>
         <IconButton
-          size="sm"
-          variant="text"
+          size="small"
           onClick={onClose}
         >
           <XMarkIcon className="h-5 w-5 stroke-2" />
@@ -251,35 +249,18 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
                 roles
                   .filter((r) => r.name !== "USER" && r.name !== "ADMIN")
                   .map((r) => (
-                    <button
+                    <MuiButton
+                      size="medium"
+                      variant={selectedRoles.has(r.id) ? "contained" : "outlined"}
                       key={r.id}
                       onClick={() => handleRoleChange(r.id)}
-                      className={`px-4 py-2 text-sm rounded-lg transition-all ${selectedRoles.has(r.id)
-                        ? "bg-blue-500 text-white shadow-md"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                        }`}
                     >
                       {r.name}
-                    </button>
+                    </MuiButton>
                   ))
               ) : (
                 <p className="text-sm text-gray-500">Không có sẵn vai trò.</p>
               )}
-            </div>
-          </div>
-
-          <div>
-            <div>
-              <Typography variant="medium" className="text-black">
-                Trạng thái
-                <span className="text-red-500"> *</span>
-              </Typography>
-              <Switch
-                label={isActive ? "Đang hoạt động" : "Vô hiệu hóa"}
-                checked={isActive}
-                onChange={() => setIsActive(!isActive)}
-                color="green"
-              />
             </div>
           </div>
         </div>

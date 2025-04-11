@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import vn.unistock.unistockmanagementsystem.features.user.partnerType.PartnerTypeDTO;
 
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,15 @@ public class PartnerController {
     public ResponseEntity<?> createPartner(@Valid @RequestBody PartnerDTO partnerDTO) {
         try {
             return ResponseEntity.ok(partnerService.createPartner(partnerDTO));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/update/{id}")
+    public ResponseEntity<?> updatePartner(@RequestBody PartnerDTO partnerDTO) {
+        try {
+            return ResponseEntity.ok(partnerService.updatePartner(partnerDTO));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         }

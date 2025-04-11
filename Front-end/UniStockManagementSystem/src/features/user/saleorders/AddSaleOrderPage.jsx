@@ -11,7 +11,8 @@ import {
   Typography,
 } from "@material-tailwind/react";
 import {
-  HighlightOffRounded
+  HighlightOffRounded,
+  ClearRounded
 } from '@mui/icons-material';
 import { TextField, Button as MuiButton, Autocomplete, IconButton, Divider } from '@mui/material';
 import ReactPaginate from "react-paginate";
@@ -28,52 +29,6 @@ import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 
 const CUSTOMER_TYPE_ID = 1;
-
-const AddCustomerDropdownIndicator = (props) => {
-  return (
-    <div style={{ display: "flex", alignItems: "center" }}>
-      <div
-        style={{ cursor: "pointer", padding: "0 8px" }}
-        onClick={(e) => {
-          console.log("FaPlus clicked to open modal");
-          e.stopPropagation();
-          props.selectProps.onAddCustomer();
-        }}
-      >
-        <FaPlus />
-      </div>
-      <components.DropdownIndicator {...props} />
-    </div>
-  );
-};
-
-const customStyles = {
-  control: (provided, state) => ({
-    ...provided,
-    minWidth: 200,
-    borderColor: state.isFocused ? "black" : provided.borderColor,
-    boxShadow: state.isFocused ? "0 0 0 1px black" : "none",
-    "&:hover": {
-      borderColor: "black",
-    },
-  }),
-  menuList: (provided) => ({
-    ...provided,
-  }),
-  option: (provided, state) => ({
-    ...provided,
-    backgroundColor: state.isFocused
-      ? "#f3f4f6"
-      : state.isSelected
-        ? "#e5e7eb"
-        : "transparent",
-    color: "#000",
-    cursor: "pointer",
-    "&:active": {
-      backgroundColor: "#e5e7eb",
-    },
-  }),
-};
 
 const AddSaleOrderPage = () => {
   const location = useLocation();
@@ -385,6 +340,8 @@ const AddSaleOrderPage = () => {
                 </Typography>
                 <Autocomplete
                   options={customers}
+                  disableClearable
+                  clearIcon={null}
                   size="small"
                   getOptionLabel={(option) => option.label}
                   value={customers.find(o => o.code === customerCode) || null}
@@ -400,7 +357,7 @@ const AddSaleOrderPage = () => {
                       InputProps={{
                         ...params.InputProps,
                         endAdornment: (
-                          <>
+                          <div className="flex items-center space-x-1">
                             <IconButton
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -410,8 +367,20 @@ const AddSaleOrderPage = () => {
                             >
                               <FaPlus fontSize="small" />
                             </IconButton>
+
+                            {customerCode && (
+                              <IconButton
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOrderSelected(null);
+                                }}
+                                size="small"
+                              >
+                                <ClearRounded fontSize="18px" />
+                              </IconButton>
+                            )}
                             {params.InputProps.endAdornment}
-                          </>
+                          </div>
                         )
                       }}
                     />
@@ -791,7 +760,7 @@ const AddSaleOrderPage = () => {
               </div>
             </MuiButton>
           </div>
-          <Divider/>
+          <Divider />
           {/* Thông báo lỗi chung (nếu có) và nút Lưu / Hủy */}
           <div className="flex flex-col gap-2">
             {globalError && (

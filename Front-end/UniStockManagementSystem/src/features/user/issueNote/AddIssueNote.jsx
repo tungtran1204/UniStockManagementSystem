@@ -11,9 +11,12 @@ import {
   Autocomplete,
   IconButton,
   Button as MuiButton,
-  Tooltip
+  Divider
 } from '@mui/material';
-import ClearRoundedIcon from '@mui/icons-material/ClearRounded';
+import {
+  HighlightOffRounded,
+  ClearRounded
+} from '@mui/icons-material';
 import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { FaPlus, FaTrash, FaArrowLeft } from "react-icons/fa";
@@ -388,9 +391,11 @@ const AddIssueNote = () => {
               {wh.quantity}
             </td>
             <td className="px-3 py-2 border-r text-sm w-24">
-              <input
+              <TextField
                 type="number"
-                className="border p-1 text-right w-[60px]"
+                size="small"
+                fullWidth
+                inputProps={{ min: 0 }}
                 value={wh.exportQuantity || 0}
                 onChange={(e) => {
                   const val = Number(e.target.value);
@@ -408,23 +413,23 @@ const AddIssueNote = () => {
                     })
                   );
                 }}
+                color="success"
+                hiddenLabel
+                placeholder="Số lượng"
               />
             </td>
-
             {isFirstRow && (
               <td
                 rowSpan={rowSpan}
                 className="px-3 py-2 text-center text-sm"
               >
-                <Tooltip title="Xóa sản phẩm">
-                  <IconButton
-                    size="small"
-                    color="error"
-                    onClick={() => handleDeleteRow(prod.id)}
-                  >
-                    <FaTrash />
-                  </IconButton>
-                </Tooltip>
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => handleDeleteRow(prod.id)}
+                >
+                  <HighlightOffRounded />
+                </IconButton>
               </td>
             )}
           </tr>
@@ -677,7 +682,7 @@ const AddIssueNote = () => {
                                 }}
                                 size="small"
                               >
-                                <ClearRoundedIcon fontSize="18px" />
+                                <ClearRounded fontSize="18px" />
                               </IconButton>
                             )}
                             {params.InputProps.endAdornment}
@@ -862,7 +867,7 @@ const AddIssueNote = () => {
                                 }}
                                 size="small"
                               >
-                                <ClearRoundedIcon fontSize="18px" />
+                                <ClearRounded fontSize="18px" />
                               </IconButton>
                             )}
                             {params.InputProps.endAdornment}
@@ -950,7 +955,7 @@ const AddIssueNote = () => {
                   disableClearable
                   clearIcon={null}
                   size="small"
-                  getOptionLabel={(option) => option.code || ""}
+                  getOptionLabel={(option) => `${option.code} - ${option.name}`}
                   value={suppliers.find(o => o.code === partnerCode) || null}
                   onChange={(event, sel) => {
                     if (sel) {
@@ -999,7 +1004,7 @@ const AddIssueNote = () => {
                                 }}
                                 size="small"
                               >
-                                <ClearRoundedIcon fontSize="18px" />
+                                <ClearRounded fontSize="18px" />
                               </IconButton>
                             )}
                             {params.InputProps.endAdornment}
@@ -1213,8 +1218,8 @@ const AddIssueNote = () => {
               />
             </div>
           )}
-
-          <div className="mt-6 border-t pt-4 flex justify-between">
+          <Divider/>
+          <div className="my-4 flex justify-between">
             <MuiButton
               color="info"
               size="medium"
@@ -1233,7 +1238,7 @@ const AddIssueNote = () => {
             >
               <FaArrowLeft className="h-3 w-3" /> Quay lại
             </MuiButton>
-            <div className="flex items-center justify-end gap-2 pb-2">
+            <div className="flex justify-end gap-2">
               <MuiButton
                 size="medium"
                 color="error"

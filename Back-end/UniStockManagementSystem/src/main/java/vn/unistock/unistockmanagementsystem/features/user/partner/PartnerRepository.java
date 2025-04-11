@@ -25,4 +25,5 @@ public interface PartnerRepository extends JpaRepository<Partner, Long> {
     @Query("SELECT DISTINCT p FROM Partner p JOIN p.partnerTypes pt WHERE pt.partnerCode LIKE :prefix%")
     List<Partner> findByPartnerCodePrefix(@Param("prefix") String prefix);
 
+    boolean existsByPartnerNameAndPartnerId(String partnerName, Long partnerId);
 }

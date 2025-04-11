@@ -8,12 +8,14 @@ import {
     Button,
     Input,
 } from "@material-tailwind/react";
-import { TextField, Button as MuiButton, Divider } from '@mui/material';
+import { TextField, Button as MuiButton, Divider, Autocomplete, IconButton } from '@mui/material';
 import { FaEdit, FaArrowLeft, FaSave, FaTimes, FaPlus, FaTrash, FaTimesCircle } from "react-icons/fa";
 import { getProductById, updateProduct, fetchUnits, fetchProductTypes, checkProductCodeExists } from "./productService";
-import Select from "react-select";
 import axios from "axios";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import {
+    HighlightOffRounded,
+} from '@mui/icons-material';
 import ReactPaginate from "react-paginate";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
@@ -336,9 +338,9 @@ const DetailProductPage = () => {
         const updatedMaterials = [...editedProduct.materials];
         updatedMaterials[index] = {
             ...updatedMaterials[index],
-            materialId: selected.value, // Thay đổi từ material.materialId sang selected.value
-            materialCode: selected.material.materialCode,
-            materialName: selected.material.materialName,
+            materialId: selected.materialId, // Thay đổi từ material.materialId sang selected.value
+            materialCode: selected.materialCode,
+            materialName: selected.materialName,
             quantity: updatedMaterials[index].quantity || 1
         };
         setEditedProduct(prev => ({
@@ -426,43 +428,35 @@ const DetailProductPage = () => {
             minWidth: 250,
             renderCell: (params) => (
                 isEditing ? (
-                    <Select
-                        placeholder="Chọn nguyên vật liệu"
-                        isSearchable
-                        options={getAvailableMaterials(params.row.index - 1).map((m) => ({
-                            value: m.materialId,
-                            label: `${m.materialCode} - ${m.materialName}`,
-                            material: m,
-                        }))}
-                        styles={{
-                            ...customStyles,
-                            menu: (provided) => ({
-                                ...provided,
-                                zIndex: 9999
-                            }),
-                            menuPortal: (base) => ({
-                                ...base,
-                                zIndex: 9999
-                            })
-                        }}
-                        className="w-full"
+                    <Autocomplete
+                        sx={{ width: '100%', paddingY: '0.5rem' }}
+                        options={getAvailableMaterials(params.row.index - 1)}
+                        size="small"
+                        getOptionLabel={(option) =>
+                            `${option.materialCode} - ${option.materialName}`
+                        }
                         value={
                             params.row.materialId
                                 ? {
-                                    value: params.row.materialId,
-                                    label: `${params.row.materialCode} - ${params.row.materialName}`,
+                                    materialId: params.row.materialId,
+                                    materialCode: params.row.materialCode,
+                                    materialName: params.row.materialName,
                                 }
                                 : null
                         }
-                        onChange={(selected) => {
-                            if (selected) {
-                                const material = selected.material;
-                                handleMaterialChange(params.row.index - 1, selected);
+                        onChange={(event, selectedMaterial) => {
+                            if (selectedMaterial) {
+                                handleMaterialChange(params.row.index - 1, selectedMaterial);
                             }
                         }}
-                        menuPosition="fixed"
-                        menuPortalTarget={document.body}
-                        noOptionsMessage={() => "Không tìm thấy vật tư"}
+                        renderInput={(params) => (
+                            <TextField
+                                color="success"
+                                hiddenLabel
+                                {...params}
+                                placeholder="Mã nguyên vật liệu"
+                            />
+                        )}
                     />
                 ) : (
                     <div className="px-3">{params.value}</div>
@@ -477,8 +471,28 @@ const DetailProductPage = () => {
             flex: 1,
             minWidth: 100,
             renderCell: (params) => (
-                <div className="w-full">
-                    <Input
+                <div className="w-full py-2">
+                    <TextField
+                        type="number"
+                        size="small"
+                        fullWidth
+                        disabled={!isEditing}
+                        inputProps={{ min: 1 }}
+                        value={params.value || ''}
+                        onChange={(e) => handleQuantityChange(params.row.index - 1, e.target.value)}
+                        color="success"
+                        hiddenLabel
+                        placeholder="Số lượng"
+                        sx={{
+                            '& .MuiInputBase-root.Mui-disabled': {
+                                bgcolor: '#eeeeee',
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                    border: 'none',
+                                },
+                            },
+                        }}
+                    />
+                    {/* <Input
                         type="number"
                         value={params.value || ''}
                         onChange={(e) => handleQuantityChange(params.row.index - 1, e.target.value)}
@@ -486,7 +500,7 @@ const DetailProductPage = () => {
                         min="1"
                         step="1"
                         className={`w-full ${quantityErrors[params.row.index - 1] ? "border-red-500" : ""}`}
-                    />
+                    /> */}
                     {isEditing && quantityErrors[params.row.index - 1] && (
                         <div className="text-xs text-red-500 mt-1">
                             {quantityErrors[params.row.index - 1]}
@@ -502,14 +516,13 @@ const DetailProductPage = () => {
             minWidth: 100,
             renderCell: (params) => (
                 isEditing && (
-                    <Button
-                        color="red"
-                        variant="text"
-                        size="sm"
+                    <IconButton
+                        size="small"
+                        color="error"
                         onClick={() => handleRemoveRow(params.row.index - 1)}
                     >
-                        <FaTrash className="h-3 w-3" />
-                    </Button>
+                        <HighlightOffRounded />
+                    </IconButton>
                 )
             )
         }
@@ -568,29 +581,36 @@ const DetailProductPage = () => {
                                     Đơn vị
                                     {isEditing && <span className="text-red-500"> *</span>}
                                 </Typography>
-                                <Select
-                                    placeholder="Chọn đơn vị"
-                                    options={units.map((unit) => ({
-                                        value: unit.unitId.toString(),
-                                        label: unit.unitName,
-                                    }))}
+                                <Autocomplete
+                                    options={units}
+                                    size="small"
+                                    getOptionLabel={(option) => option.unitName || ""}
                                     value={
-                                        units
-                                            .map((unit) => ({
-                                                value: unit.unitId.toString(),
-                                                label: unit.unitName,
-                                            }))
-                                            .find((option) => option.value === editedProduct?.unitId?.toString()) ||
-                                        null
+                                        units.find((unit) => unit.unitId === editedProduct?.unitId) || null
                                     }
-                                    onChange={(selectedOption) =>
+                                    onChange={(event, selectedUnit) => {
                                         setEditedProduct({
                                             ...editedProduct,
-                                            unitId: selectedOption ? selectedOption.value : "",
+                                            unitId: selectedUnit ? selectedUnit.unitId : "",
                                         })
-                                    }
-                                    isDisabled={!isEditing}
-                                    styles={customStyles}
+                                    }}
+                                    disabled={!isEditing}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            color="success"
+                                            hiddenLabel
+                                            {...params}
+                                            placeholder="Đơn vị"
+                                            sx={{
+                                                '& .MuiInputBase-root.Mui-disabled': {
+                                                    bgcolor: '#eeeeee',
+                                                    '& .MuiOutlinedInput-notchedOutline': {
+                                                        border: 'none',
+                                                    },
+                                                },
+                                            }}
+                                        />
+                                    )}
                                 />
                                 {validationErrors.unitId && (
                                     <Typography className="text-xs text-red-500 mt-1">
@@ -667,32 +687,39 @@ const DetailProductPage = () => {
                                     Dòng sản phẩm
                                     {isEditing && <span className="text-red-500"> *</span>}
                                 </Typography>
-                                <Select
-                                    placeholder="Chọn dòng sản phẩm"
-                                    options={productTypes.map((type) => ({
-                                        value: type.typeId.toString(),
-                                        label: type.typeName,
-                                    }))}
+                                <Autocomplete
+                                    options={productTypes}
+                                    size="small"
+                                    getOptionLabel={(option) => option.typeName || ""}
                                     value={
-                                        productTypes
-                                            .map((type) => ({
-                                                value: type.typeId.toString(),
-                                                label: type.typeName,
-                                            }))
-                                            .find(
-                                                (option) =>
-                                                    option.value === editedProduct?.typeId?.toString()
-                                            ) || null
+                                        productTypes.find(
+                                            (type) => type.typeId === editedProduct?.typeId
+                                        ) || null
                                     }
-                                    onChange={(selectedOption) =>
+                                    onChange={(event, selectedType) => {
                                         setEditedProduct({
                                             ...editedProduct,
-                                            typeId: selectedOption ? selectedOption.value : "",
-                                            typeName: selectedOption ? selectedOption.label : "",
+                                            typeId: selectedType ? selectedType.typeId : "",
+                                            typeName: selectedType ? selectedType.typeName : "",
                                         })
-                                    }
-                                    isDisabled={!isEditing}
-                                    styles={customStyles}
+                                    }}
+                                    disabled={!isEditing}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            color="success"
+                                            hiddenLabel
+                                            {...params}
+                                            placeholder="Dòng sản phẩm"
+                                            sx={{
+                                                '& .MuiInputBase-root.Mui-disabled': {
+                                                    bgcolor: '#eeeeee',
+                                                    '& .MuiOutlinedInput-notchedOutline': {
+                                                        border: 'none',
+                                                    },
+                                                },
+                                            }}
+                                        />
+                                    )}
                                 />
                                 {validationErrors.typeId && (
                                     <Typography className="text-xs text-red-500 mt-1">
@@ -862,7 +889,7 @@ const DetailProductPage = () => {
                                     borderColor: '#757575',
                                 },
                             }}
-                            onClick={() => navigate("/user/materials")}
+                            onClick={() => navigate("/user/products")}
                             className="flex items-center gap-2"
                         >
                             <FaArrowLeft className="h-3 w-3" /> Quay lại

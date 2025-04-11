@@ -6,14 +6,13 @@ import {
     DialogBody,
     DialogFooter,
     Typography,
-    Input,
     Button,
-    IconButton,
 } from "@material-tailwind/react";
 import {
     TextField,
     Divider,
-    Button as MuiButton
+    Button as MuiButton, 
+    IconButton
 } from "@mui/material";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
@@ -84,8 +83,7 @@ const CreatePartnerTypePopup = ({ onClose, onSuccess }) => {
                     Thêm nhóm đối tác
                 </Typography>
                 <IconButton
-                    size="sm"
-                    variant="text"
+                    size="small"
                     onClick={onClose}
                 >
                     <XMarkIcon className="h-5 w-5 stroke-2" />
@@ -173,56 +171,6 @@ const CreatePartnerTypePopup = ({ onClose, onSuccess }) => {
                 </Button>
             </DialogFooter>
         </Dialog>
-        // <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        //     <div className="bg-white rounded-lg p-6 w-[500px]">
-        //         <div className="flex justify-between items-center mb-4">
-        //             <Typography variant="h6">Tạo nhóm đối tác mới</Typography>
-        //             <button className="text-gray-500 hover:text-gray-700" onClick={onClose}>✕</button>
-        //         </div>
-        //         {errorMessage && <Typography variant="small" color="red" className="mb-4">{errorMessage}</Typography>}
-        //         <div className="grid grid-cols-2 gap-4 mb-4">
-        //             <div className="col-span-2">
-        //                 <Typography variant="small" className="mb-2">Mã nhóm đối tác *</Typography>
-        //                 <Input
-        //                     type="text"
-        //                     value={newPartnerType.typeCode}
-        //                     onChange={(e) => {
-        //                         setNewPartnerType({ ...newPartnerType, typeCode: e.target.value });
-        //                         setErrorTypeCode(""); // Reset lỗi khi user nhập lại
-        //                     }}
-        //                     className="w-full"
-        //                 />
-        //                 {errorTypeCode && <Typography variant="small" color="red">{errorTypeCode}</Typography>}
-        //             </div>
-        //             <div className="col-span-2">
-        //                 <Typography variant="small" className="mb-2">Tên nhóm đối tác *</Typography>
-        //                 <Input
-        //                     type="text"
-        //                     value={newPartnerType.typeName}
-        //                     onChange={(e) => {
-        //                         setNewPartnerType({ ...newPartnerType, typeName: e.target.value });
-        //                         setErrorTypeName(""); // Reset lỗi khi user nhập lại
-        //                     }}
-        //                     className="w-full"
-        //                 />
-        //                 {errorTypeName && <Typography variant="small" color="red">{errorTypeName}</Typography>}
-        //             </div>
-        //             <div className="col-span-2">
-        //                 <Typography variant="small" className="mb-2">Mô tả</Typography>
-        //                 <Textarea
-        //                     type="text"
-        //                     value={newPartnerType.description}
-        //                     onChange={(e) => setNewPartnerType({ ...newPartnerType, description: e.target.value })}
-        //                     className="w-full"
-        //                 />
-        //             </div>
-        //         </div>
-        //         <div className="flex justify-end gap-2">
-        //             <Button color="gray" onClick={onClose}>Hủy</Button>
-        //             <Button color="blue" onClick={handleCreatePartnerType}>Lưu</Button>
-        //         </div>
-        //     </div>
-        // </div>
     );
 };
 
