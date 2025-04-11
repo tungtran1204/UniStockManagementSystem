@@ -27,6 +27,7 @@ import vn.unistock.unistockmanagementsystem.features.user.warehouse.WarehouseRep
 import vn.unistock.unistockmanagementsystem.security.filter.CustomUserDetails;
 import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -299,8 +300,21 @@ public class IssueNoteService {
         return dto;
     }
     //issue report
-    public Page<IssueNoteReportDTO> getExportReportPaginated(int page, int size) {
+    public Page<IssueNoteReportDTO> getFilteredExportReport(
+            int page, int size,
+            String search,
+            LocalDate startDate,
+            LocalDate endDate,
+            String itemType,
+            Double minQuantity,
+            Double maxQuantity,
+            List<String> categories,
+            List<Long> warehouseIds
+    ) {
         Pageable pageable = PageRequest.of(page, size);
-        return issueNoteDetailRepository.getIssueNoteReport(pageable);
+        return issueNoteDetailRepository.getFilteredExportReport(
+                search, startDate, endDate, itemType, minQuantity, maxQuantity, categories, warehouseIds, pageable
+        );
     }
+
 }

@@ -44,19 +44,9 @@ const GoodIssueReportPage = () => {
     const [itemTypeAnchorEl, setItemTypeAnchorEl] = useState(null);
     const [selectedItemType, setSelectedItemType] = useState(""); // "", "PRODUCT", "MATERIAL"
 
-
-    // Fetch report data
-    useEffect(() => {
-        fetchReport(currentPage, pageSize);
-    }, [currentPage, pageSize]);
-
-    useEffect(() => {
-        fetchReport(currentPage, pageSize);
-    }, [currentPage, pageSize, searchTerm, selectedWarehouses, quantityFilters]);
-
     const fetchReport = async (page = currentPage, size = pageSize) => {
         try {
-            const response = await getGoodReceiptReportPaginated({
+            const response = await getGoodIssueReportPaginated({
                 page,
                 size,
                 search: searchTerm,
@@ -72,14 +62,15 @@ const GoodIssueReportPage = () => {
                 id: index + 1 + page * size,
                 stt: index + 1 + page * size,
                 issueCode: item.ginCode,
-                receiptDate: item.receiptDate,
+                issueDate: item.issueDate, // ✅ field đúng là issueDate, không phải receiptDate
                 itemCode: item.materialCode || item.productCode,
                 itemName: item.materialName || item.productName,
                 itemUnit: item.unitName,
                 itemQuantity: item.quantity,
-                toWarehouse: item.warehouseName,
+                fromWarehouse: item.warehouseName, // ✅ field đúng là fromWarehouse
                 category: item.category,
             }));
+
             setReportData(data);
             setTotalPages(response.data.totalPages);
             setTotalElements(response.data.totalElements);
@@ -100,7 +91,8 @@ const GoodIssueReportPage = () => {
         endDate,
         selectedCategories,
         selectedWarehouses,
-        quantityFilters
+        quantityFilters,
+        selectedItemType,
     ]);
 
     // Handle page change
@@ -115,16 +107,15 @@ const GoodIssueReportPage = () => {
 
     // Handle search
     const handleSearch = () => {
-        // Reset to first page when searching
         setCurrentPage(0);
-        fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
+        fetchReport(0, pageSize);
     };
 
     const categoryList = [
-        "Xuất kho sản xuất",
-        "Xuất kho bán hàng",
-        "Xuất kho gia công",
-        "Xuất kho trả lại hàng mua",
+        "Sản xuất",
+        "Bán hàng",
+        "Gia công",
+        "Trả lại hàng mua",
     ];
 
     useEffect(() => {
@@ -201,110 +192,11 @@ const GoodIssueReportPage = () => {
         { field: 'category', headerName: 'Phân loại xuất', flex: 2, minWidth: 200, editable: false, filterable: false },
     ];
 
-    const data = [
-        {
-            id: 1,
-            stt: 1,
-            issueCode: "PX001",
-            issueDate: "2025-04-01T08:30:00Z",
-            itemCode: "VT001",
-            itemName: "Khung xe đạp điện",
-            itemUnit: "Cái",
-            itemQuantity: 10,
-            fromWarehouse: "Kho A",
-            category: "Xuất kho sản xuất",
-        },
-        {
-            id: 2,
-            stt: 2,
-            issueCode: "PX002",
-            issueDate: "2025-04-02T09:00:00Z",
-            itemCode: "VT002",
-            itemName: "Ắc quy 12V",
-            itemUnit: "Bình",
-            itemQuantity: 5,
-            fromWarehouse: "Kho B",
-            category: "Xuất kho bán hàng",
-        },
-        {
-            id: 3,
-            stt: 3,
-            issueCode: "PX003",
-            issueDate: "2025-04-05T14:45:00Z",
-            itemCode: "VT003",
-            itemName: "Lốp xe",
-            itemUnit: "Chiếc",
-            itemQuantity: 20,
-            fromWarehouse: "Kho C",
-            category: "Xuất kho gia công",
-        },
-        {
-            id: 4,
-            stt: 4,
-            issueCode: "PX004",
-            issueDate: "2025-03-28T10:00:00Z",
-            itemCode: "VT004",
-            itemName: "Đèn LED",
-            itemUnit: "Bóng",
-            itemQuantity: 15,
-            fromWarehouse: "Kho A",
-            category: "Xuất kho sản xuất",
-        },
-        {
-            id: 5,
-            stt: 5,
-            issueCode: "PX005",
-            issueDate: "2025-03-15T08:15:00Z",
-            itemCode: "VT005",
-            itemName: "Bộ điều khiển",
-            itemUnit: "Cái",
-            itemQuantity: 7,
-            fromWarehouse: "Kho B",
-            category: "Xuất kho trả lại hàng mua",
-        },
-        {
-            id: 6,
-            stt: 6,
-            issueCode: "PX006",
-            issueDate: "2025-04-10T13:20:00Z",
-            itemCode: "VT006",
-            itemName: "Yên xe",
-            itemUnit: "Chiếc",
-            itemQuantity: 12,
-            fromWarehouse: "Kho C",
-            category: "Xuất kho bán hàng",
-        },
-    ]
+    const pageCount = totalPages;
+    const paginatedData = reportData;
 
-    const filteredData = data.filter((item) => {
-        const matchesSearch =
-            item.issueCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.itemCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.itemName.toLowerCase().includes(searchTerm.toLowerCase());
-
-        const issueDate = dayjs(item.issueDate);
-        const matchesStart = startDate ? issueDate.isAfter(dayjs(startDate).startOf("day")) || issueDate.isSame(dayjs(startDate).startOf("day")) : true;
-        const matchesEnd = endDate ? issueDate.isBefore(dayjs(endDate).endOf("day")) || issueDate.isSame(dayjs(endDate).endOf("day")) : true;
-
-        const matchesCategory =
-            selectedCategories.length === 0 || selectedCategories.includes(item.category);
-
-        const matchesWarehouse =
-            selectedWarehouses.length === 0 || selectedWarehouses.includes(item.fromWarehouse);
-
-        const matchesQuantity = (itemQuantity) => {
-            const { min, max, type } = quantityFilters.itemQuantity;
-            if (type === "lt") return max == null || itemQuantity <= max;
-            if (type === "gt") return min == null || itemQuantity >= min;
-            if (type === "eq") return min == null || itemQuantity === min;
-            return (min == null || itemQuantity >= min) && (max == null || itemQuantity <= max);
-        };
-
-        return matchesSearch && matchesStart && matchesEnd && matchesCategory && matchesWarehouse && matchesQuantity(item.itemQuantity);
-    });
-
-    const pageCount = Math.ceil(filteredData.length / pageSize);
-    const paginatedData = filteredData.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+    // const pageCount = Math.ceil(filteredData.length / pageSize);
+    // const paginatedData = filteredData.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
 
     return (
         <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -464,11 +356,16 @@ const GoodIssueReportPage = () => {
                         >
                             {selectedWarehouses.length > 0 ? (
                                 <span className="flex items-center gap-[5px]">
-                                    {selectedWarehouses[0]}
-                                    {selectedWarehouses.length > 1 && (
-                                        <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin">+{selectedWarehouses.length - 1}</span>
-                                    )}
-                                </span>
+                                {selectedWarehouses.length === 1 && selectedWarehouses[0].warehouseName}
+                                {selectedWarehouses.length > 1 && (
+                                    <>
+                                        {selectedWarehouses[0].warehouseName}
+                                        <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin">
+                                            +{selectedWarehouses.length - 1}
+                                        </span>
+                                    </>
+                                )}
+                            </span>
                             ) : (
                                 <span className="flex items-center gap-[5px]">
                                     Kho xuất
@@ -487,15 +384,20 @@ const GoodIssueReportPage = () => {
                                 <MenuItem
                                     key={wh}
                                     onClick={() => {
-                                        const updated = selectedWarehouses.includes(wh)
-                                            ? selectedWarehouses.filter(w => w !== wh)
+                                        const exists = selectedWarehouses.some(w => w.warehouseId === wh.warehouseId);
+                                        const updated = exists
+                                            ? selectedWarehouses.filter(w => w.warehouseId !== wh.warehouseId)
                                             : [...selectedWarehouses, wh];
                                         setSelectedWarehouses(updated);
                                     }}
                                     sx={{ paddingLeft: "7px", minWidth: "150px" }}
                                 >
-                                    <Checkbox color="success" size="small" checked={selectedWarehouses.includes(wh)} />
-                                    <ListItemText primary={wh} />
+                                    <Checkbox
+                                        color="success"
+                                        size="small"
+                                        checked={selectedWarehouses.some(w => w.warehouseId === wh.warehouseId)}
+                                    />
+                                    <ListItemText primary={wh.warehouseName} />
                                 </MenuItem>
                             ))}
                             {selectedWarehouses.length > 0 && (
@@ -665,7 +567,7 @@ const GoodIssueReportPage = () => {
                         <div className="flex items-center gap-2">
                             <Typography variant="small" color="blue-gray" className="font-normal">
                                 {/* Trang {currentPage + 1} / {totalPages || 1} • {totalElements || 0} bản ghi */}
-                                Trang {currentPage + 1} / {pageCount || 1} • {filteredData.length} bản ghi
+                                Trang {currentPage + 1} / {pageCount || 1} • {totalElements || 0} bản ghi
                             </Typography>
                         </div>
                         <ReactPaginate

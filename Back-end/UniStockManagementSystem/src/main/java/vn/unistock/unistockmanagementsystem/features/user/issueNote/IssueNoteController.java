@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -14,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import vn.unistock.unistockmanagementsystem.entities.User;
 import vn.unistock.unistockmanagementsystem.security.filter.CustomUserDetails;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -124,9 +126,19 @@ public class IssueNoteController {
     @GetMapping("/report")
     public ResponseEntity<Map<String, Object>> getExportReport(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String itemType,
+            @RequestParam(required = false) Double minQuantity,
+            @RequestParam(required = false) Double maxQuantity,
+            @RequestParam(required = false) List<String> categories,
+            @RequestParam(required = false) List<Long> warehouseIds
     ) {
-        Page<IssueNoteReportDTO> paged = issueNoteService.getExportReportPaginated(page, size);
+        Page<IssueNoteReportDTO> paged = issueNoteService.getFilteredExportReport(
+                page, size, search, startDate, endDate, itemType, minQuantity, maxQuantity, categories, warehouseIds
+        );
         Map<String, Object> response = new HashMap<>();
         response.put("content", paged.getContent());
         response.put("totalPages", paged.getTotalPages());
