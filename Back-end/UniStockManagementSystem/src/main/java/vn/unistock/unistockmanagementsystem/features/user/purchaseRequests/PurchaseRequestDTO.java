@@ -18,4 +18,6 @@ public class PurchaseRequestDTO {
     private String saleOrderCode;
 
     private List<PurchaseRequestDetailDTO> purchaseRequestDetails;
+    private List<UsedProductWarehouseDTO> usedProductsFromWarehouses;
+
 }

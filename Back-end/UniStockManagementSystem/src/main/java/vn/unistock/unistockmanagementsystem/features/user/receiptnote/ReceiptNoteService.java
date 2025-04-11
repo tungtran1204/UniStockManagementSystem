@@ -170,7 +170,9 @@ public class ReceiptNoteService {
                     if (detail.getUnit() == null) detail.setUnit(product.getUnit());
                     updateInventoryAndTransaction(warehouse, null, product, detailDto.getQuantity(), hasSaleOrder, grn);
                 }
-
+                if (detailDto.getMaterialId() == null && detailDto.getProductId() == null) {
+                    throw new RuntimeException("Chi tiết phiếu phải có sản phẩm hoặc vật tư.");
+                }
                 details.add(detail);
             }
             goodReceiptDetailRepository.saveAll(details);

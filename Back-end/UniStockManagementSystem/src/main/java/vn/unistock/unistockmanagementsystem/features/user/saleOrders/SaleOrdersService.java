@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import vn.unistock.unistockmanagementsystem.entities.*;
+import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryRepository;
 import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerRepository;
 import vn.unistock.unistockmanagementsystem.features.user.products.ProductsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderRepository;
@@ -26,16 +27,18 @@ public class SaleOrdersService {
     private final PartnerRepository partnerRepository;
     private final ProductsRepository productsRepository;
     private final PurchaseRequestRepository purchaseRequestRepository;
+    private final InventoryRepository inventoryRepository;
 
     public SaleOrdersService(SaleOrdersRepository saleOrdersRepository,
                              SaleOrdersMapper saleOrdersMapper,
                              PartnerRepository partnerRepository,
-                             ProductsRepository productsRepository, PurchaseRequestRepository purchaseRequestRepository) {
+                             ProductsRepository productsRepository, PurchaseRequestRepository purchaseRequestRepository, InventoryRepository inventoryRepository) {
         this.saleOrdersRepository = saleOrdersRepository;
         this.saleOrdersMapper = saleOrdersMapper;
         this.partnerRepository = partnerRepository;
         this.productsRepository = productsRepository;
         this.purchaseRequestRepository = purchaseRequestRepository;
+        this.inventoryRepository = inventoryRepository;
     }
 
     /**
@@ -112,17 +115,60 @@ public class SaleOrdersService {
         SalesOrder order = saleOrdersRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
 
-        // ✅ Cập nhật trạng thái & lý do huỷ đơn hàng
+        // Cập nhật trạng thái & lý do hủy đơn hàng
         order.setStatus(SalesOrder.OrderStatus.CANCELLED);
         order.setRejectionReason(rejectionReason);
 
+        // Trả trạng thái RESERVED về AVAILABLE cho sản phẩm
+        List<SalesOrderDetail> details = order.getDetails();
+        for (SalesOrderDetail detail : details) {
+            Product product = detail.getProduct();
+            double quantityToRelease = detail.getQuantity();
+
+            List<Inventory> reservedInventories = inventoryRepository.findByProductIdAndStatus(product.getProductId(), Inventory.InventoryStatus.RESERVED);
+            for (Inventory inventory : reservedInventories) {
+                if (quantityToRelease <= 0) break;
+
+                double quantityInInventory = inventory.getQuantity();
+                double quantityToReleaseFromThis = Math.min(quantityInInventory, quantityToRelease);
+
+                // Cập nhật trạng thái về AVAILABLE
+                inventory.setStatus(Inventory.InventoryStatus.AVAILABLE);
+                inventoryRepository.save(inventory);
+
+                quantityToRelease -= quantityToReleaseFromThis;
+            }
+        }
+
         saleOrdersRepository.save(order);
 
-        // ✅ Tìm và huỷ tất cả yêu cầu mua vật tư liên quan
+        // Tìm và hủy tất cả yêu cầu mua vật tư liên quan
         List<PurchaseRequest> requests = purchaseRequestRepository.findAllBySalesOrder_OrderId(orderId);
         for (PurchaseRequest pr : requests) {
             pr.setStatus(PurchaseRequest.RequestStatus.CANCELLED);
-            pr.setRejectionReason("Đơn hàng đã bị huỷ");
+            pr.setRejectionReason("Đơn hàng đã bị hủy");
+
+            // Trả trạng thái RESERVED về AVAILABLE cho vật tư
+            List<PurchaseRequestDetail> prDetails = pr.getPurchaseRequestDetails();
+            for (PurchaseRequestDetail detail : prDetails) {
+                Material material = detail.getMaterial();
+                double quantityToRelease = detail.getQuantity();
+
+                List<Inventory> reservedInventories = inventoryRepository.findByMaterialIdAndStatus(material.getMaterialId(), Inventory.InventoryStatus.RESERVED);
+                for (Inventory inventory : reservedInventories) {
+                    if (quantityToRelease <= 0) break;
+
+                    double quantityInInventory = inventory.getQuantity();
+                    double quantityToReleaseFromThis = Math.min(quantityInInventory, quantityToRelease);
+
+                    // Cập nhật trạng thái về AVAILABLE
+                    inventory.setStatus(Inventory.InventoryStatus.AVAILABLE);
+                    inventoryRepository.save(inventory);
+
+                    quantityToRelease -= quantityToReleaseFromThis;
+                }
+            }
+
             purchaseRequestRepository.save(pr);
         }
     }

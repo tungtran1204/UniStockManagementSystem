@@ -10,11 +10,12 @@ import {
   VisibilityOutlined,
 } from '@mui/icons-material';
 import ReactPaginate from "react-paginate";
-import axios from "axios";
+import ImportProductModal from "./ImportProductModal";
 import {
   importExcel,
   exportExcel,
   createProduct,
+  previewImport,
   fetchUnits,
   fetchProductTypes,
 } from "./productService";
@@ -47,6 +48,8 @@ const ProductPage = () => {
 
   // Các state trong component
   const [showImportPopup, setShowImportPopup] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewResults, setPreviewResults] = useState([]);
   const [file, setFile] = useState(null);
   const [localLoading, setLocalLoading] = useState(false);
   const [units, setUnits] = useState([]);
@@ -85,6 +88,38 @@ const ProductPage = () => {
     fetchData();
   }, []);
 
+  const handleFileChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    setSelectedFile(file);
+    setLocalLoading(true);
+    try {
+      const preview = await previewImport(file);
+      setPreviewResults(preview);
+    } catch (err) {
+      console.error("Lỗi preview:", err);
+      alert("❌ Lỗi khi kiểm tra file. Vui lòng thử lại.");
+    } finally {
+      setLocalLoading(false);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!selectedFile) return;
+    setLocalLoading(true);
+    try {
+      await importExcel(selectedFile);
+      alert("✅ Import thành công!");
+      setPreviewResults([]);
+      setSelectedFile(null);
+      fetchPaginatedProducts();
+    } catch (err) {
+      alert("❌ Import thất bại: " + (err.response?.data || err.message));
+    } finally {
+      setLocalLoading(false);
+    }
+  };
+
   const handleEdit = (product) => {
     navigate(`/user/products/${product.productId}`);
   };
@@ -93,33 +128,38 @@ const ProductPage = () => {
     fetchPaginatedProducts();
   };
 
-  const handleImport = async () => {
-    if (!file) {
-      alert("Vui lòng chọn file Excel!");
-      return;
-    }
-
-    setLocalLoading(true);
-    try {
-      await importExcel(file);
-      alert("Import thành công!");
-      fetchPaginatedProducts();
-      setShowImportPopup(false);
-      setFile(null);
-    } catch (error) {
-      console.error("Lỗi khi import file:", error);
-      alert("Lỗi import file! Kiểm tra lại dữ liệu.");
-    } finally {
-      setLocalLoading(false);
-    }
-  };
-
   const handlePageChangeWrapper = (selectedItem) => {
     handlePageChange(selectedItem.selected);
   };
 
   const handleAddProduct = () => {
     navigate("/user/products/add");
+  };
+
+  // Hàm xử lý export với xác nhận
+  const handleExport = () => {
+    const confirmExport = window.confirm("Bạn có muốn xuất danh sách sản phẩm ra file Excel không?");
+    if (confirmExport) {
+      setLocalLoading(true);
+      exportExcel()
+        .then((blob) => {
+          const url = window.URL.createObjectURL(new Blob([blob]));
+          const link = document.createElement("a");
+          link.href = url;
+          link.setAttribute("download", "products_export.xlsx");
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          alert("✅ Xuất file Excel thành công!");
+        })
+        .catch((err) => {
+          alert("❌ Lỗi khi xuất file Excel: " + (err.message || "Không xác định"));
+        })
+        .finally(() => {
+          setLocalLoading(false);
+        });
+    }
   };
 
   const columnsConfig = [
@@ -221,8 +261,6 @@ const ProductPage = () => {
     isProductionActive: !!product.isProductionActive,
   }));
 
-
-
   // Add this function
   const filteredProducts = Array.isArray(products)
     ? products.filter(product =>
@@ -231,17 +269,18 @@ const ProductPage = () => {
     )
     : [];
 
-  return (
-    <div className="mb-8 flex flex-col gap-12" tyle={{ height: 'calc(100vh-100px)' }}>
-      <Card className="bg-gray-50 p-7 rounded-none shadow-none">
+  const hasInvalidRows = previewResults.some((row) => row.valid === false);
 
+  return (
+    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+      <Card className="bg-gray-50 p-7 rounded-none shadow-none">
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
             title="Danh sách sản phẩm"
             addButtonLabel="Thêm sản phẩm"
             onAdd={handleAddProduct}
             onImport={() => setShowImportPopup(true)}
-            onExport={exportExcel}
+            onExport={handleExport} // Sử dụng hàm handleExport mới
           />
           {/* Phần chọn số items/trang */}
           <div className="py-2 flex items-center justify-between gap-2">
@@ -309,43 +348,11 @@ const ProductPage = () => {
       </Card>
 
       {showImportPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <div className="flex justify-between items-center mb-4">
-              <Typography variant="h6">Import Excel</Typography>
-              <button
-                className="text-gray-500 hover:text-gray-700"
-                onClick={() => setShowImportPopup(false)}
-              >
-                ✕
-              </button>
-            </div>
-            <div className="mb-4">
-              <input
-                type="file"
-                accept=".xlsx, .xls"
-                onChange={(e) => setFile(e.target.files[0])}
-                className="w-full p-2 border rounded"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button
-                color="gray"
-                onClick={() => setShowImportPopup(false)}
-                disabled={localLoading}
-              >
-                Hủy
-              </Button>
-              <Button
-                color="blue"
-                onClick={handleImport}
-                disabled={localLoading}
-              >
-                {localLoading ? "Đang xử lý..." : "Import"}
-              </Button>
-            </div>
-          </div>
-        </div>
+        <ImportProductModal
+          open={showImportPopup}
+          onClose={() => setShowImportPopup(false)}
+          onSuccess={fetchPaginatedProducts}
+        />
       )}
     </div>
   );

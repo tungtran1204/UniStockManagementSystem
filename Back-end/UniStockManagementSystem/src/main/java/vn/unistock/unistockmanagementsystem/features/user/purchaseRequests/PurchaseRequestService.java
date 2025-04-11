@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import vn.unistock.unistockmanagementsystem.entities.*;
+import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryRepository;
 import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerRepository;
 import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsDTO;
@@ -21,8 +22,10 @@ import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersR
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +41,7 @@ public class PurchaseRequestService {
     private final PurchaseRequestDetailMapper purchaseRequestDetailMapper;
     private final SaleOrdersRepository saleOrdersRepository;
     private final ProductMaterialsService productMaterialsService;
+    private final InventoryRepository inventoryRepository;
 
     public Page<PurchaseRequestDTO> getAllPurchaseRequests(Pageable pageable) {
         Page<PurchaseRequest> page = purchaseRequestRepository.findAll(pageable);
@@ -62,12 +66,16 @@ public class PurchaseRequestService {
 
     @Transactional
     public PurchaseRequestDTO createManualPurchaseRequest(PurchaseRequestDTO dto) {
+        logger.info("Bắt đầu tạo PurchaseRequest: {}", dto);
         PurchaseRequest purchaseRequest = purchaseRequestMapper.toEntity(dto);
         purchaseRequest.setCreatedDate(LocalDateTime.now());
         purchaseRequest.setStatus(PurchaseRequest.RequestStatus.PENDING);
 
+        SalesOrder salesOrder = null;
+        List<UsedProductWarehouseDTO> usedProducts = dto.getUsedProductsFromWarehouses();
+
         if (dto.getSaleOrderId() != null) {
-            SalesOrder salesOrder = saleOrdersRepository.findById(dto.getSaleOrderId())
+            salesOrder = saleOrdersRepository.findById(dto.getSaleOrderId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng với ID: " + dto.getSaleOrderId()));
             purchaseRequest.setSalesOrder(salesOrder);
         }
@@ -80,21 +88,113 @@ public class PurchaseRequestService {
             Partner partner = partnerRepository.findById(detailDto.getPartnerId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy nhà cung cấp với ID: " + detailDto.getPartnerId()));
 
+            Double availableQuantity = inventoryRepository.sumQuantityByMaterialIdAndStatus(material.getMaterialId(), Inventory.InventoryStatus.AVAILABLE);
+
+            double requiredQuantity = detailDto.getQuantity();
+            double quantityToBuy = 0.0;
+            if (availableQuantity == null || availableQuantity < requiredQuantity) {
+                quantityToBuy = requiredQuantity - (availableQuantity != null ? availableQuantity : 0.0);
+            }
+
+            if (availableQuantity != null && availableQuantity > 0) {
+                List<Inventory> availableInventories = inventoryRepository.findByMaterialIdAndStatus(material.getMaterialId(), Inventory.InventoryStatus.AVAILABLE);
+                double quantityToReserve = Math.min(availableQuantity, requiredQuantity);
+                for (Inventory inventory : availableInventories) {
+                    if (quantityToReserve <= 0) break;
+
+                    double quantityInInventory = inventory.getQuantity();
+                    double quantityToUse = Math.min(quantityInInventory, quantityToReserve);
+
+                    inventory.setQuantity(quantityInInventory - quantityToUse);
+                    if (inventory.getQuantity() == 0) {
+                        inventoryRepository.delete(inventory);
+                    } else {
+                        inventoryRepository.save(inventory);
+                    }
+
+                    Inventory reserved = new Inventory();
+                    reserved.setMaterial(inventory.getMaterial());
+                    reserved.setQuantity(quantityToUse);
+                    reserved.setStatus(Inventory.InventoryStatus.RESERVED);
+                    reserved.setWarehouse(inventory.getWarehouse());
+                    reserved.setLastUpdated(LocalDateTime.now());
+                    inventoryRepository.save(reserved);
+
+                    quantityToReserve -= quantityToUse;
+                }
+            }
+
+            if (quantityToBuy <= 0) continue;
+
+            detail.setQuantity((int) quantityToBuy);
             detail.setMaterial(material);
             detail.setPartner(partner);
             detail.setPurchaseRequest(purchaseRequest);
             details.add(detail);
         }
 
-        purchaseRequest.setPurchaseRequestDetails(details);
+        if (details.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không có vật tư nào cần mua!");
+        }
 
+        purchaseRequest.setPurchaseRequestDetails(details);
         purchaseRequest = purchaseRequestRepository.save(purchaseRequest);
+
+        if (salesOrder != null) {
+            reserveProductsForSalesOrder(salesOrder, usedProducts);
+            salesOrder.setStatus(SalesOrder.OrderStatus.PREPARING_MATERIAL);
+            saleOrdersRepository.save(salesOrder);
+        }
 
         PurchaseRequestDTO responseDTO = purchaseRequestMapper.toDTO(purchaseRequest);
         responseDTO.setPurchaseRequestDetails(purchaseRequestDetailMapper.toDTOList(details));
-
         return responseDTO;
     }
+
+    private void reserveProductsForSalesOrder(SalesOrder salesOrder, List<UsedProductWarehouseDTO> usedProducts) {
+        if (usedProducts == null || usedProducts.isEmpty()) return;
+
+        for (UsedProductWarehouseDTO entry : usedProducts) {
+            Long productId = entry.getProductId();
+            Long warehouseId = entry.getWarehouseId();
+            double requiredQuantity = entry.getQuantity();
+
+            List<Inventory> availableInventories = inventoryRepository.findByProductIdAndStatus(productId, Inventory.InventoryStatus.AVAILABLE)
+                    .stream()
+                    .filter(inv -> inv.getWarehouse().getWarehouseId().equals(warehouseId))
+                    .sorted(Comparator.comparing(Inventory::getInventoryId))
+                    .collect(Collectors.toList());
+
+            for (Inventory inventory : availableInventories) {
+                if (requiredQuantity <= 0) break;
+
+                double availableQty = inventory.getQuantity();
+                double toUse = Math.min(availableQty, requiredQuantity);
+
+                inventory.setQuantity(availableQty - toUse);
+                if (inventory.getQuantity() == 0) {
+                    inventoryRepository.delete(inventory);
+                } else {
+                    inventoryRepository.save(inventory);
+                }
+
+                Inventory reserved = new Inventory();
+                reserved.setProduct(inventory.getProduct());
+                reserved.setQuantity(toUse);
+                reserved.setStatus(Inventory.InventoryStatus.RESERVED);
+                reserved.setWarehouse(inventory.getWarehouse());
+                reserved.setLastUpdated(LocalDateTime.now());
+                inventoryRepository.save(reserved);
+
+                requiredQuantity -= toUse;
+            }
+
+            if (requiredQuantity > 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không đủ số lượng tại kho " + warehouseId + " cho sản phẩm " + productId);
+            }
+        }
+    }
+
 
     @Transactional
     public PurchaseRequestDTO updatePurchaseRequestStatus(Long id, String status, String rejectionReason) {
@@ -102,17 +202,39 @@ public class PurchaseRequestService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy yêu cầu mua vật tư với ID: " + id));
 
         PurchaseRequest.RequestStatus statusEnum = PurchaseRequest.RequestStatus.valueOf(status);
+        PurchaseRequest.RequestStatus oldStatus = request.getStatus();
         request.setStatus(statusEnum);
 
         if (statusEnum == PurchaseRequest.RequestStatus.CANCELLED) {
             request.setRejectionReason(rejectionReason);
+
+            // Trả trạng thái RESERVED về AVAILABLE cho vật tư
+            List<PurchaseRequestDetail> details = request.getPurchaseRequestDetails();
+            for (PurchaseRequestDetail detail : details) {
+                Material material = detail.getMaterial();
+                double quantityToRelease = detail.getQuantity();
+
+                List<Inventory> reservedInventories = inventoryRepository.findByMaterialIdAndStatus(material.getMaterialId(), Inventory.InventoryStatus.RESERVED);
+                for (Inventory inventory : reservedInventories) {
+                    if (quantityToRelease <= 0) break;
+
+                    double quantityInInventory = inventory.getQuantity();
+                    double quantityToReleaseFromThis = Math.min(quantityInInventory, quantityToRelease);
+
+                    // Cập nhật trạng thái về AVAILABLE
+                    inventory.setStatus(Inventory.InventoryStatus.AVAILABLE);
+                    inventoryRepository.save(inventory);
+
+                    quantityToRelease -= quantityToReleaseFromThis;
+                }
+            }
         } else {
             request.setRejectionReason(null);
         }
 
         purchaseRequestRepository.save(request);
 
-        // Nếu yêu cầu này liên kết với đơn hàng, cập nhật trạng thái đơn hàng nếu cần
+        // Nếu yêu cầu này liên kết với đơn hàng, cập nhật trạng thái đơn hàng và sản phẩm
         if (request.getSalesOrder() != null) {
             SalesOrder salesOrder = request.getSalesOrder();
             List<PurchaseRequest> allRequests = purchaseRequestRepository.findAllBySalesOrder_OrderId(salesOrder.getOrderId());
@@ -120,15 +242,36 @@ public class PurchaseRequestService {
             boolean allCancelled = allRequests.stream().allMatch(r -> r.getStatus() == PurchaseRequest.RequestStatus.CANCELLED);
             boolean anyConfirmed = allRequests.stream().anyMatch(r -> r.getStatus() == PurchaseRequest.RequestStatus.CONFIRMED);
 
-            if (anyConfirmed) {
-                salesOrder.setStatus(SalesOrder.OrderStatus.PREPARING_MATERIAL);
-            } else if (allCancelled) {
+            if (statusEnum == PurchaseRequest.RequestStatus.CANCELLED && allCancelled) {
+                // Trả trạng thái RESERVED về AVAILABLE cho sản phẩm
+                List<SalesOrderDetail> details = salesOrder.getDetails();
+                for (SalesOrderDetail detail : details) {
+                    Product product = detail.getProduct();
+                    double quantityToRelease = detail.getQuantity();
+
+                    List<Inventory> reservedInventories = inventoryRepository.findByProductIdAndStatus(product.getProductId(), Inventory.InventoryStatus.RESERVED);
+                    for (Inventory inventory : reservedInventories) {
+                        if (quantityToRelease <= 0) break;
+
+                        double quantityInInventory = inventory.getQuantity();
+                        double quantityToReleaseFromThis = Math.min(quantityInInventory, quantityToRelease);
+
+                        // Cập nhật trạng thái về AVAILABLE
+                        inventory.setStatus(Inventory.InventoryStatus.AVAILABLE);
+                        inventoryRepository.save(inventory);
+
+                        quantityToRelease -= quantityToReleaseFromThis;
+                    }
+                }
+
+                // Cập nhật trạng thái SalesOrder
                 salesOrder.setStatus(SalesOrder.OrderStatus.PROCESSING);
+            } else if (statusEnum == PurchaseRequest.RequestStatus.CONFIRMED || anyConfirmed) {
+                salesOrder.setStatus(SalesOrder.OrderStatus.PREPARING_MATERIAL);
             }
 
             saleOrdersRepository.save(salesOrder);
         }
-
 
         return purchaseRequestMapper.toDTO(request);
     }

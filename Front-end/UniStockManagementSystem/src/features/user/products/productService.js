@@ -2,13 +2,11 @@ import axios from "axios";
 
 const API_URL = `${import.meta.env.VITE_API_URL}/user`;
 
-// Hàm để lấy Token từ LocalStorage
 const authHeader = () => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-// Lấy danh sách tất cả sản phẩm
 export const getAllProducts = async (page = 0, size = 10) => {
   try {
     const response = await axios.get(`${API_URL}/products`, {
@@ -41,7 +39,6 @@ export const getAllProducts = async (page = 0, size = 10) => {
   }
 };
 
-// Lấy sản phẩm theo ID
 export const getProductById = async (productId) => {
   try {
     const response = await axios.get(`${API_URL}/products/${productId}`, {
@@ -55,7 +52,6 @@ export const getProductById = async (productId) => {
   }
 };
 
-// Tạo sản phẩm mới
 export const createProduct = async (productData) => {
   try {
     const formData = new FormData();
@@ -92,7 +88,6 @@ export const createProduct = async (productData) => {
   }
 };
 
-// Cập nhật sản phẩm
 export const updateProduct = async (productId, productData) => {
   try {
     const formData = new FormData();
@@ -108,7 +103,6 @@ export const updateProduct = async (productId, productData) => {
       formData.append("image", productData.image);
     }
 
-    // Lọc và chuẩn hóa materials trước khi gửi
     const filteredMaterials = (productData.materials || []).map(material => ({
       materialId: material.materialId,
       quantity: material.quantity,
@@ -136,7 +130,6 @@ export const updateProduct = async (productId, productData) => {
   }
 };
 
-// Thay đổi trạng thái sản xuất
 export const toggleProductStatus = async (productId) => {
   try {
     const response = await axios.patch(
@@ -152,7 +145,6 @@ export const toggleProductStatus = async (productId) => {
   }
 };
 
-// Lấy danh sách đơn vị
 export const fetchUnits = async () => {
   try {
     const response = await axios.get(`${API_URL}/units`, {
@@ -166,19 +158,16 @@ export const fetchUnits = async () => {
   }
 };
 
-// Lấy danh sách dòng sản phẩm
 export const fetchProductTypes = async () => {
   try {
     const response = await axios.get(`${API_URL}/product-types`, {
       headers: authHeader()
     });
-    
-    // Check if response.data has content property (paginated response)
+
     if (response.data && response.data.content) {
       return response.data.content.filter(type => type.status === true);
     }
-    
-    // If response.data is direct array
+
     if (Array.isArray(response.data)) {
       return response.data.filter(type => type.status === true);
     }
@@ -191,7 +180,6 @@ export const fetchProductTypes = async () => {
   }
 };
 
-// Kiểm tra mã sản phẩm đã tồn tại
 export const checkProductCodeExists = async (productCode, excludeId = null) => {
   try {
     const response = await axios.get(
@@ -206,7 +194,6 @@ export const checkProductCodeExists = async (productCode, excludeId = null) => {
   }
 };
 
-// Import sản phẩm từ Excel
 export const importExcel = async (file) => {
   try {
     const formData = new FormData();
@@ -223,49 +210,55 @@ export const importExcel = async (file) => {
       }
     );
 
-    console.log("✅ [importExcel] Import thành công:", response.data);
+    console.log("✅ [importExcel] Nhập dữ liệu thành công:", response.data);
     return response.data;
   } catch (error) {
-    console.error("❌ Lỗi khi import file:", error.response?.data || error.message);
-    throw new Error(error.response?.data?.message || "Lỗi khi import file");
+    console.error("❌ Lỗi khi nhập dữ liệu:", error.response?.data || error.message);
+    throw new Error(error.response?.data || "Lỗi khi nhập dữ liệu từ file");
   }
 };
 
-// Export sản phẩm ra Excel
 export const exportExcel = async () => {
   try {
-    const response = await axios.get(`${API_URL}/products`, { headers: authHeader() });
-    const products = response.data.content;
-
-    const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet("Sản phẩm");
-
-    sheet.columns = [
-      { header: "STT", key: "stt", width: 10 },
-      { header: "Mã sản phẩm", key: "productCode", width: 15 },
-      { header: "Tên sản phẩm", key: "productName", width: 25 },
-      { header: "Mô tả", key: "description", width: 30 },
-      { header: "Đơn vị", key: "unitName", width: 15 },
-      { header: "Loại sản phẩm", key: "typeName", width: 20 },
-      { header: "Trạng thái sản xuất", key: "isProductionActive", width: 20 },
-    ];
-
-    products.forEach((product, index) => {
-      sheet.addRow({
-        stt: index + 1,
-        productCode: product.productCode,
-        productName: product.productName,
-        description: product.description,
-        unitName: product.unitName,
-        typeName: product.typeName,
-        isProductionActive: product.isProductionActive ? "Hoạt động" : "Ngừng hoạt động",
-      });
+    const response = await axios.get(`${API_URL}/products/export`, {
+      headers: authHeader(),
+      responseType: "blob", // Nhận dữ liệu dưới dạng blob
     });
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    saveAs(new Blob([buffer]), "San_pham.xlsx");
+    console.log("✅ [exportExcel] Xuất file Excel thành công");
+    return response.data; // Trả về blob
   } catch (error) {
-    console.error("❌ Lỗi khi export Excel:", error.response?.data || error.message);
+    console.error("❌ Lỗi khi xuất Excel:", error.response?.data || error.message);
     throw error;
   }
+};
+
+export const previewImport = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await axios.post(
+      `${API_URL}/products/preview-import`,
+      formData,
+      {
+        headers: {
+          ...authHeader(),
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    return response.data; // Mảng ProductPreviewDTO
+  } catch (error) {
+    console.error("❌ Lỗi khi kiểm tra file:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const downloadProductTemplate = async () => {
+  const response = await axios.get(`${API_URL}/products/template`, {
+    responseType: "blob", // để nhận dữ liệu nhị phân
+    headers: authHeader(),
+  });
+  return response.data;
 };

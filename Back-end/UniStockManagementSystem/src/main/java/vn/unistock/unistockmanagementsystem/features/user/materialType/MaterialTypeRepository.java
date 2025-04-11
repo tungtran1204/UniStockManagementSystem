@@ -5,10 +5,14 @@ import org.springframework.stereotype.Repository;
 import vn.unistock.unistockmanagementsystem.entities.MaterialType;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MaterialTypeRepository extends JpaRepository<MaterialType, Long> {
     boolean existsByName(String name);
     boolean existsByNameAndMaterialTypeIdNot(String name, Long materialTypeId);
     List<MaterialType> findAllByIsUsingTrue();
+
+    Optional<MaterialType> findByNameIgnoreCase(String name);
+
 }
