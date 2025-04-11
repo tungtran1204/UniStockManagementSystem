@@ -11,13 +11,9 @@ import {
   Autocomplete,
   IconButton,
   Button as MuiButton,
-  Divider,
   Tooltip
-} from '@mui/material';
-import {
-  HighlightOffRounded,
-  ClearRounded
-} from '@mui/icons-material';
+} from "@mui/material";
+import ClearRoundedIcon from '@mui/icons-material/ClearRounded';
 import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { FaPlus, FaTrash, FaArrowLeft, FaSearch } from "react-icons/fa";
@@ -377,10 +373,10 @@ const AddIssueNote = () => {
 
       // Hiển thị giống bảng sản phẩm: mỗi NVL có thể có nhiều kho, dùng flatMap để render nhiều dòng với rowSpan
       return displayed.flatMap((nvl, nvlIndex) => {
-        const inv = nvl.inventory && nvl.inventory.length > 0
-          ? nvl.inventory
+        const inv = nvl.inventory && nvl.inventory.length > 0 
+          ? nvl.inventory 
           : [{ warehouseId: null, warehouseName: "", quantity: 0, exportQuantity: 0 }];
-
+        
         return inv.map((wh, whIndex) => {
           const isFirstRow = whIndex === 0;
           const rowSpan = inv.length;
@@ -495,13 +491,13 @@ const AddIssueNote = () => {
               </td>
               {isFirstRow && (
                 <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm">
-                  <Tooltip title="Xóa">
+                  <Tooltip title="Xóa nguyên vật liệu">
                     <IconButton
                       size="small"
                       color="error"
-                      onClick={() => handleDeleteRow(prod.id)}
+                      onClick={() => handleDeleteRow(nvl.id)}
                     >
-                      <HighlightOffRounded />
+                      <FaTrash />
                     </IconButton>
                   </Tooltip>
                 </td>
@@ -510,8 +506,8 @@ const AddIssueNote = () => {
           );
         });
       });
-    } else if (category === "Bán hàng") {
-      // --------- Xử lý cho BÁN HÀNG (8 cột) ---------
+    } else if (category === "Sản xuất") {
+      // --------- Xử lý cho SẢN XUẤT (8 cột) ---------
       const displayed = products.slice(
         currentPage * pageSize,
         (currentPage + 1) * pageSize
@@ -609,13 +605,13 @@ const AddIssueNote = () => {
               </td>
               {isFirstRow && (
                 <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm">
-                  <Tooltip title="Xóa">
+                  <Tooltip title="Xóa sản phẩm">
                     <IconButton
                       size="small"
                       color="error"
                       onClick={() => handleDeleteRow(prod.id)}
                     >
-                      <HighlightOffRounded />
+                      <FaTrash />
                     </IconButton>
                   </Tooltip>
                 </td>
@@ -625,7 +621,7 @@ const AddIssueNote = () => {
         });
       });
     } else {
-      // --------- Các trường hợp khác: Sản xuất, Gia công ---------
+      // --------- Các trường hợp khác (Bán hàng, Gia công) ---------
       const displayed = products.slice(
         currentPage * pageSize,
         (currentPage + 1) * pageSize
@@ -647,7 +643,7 @@ const AddIssueNote = () => {
           const rowSpan = prod.inStock ? prod.inStock.length : 1;
           const maxExport =
             typeof wh.quantity === "number" &&
-              typeof prod.pendingQuantity === "number"
+            typeof prod.pendingQuantity === "number"
               ? Math.min(wh.quantity, prod.pendingQuantity)
               : undefined;
 
@@ -688,10 +684,10 @@ const AddIssueNote = () => {
                     type="number"
                     className="border p-1 text-right w-[60px]"
                     value={wh.exportQuantity || 0}
-                    max={category === "Bán hàng" ? maxExport : undefined}
+                    max={category === "Sản xuất" ? maxExport : undefined}
                     onChange={(e) => {
                       const val = Number(e.target.value);
-                      if (category === "Bán hàng") {
+                      if (category === "Sản xuất") {
                         const maxAllowed = maxExport;
                         if (maxAllowed !== undefined && val > maxAllowed) {
                           setProducts((prev) =>
@@ -756,13 +752,13 @@ const AddIssueNote = () => {
               </td>
               {isFirstRow && (
                 <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm">
-                  <Tooltip title="Xóa">
+                  <Tooltip title="Xóa sản phẩm">
                     <IconButton
                       size="small"
                       color="error"
                       onClick={() => handleDeleteRow(prod.id)}
                     >
-                      <HighlightOffRounded />
+                      <FaTrash />
                     </IconButton>
                   </Tooltip>
                 </td>
@@ -1023,7 +1019,7 @@ const AddIssueNote = () => {
                                 }}
                                 size="small"
                               >
-                                <ClearRounded fontSize="18px" />
+                                <ClearRoundedIcon fontSize="18px" />
                               </IconButton>
                             )}
                             {params.InputProps.endAdornment}
@@ -1205,7 +1201,7 @@ const AddIssueNote = () => {
                                 }}
                                 size="small"
                               >
-                                <ClearRounded fontSize="18px" />
+                                <ClearRoundedIcon fontSize="18px" />
                               </IconButton>
                             )}
                             {params.InputProps.endAdornment}
@@ -1287,8 +1283,8 @@ const AddIssueNote = () => {
                   disableClearable
                   clearIcon={null}
                   size="small"
-                  getOptionLabel={(option) => `${option.code} - ${option.name}`}
-                  value={suppliers.find(o => o.code === partnerCode) || null}
+                  getOptionLabel={(option) => option.code || ""}
+                  value={suppliers.find((o) => o.code === partnerCode) || null}
                   onChange={(event, sel) => {
                     if (sel) {
                       setPartnerCode(sel.code);
@@ -1337,7 +1333,7 @@ const AddIssueNote = () => {
                                 }}
                                 size="small"
                               >
-                                <ClearRounded fontSize="18px" />
+                                <ClearRoundedIcon fontSize="18px" />
                               </IconButton>
                             )}
                             {params.InputProps.endAdornment}
@@ -1453,7 +1449,7 @@ const AddIssueNote = () => {
                 <tbody>{renderUnifiedTableBody()}</tbody>
               </table>
             </div>
-          ) : category === "Bán hàng" ? (
+          ) : category === "Sản xuất" ? (
             <div className="border rounded mb-4 overflow-x-auto">
               <table className="w-full border-collapse text-sm">
                 <thead className="bg-gray-50 border-b">
@@ -1547,8 +1543,8 @@ const AddIssueNote = () => {
               />
             </div>
           )}
-          <Divider />
-          <div className="my-4 flex justify-between">
+
+          <div className="mt-6 border-t pt-4 flex justify-between">
             <MuiButton
               color="info"
               size="medium"
@@ -1564,12 +1560,8 @@ const AddIssueNote = () => {
             >
               <FaArrowLeft className="h-3 w-3" /> Quay lại
             </MuiButton>
-            <div className="flex justify-end gap-2">
-              <MuiButton
-                size="medium"
-                color="error"
-                variant="outlined"
-              >
+            <div className="flex items-center justify-end gap-2 pb-2">
+              <MuiButton size="medium" color="error" variant="outlined">
                 Hủy
               </MuiButton>
               <Button
