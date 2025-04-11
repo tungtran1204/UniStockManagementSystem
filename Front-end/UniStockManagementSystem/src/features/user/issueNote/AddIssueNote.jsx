@@ -11,9 +11,13 @@ import {
   Autocomplete,
   IconButton,
   Button as MuiButton,
+  Divider,
   Tooltip
-} from "@mui/material";
-import ClearRoundedIcon from '@mui/icons-material/ClearRounded';
+} from '@mui/material';
+import {
+  HighlightOffRounded,
+  ClearRounded
+} from '@mui/icons-material';
 import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { FaPlus, FaTrash, FaArrowLeft, FaSearch } from "react-icons/fa";
@@ -373,10 +377,10 @@ const AddIssueNote = () => {
 
       // Hiển thị giống bảng sản phẩm: mỗi NVL có thể có nhiều kho, dùng flatMap để render nhiều dòng với rowSpan
       return displayed.flatMap((nvl, nvlIndex) => {
-        const inv = nvl.inventory && nvl.inventory.length > 0 
-          ? nvl.inventory 
+        const inv = nvl.inventory && nvl.inventory.length > 0
+          ? nvl.inventory
           : [{ warehouseId: null, warehouseName: "", quantity: 0, exportQuantity: 0 }];
-        
+
         return inv.map((wh, whIndex) => {
           const isFirstRow = whIndex === 0;
           const rowSpan = inv.length;
@@ -491,13 +495,13 @@ const AddIssueNote = () => {
               </td>
               {isFirstRow && (
                 <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm">
-                  <Tooltip title="Xóa nguyên vật liệu">
+                  <Tooltip title="Xóa">
                     <IconButton
                       size="small"
                       color="error"
-                      onClick={() => handleDeleteRow(nvl.id)}
+                      onClick={() => handleDeleteRow(prod.id)}
                     >
-                      <FaTrash />
+                      <HighlightOffRounded />
                     </IconButton>
                   </Tooltip>
                 </td>
@@ -605,13 +609,13 @@ const AddIssueNote = () => {
               </td>
               {isFirstRow && (
                 <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm">
-                  <Tooltip title="Xóa sản phẩm">
+                  <Tooltip title="Xóa">
                     <IconButton
                       size="small"
                       color="error"
                       onClick={() => handleDeleteRow(prod.id)}
                     >
-                      <FaTrash />
+                      <HighlightOffRounded />
                     </IconButton>
                   </Tooltip>
                 </td>
@@ -643,7 +647,7 @@ const AddIssueNote = () => {
           const rowSpan = prod.inStock ? prod.inStock.length : 1;
           const maxExport =
             typeof wh.quantity === "number" &&
-            typeof prod.pendingQuantity === "number"
+              typeof prod.pendingQuantity === "number"
               ? Math.min(wh.quantity, prod.pendingQuantity)
               : undefined;
 
@@ -752,13 +756,13 @@ const AddIssueNote = () => {
               </td>
               {isFirstRow && (
                 <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm">
-                  <Tooltip title="Xóa sản phẩm">
+                  <Tooltip title="Xóa">
                     <IconButton
                       size="small"
                       color="error"
                       onClick={() => handleDeleteRow(prod.id)}
                     >
-                      <FaTrash />
+                      <HighlightOffRounded />
                     </IconButton>
                   </Tooltip>
                 </td>
@@ -1019,7 +1023,7 @@ const AddIssueNote = () => {
                                 }}
                                 size="small"
                               >
-                                <ClearRoundedIcon fontSize="18px" />
+                                <ClearRounded fontSize="18px" />
                               </IconButton>
                             )}
                             {params.InputProps.endAdornment}
@@ -1201,7 +1205,7 @@ const AddIssueNote = () => {
                                 }}
                                 size="small"
                               >
-                                <ClearRoundedIcon fontSize="18px" />
+                                <ClearRounded fontSize="18px" />
                               </IconButton>
                             )}
                             {params.InputProps.endAdornment}
@@ -1283,8 +1287,8 @@ const AddIssueNote = () => {
                   disableClearable
                   clearIcon={null}
                   size="small"
-                  getOptionLabel={(option) => option.code || ""}
-                  value={suppliers.find((o) => o.code === partnerCode) || null}
+                  getOptionLabel={(option) => `${option.code} - ${option.name}`}
+                  value={suppliers.find(o => o.code === partnerCode) || null}
                   onChange={(event, sel) => {
                     if (sel) {
                       setPartnerCode(sel.code);
@@ -1333,7 +1337,7 @@ const AddIssueNote = () => {
                                 }}
                                 size="small"
                               >
-                                <ClearRoundedIcon fontSize="18px" />
+                                <ClearRounded fontSize="18px" />
                               </IconButton>
                             )}
                             {params.InputProps.endAdornment}
@@ -1543,8 +1547,8 @@ const AddIssueNote = () => {
               />
             </div>
           )}
-
-          <div className="mt-6 border-t pt-4 flex justify-between">
+          <Divider />
+          <div className="my-4 flex justify-between">
             <MuiButton
               color="info"
               size="medium"
@@ -1560,8 +1564,12 @@ const AddIssueNote = () => {
             >
               <FaArrowLeft className="h-3 w-3" /> Quay lại
             </MuiButton>
-            <div className="flex items-center justify-end gap-2 pb-2">
-              <MuiButton size="medium" color="error" variant="outlined">
+            <div className="flex justify-end gap-2">
+              <MuiButton
+                size="medium"
+                color="error"
+                variant="outlined"
+              >
                 Hủy
               </MuiButton>
               <Button

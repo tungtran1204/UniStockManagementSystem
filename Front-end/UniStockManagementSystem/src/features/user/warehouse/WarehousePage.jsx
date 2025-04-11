@@ -6,16 +6,13 @@ import { useNavigate } from "react-router-dom";
 import { BiExport, BiImport, BiSearch } from "react-icons/bi";
 import {
   Card,
-  CardHeader,
   CardBody,
   Typography,
   Tooltip,
-  Button,
-  Input,
   Switch,
-  Avatar,
 } from "@material-tailwind/react";
-import { BiSolidEdit } from "react-icons/bi";
+import { IconButton } from "@mui/material";
+import ModeEditOutlineOutlinedIcon from '@mui/icons-material/ModeEditOutlineOutlined';
 import ModalAddWarehouse from "./ModalAddWarehouse"; // Import ModalAddWarehouse component
 import ModalEditWarehouse from "./ModalEditWarehouse"; // Import ModalEditWarehouse component
 import ReactPaginate from "react-paginate"; // Import ReactPaginate for pagination
@@ -83,9 +80,13 @@ const WarehousePage = () => {
               }
             }}
           />
-          <Typography className="text-xs font-semibold text-blue-gray-600">
-            {params.value ? "Đang hoạt động" : "Không hoạt động"}
-          </Typography>
+          <div
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                      ${params.value ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
+              }`}
+          >
+            {params.value ? "Đang hoạt động" : "Ngừng hoạt động"}
+          </div>
         </div>
       ),
     },
@@ -97,12 +98,13 @@ const WarehousePage = () => {
       renderCell: (params) => (
         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
           <Tooltip content="Chỉnh sửa">
-            <button
+            <IconButton
+              size="small"
               onClick={() => handleEditWarehouse(params.row)}
-              className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+              color="primary"
             >
-              <BiSolidEdit className="h-5 w-5" />
-            </button>
+              <ModeEditOutlineOutlinedIcon />
+            </IconButton>
           </Tooltip>
         </div>
       ),
