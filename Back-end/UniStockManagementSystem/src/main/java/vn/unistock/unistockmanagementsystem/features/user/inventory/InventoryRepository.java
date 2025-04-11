@@ -147,4 +147,23 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
         int end = Math.min((start + pageable.getPageSize()), all.size());
         return new PageImpl<>(all.subList(start, end), pageable, all.size());
     }
+
+    // tổng số lượng tồn kho - kho phế liệu
+    @Query("""
+SELECT COALESCE(SUM(i.quantity), 0)
+FROM Inventory i
+WHERE i.product.productId = :productId
+AND i.warehouse.warehouseName NOT LIKE '%phế liệu%'
+""")
+    Double getTotalQuantityAcrossWarehousesByProduct(@Param("productId") Long productId);
+
+    @Query("""
+SELECT COALESCE(SUM(i.quantity), 0)
+FROM Inventory i
+WHERE i.material.materialId = :materialId
+AND i.warehouse.warehouseName NOT LIKE '%phế liệu%'
+""")
+    Double getTotalQuantityAcrossWarehousesByMaterial(@Param("materialId") Long materialId);
+
+
 }

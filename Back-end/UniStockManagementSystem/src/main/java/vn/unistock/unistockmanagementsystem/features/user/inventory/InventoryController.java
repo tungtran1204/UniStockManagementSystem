@@ -51,7 +51,7 @@ public class InventoryController {
             @RequestParam(required = false) Double minTotal,
             @RequestParam(required = false) Double maxTotal,
             @RequestParam(required = false) String itemType,
-            @RequestParam(required = false) List<Long> productTypeIds,       // ✅ thêm
+            @RequestParam(required = false) List<Long> productTypeIds,
             @RequestParam(required = false) List<Long> materialTypeIds
     ) {
         return ResponseEntity.ok(
