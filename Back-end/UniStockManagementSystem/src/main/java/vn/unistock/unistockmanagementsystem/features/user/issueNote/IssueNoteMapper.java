@@ -11,11 +11,17 @@ public interface IssueNoteMapper {
     @Mapping(source = "details", target = "details")
     @Mapping(source = "salesOrder.orderId", target = "soId")
     @Mapping(source = "category", target = "category")
+    @Mapping(source = "partner.partnerId", target = "partnerId")
+    @Mapping(source = "partner.partnerName", target = "partnerName")
+    @Mapping(source = "partner.address", target = "address")
+    @Mapping(source = "partner.contactName", target = "contactName")
+    @Mapping(source = "partner.phone", target = "phone")
     IssueNoteDTO toDTO(GoodIssueNote entity);
 
     @Mapping(source = "soId", target = "salesOrder.orderId")
     @Mapping(source = "createdBy", target = "createdBy.userId")
     @Mapping(source = "details", target = "details")
     @Mapping(source = "category", target = "category")
+    @Mapping(source = "partnerId", target = "partner.partnerId")
     GoodIssueNote toEntity(IssueNoteDTO dto);
 }

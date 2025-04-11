@@ -25,6 +25,17 @@ public class InventoryController {
         return ResponseEntity.ok(details);
     }
 
+    @GetMapping("/material/{materialId}/total-quantity")
+    public ResponseEntity<Double> getTotalQuantityM(@PathVariable Long materialId) {
+        Double totalQty = inventoryService.getTotalQuantityOfMaterial(materialId);
+        return ResponseEntity.ok(totalQty);
+    }
+    @GetMapping("/material/{materialId}/warehouses")
+    public ResponseEntity<List<InventoryByWarehouseDTO>> getInventoryDetailsByWarehouseM(@PathVariable Long materialId) {
+        List<InventoryByWarehouseDTO> details = inventoryService.getInventoryDetailsByMaterial(materialId);
+        return ResponseEntity.ok(details);
+    }
+
     @GetMapping("/report")
     public ResponseEntity<Page<InventoryReportDTO>> getInventoryReport(
             @RequestParam(defaultValue = "0") int page,

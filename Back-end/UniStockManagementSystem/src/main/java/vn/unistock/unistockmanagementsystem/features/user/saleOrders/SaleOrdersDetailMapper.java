@@ -20,7 +20,9 @@ public interface SaleOrdersDetailMapper {
     @Mapping(source = "product.productName", target = "productName")
     @Mapping(source = "product.unit.unitName", target = "unitName")
     @Mapping(source = "product.productCode",  target = "productCode")
-    @Mapping(source = "remainingQuantity", target = "quantity")
+    @Mapping(source = "remainingQuantity", target = "remainingQuantity")
+    @Mapping(source = "quantity", target = "quantity")
+    @Mapping(source = "receivedQuantity", target = "receivedQuantity")
     SalesOrderDetailDTO toDTO(SalesOrderDetail entity);
 
     default List<SalesOrderDetailDTO> toDTOList(List<SalesOrderDetail> entityList) {
@@ -31,7 +33,9 @@ public interface SaleOrdersDetailMapper {
 
     // Ánh xạ từ SalesOrderDetailDTO (DTO) → SalesOrderDetail (Entity)
     @Mapping(source = "productId", target = "product.productId")
-    @Mapping(source = "quantity", target = "remainingQuantity")
+    @Mapping(source = "remainingQuantity", target = "remainingQuantity")
+    @Mapping(source = "quantity", target = "quantity")
+    @Mapping(source = "receivedQuantity", target = "receivedQuantity")
     @Mapping(source = "productCode",  target = "product.productCode")
     SalesOrderDetail toEntity(SalesOrderDetailDTO dto);
 

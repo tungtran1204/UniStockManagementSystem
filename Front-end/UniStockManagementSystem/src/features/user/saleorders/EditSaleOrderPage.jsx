@@ -9,10 +9,26 @@ import {
   Textarea,
   Typography,
 } from "@material-tailwind/react";
-import { TextField, Button as MuiButton } from '@mui/material';
-import { Tab, Tabs } from '@mui/material';
+import {
+  TextField,
+  Button as MuiButton,
+  Tab,
+  Tabs,
+  Autocomplete,
+  IconButton,
+  Divider,
+  MenuItem
+} from '@mui/material';
+import {
+  HighlightOffRounded
+} from '@mui/icons-material';
+import { ListBulletIcon } from "@heroicons/react/24/outline";
+import { InformationCircleIcon, IdentificationIcon } from "@heroicons/react/24/solid";
 import Select, { components } from "react-select";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import "dayjs/locale/vi"; // Import Tiếng Việt
 import useSaleOrder from "./useSaleOrder";
 import { getPartnersByType, getPartnersByMaterial } from "@/features/user/partner/partnerService";
 import {
@@ -675,7 +691,7 @@ const EditSaleOrderPage = () => {
         <tr>
           <td
             colSpan={mode === MODE_EDIT ? 10 : mode === MODE_DINHMUC ? 10 : 5}
-            className="px-4 py-2 text-center text-gray-500"
+            className="px-4 py-2 text-center text-gray-700"
           >
             Chưa có dòng sản phẩm nào
           </td>
@@ -690,24 +706,47 @@ const EditSaleOrderPage = () => {
             : [{ warehouseName: "", quantity: 0, usedQuantity: 0 }];
         const totalUsed = details.reduce((sum, d) => sum + d.usedQuantity, 0);
         return details.map((detail, detailIndex) => (
-          <tr key={`${item.id}-${detailIndex}`} className="border-b last:border-b-0 hover:bg-gray-50">
+          <tr key={`${item.id}-${detailIndex}`} className="border-b border-[rgba(224,224,224,1)] last:border-b-0 hover:bg-gray-50">
             {detailIndex === 0 && (
               <>
-                <td className="px-4 py-2 text-sm text-gray-700 border-r" rowSpan={details.length}>
+                <td className="px-4 py-2 text-sm text-[#000000DE] w-10 border-r border-[rgba(224,224,224,1)]" rowSpan={details.length}>
                   {idx + 1}
                 </td>
-                <td className="px-4 py-2 text-sm border-r" rowSpan={details.length}>
-                  <Select
-                    placeholder="Chọn sản phẩm"
-                    isSearchable
+                <td className="px-4 py-2 text-sm border-r border-[rgba(224,224,224,1)] w-80" rowSpan={details.length}>
+                  <Autocomplete
                     options={products}
-                    styles={customStyles}
-                    className="w-52"
+                    size="small"
+                    disabled={mode !== MODE_EDIT}
+                    getOptionLabel={(option) => option.label}
                     value={products.find((p) => p.value === item.productCode) || null}
-                    onChange={(sel) => handleSelectProduct(item.id, sel)}
-                    isDisabled={mode !== MODE_EDIT}
-                    menuPortalTarget={document.body}
-                    menuPosition="fixed"
+                    onChange={(event, selected) => {
+                      if (selected) handleSelectProduct(item.id, selected);
+                    }}
+                    fullWidth
+                    slotProps={{
+                      paper: {
+                        sx: {
+                          maxHeight: 300,
+                          overflowY: "auto",
+                        },
+                      },
+                    }}
+                    sx={{
+                      '& .MuiInputBase-root.Mui-disabled': {
+                        bgcolor: '#eeeeee',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: 'none',
+                        },
+                      },
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        color="success"
+                        hiddenLabel
+                        placeholder="Chọn sản phẩm"
+                      />
+                    )}
                   />
                   {itemsErrors[item.id]?.productError && (
                     <Typography color="red" className="text-xs mt-1">
@@ -720,19 +759,32 @@ const EditSaleOrderPage = () => {
                     </Typography>
                   )}
                 </td>
-                <td className="px-4 py-2 text-sm border-r" rowSpan={details.length}>
-                  <Input className="w-32 text-sm" value={item.productName} disabled />
+                <td className="px-4 py-2 text-sm border-r w-96 text-[#000000DE] border-[rgba(224,224,224,1)]" rowSpan={details.length}>
+                  {item.productName}
                 </td>
-                <td className="px-4 py-2 text-sm border-r" rowSpan={details.length}>
-                  <Input className="w-16 text-sm" value={item.unitName} disabled />
+                <td className="px-4 py-2 text-sm border-r w-36 text-[#000000DE] border-[rgba(224,224,224,1)]" rowSpan={details.length}>
+                  {item.unitName}
                 </td>
-                <td className="px-4 py-2 text-sm border-r" rowSpan={details.length}>
-                  <Input
+                <td className="px-4 py-2 text-sm border-r w-36 border-[rgba(224,224,224,1)]" rowSpan={details.length}>
+                  <TextField
                     type="number"
-                    className="w-12 text-sm"
+                    size="small"
+                    fullWidth
+                    inputProps={{ min: 0 }}
                     value={item.quantity}
                     onChange={(e) => handleQuantityChange(item.id, e.target.value)}
                     disabled={mode !== MODE_EDIT}
+                    color="success"
+                    hiddenLabel
+                    placeholder="Số lượng"
+                    sx={{
+                      '& .MuiInputBase-root.Mui-disabled': {
+                        bgcolor: '#eeeeee',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: 'none',
+                        },
+                      },
+                    }}
                   />
                   {itemsErrors[item.id]?.quantityError && (
                     <Typography color="red" className="text-xs mt-1">
@@ -742,35 +794,39 @@ const EditSaleOrderPage = () => {
                 </td>
               </>
             )}
-            <td className="px-4 py-2 text-sm border-r">{detail.warehouseName}</td>
-            <td className="px-4 py-2 text-sm border-r">
-              <Input type="number" className="w-12 text-sm" value={detail.quantity || 0} disabled />
+            <td className="px-4 py-2 text-sm border-r text-[#000000DE] border-[rgba(224,224,224,1)]">{detail.warehouseName}</td>
+            <td className="px-4 py-2 text-sm border-r text-[#000000DE] border-[rgba(224,224,224,1)]">
+              {detail.quantity || 0}
             </td>
-            <td className="px-4 py-2 text-sm border-r">
-              <Input
+            <td className="px-4 py-2 text-sm border-r w-40 border-[rgba(224,224,224,1)]">
+              <TextField
                 type="number"
-                className="w-12 text-sm"
+                size="small"
+                fullWidth
+                inputProps={{ min: 0 }}
                 value={detail.usedQuantity || 0}
                 onChange={(e) =>
                   handleDetailUsedQuantityChange(item.id, detailIndex, e.target.value)
                 }
+                color="success"
+                hiddenLabel
+                placeholder="Số lượng"
               />
             </td>
             {detailIndex === 0 && (
-              <td className="px-4 py-2 text-sm border-r" rowSpan={details.length}>
-                <Input type="number" className="w-12 text-sm" value={item.produceQuantity || 0} disabled />
+              <td className="px-4 py-2 text-sm border-r text-[#000000DE] border-[rgba(224,224,224,1)]" rowSpan={details.length}>
+                {item.produceQuantity || 0}
               </td>
             )}
             {detailIndex === 0 && mode === MODE_EDIT && (
               <td className="px-4 py-2 text-sm text-center" rowSpan={details.length}>
-                <Button
-                  color="red"
-                  variant="text"
-                  size="sm"
+                <IconButton
+                  size="small"
+                  color="error"
                   onClick={() => handleDeleteRow(item.id)}
                 >
-                  Xóa
-                </Button>
+                  <HighlightOffRounded />
+                </IconButton>
               </td>
             )}
           </tr>
@@ -779,20 +835,44 @@ const EditSaleOrderPage = () => {
     } else {
       return items.map((item, idx) => (
         <tr key={item.id} className="border-b last:border-b-0 hover:bg-gray-50">
-          <td className="px-4 py-2 text-sm text-gray-700 border-r">{idx + 1}</td>
-          <td className="px-4 py-2 text-sm border-r">
-            <Select
-              placeholder="Chọn sản phẩm"
-              isSearchable
+          <td className="px-4 py-2 text-sm w-10 text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{idx + 1}</td>
+          <td className="px-4 py-2 text-sm border-r border-[rgba(224,224,224,1)] w-96">
+            <Autocomplete
               options={products}
-              styles={customStyles}
-              className="w-52"
+              size="small"
+              disabled={mode !== MODE_EDIT}
+              getOptionLabel={(option) => option.label}
               value={products.find((p) => p.value === item.productCode) || null}
-              onChange={(sel) => handleSelectProduct(item.id, sel)}
-              isDisabled={mode !== MODE_EDIT}
-              menuPortalTarget={document.body}
-              menuPosition="fixed"
+              onChange={(event, selected) => {
+                if (selected) handleSelectProduct(item.id, selected);
+              }}
+              fullWidth
+              slotProps={{
+                paper: {
+                  sx: {
+                    maxHeight: 300,
+                    overflowY: "auto",
+                  },
+                },
+              }}
+              sx={{
+                '& .MuiInputBase-root.Mui-disabled': {
+                  bgcolor: '#eeeeee',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    border: 'none',
+                  },
+                },
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  color="success"
+                  hiddenLabel
+                  placeholder="Chọn sản phẩm"
+                />
+              )}
             />
+
             {itemsErrors[item.id]?.productError && (
               <Typography color="red" className="text-xs mt-1">
                 {itemsErrors[item.id].productError}
@@ -804,19 +884,32 @@ const EditSaleOrderPage = () => {
               </Typography>
             )}
           </td>
-          <td className="px-4 py-2 text-sm border-r">
-            <Input className="w-32 text-sm" value={item.productName} disabled />
+          <td className="px-4 py-2 text-sm border-r border-[rgba(224,224,224,1)]">
+            {item.productName}
           </td>
-          <td className="px-4 py-2 text-sm border-r">
-            <Input className="w-16 text-sm" value={item.unitName} disabled />
+          <td className="px-4 py-2 text-sm border-r w-40 border-[rgba(224,224,224,1)]">
+            {item.unitName}
           </td>
-          <td className="px-4 py-2 text-sm border-r">
-            <Input
+          <td className="px-4 py-2 text-sm border-r w-48 border-[rgba(224,224,224,1)]">
+            <TextField
               type="number"
-              className="w-12 text-sm"
+              size="small"
+              fullWidth
+              inputProps={{ min: 0 }}
               value={item.quantity}
               onChange={(e) => handleQuantityChange(item.id, e.target.value)}
               disabled={mode !== MODE_EDIT}
+              color="success"
+              hiddenLabel
+              placeholder="Số lượng"
+              sx={{
+                '& .MuiInputBase-root.Mui-disabled': {
+                  bgcolor: '#eeeeee',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    border: 'none',
+                  },
+                },
+              }}
             />
             {itemsErrors[item.id]?.quantityError && (
               <Typography color="red" className="text-xs mt-1">
@@ -826,32 +919,36 @@ const EditSaleOrderPage = () => {
           </td>
           {mode === MODE_DINHMUC && (
             <>
-              <td className="px-4 py-2 text-sm border-r">
-                <Input type="number" className="w-12 text-sm" value={item.inStock || 0} disabled />
+              <td className="px-4 py-2 text-sm border-r border-[rgba(224,224,224,1)]">
+                {item.inStock || 0}
               </td>
-              <td className="px-4 py-2 text-sm border-r">
-                <Input
+              <td className="px-4 py-2 text-sm border-r border-[rgba(224,224,224,1)]">
+                <TextField
                   type="number"
-                  className="w-12 text-sm"
-                  value={item.usedQuantity || 0}
+                  size="small"
+                  fullWidth
+                  inputProps={{ min: 0 }}
+                  value={item.usedQuantity}
                   onChange={(e) => handleUsedQuantityChange(item.id, e.target.value)}
+                  color="success"
+                  hiddenLabel
+                  placeholder="Số lượng"
                 />
               </td>
-              <td className="px-4 py-2 text-sm border-r">
-                <Input
-                  type="number"
-                  className="w-12 text-sm"
-                  value={item.produceQuantity || 0}
-                  disabled
-                />
+              <td className="px-4 py-2 text-sm border-r border-[rgba(224,224,224,1)]">
+                {item.produceQuantity || 0}
               </td>
             </>
           )}
           {mode === MODE_EDIT && (
-            <td className="px-4 py-2 text-sm text-center">
-              <Button color="red" variant="text" size="sm" onClick={() => handleDeleteRow(item.id)}>
-                Xóa
-              </Button>
+            <td className="px-4 py-2 w-24 text-sm text-center">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => handleDeleteRow(item.id)}
+              >
+                <HighlightOffRounded />
+              </IconButton>
             </td>
           )}
         </tr>
@@ -938,80 +1035,204 @@ const EditSaleOrderPage = () => {
           </div>
 
           {activeTab === "info" && (
-            <div className="flex flex-col gap-6 mb-6">
-              <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Typography variant="h6" className="flex items-center mb-4 text-black">
+                <InformationCircleIcon className="h-5 w-5 mr-2" />
+                Thông tin chung
+              </Typography>
+              <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-4">
                 <div>
-                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                    Mã đơn
-                  </Typography>
-                  <Input label="Mã đơn" value={orderCode} disabled className="text-sm" />
-                </div>
-                <div>
-                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                    Ngày tạo đơn
-                  </Typography>
-                  <Input
-                    type="date"
-                    value={orderDate}
-                    onChange={(e) => setOrderDate(e.target.value)}
-                    className="text-sm"
-                    disabled={mode !== MODE_EDIT}
+                  <Typography variant="medium" className="mb-1 text-black">Mã đơn</Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    disabled
+                    value={orderCode}
+                    sx={{
+                      '& .MuiInputBase-root.Mui-disabled': {
+                        bgcolor: '#eeeeee',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: 'none',
+                        },
+                      },
+                    }}
                   />
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                    Trạng thái đơn hàng
-                  </Typography>
-                  <Input label="Trạng thái" value={originalData?.statusLabel || "Không rõ"} disabled />
+                  <Typography variant="medium" className="mb-1 text-black">Ngày lập phiếu</Typography>
+                  <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+                    <style>
+                      {`.MuiPickersCalendarHeader-label { text-transform: capitalize !important; }`}
+                    </style>
+                    <DatePicker
+                      value={orderDate ? dayjs(orderDate) : null}
+                      disabled={mode !== MODE_EDIT}
+                      onChange={(newValue) => {
+                        if (newValue) {
+                          setOrderDate(newValue.format("YYYY-MM-DD"));
+                        }
+                      }}
+                      format="DD/MM/YYYY"
+                      dayOfWeekFormatter={(weekday) => `${weekday.format("dd")}`}
+                      slotProps={{
+                        textField: {
+                          hiddenLabel: true,
+                          fullWidth: true,
+                          size: "small",
+                          color: "success",
+                        },
+                        day: {
+                          sx: () => ({
+                            "&.Mui-selected": {
+                              backgroundColor: "#0ab067 !important",
+                              color: "white",
+                            },
+                            "&.Mui-selected:hover": {
+                              backgroundColor: "#089456 !important",
+                            },
+                            "&:hover": {
+                              backgroundColor: "#0894561A !important",
+                            },
+                          }),
+                        },
+                      }}
+                      sx={{
+                        '& .MuiInputBase-root.Mui-disabled': {
+                          bgcolor: '#eeeeee',
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            border: 'none',
+                          },
+                        },
+                      }}
+                    />
+                  </LocalizationProvider>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-4">
+                <div>
+                  <Typography variant="medium" className="mb-1 text-black">Trạng thái đơn hàng</Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    disabled
+                    value={originalData?.statusLabel || "Không rõ"}
+                    sx={{
+                      '& .MuiInputBase-root.Mui-disabled': {
+                        bgcolor: '#eeeeee',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: 'none',
+                        },
+                      },
+                    }}
+                  />
                 </div>
               </div>
               {originalData?.status === "CANCELLED" && (
                 <div>
-                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                    Lý do huỷ đơn hàng
-                  </Typography>
-                  <Textarea
-                    value={originalData?.rejectionReason?.trim() || "Không có"}
+                  <Typography variant="medium" className="mb-1 text-black">Lý do huỷ đơn hàng</Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    color="success"
+                    variant="outlined"
                     disabled
-                    className="text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
+                    value={originalData?.rejectionReason?.trim() || "Không có"}
+                    sx={{
+                      '& .MuiInputBase-root.Mui-disabled': {
+                        bgcolor: '#eeeeee',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: 'none',
+                        },
+                      },
+                    }}
                   />
                 </div>
               )}
-              <div>
-                <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                  Diễn giải
-                </Typography>
-                <Textarea
-                  placeholder="Diễn giải"
+              <div className="mb-10">
+                <Typography variant="medium" className="mb-1 text-black">Diễn giải nhập kho</Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  hiddenLabel
+                  multiline
+                  rows={4}
+                  color="success"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="text-sm"
                   disabled={mode !== MODE_EDIT}
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
                 />
               </div>
-              <Typography variant="h6" className="mt-4 mb-2 pb-2 font-bold text-gray-900 border-b">
+
+              <Typography variant="h6" className="flex items-center mb-4 text-black">
+                <IdentificationIcon className="h-5 w-5 mr-2" />
                 Thông tin khách hàng
               </Typography>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-4">
                 <div>
-                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                    Mã khách hàng
-                  </Typography>
-                  <Select
-                    ref={selectRef}
+                  <Typography variant="medium" className="mb-1 text-black">Mã khách hàng</Typography>
+                  <Autocomplete
                     options={customers}
-                    value={customers.find((c) => c.code === customerCode) || null}
-                    onChange={handleCustomerChange}
-                    isSearchable
-                    styles={customStyles}
-                    placeholder="Chọn khách hàng"
-                    components={{ DropdownIndicator: AddCustomerDropdownIndicator }}
-                    onAddCustomer={() => setIsCreatePartnerPopupOpen(true)}
-                    isDisabled={mode !== MODE_EDIT}
-                    menuPortalTarget={document.body}
-                    menuPosition="fixed"
+                    size="small"
+                    getOptionLabel={(option) => `${option.code} - ${option.name}`}
+                    value={customers.find(o => o.code === customerCode) || null}
+                    onChange={(event, selected) => {
+                      handleCustomerChange(selected);
+                    }}
+                    disabled={mode !== MODE_EDIT}
+                    slotProps={{
+                      paper: {
+                        sx: {
+                          maxHeight: 300, // Giới hạn chiều cao dropdown
+                          overflowY: "auto",
+                        },
+                      },
+                    }}
+                    sx={{
+                      '& .MuiInputBase-root.Mui-disabled': {
+                        bgcolor: '#eeeeee',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: 'none',
+                        },
+                      },
+                    }}
+                    renderInput={(params) => (
+                      <TextField
+                        color="success"
+                        hiddenLabel
+                        {...params}
+                        placeholder="Chọn khách hàng"
+                        InputProps={{
+                          ...params.InputProps,
+                          endAdornment: (
+                            <>
+                              <IconButton
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setIsCreatePartnerPopupOpen(true);
+                                }}
+                                size="small"
+                                disabled={mode !== MODE_EDIT}
+                              >
+                                <FaPlus fontSize="small" />
+                              </IconButton>
+                              {params.InputProps.endAdornment}
+                            </>
+                          )
+                        }}
+                      />
+                    )}
                   />
                   {customerError && (
                     <Typography color="red" className="text-xs mt-1">
@@ -1020,79 +1241,138 @@ const EditSaleOrderPage = () => {
                   )}
                 </div>
                 <div>
-                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                    Tên khách hàng
-                  </Typography>
-                  <Input label="Tên khách hàng" value={customerName} disabled className="text-sm" />
+                  <Typography variant="medium" className="mb-1 text-black">Tên khách hàng</Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    disabled
+                    value={customerName}
+                    sx={{
+                      '& .MuiInputBase-root.Mui-disabled': {
+                        bgcolor: '#eeeeee',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: 'none',
+                        },
+                      },
+                    }}
+                  />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-4">
                 <div>
-                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                    Địa chỉ
-                  </Typography>
-                  <Input label="Địa chỉ" value={address} disabled className="text-sm" />
+                  <Typography variant="medium" className="mb-1 text-black">Địa chỉ</Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    disabled
+                    value={address}
+                    sx={{
+                      '& .MuiInputBase-root.Mui-disabled': {
+                        bgcolor: '#eeeeee',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: 'none',
+                        },
+                      },
+                    }}
+                  />
                 </div>
                 <div>
-                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                    Số điện thoại
-                  </Typography>
-                  <Input label="Số điện thoại" value={phoneNumber} disabled className="text-sm" />
+                  <Typography variant="medium" className="mb-1 text-black">Số điện thoại</Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    disabled
+                    value={phoneNumber}
+                    sx={{
+                      '& .MuiInputBase-root.Mui-disabled': {
+                        bgcolor: '#eeeeee',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: 'none',
+                        },
+                      },
+                    }}
+                  />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-4">
                 <div>
-                  <Typography variant="small" className="mb-2 font-bold text-gray-900">
-                    Người liên hệ
-                  </Typography>
-                  <Input value={contactName} onChange={(e) => setContactName(e.target.value)} className="text-sm" disabled />
+                  <Typography variant="medium" className="mb-1 text-black">Người liên hệ</Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    disabled
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    sx={{
+                      '& .MuiInputBase-root.Mui-disabled': {
+                        bgcolor: '#eeeeee',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          border: 'none',
+                        },
+                      },
+                    }}
+                  />
                 </div>
               </div>
             </div>
           )}
 
           {activeTab === "products" && (
-            <div>
-              {mode === MODE_VIEW && (
-                <div className="flex justify-end mb-4">
-                  <MuiButton
-                    color="info"
-                    size="medium"
-                    variant="outlined"
-                    sx={{
-                      color: '#616161',           // text color
-                      borderColor: '#9e9e9e',     // border
-                      '&:hover': {
-                        backgroundColor: '#f5f5f5',
-                        borderColor: '#757575',
-                      },
-                    }}
-                    onClick={handleXemDinhMuc}
-                    className="flex items-center gap-2"
-                  >
-                    <FaEye className="h-3 w-3" /> Xem định mức
-                  </MuiButton>
-                </div>
-              )}
-              <div className="border border-gray-200 rounded mb-4 overflow-x-auto">
-                <table className="w-full text-left min-w-max border-collapse">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+            <div className="mb-4">
+              <div className="flex justify-between">
+                <Typography variant="h6" className="flex items-center mb-4 text-black">
+                  <ListBulletIcon className="h-5 w-5 mr-2" />
+                  Danh sách sản phẩm
+                </Typography>
+                {mode === MODE_VIEW && (
+                  <div className="flex justify-end mb-4">
+                    <MuiButton
+                      color="info"
+                      size="medium"
+                      variant="outlined"
+                      sx={{
+                        color: '#616161',           // text color
+                        borderColor: '#9e9e9e',     // border
+                        '&:hover': {
+                          backgroundColor: '#f5f5f5',
+                          borderColor: '#757575',
+                        },
+                      }}
+                      onClick={handleXemDinhMuc}
+                      className="flex items-center gap-2"
+                    >
+                      <FaEye className="h-3 w-3" /> Xem định mức
+                    </MuiButton>
+                  </div>
+                )}
+              </div>
+              <div className="border border-gray-200 rounded mb-4 overflow-x-auto border-[rgba(224,224,224,1)]">
+                <table className="w-full text-left min-w-max border-collapse border-[rgba(224,224,224,1)]">
+                  <thead className="bg-[#f5f5f5] border-b border-[rgba(224,224,224,1)]">
                     <tr>
-                      <th className="px-4 py-2 text-sm font-semibold text-gray-600 border-r">STT</th>
-                      <th className="px-4 py-2 text-sm font-semibold text-gray-600 border-r">Mã hàng</th>
-                      <th className="px-4 py-2 text-sm font-semibold text-gray-600 border-r">Tên hàng</th>
-                      <th className="px-4 py-2 text-sm font-semibold text-gray-600 border-r">Đơn vị</th>
-                      <th className="px-4 py-2 text-sm font-semibold text-gray-600 border-r">Số lượng</th>
+                      <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">STT</th>
+                      <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Mã hàng</th>
+                      <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Tên hàng</th>
+                      <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Đơn vị</th>
+                      <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Số lượng</th>
                       {mode === MODE_DINHMUC && (
                         <>
-                          <th className="px-4 py-2 text-sm font-semibold text-gray-600 border-r">Tên kho</th>
-                          <th className="px-4 py-2 text-sm font-semibold text-gray-600 border-r">Tồn kho</th>
-                          <th className="px-4 py-2 text-sm font-semibold text-gray-600 border-r">SL muốn dùng</th>
-                          <th className="px-4 py-2 text-sm font-semibold text-gray-600 border-r">SL cần SX</th>
+                          <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Tên kho</th>
+                          <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Tồn kho</th>
+                          <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">SL muốn dùng</th>
+                          <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">SL cần SX</th>
                         </>
                       )}
                       {mode === MODE_EDIT && activeTab === "products" && (
-                        <th className="px-4 py-2 text-sm font-semibold text-gray-600">Thao tác</th>
+                        <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Thao tác</th>
                       )}
                     </tr>
                   </thead>
@@ -1101,48 +1381,66 @@ const EditSaleOrderPage = () => {
               </div>
               {mode === MODE_EDIT && activeTab === "products" && (
                 <div className="flex gap-2 mb-4">
-                  <Button variant="outlined" onClick={handleAddRow} className="flex items-center gap-2">
-                    <FaPlus /> Thêm dòng
-                  </Button>
-                  <Button variant="outlined" color="red" onClick={handleRemoveAllRows} className="flex items-center gap-2">
-                    <FaTrash /> Xóa hết dòng
-                  </Button>
+                  <MuiButton
+                    size="small"
+                    variant="outlined"
+                    onClick={handleAddRow}
+                  >
+                    <div className='flex items-center gap-2'>
+                      <FaPlus className="h-4 w-4" />
+                      <span>Thêm dòng</span>
+                    </div>
+                  </MuiButton>
+                  <MuiButton
+                    size="small"
+                    variant="outlined"
+                    color="error"
+                    onClick={handleRemoveAllRows}
+                  >
+                    <div className='flex items-center gap-2'>
+                      <FaTrash className="h-4 w-4" />
+                      <span>Xoá hết dòng</span>
+                    </div>
+                  </MuiButton>
                 </div>
               )}
               {/* Bảng định mức nguyên vật liệu sẽ xuất hiện ngay bên dưới bảng sản phẩm khi đã xem định mức */}
               {mode === MODE_DINHMUC && showMaterialTable && (
                 <div className="mt-4">
-                  <Typography variant="h6" className="mb-2 text-gray-900">
+                  <Typography variant="h6" className="flex items-center mb-4 text-black">
+                    <ListBulletIcon className="h-5 w-5 mr-2" />
                     Định mức nguyên vật liệu
                   </Typography>
-                  <table className="w-full text-left min-w-max border-collapse">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="px-4 py-2 text-sm font-semibold text-gray-600 border-r">Mã NVL</th>
-                        <th className="px-4 py-2 text-sm font-semibold text-gray-600 border-r">Tên NVL</th>
-                        <th className="px-4 py-2 text-sm font-semibold text-gray-600 border-r">Số lượng</th>
-                        <th className="px-4 py-2 text-sm font-semibold text-gray-600 border-r">Đơn vị</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {materialRequirements.length > 0 ? (
-                        materialRequirements.map((mat, index) => (
-                          <tr key={index} className="border-b last:border-b-0 hover:bg-gray-50">
-                            <td className="px-4 py-2 text-sm border-r">{mat.materialCode}</td>
-                            <td className="px-4 py-2 text-sm border-r">{mat.materialName}</td>
-                            <td className="px-4 py-2 text-sm border-r">{mat.requiredQuantity}</td>
-                            <td className="px-4 py-2 text-sm border-r">{mat.unitName}</td>
-                          </tr>
-                        ))
-                      ) : (
+                  <div className="border border-gray-200 rounded mb-4 overflow-x-auto border-[rgba(224,224,224,1)]">
+                    <table className="w-full text-left min-w-max border-collapse border-[rgba(224,224,224,1)]">
+                      <thead className="bg-[#f5f5f5] border-b border-[rgba(224,224,224,1)]">
                         <tr>
-                          <td colSpan="4" className="px-4 py-2 text-sm text-gray-500">
-                            Không có nguyên vật liệu nào
-                          </td>
+                          <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Mã NVL</th>
+                          <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Tên NVL</th>
+                          <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Số lượng</th>
+                          <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Đơn vị</th>
                         </tr>
-                      )}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {materialRequirements.length > 0 ? (
+                          materialRequirements.map((mat, index) => (
+                            <tr key={index} className="border-b last:border-b-0 hover:bg-gray-50">
+                              <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.materialCode}</td>
+                              <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.materialName}</td>
+                              <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.requiredQuantity}</td>
+                              <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.unitName}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="4" className="px-4 py-2 text-sm text-gray-500">
+                              Không có nguyên vật liệu nào
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>
@@ -1154,7 +1452,8 @@ const EditSaleOrderPage = () => {
                 {globalError}
               </Typography>
             )}
-            <div className="flex justify-between mt-2">
+            <Divider />
+            <div className="flex justify-between my-2">
               <MuiButton
                 color="info"
                 size="medium"
@@ -1173,18 +1472,15 @@ const EditSaleOrderPage = () => {
                 <FaArrowLeft className="h-3 w-3" /> Quay lại
               </MuiButton>
               {mode === MODE_VIEW && originalData?.statusLabel !== "Đã huỷ" && activeTab === "info" && (
-                <Button
-                  size="lg"
-                  color="red"
+                <MuiButton
+                  size="medium"
+                  color="error"
                   variant="outlined"
-                  className="ml-2"
                   onClick={() => setShowCancelModal(true)}
                 >
-                  Huỷ đơn hàng
-                </Button>
+                  Hủy đơn hàng
+                </MuiButton>
               )}
-
-
 
               {mode === MODE_VIEW && activeTab === "products" && canCreatePurchaseRequestState && originalData?.status !== "CANCELLED" && (
                 <MuiButton
@@ -1243,27 +1539,6 @@ const EditSaleOrderPage = () => {
                 </Button>
               )}
             </div>
-
-            {/* <div className="flex justify-end gap-2">
-              <Button variant="text" color="gray" onClick={handleCancel} className="flex items-center gap-2">
-                {mode === MODE_EDIT ? "Hủy" : "Quay lại"}
-              </Button>
-              {mode === MODE_VIEW && activeTab === "products" && (
-                <Button variant="gradient" color="blue" onClick={handleEdit} className="flex items-center gap-2">
-                  <FaEdit /> Chỉnh sửa
-                </Button>
-              )}
-              {mode === MODE_EDIT && (
-                <Button variant="gradient" color="green" onClick={handleSaveOrder} className="flex items-center gap-2">
-                  <FaSave /> Lưu
-                </Button>
-              )}
-              {mode === MODE_DINHMUC && (
-                <Button variant="gradient" color="green" onClick={handleCreatePurchaseRequest} className="flex items-center gap-2">
-                  <FaCheck /> Tạo yêu cầu mua vật tư
-                </Button>
-              )}
-            </div> */}
           </div>
         </CardBody>
       </Card>
