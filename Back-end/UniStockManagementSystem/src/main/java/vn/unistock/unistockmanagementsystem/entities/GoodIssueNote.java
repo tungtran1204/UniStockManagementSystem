@@ -52,7 +52,7 @@ public class GoodIssueNote {
     private List<GoodIssueDetail> details;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(name = "status", nullable = true)
     private GinStatus status = GinStatus.PENDING;
 
     public enum GinStatus {
