@@ -56,14 +56,16 @@ const StockMovementReportPage = () => {
                 quantityFilters,
             });
 
-            const dataWithSTT = res.data.content.map((item, index) => ({
+            const rawData = res.data;
+
+            const dataWithSTT = rawData.content.map((item, index) => ({
                 ...item,
                 stt: page * size + index + 1,
             }));
 
             setReportData(dataWithSTT);
-            setTotalElements(res.data.totalElements);
-            setTotalPages(res.data.totalPages);
+            setTotalElements(rawData.totalElements); 
+            setTotalPages(rawData.totalPages);  
         } catch (error) {
             console.error("Error fetching stock movement report:", error);
         }
@@ -455,7 +457,7 @@ const StockMovementReportPage = () => {
                     <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
                         <div className="flex items-center gap-2">
                             <Typography variant="small" color="blue-gray" className="font-normal">
-                                Trang {currentPage + 1} / {totalPages || 1} • {totalElements || 0} bản ghi
+                                Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
                             </Typography>
                         </div>
                         <ReactPaginate

@@ -28,4 +28,18 @@ public interface InventoryTransactionRepository extends JpaRepository<InventoryT
     List<Map<String, Object>> summarizeTransactions(@Param("startDate") LocalDateTime startDate,
                                                     @Param("endDate") LocalDateTime endDate);
 
+    @Query("""
+    SELECT new map(
+        t.product.productId as productId,
+        t.material.materialId as materialId,
+        t.transactionType as type,
+        SUM(t.quantity) as total
+    )
+    FROM InventoryTransaction t
+    WHERE t.transactionDate < :startDate
+      AND (t.product IS NOT NULL OR t.material IS NOT NULL)
+    GROUP BY t.transactionType, t.product.productId, t.material.materialId
+""")
+    List<Map<String, Object>> summarizeBefore(@Param("startDate") LocalDateTime startDate);
+
 }
