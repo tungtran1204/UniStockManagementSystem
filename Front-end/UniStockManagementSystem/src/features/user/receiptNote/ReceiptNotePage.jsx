@@ -73,7 +73,7 @@ const ReceiptNotePage = () => {
 
   const columnsConfig = [
     { field: 'receiptCode', headerName: 'Mã phiếu nhập', flex: 1.5, minWidth: 150, editable: false },
-    { field: 'category', headerName: 'Loại hàng hóa', flex: 2, minWidth: 100, editable: false },
+    { field: 'category', headerName: 'Phân loại nhập kho', flex: 2, minWidth: 100, editable: false },
     {
       field: 'createdDate',
       headerName: 'Ngày lập phiếu',
@@ -102,15 +102,15 @@ const ReceiptNotePage = () => {
       renderCell: (params) => {
         const receipt = params.row;
         const label = receipt.poCode || receipt.ginCode || "-";
-    
+
         const getPath = () => {
           if (receipt.poId && receipt.poCode) return `/user/purchaseOrder/${receipt.poId}`;
           if (receipt.ginId && receipt.ginCode) return `/user/issueNote/${receipt.ginId}`;
           return null;
         };
-    
+
         const path = getPath();
-    
+
         return path ? (
           <span
             onClick={() => navigate(path)}
@@ -154,13 +154,15 @@ const ReceiptNotePage = () => {
     ginId: receipt.ginId,
     poCode: receipt.poCode,
     ginCode: receipt.ginCode,
-  }));  
+  }));
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
+            showImport={false}
+            showExport={false}
             title="Danh sách phiếu nhập kho"
             addButtonLabel="Thêm phiếu nhập"
             onAdd={async () => {
@@ -171,50 +173,50 @@ const ReceiptNotePage = () => {
                 console.error("Không lấy được mã phiếu nhập:", error);
               }
             }}
-            customButtons={
-              <Menu placement="bottom-end">
-                <MenuHandler>
-                  <Button
-                    size="sm"
-                    color="white"
-                    className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none hover:shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
-                    variant="contained"
-                    ripple={true}
-                  >
-                    <div className='flex items-center gap-2'>
-                      <FaPlus className="h-4 w-4" />
-                      <span>Thêm Phiếu Nhập</span>
-                    </div>
-                  </Button>
-                </MenuHandler>
-                <MenuList>
-                  <MenuItem
-                    className="hover:bg-green-900/10 rounded-[4px]"
-                    onClick={() => navigate("/user/purchaseOrder")}
-                  >
-                    <span className="text-gray-700 hover:text-green-900">Vật tư mua bán</span>
-                  </MenuItem>
-                  <MenuItem
-                    className="hover:bg-green-900/10 rounded-[4px]"
-                    onClick={() => navigate("/user/receiptNote/general")}
-                  >
-                    <span className="text-gray-700 hover:text-green-900">Thành phẩm sản xuất</span>
-                  </MenuItem>
-                  <MenuItem
-                    className="hover:bg-green-900/10 rounded-[4px]"
-                    onClick={() => navigate("/user/issueNote")}
-                  >
-                    <span className="text-gray-700 hover:text-green-900">Hàng hóa gia công</span>
-                  </MenuItem>
-                  <MenuItem
-                    className="hover:bg-green-900/10 rounded-[4px]"
-                    onClick={() => navigate("/user/receiptNote/manual", { state: { category: "Hàng hóa trả lại" } })}
-                  >
-                    <span className="text-gray-700 hover:text-green-900">Hàng hóa trả lại</span>
-                  </MenuItem>
-                </MenuList>
-              </Menu>
-            }
+            // customButtons={
+            //   <Menu placement="bottom-end">
+            //     <MenuHandler>
+            //       <Button
+            //         size="sm"
+            //         color="white"
+            //         className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none hover:shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+            //         variant="contained"
+            //         ripple={true}
+            //       >
+            //         <div className='flex items-center gap-2'>
+            //           <FaPlus className="h-4 w-4" />
+            //           <span>Thêm Phiếu Nhập</span>
+            //         </div>
+            //       </Button>
+            //     </MenuHandler>
+            //     <MenuList>
+            //       <MenuItem
+            //         className="hover:bg-green-900/10 rounded-[4px]"
+            //         onClick={() => navigate("/user/purchaseOrder")}
+            //       >
+            //         <span className="text-gray-700 hover:text-green-900">Vật tư mua bán</span>
+            //       </MenuItem>
+            //       <MenuItem
+            //         className="hover:bg-green-900/10 rounded-[4px]"
+            //         onClick={() => navigate("/user/receiptNote/general")}
+            //       >
+            //         <span className="text-gray-700 hover:text-green-900">Thành phẩm sản xuất</span>
+            //       </MenuItem>
+            //       <MenuItem
+            //         className="hover:bg-green-900/10 rounded-[4px]"
+            //         onClick={() => navigate("/user/issueNote")}
+            //       >
+            //         <span className="text-gray-700 hover:text-green-900">Hàng hóa gia công</span>
+            //       </MenuItem>
+            //       <MenuItem
+            //         className="hover:bg-green-900/10 rounded-[4px]"
+            //         onClick={() => navigate("/user/receiptNote/manual", { state: { category: "Hàng hóa trả lại" } })}
+            //       >
+            //         <span className="text-gray-700 hover:text-green-900">Hàng hóa trả lại</span>
+            //       </MenuItem>
+            //     </MenuList>
+            //   </Menu>
+            // }
           />
           <div className="py-2 flex items-center justify-between gap-2">
             {/* Items per page */}
