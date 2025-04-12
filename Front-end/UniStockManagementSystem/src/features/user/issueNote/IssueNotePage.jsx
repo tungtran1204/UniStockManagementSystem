@@ -141,8 +141,8 @@ const IssueNotePage = () => {
             title="Danh sách phiếu xuất kho"
             addButtonLabel="Thêm phiếu xuất"
             onAdd={handleAdd}
-            onImport={() => setShowImportPopup(true)}
-            onExport={() => { /* export Excel */ }}
+            showImport={false}
+            showExport={false}
           />
           <div className="py-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
