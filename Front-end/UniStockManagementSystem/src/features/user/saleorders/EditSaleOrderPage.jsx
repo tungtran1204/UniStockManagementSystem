@@ -1546,46 +1546,81 @@ const EditSaleOrderPage = () => {
                 </div>
               )}
 
-              {canCreatePurchaseRequestState && mode === MODE_DINHMUC && originalData?.status !== "CANCELLED" && (
-                materialRequirements.every((mat) => mat.quantityToBuy === 0) ? (
-                  <Button
-                    size="lg"
-                    color="white"
-                    variant="text"
-                    className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
-                    ripple={true}
-                    onClick={async () => {
-                      try {
-                        await setPreparingStatus(orderId);
-                        alert("Đơn hàng đã được chuyển sang trạng thái 'Đang chuẩn bị vật tư'.");
-                        navigate("/user/sale-orders");
-                      } catch (err) {
-                        console.error("Lỗi khi chuyển trạng thái đơn hàng:", err);
-                        alert("Không thể chuyển trạng thái đơn hàng.");
-                      }
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <FaCheck />
-                      <span>Chuẩn bị vật tư</span>
-                    </div>
-                  </Button>
-                ) : (
-                  <Button
-                    size="lg"
-                    color="white"
-                    variant="text"
-                    className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
-                    ripple={true}
-                    onClick={handleCreatePurchaseRequest}
-                  >
-                    <div className="flex items-center gap-2">
-                      <FaCheck />
-                      <span>Tạo yêu cầu mua vật tư</span>
-                    </div>
-                  </Button>
-                )
-              )}
+              {canCreatePurchaseRequestState &&
+                mode === MODE_DINHMUC &&
+                originalData?.status !== "CANCELLED" &&
+                originalData?.status === "PROCESSING" &&
+                activeTab === "products" &&
+                showMaterialTable && (
+                  materialRequirements.every((mat) => mat.quantityToBuy === 0) ? (
+                    <Button
+                      size="lg"
+                      color="white"
+                      variant="text"
+                      className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                      ripple={true}
+                      onClick={async () => {
+                        try {
+                          const usedProductsFromWarehouses = items.flatMap((item) =>
+                            (item.inStock || [])
+                              .filter((d) => d.usedQuantity > 0)
+                              .map((d) => ({
+                                productId: item.productId,
+                                productCode: item.productCode,
+                                productName: item.productName,
+                                unitName: item.unitName,
+                                quantity: d.usedQuantity,
+                                warehouseId: d.warehouseId,
+                                warehouseName: d.warehouseName,
+                              }))
+                          );
+
+                          const usedMaterialsFromWarehouses = materialRequirements
+                            .map((req) => ({
+                              materialId: req.materialId,
+                              quantity: req.requiredQuantity,
+                            }))
+                            .filter((entry) => entry.quantity > 0);
+
+
+                          const payload = {
+                            saleOrderId: orderId,
+                            usedProductsFromWarehouses,
+                            usedMaterialsFromWarehouses,
+                          };
+
+                          console.log("🔍 Gửi setPreparingStatus với payload:", payload);
+
+                          await setPreparingStatus(payload);
+                          alert("Đơn hàng đã được chuyển sang trạng thái 'Đang chuẩn bị vật tư'.");
+                          navigate("/user/sale-orders");
+                        } catch (err) {
+                          console.error("Lỗi khi chuyển trạng thái đơn hàng:", err);
+                          alert("Không thể chuyển trạng thái đơn hàng.");
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <FaCheck />
+                        <span>Chuẩn bị vật tư</span>
+                      </div>
+                    </Button>
+                  ) : (
+                    <Button
+                      size="lg"
+                      color="white"
+                      variant="text"
+                      className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                      ripple={true}
+                      onClick={handleCreatePurchaseRequest}
+                    >
+                      <div className="flex items-center gap-2">
+                        <FaCheck />
+                        <span>Tạo yêu cầu mua vật tư</span>
+                      </div>
+                    </Button>
+                  )
+                )}
             </div>
           </div>
         </CardBody>

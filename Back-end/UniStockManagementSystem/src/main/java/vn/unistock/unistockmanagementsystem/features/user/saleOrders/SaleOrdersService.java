@@ -15,7 +15,9 @@ import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryRep
 import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerRepository;
 import vn.unistock.unistockmanagementsystem.features.user.products.ProductsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderRepository;
+import vn.unistock.unistockmanagementsystem.features.user.purchaseRequests.PurchaseRequestDetailDTO;
 import vn.unistock.unistockmanagementsystem.features.user.purchaseRequests.PurchaseRequestRepository;
+import vn.unistock.unistockmanagementsystem.features.user.purchaseRequests.PurchaseRequestService;
 import vn.unistock.unistockmanagementsystem.security.filter.CustomUserDetails;
 
 import java.util.List;
@@ -28,17 +30,20 @@ public class SaleOrdersService {
     private final ProductsRepository productsRepository;
     private final PurchaseRequestRepository purchaseRequestRepository;
     private final InventoryRepository inventoryRepository;
+    private final PurchaseRequestService purchaseRequestService;
+
 
     public SaleOrdersService(SaleOrdersRepository saleOrdersRepository,
                              SaleOrdersMapper saleOrdersMapper,
                              PartnerRepository partnerRepository,
-                             ProductsRepository productsRepository, PurchaseRequestRepository purchaseRequestRepository, InventoryRepository inventoryRepository) {
+                             ProductsRepository productsRepository, PurchaseRequestRepository purchaseRequestRepository, InventoryRepository inventoryRepository, PurchaseRequestService purchaseRequestService) {
         this.saleOrdersRepository = saleOrdersRepository;
         this.saleOrdersMapper = saleOrdersMapper;
         this.partnerRepository = partnerRepository;
         this.productsRepository = productsRepository;
         this.purchaseRequestRepository = purchaseRequestRepository;
         this.inventoryRepository = inventoryRepository;
+        this.purchaseRequestService = purchaseRequestService;
     }
 
     /**
@@ -264,13 +269,38 @@ public class SaleOrdersService {
     }
 
     @Transactional
-    public void setPreparingMaterialStatus(Long orderId) {
-        SalesOrder order = saleOrdersRepository.findById(orderId)
+    public void setPreparingMaterialStatus(PrepareMaterialForSaleOrderDTO request) {
+        SalesOrder order = saleOrdersRepository.findById(request.getSaleOrderId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
 
         order.setStatus(SalesOrder.OrderStatus.PREPARING_MATERIAL);
+
+        // 🔁 Trừ kho sản phẩm nếu có dữ liệu gửi từ frontend
+        if (request.getUsedProductsFromWarehouses() != null && !request.getUsedProductsFromWarehouses().isEmpty()) {
+            purchaseRequestService.reserveProductsForSalesOrder(order, request.getUsedProductsFromWarehouses());
+        }
+
+        // 🔁 Trừ kho vật tư nếu có dữ liệu gửi từ frontend
+        if (request.getUsedMaterialsFromWarehouses() != null && !request.getUsedMaterialsFromWarehouses().isEmpty()) {
+            List<PurchaseRequestDetailDTO> materialReserveList = request.getUsedMaterialsFromWarehouses().stream()
+                    .filter(m -> m.getQuantity() > 0)
+                    .map(m -> {
+                        PurchaseRequestDetailDTO dto = new PurchaseRequestDetailDTO();
+                        dto.setMaterialId(m.getMaterialId());
+                        dto.setQuantity((int) m.getQuantity());
+                        return dto;
+                    })
+                    .toList();
+
+            purchaseRequestService.reserveMaterialsForPurchaseRequest(materialReserveList);
+        }
+
         saleOrdersRepository.save(order);
     }
+
+
+
+
 
 
 }
