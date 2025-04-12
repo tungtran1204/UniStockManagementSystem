@@ -18,7 +18,6 @@ public interface IssueNoteMapper {
     @Mapping(source = "partner.address", target = "address")
     @Mapping(source = "partner.contactName", target = "contactName")
     @Mapping(source = "partner.phone", target = "phone")
-    @Mapping(source = "TuNhu", target = "emLaAiThe=))")
     IssueNoteDTO toDTO(GoodIssueNote entity);
 
     @Mapping(source = "soId", target = "salesOrder.orderId")
