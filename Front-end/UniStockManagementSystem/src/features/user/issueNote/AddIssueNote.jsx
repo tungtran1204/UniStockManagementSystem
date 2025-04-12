@@ -337,11 +337,8 @@ const AddIssueNote = () => {
   // ------------------ Pagination cho sản phẩm/NVL ------------------
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const totalPages = Math.ceil(
-    category === "Trả lại hàng mua" ? products.length : products.length / pageSize
-  );
-  const totalElements =
-    category === "Trả lại hàng mua" ? products.length : products.length;
+  const totalPages = Math.ceil(products.length / pageSize);
+  const totalElements = products.length;
 
   useEffect(() => {
     if (currentPage >= totalPages) {
@@ -663,13 +660,13 @@ const AddIssueNote = () => {
                   <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
                     {prod.unitName}
                   </td>
-                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm text-center">
+                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-center text-sm">
                     {prod.orderQuantity}
                   </td>
-                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm text-center">
+                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-center text-sm">
                     {prod.exportedQuantity}
                   </td>
-                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm text-center">
+                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-center text-sm">
                     {prod.pendingQuantity}
                   </td>
                 </>
@@ -912,11 +909,6 @@ const AddIssueNote = () => {
                 <MenuItem value="Gia công">Gia công</MenuItem>
                 <MenuItem value="Trả lại hàng mua">Trả lại hàng mua</MenuItem>
               </TextField>
-              {!category && (
-                <Typography variant="small" className="text-red-500 mt-1">
-                  Vui lòng chọn phân loại xuất kho
-                </Typography>
-              )}
             </div>
             {/* Mã phiếu */}
             <div>
@@ -1430,6 +1422,32 @@ const AddIssueNote = () => {
             </div>
           </div>
 
+          {/* Dropdown phân trang */}
+          <div className="py-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Typography variant="small" color="blue-gray" className="font-light">
+                Hiển thị
+              </Typography>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(0);
+                }}
+                className="border rounded px-2 py-1"
+              >
+                {[5, 10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                bản ghi mỗi trang
+              </Typography>
+            </div>
+          </div>
+
           {/* Render bảng */}
           {category === "Trả lại hàng mua" ? (
             <div className="border rounded mb-4 overflow-x-auto">
@@ -1490,6 +1508,7 @@ const AddIssueNote = () => {
             </div>
           )}
 
+          {/* Phần nút Thêm dòng/Xoá hết dòng - giữ nguyên code gốc */}
           {category !== "Bán hàng" && (
             <div className="flex gap-2 mb-4">
               <MuiButton size="small" variant="outlined" onClick={handleAddRow}>
