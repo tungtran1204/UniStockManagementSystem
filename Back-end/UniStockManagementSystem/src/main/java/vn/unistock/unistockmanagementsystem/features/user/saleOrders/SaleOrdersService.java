@@ -262,4 +262,15 @@ public class SaleOrdersService {
 
         return saleOrdersMapper.toDTO(savedOrder);
     }
+
+    @Transactional
+    public void setPreparingMaterialStatus(Long orderId) {
+        SalesOrder order = saleOrdersRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+
+        order.setStatus(SalesOrder.OrderStatus.PREPARING_MATERIAL);
+        saleOrdersRepository.save(order);
+    }
+
+
 }

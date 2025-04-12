@@ -98,29 +98,40 @@ public class PurchaseRequestService {
 
             if (availableQuantity != null && availableQuantity > 0) {
                 List<Inventory> availableInventories = inventoryRepository.findByMaterialIdAndStatus(material.getMaterialId(), Inventory.InventoryStatus.AVAILABLE);
-                double quantityToReserve = Math.min(availableQuantity, requiredQuantity);
                 for (Inventory inventory : availableInventories) {
-                    if (quantityToReserve <= 0) break;
+                    if (requiredQuantity <= 0) break;
 
-                    double quantityInInventory = inventory.getQuantity();
-                    double quantityToUse = Math.min(quantityInInventory, quantityToReserve);
+                    double availableQty = inventory.getQuantity();
+                    double toUse = Math.min(availableQty, requiredQuantity);
+                    inventory.setQuantity(availableQty - toUse);
 
-                    inventory.setQuantity(quantityInInventory - quantityToUse);
                     if (inventory.getQuantity() == 0) {
                         inventoryRepository.delete(inventory);
                     } else {
                         inventoryRepository.save(inventory);
                     }
 
-                    Inventory reserved = new Inventory();
-                    reserved.setMaterial(inventory.getMaterial());
-                    reserved.setQuantity(quantityToUse);
-                    reserved.setStatus(Inventory.InventoryStatus.RESERVED);
-                    reserved.setWarehouse(inventory.getWarehouse());
+                    // tìm hoặc tạo bản ghi RESERVED tương ứng
+                    Inventory reserved = inventoryRepository
+                            .findByMaterial_MaterialIdAndWarehouse_WarehouseIdAndStatus(
+                                    material.getMaterialId(),
+                                    inventory.getWarehouse().getWarehouseId(),
+                                    Inventory.InventoryStatus.RESERVED
+                            )
+                            .orElseGet(() -> {
+                                Inventory newReserved = new Inventory();
+                                newReserved.setMaterial(material);
+                                newReserved.setWarehouse(inventory.getWarehouse());
+                                newReserved.setStatus(Inventory.InventoryStatus.RESERVED);
+                                newReserved.setQuantity(0.0);
+                                return newReserved;
+                            });
+
+                    reserved.setQuantity(reserved.getQuantity() + toUse);
                     reserved.setLastUpdated(LocalDateTime.now());
                     inventoryRepository.save(reserved);
 
-                    quantityToReserve -= quantityToUse;
+                    requiredQuantity -= toUse;
                 }
             }
 
@@ -178,11 +189,22 @@ public class PurchaseRequestService {
                     inventoryRepository.save(inventory);
                 }
 
-                Inventory reserved = new Inventory();
-                reserved.setProduct(inventory.getProduct());
-                reserved.setQuantity(toUse);
-                reserved.setStatus(Inventory.InventoryStatus.RESERVED);
-                reserved.setWarehouse(inventory.getWarehouse());
+                Inventory reserved = inventoryRepository
+                        .findByProduct_ProductIdAndWarehouse_WarehouseIdAndStatus(
+                                productId,
+                                warehouseId,
+                                Inventory.InventoryStatus.RESERVED
+                        )
+                        .orElseGet(() -> {
+                            Inventory newReserved = new Inventory();
+                            newReserved.setProduct(inventory.getProduct());
+                            newReserved.setWarehouse(inventory.getWarehouse());
+                            newReserved.setStatus(Inventory.InventoryStatus.RESERVED);
+                            newReserved.setQuantity(0.0);
+                            return newReserved;
+                        });
+
+                reserved.setQuantity(reserved.getQuantity() + toUse);
                 reserved.setLastUpdated(LocalDateTime.now());
                 inventoryRepository.save(reserved);
 
@@ -194,6 +216,7 @@ public class PurchaseRequestService {
             }
         }
     }
+
 
 
     @Transactional
