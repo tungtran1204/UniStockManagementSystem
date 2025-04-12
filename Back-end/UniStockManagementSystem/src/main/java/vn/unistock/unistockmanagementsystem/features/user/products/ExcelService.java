@@ -161,10 +161,10 @@ public class ExcelService {
             }
 
             if (typeName == null || typeName.trim().isEmpty()) {
-                errors.add("Loại sản phẩm không được để trống");
+                errors.add("Dòng sản phẩm không được để trống");
                 dto.setValid(false);
             } else if (!productTypeRepository.existsByTypeNameIgnoreCase(typeName.trim())) {
-                errors.add("Loại sản phẩm không tồn tại trong hệ thống");
+                errors.add("Dòng sản phẩm không tồn tại trong hệ thống");
                 dto.setValid(false);
             }
 

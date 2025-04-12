@@ -1,11 +1,13 @@
 package vn.unistock.unistockmanagementsystem.entities;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "material_types")
 public class MaterialType {
@@ -19,16 +21,15 @@ public class MaterialType {
     private String name;
 
     @Column(name = "is_using_active", nullable = false)
-    private boolean isUsing = true;
+    private boolean status = true;
 
     private String description;
-
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    private Long createdBy;
-    private Long updatedBy;
+    private String createdBy;
+    private String updatedBy;
 
     @PrePersist
     protected void onCreate() {
