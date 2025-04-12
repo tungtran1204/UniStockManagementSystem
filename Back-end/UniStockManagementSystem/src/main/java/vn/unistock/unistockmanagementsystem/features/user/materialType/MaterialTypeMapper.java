@@ -10,6 +10,5 @@ public interface MaterialTypeMapper {
     MaterialTypeMapper INSTANCE = Mappers.getMapper(MaterialTypeMapper.class);
 
     MaterialTypeDTO toDTO(MaterialType materialType);
-
     MaterialType toEntity(MaterialTypeDTO dto);
 }

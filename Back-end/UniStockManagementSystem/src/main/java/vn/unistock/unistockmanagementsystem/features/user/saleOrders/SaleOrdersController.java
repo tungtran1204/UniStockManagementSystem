@@ -67,12 +67,16 @@ public class SaleOrdersController {
     }
 
     @PutMapping("/{orderId}/set-preparing")
-    public ResponseEntity<?> setPreparingMaterial(@PathVariable Long orderId) {
-        try {
-            saleOrdersService.setPreparingMaterialStatus(orderId);
-            return ResponseEntity.ok("Đơn hàng đã chuyển sang trạng thái chuẩn bị vật tư.");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Không thể cập nhật trạng thái: " + e.getMessage());
-        }
+    public ResponseEntity<?> setPreparingMaterial(
+            @PathVariable Long orderId,
+            @RequestBody PrepareMaterialForSaleOrderDTO request
+    ) {
+        System.out.println("🔍 [DEBUG] Nhận request chuẩn bị vật tư cho đơn hàng: " + orderId);
+        request.setSaleOrderId(orderId); // Gán thủ công nếu cần xử lý bên trong service
+        saleOrdersService.setPreparingMaterialStatus(request);
+        return ResponseEntity.ok("Đơn hàng đã chuyển sang trạng thái 'Đang chuẩn bị vật tư'.");
     }
+
+
+
 }

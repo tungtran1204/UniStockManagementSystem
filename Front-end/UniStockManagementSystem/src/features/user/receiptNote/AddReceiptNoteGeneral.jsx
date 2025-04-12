@@ -585,48 +585,46 @@ const AddReceiptNoteGeneral = () => {
       renderCell: (params) => params.value ?? "",
     },
     {
-      field: 'itemCode',
-      headerName: 'Mã hàng',
-      minWidth: 150,
+      field: 'item',
+      headerName: 'Hàng hoá / Vật tư',
+      minWidth: 600,
       editable: false,
+      filterable: false,
       renderCell: (params) => {
-        const dropdownList = getDropdownListByCategory();
+        // params.row sẽ chứa { selected, warehouse, quantity, ... }
+        // Lấy danh sách hiển thị:
+        const dropdownList = getDropdownListByCategory(); // hàm ở trên
         return (
           <Autocomplete
-            sx={{ width: '100%' }}
+            sx={{ width: '100%', paddingY: '0.5rem' }}
             size="small"
             options={dropdownList}
-            getOptionLabel={(option) => option?.code || ""}
+            getOptionLabel={(option) => option?.code + " - " + option?.name}
             value={params.row.selected || null}
-            onChange={(e, newValue) => handleChangeSelectedItem(params.row.id, newValue)}
+            onChange={(e, newValue) => {
+              // newValue là {id, code, name, unit, type}...
+              // Cập nhật state
+              handleChangeSelectedItem(params.row.id, newValue);
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}
                 color="success"
                 variant="outlined"
-                placeholder="Chọn mã hàng"
+                placeholder="Chọn sản phẩm / vật tư"
                 size="small"
               />
             )}
           />
         );
-      }
-    },
-    {
-      field: 'itemName',
-      headerName: 'Tên hàng',
-      minWidth: 250,
-      editable: false,
-      renderCell: (params) => (
-        <span>{params.row.selected?.name || ""}</span>
-      )
+      },
     },
     {
       field: 'unit',
       headerName: 'Đơn vị',
       editable: false,
       filterable: false,
-      minWidth: 100,
+      minWidth: 200,
       renderCell: (params) => {
         // Hiển thị unit dựa trên params.row.selected
         return (
@@ -639,7 +637,7 @@ const AddReceiptNoteGeneral = () => {
       headerName: 'Kho nhập',
       editable: false,
       filterable: false,
-      minWidth: 250,
+      minWidth: 300,
       renderCell: (params) => {
         return (
           <Autocomplete
@@ -869,7 +867,7 @@ const AddReceiptNoteGeneral = () => {
                           <>
                             <IconButton onClick={() => setIsChooseDocModalOpen(true)}
                               size="small">
-                              <Search fontSize="20px"/>
+                              <Search fontSize="20px" />
                             </IconButton>
                             {params.InputProps.endAdornment}
                           </>
@@ -1390,3 +1388,4 @@ const AddReceiptNoteGeneral = () => {
 };
 
 export default AddReceiptNoteGeneral;
+
