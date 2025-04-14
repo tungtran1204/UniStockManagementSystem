@@ -16,7 +16,8 @@ import {
 } from '@mui/material';
 import {
   HighlightOffRounded,
-  ClearRounded
+  ClearRounded,
+  Margin
 } from '@mui/icons-material';
 import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
@@ -553,8 +554,8 @@ const AddIssueNote = () => {
               <td className="px-3 py-2 border-r text-sm">
                 {wh.warehouseName || "(Chưa có kho)"}
               </td>
-              <td className="px-3 py-2 border-r text-sm text-right">{wh.quantity}</td>
-              <td className="px-3 py-2 border-r text-sm w-24">
+              <td className="px-3 py-2 border-r text-sm w-24 text-center">{wh.quantity}</td>
+              <td className="px-3 py-2 border-r text-sm w-40">
                 <input
                   type="number"
                   className="border p-1 text-right w-[60px]"
@@ -603,12 +604,69 @@ const AddIssueNote = () => {
                     }
                   }}
                 />
+                {/* <TextField
+                  type="number"
+                  variant="outlined"
+                  size="small"
+                  color="success"
+                  fullWidth
+                  value={wh.exportQuantity || 0}
+                  error={!!wh.error}
+                  sx={{
+                    "& input": {
+                      padding: "4px 8px",
+                      max: maxAllowed
+                    },
+                  }}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    if (val > maxAllowed) {
+                      setProducts((prev) =>
+                        prev.map((p) => {
+                          if (p.id === prod.id) {
+                            const newInStock = p.inStock.map((ins, i) => {
+                              if (i === whIndex) {
+                                return {
+                                  ...ins,
+                                  error: `SL xuất không được vượt quá tồn kho (${maxAllowed}).`,
+                                };
+                              }
+                              return ins;
+                            });
+                            return { ...p, inStock: newInStock };
+                          }
+                          return p;
+                        })
+                      );
+                      return;
+                    } else {
+                      setProducts((prev) =>
+                        prev.map((p) => {
+                          if (p.id === prod.id) {
+                            const newInStock = p.inStock.map((ins, i) => {
+                              if (i === whIndex) {
+                                return {
+                                  ...ins,
+                                  exportQuantity: val,
+                                  error: "",
+                                };
+                              }
+                              return ins;
+                            });
+                            return { ...p, inStock: newInStock };
+                          }
+                          return p;
+                        })
+                      );
+                    }
+                  }}
+                /> */}
                 {wh.error && (
                   <div className="text-red-500 text-xs mt-1">{wh.error}</div>
                 )}
               </td>
               {isFirstRow && (
-                <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm">
+                <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm w-24">
                   <Tooltip title="Xóa">
                     <IconButton
                       size="small"
@@ -949,6 +1007,9 @@ const AddIssueNote = () => {
               <Typography variant="medium" className="mb-1 text-black">
                 Ngày lập phiếu
               </Typography>
+              <style>
+                {`.MuiPickersCalendarHeader-label { text-transform: capitalize; }`}
+              </style>
               <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
                 <DatePicker
                   value={createdDate ? dayjs(createdDate) : null}
@@ -960,6 +1021,20 @@ const AddIssueNote = () => {
                   format="DD/MM/YYYY"
                   dayOfWeekFormatter={(weekday) => `${weekday.format("dd")}`}
                   slotProps={{
+                    day: {
+                      sx: () => ({
+                        "&.Mui-selected": {
+                          backgroundColor: "#0ab067 !important",
+                          color: "white",
+                        },
+                        "&.Mui-selected:hover": {
+                          backgroundColor: "#089456 !important",
+                        },
+                        "&:hover": {
+                          backgroundColor: "#0894561A !important",
+                        },
+                      }),
+                    },
                     textField: {
                       hiddenLabel: true,
                       fullWidth: true,
@@ -1284,8 +1359,6 @@ const AddIssueNote = () => {
                 </Typography>
                 <Autocomplete
                   options={suppliers}
-                  disableClearable
-                  clearIcon={null}
                   size="small"
                   getOptionLabel={(option) => `${option.code} - ${option.name}`}
                   value={suppliers.find(o => o.code === partnerCode) || null}
@@ -1296,6 +1369,12 @@ const AddIssueNote = () => {
                       setAddress(sel.address);
                       setContactName(sel.contactName);
                       setPartnerId(sel.id); // Lưu partnerId khi chọn NCC
+                    } else {
+                      setPartnerCode("");
+                      setPartnerName("");
+                      setAddress("");
+                      setContactName("");
+                      setPartnerId(""); // Lưu partnerId khi chọn NCC
                     }
                   }}
                   slotProps={{
@@ -1312,38 +1391,6 @@ const AddIssueNote = () => {
                       hiddenLabel
                       {...params}
                       placeholder="Mã nhà cung cấp"
-                      InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                          <div className="flex items-center space-x-1">
-                            <IconButton
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenCreatePartnerPopup();
-                              }}
-                              size="small"
-                            >
-                              <FaPlus fontSize="small" />
-                            </IconButton>
-                            {partnerCode && (
-                              <IconButton
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPartnerCode("");
-                                  setPartnerName("");
-                                  setAddress("");
-                                  setContactName("");
-                                  setPartnerId(null);
-                                }}
-                                size="small"
-                              >
-                                <ClearRounded fontSize="18px" />
-                              </IconButton>
-                            )}
-                            {params.InputProps.endAdornment}
-                          </div>
-                        ),
-                      }}
                     />
                   )}
                 />
@@ -1517,7 +1564,7 @@ const AddIssueNote = () => {
           )}
 
           {totalElements > 0 && (
-            <div className="flex items-center justify-between pt-4">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Typography
                   variant="small"
@@ -1547,7 +1594,7 @@ const AddIssueNote = () => {
               />
             </div>
           )}
-          <Divider />
+          <Divider sx={{ marginY: "16px" }} />
           <div className="my-4 flex justify-between">
             <MuiButton
               color="info"

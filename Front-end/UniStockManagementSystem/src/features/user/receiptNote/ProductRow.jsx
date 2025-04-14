@@ -150,6 +150,7 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
           <td className="px-2 py-2 text-sm text-[#000000DE] w-60 border-r border-[rgba(224,224,224,1)]">
             <Autocomplete
               options={warehouses}
+              noOptionsText="Không có dữ liệu"
               size="small"
               getOptionLabel={(option) => `${option.warehouseCode} - ${option.warehouseName}`}
               value={

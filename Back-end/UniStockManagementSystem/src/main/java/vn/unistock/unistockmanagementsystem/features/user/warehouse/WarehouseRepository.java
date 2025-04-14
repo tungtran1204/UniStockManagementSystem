@@ -16,4 +16,6 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
 
     Warehouse findByWarehouseName(String warehouseName);
     Warehouse findByWarehouseId(Long warehouseId);
+
+    boolean existsByWarehouseCode(String warehouseCode);
 }

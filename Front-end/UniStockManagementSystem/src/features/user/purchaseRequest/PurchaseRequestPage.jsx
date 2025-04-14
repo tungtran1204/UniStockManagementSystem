@@ -97,15 +97,16 @@ const PurchaseRequestPage = () => {
     };
 
     const columnsConfig = [
-        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
-        { field: 'purchaseRequestCode', headerName: 'Mã yêu cầu', flex: 1.5, minWidth: 150, editable: false },
-        { field: 'purchaseOrderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false, renderCell: (params) => params.value || "Chưa có" },
+        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
+        { field: 'purchaseRequestCode', headerName: 'Mã yêu cầu', flex: 1.5, minWidth: 150, editable: false, filterable: false },
+        { field: 'purchaseOrderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false, filterable: false, renderCell: (params) => params.value || "Chưa có" },
         {
             field: 'createdDate',
             headerName: 'Ngày tạo yêu cầu',
             flex: 1.5,
             minWidth: 150,
             editable: false,
+            filterable: false,
             renderCell: (params) => dayjs(params.value).format("DD/MM/YYYY"),
         },
         {
@@ -113,6 +114,8 @@ const PurchaseRequestPage = () => {
             headerName: 'Trạng thái',
             flex: 1.5,
             minWidth: 200,
+            editable: false,
+            filterable: false,
             renderCell: (params) => (
                 <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                     ${params.value === 'Đã duyệt'
@@ -131,6 +134,8 @@ const PurchaseRequestPage = () => {
             headerName: 'Lý do từ chối',
             flex: 2,
             minWidth: 220,
+            editable: false,
+            filterable: false,
             renderCell: (params) => {
                 if (params.row.status !== 'Từ chối') return '';
                 if (!params.value) return 'Không có';
@@ -142,6 +147,8 @@ const PurchaseRequestPage = () => {
             headerName: 'Hành động',
             flex: 0.5,
             minWidth: 50,
+            filterable: false,
+            editable: false,
             renderCell: (params) => (
                 <div className="flex gap-2 justify-center items-center w-full">
                     <Tooltip content="Xem chi tiết">

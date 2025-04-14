@@ -103,6 +103,14 @@ const AddSaleOrderPage = () => {
   }, []);
 
   const handleCustomerChange = (selectedOption) => {
+    if (!selectedOption) {
+      setCustomerCode("");
+      setCustomerName("");
+      setAddress("");
+      setPhoneNumber("");
+      return;
+    }
+
     setCustomerCode(selectedOption.code);
     setCustomerName(selectedOption.name);
     setAddress(selectedOption.address);
@@ -137,7 +145,7 @@ const AddSaleOrderPage = () => {
         productCode: "",
         productName: "",
         unitName: "",
-        quantity: 0,
+        quantity: "",
       },
     ]);
     setNextId((id) => id + 1);
@@ -158,9 +166,9 @@ const AddSaleOrderPage = () => {
         row.id === rowId
           ? {
             ...row,
-            productCode: selectedOption.value,
-            productName: selectedOption.label,
-            unitName: selectedOption.unit,
+            productCode: selectedOption ? selectedOption.value : "",
+            productName: selectedOption ? selectedOption.label : "",
+            unitName: selectedOption ? selectedOption.unit : "",
           }
           : row
       )
@@ -372,7 +380,7 @@ const AddSaleOrderPage = () => {
                               <IconButton
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleOrderSelected(null);
+                                  handleCustomerChange(null);
                                 }}
                                 size="small"
                               >
@@ -633,14 +641,6 @@ const AddSaleOrderPage = () => {
                               },
                             },
                           }}
-                          sx={{
-                            '& .MuiInputBase-root.Mui-disabled': {
-                              bgcolor: '#eeeeee',
-                              '& .MuiOutlinedInput-notchedOutline': {
-                                border: 'none',
-                              },
-                            },
-                          }}
                           renderInput={(params) => (
                             <TextField
                               {...params}
@@ -667,12 +667,16 @@ const AddSaleOrderPage = () => {
                           type="number"
                           size="small"
                           fullWidth
-                          inputProps={{ min: 0 }}
+                          slotProps={{
+                            input: {
+                              inputMode: "numeric",
+                            }
+                          }}
                           value={item.quantity}
                           onChange={(e) => handleQuantityChange(item.id, e.target.value)}
                           color="success"
                           hiddenLabel
-                          placeholder="Số lượng"
+                          placeholder="0"
                         />
                         {itemsErrors[item.id] && itemsErrors[item.id].quantityError && (
                           <Typography color="red" className="text-xs mt-1">
@@ -706,6 +710,12 @@ const AddSaleOrderPage = () => {
               </tbody>
             </table>
           </div>
+
+          {globalError && (
+            <Typography color="red" className="text-sm pb-4">
+              {globalError}
+            </Typography>
+          )}
 
           {getFilteredItems().length > 0 && (
             <div className="flex items-center justify-between pb-4">
@@ -763,11 +773,6 @@ const AddSaleOrderPage = () => {
           <Divider />
           {/* Thông báo lỗi chung (nếu có) và nút Lưu / Hủy */}
           <div className="flex flex-col gap-2">
-            {globalError && (
-              <Typography color="red" className="text-sm text-right">
-                {globalError}
-              </Typography>
-            )}
             <div className="flex items-center justify-end gap-2 py-4">
               <MuiButton
                 size="medium"

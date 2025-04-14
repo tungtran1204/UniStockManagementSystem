@@ -587,7 +587,7 @@ const AddReceiptNoteGeneral = () => {
     {
       field: 'item',
       headerName: 'Hàng hoá / Vật tư',
-      minWidth: 600,
+      minWidth: 400,
       editable: false,
       filterable: false,
       renderCell: (params) => {
@@ -624,7 +624,7 @@ const AddReceiptNoteGeneral = () => {
       headerName: 'Đơn vị',
       editable: false,
       filterable: false,
-      minWidth: 200,
+      minWidth: 150,
       renderCell: (params) => {
         // Hiển thị unit dựa trên params.row.selected
         return (
@@ -644,7 +644,7 @@ const AddReceiptNoteGeneral = () => {
             sx={{ width: '100%' }}
             size="small"
             options={warehouses || []}
-            getOptionLabel={(option) => option?.warehouseCode || ""}
+            getOptionLabel={(option) => option?.warehouseCode + " - " + option?.warehouseName}
             value={warehouses.find(wh => wh.warehouseCode === params.row.warehouse) || null}
             onChange={(e, newValue) => {
               // Cập nhật state
@@ -697,7 +697,7 @@ const AddReceiptNoteGeneral = () => {
       headerName: 'Hành động',
       editable: false,
       filterable: false,
-      minWidth: 50,
+      minWidth: 100,
       renderCell: (params) => (
         <IconButton
           size="small"

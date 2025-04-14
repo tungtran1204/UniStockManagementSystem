@@ -19,8 +19,7 @@ import { useNavigate } from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
-// Nếu cần edit:
-// import ModalEditSaleOrder from "./ModalEditSaleOrder";
+import SuccessAlert from "@/components/SuccessAlert";
 
 const SaleOrdersPage = () => {
   const {
@@ -43,7 +42,7 @@ const SaleOrdersPage = () => {
   }, [currentPage, pageSize]);
 
   const navigate = useNavigate(); // ✅ Định nghĩa useNavigate
-
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
   const handleAddOrder = async () => {
     const code = await getNextCode();
@@ -204,6 +203,12 @@ const SaleOrdersPage = () => {
           </div>
         </CardBody>
       </Card>
+
+      <SuccessAlert
+        open={showSuccessAlert}
+        onClose={() => setShowSuccessAlert(false)}
+        message="Huỷ đơn hàng thành công!"
+      />
     </div>
   );
 };

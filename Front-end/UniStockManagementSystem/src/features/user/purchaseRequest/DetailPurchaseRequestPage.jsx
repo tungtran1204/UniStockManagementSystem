@@ -315,13 +315,27 @@ const DetailPurchaseRequestPage = () => {
                             </div>
                             {purchaseRequest.status === "CANCELLED" && (
                                 <div>
-                                    <Typography variant="small" className="mb-2 font-bold text-gray-900">
+                                    <Typography variant="medium" className="mb-1 text-black">
                                         Lý do hủy
                                     </Typography>
-                                    <Textarea
+                                    <TextField
+                                        fullWidth
+                                        size="small"
+                                        placeholder="Lý do huỷ"
+                                        hiddenLabel
+                                        multiline
+                                        rows={4}
+                                        color="success"
                                         value={purchaseRequest.rejectionReason?.trim() ? purchaseRequest.rejectionReason : "Không có"}
                                         disabled
-                                        className="text-sm disabled:opacity-100 disabled:font-normal disabled:text-black"
+                                        sx={{
+                                            '& .MuiInputBase-root.Mui-disabled': {
+                                                bgcolor: '#eeeeee',
+                                                '& .MuiOutlinedInput-notchedOutline': {
+                                                    border: 'none',
+                                                },
+                                            },
+                                        }}
                                     />
                                 </div>
                             )}

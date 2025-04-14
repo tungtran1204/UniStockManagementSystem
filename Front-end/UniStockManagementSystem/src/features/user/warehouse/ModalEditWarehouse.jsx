@@ -11,10 +11,11 @@ import { TextField, Divider, Button as MuiButton, IconButton } from "@mui/materi
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import useWarehouse from "./useWarehouse";
 
-const ModalEditWarehouse = ({ open, onClose, warehouse, fetchWarehouses }) => {
+const ModalEditWarehouse = ({ open, onClose, warehouse, onSuccess }) => {
   const [warehouseCode, setWarehouseCode] = useState("");
   const [warehouseName, setWarehouseName] = useState("");
   const [warehouseDescription, setDescription] = useState("");
+  const [isActive, setIsActive] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});
 
@@ -25,6 +26,7 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, fetchWarehouses }) => {
       setWarehouseCode(warehouse.warehouseCode || "");
       setWarehouseName(warehouse.warehouseName || "");
       setDescription(warehouse.warehouseDescription || "");
+      setIsActive(warehouse.isActive || "");
     }
   }, [warehouse]);
 
@@ -63,17 +65,25 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, fetchWarehouses }) => {
   };
 
   const handleUpdate = async () => {
-    if (Object.keys(error).length > 0) return;
-
     setLoading(true);
     try {
-      await editWarehouse(warehouse.warehouseId, { warehouseCode, warehouseName, warehouseDescription });
-      alert("Chỉnh sửa thông tin kho thành công!");
-      fetchWarehouses();
+      await editWarehouse(warehouse.warehouseId, { warehouseCode, warehouseName, warehouseDescription, isActive });
+      onSuccess();
       onClose();
     } catch (error) {
-      console.error("Lỗi khi sửa thông tin kho:", error);
-      alert("Lỗi khi sửa kho!");
+      if (error.response?.status === 409) {
+        const errorCode = error.response.data;
+        let errors = { ...error };
+        if (errorCode === "DUPLICATE_CODE_AND_NAME") {
+          errors.warehouseCode = "Mã kho đã tồn tại.";
+          errors.warehouseName = "Tên kho đã tồn tại.";
+        } else if (errorCode === "DUPLICATE_CODE") {
+          errors.warehouseCode = "Mã kho đã tồn tại.";
+        } else if (errorCode === "DUPLICATE_NAME") {
+          errors.warehouseName = "Tên kho đã tồn tại.";
+        }
+        setError(errors);
+      }
     } finally {
       setLoading(false);
     }
@@ -117,7 +127,7 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, fetchWarehouses }) => {
                 setWarehouseCode(e.target.value);
                 validateFields("warehouseCode", e.target.value);
               }}
-              error={!!error.warehouseName}
+              error={!!error.warehouseCode}
             />
             {error.warehouseCode && <Typography variant="small" color="red">{error.warehouseCode}</Typography>}
           </div>

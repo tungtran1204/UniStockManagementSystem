@@ -15,13 +15,16 @@ import {
     Divider,
 } from '@mui/material';
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const CancelSaleOrderModal = ({ open, onClose, onConfirm }) => {
     const [reason, setReason] = useState("");
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [error, setError] = useState();
 
     const handleConfirm = () => {
         if (!reason.trim()) {
-            alert("Vui lòng nhập lý do huỷ đơn hàng");
+            setError("Vui lòng nhập lý do huỷ đơn hàng");
             return;
         }
 
@@ -31,65 +34,79 @@ const CancelSaleOrderModal = ({ open, onClose, onConfirm }) => {
         onConfirm(reason);
         onClose();
         setReason("");
+        setError("");
     };
 
     const handleClose = () => {
         onClose();
         setReason("");
+        setError("");
+        setConfirmDialogOpen(false);
     };
 
     return (
-        <Dialog open={open} handler={handleClose} size="md" className="px-4 py-2">
-            <DialogHeader className="flex justify-between items-center pb-2">
-                <Typography variant="h4" color="blue-gray">
-                    Huỷ đơn hàng
-                </Typography>
-                <IconButton size="small" onClick={handleClose}>
-                    <XMarkIcon className="h-5 w-5 stroke-2" />
-                </IconButton>
-            </DialogHeader>
-            <Divider variant="middle" />
-            <DialogBody className="space-y-4 pb-6 pt-6">
-                <div>
-                    <Typography variant="medium" className="text-black mb-1">
-                        Lý do huỷ <span className="text-red-500">*</span>
+        <div>
+            <Dialog open={open} handler={handleClose} size="md" className="px-4 py-2">
+                <DialogHeader className="flex justify-between items-center pb-2">
+                    <Typography variant="h4" color="blue-gray">
+                        Huỷ đơn hàng
                     </Typography>
-                    <TextField
-                        fullWidth
-                        size="small"
-                        hiddenLabel
-                        placeholder="Nhập lý do huỷ đơn hàng"
-                        variant="outlined"
-                        multiline
-                        rows={4}
-                        color="success"
-                        value={reason}
-                        onChange={(e) => setReason(e.target.value)}
-                    />
-                </div>
-            </DialogBody>
+                    <IconButton size="small" onClick={handleClose}>
+                        <XMarkIcon className="h-5 w-5 stroke-2" />
+                    </IconButton>
+                </DialogHeader>
+                <Divider variant="middle" />
+                <DialogBody className="space-y-4 pb-6 pt-6">
+                    <div>
+                        <Typography variant="medium" className="text-black mb-1">
+                            Lý do huỷ <span className="text-red-500">*</span>
+                        </Typography>
+                        <TextField
+                            fullWidth
+                            size="small"
+                            hiddenLabel
+                            placeholder="Nhập lý do huỷ đơn hàng"
+                            variant="outlined"
+                            multiline
+                            rows={4}
+                            color="success"
+                            value={reason}
+                            error={!!error}
+                            onChange={(e) => {
+                                setReason(e.target.value);
+                                setError("");
+                            }}
+                        />
+                        {error && (
+                            <Typography color="red" className="text-xs mt-1">
+                                {error}
+                            </Typography>
+                        )}
+                    </div>
+                </DialogBody>
 
-            <DialogFooter className="pt-0">
-                <MuiButton
-                    size="medium"
-                    color="error"
-                    variant="outlined"
-                    onClick={handleClose}
-                >
-                    Hủy
-                </MuiButton>
-                <Button
-                    color="white"
-                    variant="text"
-                    size="lg"
-                    className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-3 rounded-[4px] transition-all duration-200 ease-in-out"
-                    ripple={true}
-                    onClick={handleConfirm}
-                >
-                    Xác nhận
-                </Button>
-            </DialogFooter>
-        </Dialog>
+                <DialogFooter className="pt-0">
+                    <MuiButton
+                        size="medium"
+                        color="error"
+                        variant="outlined"
+                        onClick={handleClose}
+                    >
+                        Hủy
+                    </MuiButton>
+                    <Button
+                        color="white"
+                        variant="text"
+                        size="lg"
+                        className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-3 rounded-[4px] transition-all duration-200 ease-in-out"
+                        ripple={true}
+                        onClick={handleConfirm}
+                    >
+                        Xác nhận
+                    </Button>
+                </DialogFooter>
+            </Dialog>
+        </div>
     );
 };
 

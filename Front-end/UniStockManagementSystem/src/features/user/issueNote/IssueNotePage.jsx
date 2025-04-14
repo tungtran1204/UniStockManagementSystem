@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { Card, CardBody, Typography, Tooltip } from "@material-tailwind/react";
-import { ArrowLeftIcon, ArrowRightIcon, EyeIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
+import { IconButton } from "@mui/material";
+import { VisibilityOutlined } from '@mui/icons-material';
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
@@ -121,12 +123,13 @@ const IssueNotePage = () => {
       renderCell: (params) => (
         <div className="flex justify-center w-full">
           <Tooltip content="Xem chi tiết">
-            <button
+            <IconButton
+              size="small"
               onClick={() => handleViewIssue(params.row)}
-              className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
+              color="primary"
             >
-              <EyeIcon className="h-5 w-5" />
-            </button>
+              <VisibilityOutlined />
+            </IconButton>
           </Tooltip>
         </div>
       ),
@@ -177,7 +180,7 @@ const IssueNotePage = () => {
           <div className="w-full overflow-x-auto">
             <Table data={data} columnsConfig={columnsConfig} enableSelection={false} />
           </div>
-          <div className="flex items-center justify-between border-t border-blue-gray-50 py-4 mt-2">
+          <div className="flex items-center justify-between py-4">
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-normal">
                 Trang {currentPage + 1} / {totalPages || 1} • {totalElements || 0} bản ghi
@@ -192,7 +195,7 @@ const IssueNotePage = () => {
               pageRangeDisplayed={5}
               onPageChange={handlePageChange}
               containerClassName="flex items-center gap-1"
-              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
               pageLinkClassName="flex items-center justify-center w-full h-full"
               previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"

@@ -196,6 +196,7 @@ const AddPurchaseRequestPage = () => {
   };
 
   const handleSupplierChange = (index, selectedOption) => {
+    console.log("selectedOption: ", selectedOption)
     setItems((prev) =>
       prev.map((item, idx) =>
         idx === index

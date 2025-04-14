@@ -43,6 +43,7 @@ import PageHeader from "@/components/PageHeader";
 import { canCreatePurchaseRequest } from "@/features/user/purchaseRequest/PurchaseRequestService";
 import CancelSaleOrderModal from "./CancelSaleOrderModal";
 import { getTotalQuantityOfMaterial } from "@/features/user/issueNote/issueNoteService";
+import SuccessAlert from "@/components/SuccessAlert";
 
 // ------------------ 3 MODE ------------------
 const MODE_VIEW = "view";
@@ -51,55 +52,6 @@ const MODE_DINHMUC = "dinhMuc";
 // ---------------------------------------------
 
 const CUSTOMER_TYPE_ID = 2;
-
-const AddCustomerDropdownIndicator = (props) => {
-  return (
-    <div style={{ display: "flex", alignItems: "center" }}>
-      <div
-        style={{ cursor: "pointer", padding: "0 8px" }}
-        onClick={(e) => {
-          e.stopPropagation();
-          props.selectProps.onAddCustomer();
-        }}
-      >
-        <FaPlus />
-      </div>
-      <components.DropdownIndicator {...props} />
-    </div>
-  );
-};
-
-const customStyles = {
-  control: (provided, state) => ({
-    ...provided,
-    minWidth: 200,
-    borderColor: state.isFocused ? "black" : provided.borderColor,
-    boxShadow: state.isFocused ? "0 0 0 1px black" : "none",
-    "&:hover": {
-      borderColor: "black",
-    },
-  }),
-  menuPortal: (provided) => ({
-    ...provided,
-    zIndex: 9999, // Đảm bảo dropdown hiển thị trên tất cả các phần tử khác
-  }),
-  menuList: (provided) => ({
-    ...provided,
-  }),
-  option: (provided, state) => ({
-    ...provided,
-    backgroundColor: state.isFocused
-      ? "#f3f4f6"
-      : state.isSelected
-        ? "#e5e7eb"
-        : "transparent",
-    color: "#000",
-    cursor: "pointer",
-    "&:active": {
-      backgroundColor: "#e5e7eb",
-    },
-  }),
-};
 
 const EditSaleOrderPage = () => {
   const { orderId } = useParams();
@@ -117,6 +69,7 @@ const EditSaleOrderPage = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [description, setDescription] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
   // Mảng dòng sản phẩm
   const [items, setItems] = useState([]);
@@ -376,7 +329,7 @@ const EditSaleOrderPage = () => {
   const handleCancelSaleOrder = async (reason) => {
     try {
       await cancelSaleOrder(orderId, reason);
-      alert("Đơn hàng đã được hủy.");
+      setShowSuccessAlert(true);
       navigate("/user/sale-orders");
     } catch (error) {
       console.error("Lỗi khi hủy đơn hàng:", error);
@@ -1373,7 +1326,7 @@ const EditSaleOrderPage = () => {
                   </div>
                 )}
               </div>
-              <div className="border border-gray-200 rounded mb-4 overflow-x-auto border-[rgba(224,224,224,1)]">
+              <div className="border border-gray-200 rounded overflow-x-auto border-[rgba(224,224,224,1)]">
                 <table className="w-full text-left min-w-max border-collapse border-[rgba(224,224,224,1)]">
                   <thead className="bg-[#f5f5f5] border-b border-[rgba(224,224,224,1)]">
                     <tr>
@@ -1398,8 +1351,14 @@ const EditSaleOrderPage = () => {
                   <tbody>{renderTableRows()}</tbody>
                 </table>
               </div>
+
+              {globalError && (
+                <Typography color="red" className="text-sm mt-2">
+                  {globalError}
+                </Typography>
+              )}
               {mode === MODE_EDIT && activeTab === "products" && (
-                <div className="flex gap-2 mb-4">
+                <div className="flex gap-2 my-4">
                   <MuiButton
                     size="small"
                     variant="outlined"
@@ -1470,11 +1429,6 @@ const EditSaleOrderPage = () => {
           )}
 
           <div className="flex flex-col gap-2">
-            {globalError && (
-              <Typography color="red" className="text-sm text-right">
-                {globalError}
-              </Typography>
-            )}
             <Divider />
             <div className="flex justify-between my-2">
               <MuiButton
@@ -1494,33 +1448,36 @@ const EditSaleOrderPage = () => {
               >
                 <FaArrowLeft className="h-3 w-3" /> Quay lại
               </MuiButton>
-              {mode === MODE_VIEW && originalData?.statusLabel !== "Đã huỷ" && activeTab === "info" && (
-                <MuiButton
-                  size="medium"
-                  color="error"
-                  variant="outlined"
-                  onClick={() => setShowCancelModal(true)}
-                >
-                  Hủy đơn hàng
-                </MuiButton>
-              )}
 
-              {mode === MODE_VIEW && activeTab === "products" && canCreatePurchaseRequestState && originalData?.status !== "CANCELLED" && (
-                <MuiButton
-                  variant="contained"
-                  size="medium"
-                  onClick={handleEdit}
-                  sx={{
-                    boxShadow: 'none',
-                    '&:hover': { boxShadow: 'none' }
-                  }}
-                >
-                  <div className='flex items-center gap-2'>
-                    <FaEdit className="h-4 w-4" />
-                    <span>Chỉnh sửa</span>
-                  </div>
-                </MuiButton>
-              )}
+              <div className="flex items-center gap-2">
+                {mode === MODE_VIEW && originalData?.statusLabel !== "Đã huỷ" && activeTab === "info" && (
+                  <MuiButton
+                    size="medium"
+                    color="error"
+                    variant="outlined"
+                    onClick={() => setShowCancelModal(true)}
+                  >
+                    Hủy đơn hàng
+                  </MuiButton>
+                )}
+
+                {mode === MODE_VIEW && canCreatePurchaseRequestState && originalData?.status !== "CANCELLED" && (
+                  <MuiButton
+                    variant="contained"
+                    size="medium"
+                    onClick={handleEdit}
+                    sx={{
+                      boxShadow: 'none',
+                      '&:hover': { boxShadow: 'none' }
+                    }}
+                  >
+                    <div className='flex items-center gap-2'>
+                      <FaEdit className="h-4 w-4" />
+                      <span>Chỉnh sửa</span>
+                    </div>
+                  </MuiButton>
+                )}
+              </div>
 
               {mode === MODE_EDIT && (
                 <div className="flex items-center gap-2">
@@ -1582,6 +1539,25 @@ const EditSaleOrderPage = () => {
           }}
         />
       )}
+
+      {/* <ConfirmDialog
+        open={confirmDialogOpen}
+        onClose={() => setConfirmDialogOpen(false)}
+        onConfirm={() => {
+          onConfirm(reason);
+          handleClose();
+        }}
+        message="Bạn có chắc chắn muốn huỷ đơn hàng này không?"
+        subMessage="Việc huỷ đơn hàng cũng sẽ huỷ yêu cầu mua vật tư cho đơn hàng này."
+        confirmText="Có"
+        cancelText="Không"
+      /> */}
+
+      <SuccessAlert
+        open={showSuccessAlert}
+        onClose={() => setShowSuccessAlert(false)}
+        message="Huỷ đơn hàng thành công!"
+      />
     </div>
   );
 };

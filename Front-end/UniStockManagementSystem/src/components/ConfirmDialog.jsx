@@ -22,16 +22,22 @@ const ConfirmDialog = ({
     onClose,
     onConfirm,
     message = "Are you sure?",
+    subMessage = "This action cannot be undone.",
     confirmText = "Yes, delete it!",
     cancelText = "Cancel",
 }) => {
     return (
         <Dialog open={open} handler={onClose} size="xs" className="px-4 py-2">
-            <DialogBody className="space-y-4  flex flex-col items-center">
+            <DialogBody className="space-y-4 flex flex-col items-center justify-center">
                 <WarningAmberRoundedIcon sx={{ fontSize: 100, color: "#f5a623" }} />
-                <Typography variant="paragraph" className="text-black">
+                <Typography variant="paragraph" className="text-black w-fit font-bold">
                     {message}
                 </Typography>
+                {subMessage && (
+                    <Typography variant="small" className="text-gray-700 text-sm text-center max-w-xs">
+                        {subMessage}
+                    </Typography>
+                )}
             </DialogBody>
 
             {/* Footer của Dialog */}

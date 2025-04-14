@@ -398,7 +398,7 @@ const AddMaterialPage = () => {
                                     onFileSelect={(file) => {
                                         const imageUrl = URL.createObjectURL(file);
                                         setPreviewImage(imageUrl);
-                                        setEditedMaterial((prev) => ({
+                                        setNewMaterial((prev) => ({
                                             ...prev,
                                             image: file,
                                         }));

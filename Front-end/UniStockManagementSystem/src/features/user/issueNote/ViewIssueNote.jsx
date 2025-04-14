@@ -3,13 +3,17 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { Card, CardBody, Typography, Button } from "@material-tailwind/react";
 import { TextField, Button as MuiButton } from "@mui/material";
 import PageHeader from "@/components/PageHeader";
+import FilePreviewDialog from "@/components/FilePreviewDialog";
 import useIssueNote from "./useIssueNote"; // Sử dụng hook chứa fetchIssueNoteDetail
 import useUser from "../../admin/users/useUser";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import "dayjs/locale/vi"; // Import Tiếng Việt
 import Table from "@/components/Table";
 import ReactPaginate from "react-paginate";
 import { ArrowLeftIcon, ArrowRightIcon, ListBulletIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
@@ -279,7 +283,7 @@ const ViewIssueNote = () => {
               </Button>
             }
           />
-          <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
+          <Typography variant="h6" className="flex items-center mb-4 text-black">
             <InformationCircleIcon className="h-5 w-5 mr-2" />
             Thông tin chung
           </Typography>
@@ -296,7 +300,14 @@ const ViewIssueNote = () => {
                 variant="outlined"
                 disabled
                 value={data.ginCode}
-                InputProps={{ style: { backgroundColor: "#eeeeee" } }}
+                sx={{
+                  "& .MuiInputBase-root.Mui-disabled": {
+                    bgcolor: "#eeeeee",
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      border: "none",
+                    },
+                  },
+                }}
               />
             </div>
             <div>
@@ -310,22 +321,46 @@ const ViewIssueNote = () => {
                 variant="outlined"
                 disabled
                 value={data.category}
-                InputProps={{ style: { backgroundColor: "#eeeeee" } }}
+                sx={{
+                  "& .MuiInputBase-root.Mui-disabled": {
+                    bgcolor: "#eeeeee",
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      border: "none",
+                    },
+                  },
+                }}
               />
             </div>
             <div>
               <Typography variant="medium" className="mb-1 text-black">
                 Ngày tạo phiếu
               </Typography>
-              <TextField
-                fullWidth
-                size="small"
-                color="success"
-                variant="outlined"
-                disabled
-                value={formatDate(data.issueDate)}
-                InputProps={{ style: { backgroundColor: "#eeeeee" } }}
-              />
+              <style>
+                {`.MuiPickersCalendarHeader-label { text-transform: capitalize !important; }`}
+              </style>
+              <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+                <DatePicker
+                  value={data.issueDate ? dayjs(data.issueDate) : null}
+                  disabled
+                  format="DD/MM/YYYY"
+                  dayOfWeekFormatter={(weekday) => `${weekday.format("dd")}`}
+                  slotProps={{
+                    textField: {
+                      hiddenLabel: true,
+                      fullWidth: true,
+                      size: "small",
+                    },
+                  }}
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
+                />
+              </LocalizationProvider>
             </div>
             <div>
               <Typography variant="medium" className="mb-1 text-black">
@@ -338,7 +373,14 @@ const ViewIssueNote = () => {
                 variant="outlined"
                 disabled
                 value={creator}
-                InputProps={{ style: { backgroundColor: "#eeeeee" } }}
+                sx={{
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  },
+                }}
               />
             </div>
             <div>
@@ -360,7 +402,14 @@ const ViewIssueNote = () => {
                   variant="outlined"
                   disabled
                   value="Không có"
-                  InputProps={{ style: { backgroundColor: "#eeeeee" } }}
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
                 />
               )}
             </div>
@@ -371,16 +420,26 @@ const ViewIssueNote = () => {
               {data.paperEvidence && data.paperEvidence.length > 0 ? (
                 <div className="grid grid-cols-3 gap-2 mt-1">
                   {data.paperEvidence.map((url, index) => (
-                    <Button
+                    <MuiButton
                       key={index}
                       variant="outlined"
-                      className="flex items-center justify-between text-xs px-2 py-1 h-9 min-h-0 leading-none"
-                      onClick={() => handlePreview(url)}
+                      color="primary"
+                      disableElevation
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'start',
+                        padding: 0,
+                      }}
+                      className="text-xs w-full gap-2"
                     >
-                      <span className="truncate max-w-[75%]">
+                      <span
+                        className="truncate max-w-[100%] px-2 py-1"
+                        onClick={() => handlePreview(url)}
+                      >
                         {url.split("/").pop()}
                       </span>
-                    </Button>
+                    </MuiButton>
                   ))}
                 </div>
               ) : (
@@ -388,7 +447,13 @@ const ViewIssueNote = () => {
                   Không có
                 </Typography>
               )}
-              <Dialog open={!!previewFile} onClose={handleClosePreview} maxWidth="md" fullWidth>
+              <FilePreviewDialog
+                file={previewFile}
+                open={!!previewFile}
+                onClose={handleClosePreview}
+                showDownload={true}
+              />
+              {/* <Dialog open={!!previewFile} onClose={handleClosePreview} maxWidth="md" fullWidth>
                 <div className="flex justify-between items-center mr-6">
                   <DialogTitle>{previewFile?.name}</DialogTitle>
                   <IconButton size="sm" variant="text" onClick={handleClosePreview}>
@@ -463,7 +528,7 @@ const ViewIssueNote = () => {
                       }
                     })()}
                 </DialogContent>
-              </Dialog>
+              </Dialog> */}
             </div>
           </div>
 
@@ -482,12 +547,19 @@ const ViewIssueNote = () => {
                 color="success"
                 value={data.description || "Không có"}
                 disabled
-                InputProps={{ style: { backgroundColor: "#eeeeee" } }}
+                sx={{
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  },
+                }}
               />
             </div>
           </div>
 
-          <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
+          <Typography variant="h6" className="flex items-center mb-4 text-black">
             <ListBulletIcon className="h-5 w-5 mr-2" />
             Danh sách hàng hóa
           </Typography>

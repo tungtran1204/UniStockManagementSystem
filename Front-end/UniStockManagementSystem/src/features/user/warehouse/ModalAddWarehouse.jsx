@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
-    Dialog,
-    DialogHeader,
-    DialogBody,
-    DialogFooter,
-    Typography,
-    Button,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  Typography,
+  Button,
 } from "@material-tailwind/react";
 import { TextField, Divider, Button as MuiButton, IconButton } from "@mui/material";
 import { XMarkIcon } from "@heroicons/react/24/outline";
@@ -55,17 +55,25 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
   };
 
   const handleSave = async () => {
-    if (Object.keys(error).length > 0) return;
-
     setLoading(true);
     try {
-      await addWarehouse({ warehouseCode, warehouseName, warehouseDescription });
-      alert("Thêm kho thành công!");
+      await addWarehouse({ warehouseCode, warehouseName, warehouseDescription, isActive: true });
       onAdd?.();
       onClose();
     } catch (error) {
-      console.error("Lỗi khi thêm kho:", error);
-      alert("Lỗi khi thêm kho!");
+      if (error.response?.status === 409) {
+        const errorCode = error.response.data;
+        let errors = { ...error };
+        if (errorCode === "DUPLICATE_CODE_AND_NAME") {
+          errors.warehouseCode = "Mã kho đã tồn tại.";
+          errors.warehouseName = "Tên kho đã tồn tại.";
+        } else if (errorCode === "DUPLICATE_CODE") {
+          errors.warehouseCode = "Mã kho đã tồn tại.";
+        } else if (errorCode === "DUPLICATE_NAME") {
+          errors.warehouseName = "Tên kho đã tồn tại.";
+        }
+        setError(errors);
+      }
     } finally {
       setLoading(false);
     }
@@ -109,7 +117,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
                 setWarehouseCode(e.target.value);
                 validateFields("warehouseCode", e.target.value);
               }}
-              error={!!error.warehouseName}
+              error={!!error.warehouseCode}
             />
             {error.warehouseCode && <Typography variant="small" color="red">{error.warehouseCode}</Typography>}
           </div>
