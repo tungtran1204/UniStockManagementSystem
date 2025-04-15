@@ -593,10 +593,10 @@ const AddReceiptNoteGeneral = () => {
         const dropdownList = getDropdownListByCategory();
         return (
           <Autocomplete
-            sx={{ width: '100%' }}
+            sx={{ width: '100%', paddingY: '0.5rem' }}
             size="small"
             options={dropdownList}
-            getOptionLabel={(option) => option?.code || ""}
+            getOptionLabel={(option) => option?.code + " - " + option?.name}
             value={params.row.selected || null}
             onChange={(e, newValue) => handleChangeSelectedItem(params.row.id, newValue)}
             renderInput={(params) => (
@@ -869,7 +869,7 @@ const AddReceiptNoteGeneral = () => {
                           <>
                             <IconButton onClick={() => setIsChooseDocModalOpen(true)}
                               size="small">
-                              <Search fontSize="20px"/>
+                              <Search fontSize="20px" />
                             </IconButton>
                             {params.InputProps.endAdornment}
                           </>

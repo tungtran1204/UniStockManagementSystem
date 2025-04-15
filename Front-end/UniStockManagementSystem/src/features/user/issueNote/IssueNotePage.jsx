@@ -3,6 +3,12 @@ import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { Card, CardBody, Typography, Tooltip } from "@material-tailwind/react";
 import { ArrowLeftIcon, ArrowRightIcon, EyeIcon } from "@heroicons/react/24/outline";
+import {
+  IconButton,
+} from '@mui/material';
+import {
+  VisibilityOutlined,
+} from '@mui/icons-material';
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
@@ -25,7 +31,7 @@ const IssueNotePage = () => {
 
   const fetchPaginatedIssueNotes = async (page, size, search = "") => {
     try {
-      // API trả về dạng: { totalPages, content: [ { ginId, ginCode, description, category, issueDate, soId, createdBy, details, ... } ] }
+      // API trả về dạng: { totalPages, content: [ { ginId, ginCode, description, category, issueDate, soCode, createdByUsername, details, ... } ] }
       const data = await getIssueNotes(page, size);
       setIssueNotes(data.content || []);
       setTotalPages(data.totalPages);
@@ -67,11 +73,12 @@ const IssueNotePage = () => {
     category: note.category || "N/A",
     description: note.description || "Không có ghi chú",
     issueDate: note.issueDate,
-    createdBy: note.createdBy || "Đang tải...",
-    reference: note.soId // Dùng soId làm tham chiếu (Sales Order id)
+    createdByUserName: note.createdByUserName || "Đang tải...",
+    soId: note.soId, 
+    soCode: note.soCode || "Không có"
   }));
 
-  // Các cột hiển thị giống ReceiptNotePage nhưng thay đổi tên trường cho phù hợp với IssueNote
+  // Cấu hình các cột hiển thị; thay createdBy và soId bằng createdByUsername và soCode
   const columnsConfig = [
     { field: 'ginCode', headerName: 'Mã phiếu xuất', flex: 1.5, minWidth: 150 },
     { field: 'category', headerName: 'Loại hàng hóa', flex: 2, minWidth: 100 },
@@ -87,32 +94,33 @@ const IssueNotePage = () => {
       },
     },
     {
-      field: 'createdBy',
+      field: 'createdByUserName',
       headerName: 'Người tạo phiếu',
       flex: 1.5,
       minWidth: 100,
       renderCell: (params) => params.value,
     },
     {
-      field: 'reference',
-      headerName: 'Tham chiếu',
+      field: 'soCode',
+      headerName: 'Mã đơn hàng',
       flex: 1.5,
       minWidth: 150,
       renderCell: (params) => {
-        const soId = params.value;
-        if (soId) {
+        const soCode = params.value;
+        if (soCode && soCode !== "Không có") {
           return (
             <span
-              onClick={() => navigate(`/user/saleOrder/${soId}`)}
+              onClick={() => navigate(`/user/sale-orders/${params.row.soId}`)}
               className="text-blue-600 hover:underline cursor-pointer"
             >
-              SO{soId}
+              {soCode}
             </span>
           );
         }
-        return " - ";
+        return "Không có";
       },
     },
+    
     {
       field: 'actions',
       headerName: 'Hành động',
@@ -121,12 +129,14 @@ const IssueNotePage = () => {
       renderCell: (params) => (
         <div className="flex justify-center w-full">
           <Tooltip content="Xem chi tiết">
-            <button
+            
+            <IconButton
+              size="small"
+              color="primary"
               onClick={() => handleViewIssue(params.row)}
-              className="p-1.5 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
             >
-              <EyeIcon className="h-5 w-5" />
-            </button>
+              <VisibilityOutlined />
+            </IconButton>
           </Tooltip>
         </div>
       ),
@@ -141,8 +151,8 @@ const IssueNotePage = () => {
             title="Danh sách phiếu xuất kho"
             addButtonLabel="Thêm phiếu xuất"
             onAdd={handleAdd}
-            onImport={() => setShowImportPopup(true)}
-            onExport={() => { /* export Excel */ }}
+            showImport={false}
+            showExport={false}
           />
           <div className="py-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">

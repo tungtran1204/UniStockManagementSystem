@@ -75,7 +75,7 @@ const DetailMaterialPage = () => {
         setMaterial(mappedMaterial);
         setEditedMaterial(mappedMaterial);
         setUnits(unitsData);
-        setMaterialCategories(categoriesData);
+        setMaterialCategories(categoriesData?.content || []);
 
       } catch (error) {
         console.error("Error loading material details:", error);

@@ -33,6 +33,7 @@ import SaleOrdersPage from "../features/user/saleorders/SaleOrdersPage";
 import PartnerTypePage from "@/features/user/partnerType/PartnerTypePage";
 import PartnerPage from "@/features/user/partner/PartnerPage";
 import MaterialPage from "@/features/user/materials/MaterialPage";
+import MaterialTypePage from "@/features/user/materialType/MaterialTypePage";
 
 import ReceiptNotePage from "../features/user/receiptNote/ReceiptNotePage";
 import AddSaleOrderPage from "../features/user/saleorders/AddSaleOrderPage";
@@ -201,11 +202,27 @@ export const routes = [
         ],
       },
       {
-        icon: <Construction {...icon} />, // Sử dụng TableCellsIcon cho phần quản lý nguyên vật liệu
+        icon: <Construction {...icon} />,
         name: "Vật tư",
         path: "/user/materials",
-        element: <MaterialPage />,
+        element: <Navigate to="/user/materials" replace />,
         roles: ["USER"],
+        subPages: [
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Nguyên vật liệu",
+            path: "/user/materials",
+            element: <MaterialPage />,
+            roles: ["USER"],
+          },
+          {
+            icon: <Bars3BottomRightIcon {...icon} />,
+            name: "Danh mục vật tư",
+            path: "/user/material-types",
+            element: <MaterialTypePage />,
+            roles: ["USER"],
+          },
+        ],
       },
       {
         icon: <Diversity3 {...icon} />,

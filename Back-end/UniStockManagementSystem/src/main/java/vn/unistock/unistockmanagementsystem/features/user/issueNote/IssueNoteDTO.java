@@ -21,7 +21,9 @@ public class IssueNoteDTO {
     private String phone;
     private LocalDateTime issueDate;
     private Long soId;
+    private String soCode;
     private Long createdBy;
+    private String createdByUserName;
     private List<IssueNoteDetailDTO> details;
     private List<String> paperEvidence;
 }

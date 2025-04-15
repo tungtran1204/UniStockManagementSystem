@@ -25,7 +25,6 @@ const ViewIssueNote = () => {
   const navigate = useNavigate();
   // Lấy hàm fetchIssueNoteDetail từ hook useIssueNote
   const { fetchIssueNoteDetail } = useIssueNote();
-  const { getUserById } = useUser();
 
   const [data, setData] = useState(null);
   const [creator, setCreator] = useState("Đang tải...");
@@ -83,12 +82,11 @@ const ViewIssueNote = () => {
         const issueNote = await fetchIssueNoteDetail(id);
         setData(issueNote);
         if (issueNote.createdBy) {
-          const user = await getUserById(issueNote.createdBy);
-          setCreator(user.username || user.email || "Không xác định");
+          setCreator(issueNote.createdByUserName || "Không xác định");
         }
         // Nếu có tham chiếu (soId), cập nhật giá trị tham chiếu
         if (issueNote.soId) {
-          setSoReference(`SO${issueNote.soId}`);
+          setSoReference(`SO${issueNote.soCode}`);
         }
       } catch (err) {
         console.error("Lỗi khi tải phiếu xuất:", err);
@@ -97,7 +95,7 @@ const ViewIssueNote = () => {
       }
     };
     fetchDetail();
-  }, [id, getUserById, fetchIssueNoteDetail]);
+  }, [id, fetchIssueNoteDetail]);
 
   if (loading) return <Typography>Đang tải dữ liệu...</Typography>;
   if (!data) return <Typography className="text-red-500">Không tìm thấy phiếu xuất</Typography>;
@@ -350,7 +348,7 @@ const ViewIssueNote = () => {
                   to={`/user/sale-orders/${data.soId}`}
                   className="text-blue-600 hover:underline text-sm block mt-1"
                 >
-                  {soReference || `SO${data.soId}`}
+                  { `${data.soCode}`}
                 </Link>
               ) : (
                 <TextField

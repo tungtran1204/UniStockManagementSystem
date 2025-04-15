@@ -358,11 +358,13 @@ const AddPurchaseRequestPage = () => {
         notes: description || "",
         status: "PENDING",
         saleOrderId: saleOrderId ? Number(saleOrderId) : null,
-        purchaseRequestDetails: items.map((item) => ({
-          materialId: Number(item.materialId),
-          quantity: Number(item.quantity),
-          partnerId: Number(item.supplierId),
-        })),
+        purchaseRequestDetails: items
+          .filter((item) => Number(item.quantity) > 0)
+          .map((item) => ({
+            materialId: Number(item.materialId),
+            quantity: Number(item.quantity),
+            partnerId: Number(item.supplierId),
+          })),
         usedProductsFromWarehouses: usedProductsFromWarehouses.map((u) => ({
           productId: u.productId,
           warehouseId: u.warehouseId,
