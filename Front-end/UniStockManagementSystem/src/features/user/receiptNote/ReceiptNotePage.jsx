@@ -383,7 +383,6 @@ const ReceiptNotePage = () => {
                 />
               </div>
             </div>
-
           </div>
 
           <Table
