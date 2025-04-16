@@ -38,6 +38,7 @@ const SaleOrdersPage = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
+  //state for filter and search
   const [selectedStatuses, setSelectedStatuses] = useState([]);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
@@ -117,12 +118,22 @@ const SaleOrdersPage = () => {
 
   // Lọc danh sách
   const filteredOrders = saleOrders.filter(
-    (order) =>
-      (order.orderCode &&
-        order.orderCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (order.partnerName &&
-        order.partnerName.toLowerCase().includes(searchTerm.toLowerCase()))
+    (order) => {
+      const matchesSearch =
+        (order.orderCode &&
+          order.orderCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (order.partnerName &&
+          order.partnerName.toLowerCase().includes(searchTerm.toLowerCase()));
+  
+      // Nếu không chọn filter trạng thái thì luôn true
+      const matchesStatus =
+        selectedStatuses.length === 0 ||
+        selectedStatuses.includes(order.statusLabel || getStatusLabel(order.status));
+  
+      return matchesSearch && matchesStatus;
+    }
   );
+  
 
   const getStatusLabel = (status) => {
     switch (status) {
