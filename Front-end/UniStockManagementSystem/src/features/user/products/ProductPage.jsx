@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import useProduct from "./useProduct";
-import { Button } from "@material-tailwind/react";
+//import { Button } from "@material-tailwind/react";
+import { FaAngleDown } from "react-icons/fa";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import {
   IconButton,
+  Button,
+  MenuItem,
+  Menu,
+  Checkbox,
+  ListItemText,
 } from '@mui/material';
 import {
   VisibilityOutlined,
@@ -29,6 +35,8 @@ import {
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
+import StatusFilterButton from "@/components/StatusFilterButton";
+
 
 const ProductPage = () => {
   const navigate = useNavigate();
@@ -55,6 +63,32 @@ const ProductPage = () => {
   const [units, setUnits] = useState([]);
   const [productTypes, setProductTypes] = useState([]);
   const [searchTerm, setSearchTerm] = useState(""); // State for search term
+
+  const [statusAnchorEl, setStatusAnchorEl] = useState(null);
+  const [selectedStatuses, setSelectedStatuses] = useState([]);
+
+  const [selectedProductTypes, setSelectedProductTypes] = useState([]);
+  const [productTypeAnchorEl, setProductTypeAnchorEl] = useState(null);
+
+  const allStatuses = [
+    {
+      value: true,
+      label: "Đang sản xuất",
+      className: "bg-green-50 text-green-800",
+    },
+    {
+      value: false,
+      label: "Ngừng sản xuất",
+      className: "bg-red-50 text-red-800",
+    },
+  ];
+
+  // Handle search
+  const handleSearch = () => {
+    // Reset to first page when searching
+    setCurrentPage(0);
+    fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
+  };
 
   const [newProduct, setNewProduct] = useState({
     productCode: "",
@@ -303,16 +337,120 @@ const ProductPage = () => {
                 bản ghi mỗi trang
               </Typography>
             </div>
-            <TableSearch
-              value={searchTerm}
-              onChange={setSearchTerm}
-              onSearch={() => {
-                // Thực hiện tìm kiếm hoặc gọi API ở đây
-              }}
-              placeholder="Tìm kiếm sản phẩm"
-            />
-          </div>
 
+            <div className="mb-3 flex flex-wrap items-center gap-4">
+              {/* Filter by status */}
+              <StatusFilterButton
+                anchorEl={statusAnchorEl}
+                setAnchorEl={setStatusAnchorEl}
+                selectedStatuses={selectedStatuses}
+                setSelectedStatuses={setSelectedStatuses}
+                allStatuses={allStatuses}
+                buttonLabel="Trạng thái"
+              />
+
+              {/* Filter by product type */}
+              <Button
+                onClick={(e) => setProductTypeAnchorEl(e.currentTarget)}
+                size="sm"
+                variant={selectedProductTypes.length > 0 ? "outlined" : "contained"}
+                sx={{
+                  ...(selectedProductTypes.length > 0
+                    ? {
+                      backgroundColor: "#ffffff",
+                      boxShadow: "none",
+                      borderColor: "#089456",
+                      textTransform: "none",
+                      color: "#089456",
+                      px: 1.5,
+                      "&:hover": {
+                        backgroundColor: "#0894561A",
+                        borderColor: "#089456",
+                        boxShadow: "none",
+                      },
+                    }
+                    : {
+                      backgroundColor: "#0ab067",
+                      boxShadow: "none",
+                      textTransform: "none",
+                      color: "#ffffff",
+                      px: 1.5,
+                      "&:hover": {
+                        backgroundColor: "#089456",
+                        borderColor: "#089456",
+                        boxShadow: "none",
+                      },
+                    }),
+                }}
+              >
+                {selectedProductTypes.length > 0 ? (
+                  <span className="flex items-center gap-[5px]">
+                    {selectedProductTypes[0]?.typeName}
+                    {selectedProductTypes.length > 1 && (
+                      <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin">+{selectedProductTypes.length - 1}</span>
+                    )}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-[5px]">
+                    Dòng sản phẩm <FaAngleDown className="h-4 w-4" />
+                  </span>
+                )}
+              </Button>
+              <Menu
+                anchorEl={productTypeAnchorEl}
+                open={Boolean(productTypeAnchorEl)}
+                onClose={() => setProductTypeAnchorEl(null)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+              >
+                {productTypes.map((pt) => (
+                  <MenuItem key={pt.typeId}
+                    onClick={() => {
+                      const updated = selectedProductTypes.includes(pt)
+                        ? selectedProductTypes.filter(p => p !== pt)
+                        : [...selectedProductTypes, pt];
+                      setSelectedProductTypes(updated);
+                      setCurrentPage(0);
+                    }}
+                    sx={{ paddingLeft: "7px", minWidth: "150px" }}
+                  >
+                    <Checkbox color="success" size="small" checked={selectedProductTypes.some(p => p.typeId === pt.typeId)} />
+                    <ListItemText primary={pt.typeName} />
+                  </MenuItem>
+                ))}
+                {selectedProductTypes.length > 0 && (
+                  <div className="flex justify-end">
+                    <Button
+                      variant="text"
+                      size="medium"
+                      onClick={() => {
+                        setSelectedProductTypes([]);
+                        setCurrentPage(0);
+                      }}
+                      sx={{
+                        color: "#000000DE",
+                        "&:hover": {
+                          backgroundColor: "transparent",
+                          textDecoration: "underline",
+                        },
+                      }}
+                    >
+                      Xóa
+                    </Button>
+                  </div>
+                )}
+              </Menu>
+
+              {/* Search input */}
+              <div className="w-[250px]">
+                <TableSearch
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                  onSearch={handleSearch}
+                  placeholder="Tìm kiếm sản phẩm"
+                />
+              </div>
+            </div>
+          </div>
           <Table
             data={data}
             columnsConfig={columnsConfig}

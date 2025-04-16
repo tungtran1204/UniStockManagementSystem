@@ -19,6 +19,8 @@ import { useNavigate } from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
+import DateFilterButton from "@/components/DateFilterButton";
+import StatusFilterButton from "@/components/StatusFilterButton";
 // Nếu cần edit:
 // import ModalEditSaleOrder from "./ModalEditSaleOrder";
 
@@ -36,6 +38,62 @@ const SaleOrdersPage = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
+  //state for filter and search
+  const [selectedStatuses, setSelectedStatuses] = useState([]);
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [statusAnchorEl, setStatusAnchorEl] = useState(null);
+  const [allStatuses, setAllStatuses] = useState([]);
+
+  //list status for filter
+  const saleOrderStatuses = [
+    {
+      //value: "PROCESSING_NO_REQUEST",
+      label: "Chưa có yêu cầu",
+      className: "bg-gray-100 text-gray-800",
+    },
+    {
+      //value: "PROCESSING_PENDING_REQUEST",
+      label: "Đang chờ yêu cầu được duyệt",
+      className: "bg-blue-50 text-blue-800",
+    },
+    {
+      //value: "PROCESSING_REJECTED_REQUEST",
+      label: "Yêu cầu bị từ chối",
+      className: "bg-red-50 text-red-800",
+    },
+    {
+      //value: "PREPARING",
+      label: "Đang chuẩn bị",
+      className: "bg-yellow-100 text-amber-800",
+    },
+    {
+      //value: "PARTIALLY_ISSUED",
+      label: "Đã xuất một phần",
+      className: "bg-indigo-50 text-indigo-800",
+    },
+    {
+      //value: "COMPLETED",
+      label: "Hoàn thành",
+      className: "bg-green-50 text-green-800",
+    },
+    {
+      //value: "CANCELLED",
+      label: "Đã huỷ",
+      className: "bg-red-100 text-red-800",
+    },
+  ];
+
+  // Handle search
+  const handleSearch = () => {
+    // Reset to first page when searching
+    setCurrentPage(0);
+    fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
+  };
+
+  useEffect(() => {
+    setAllStatuses(saleOrderStatuses);
+  }, []);
 
   useEffect(() => {
     // Gọi API lấy danh sách khi thay đổi trang/pageSize
@@ -60,12 +118,22 @@ const SaleOrdersPage = () => {
 
   // Lọc danh sách
   const filteredOrders = saleOrders.filter(
-    (order) =>
-      (order.orderCode &&
-        order.orderCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (order.partnerName &&
-        order.partnerName.toLowerCase().includes(searchTerm.toLowerCase()))
+    (order) => {
+      const matchesSearch =
+        (order.orderCode &&
+          order.orderCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (order.partnerName &&
+          order.partnerName.toLowerCase().includes(searchTerm.toLowerCase()));
+  
+      // Nếu không chọn filter trạng thái thì luôn true
+      const matchesStatus =
+        selectedStatuses.length === 0 ||
+        selectedStatuses.includes(order.statusLabel || getStatusLabel(order.status));
+  
+      return matchesSearch && matchesStatus;
+    }
   );
+  
 
   const getStatusLabel = (status) => {
     switch (status) {
@@ -158,17 +226,38 @@ const SaleOrdersPage = () => {
               </Typography>
             </div>
 
-            {/* Search input */}
-            <TableSearch
-              value={searchTerm}
-              onChange={setSearchTerm}
-              onSearch={() => {
-                // Thêm hàm xử lý tìm kiếm vào đây nếu có
-                console.log("Tìm kiếm đơn hàng:", searchTerm);
-              }}
-              placeholder="Tìm kiếm đơn hàng"
-            />
+            <div className="mb-3 flex flex-wrap items-center gap-4">
 
+              {/* Filter by date */}
+              <DateFilterButton
+                startDate={startDate}
+                endDate={endDate}
+                setStartDate={setStartDate}
+                setEndDate={setEndDate}
+                setCurrentPage={setCurrentPage}
+              />
+
+              {/* Filter by status */}
+              <StatusFilterButton
+                anchorEl={statusAnchorEl}
+                setAnchorEl={setStatusAnchorEl}
+                selectedStatuses={selectedStatuses}
+                setSelectedStatuses={setSelectedStatuses}
+                allStatuses={allStatuses}
+                buttonLabel="Trạng thái"
+              />
+
+              {/* Search input */}
+              <div className="w-[250px]">
+                <TableSearch
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                  onSearch={handleSearch}
+                  placeholder="Tìm kiếm đơn hàng"
+                />
+              </div>
+
+            </div>
           </div>
 
           {/* Bảng đơn hàng */}

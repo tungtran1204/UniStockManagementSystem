@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
-import { Button, Card, CardHeader, CardBody, Typography, Tooltip } from "@material-tailwind/react";
-import { FaPlus, FaEye } from "react-icons/fa";
+import { Card, CardHeader, CardBody, Typography, Tooltip } from "@material-tailwind/react";
+import { FaPlus, FaEye, FaAngleDown } from "react-icons/fa";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import {
   IconButton,
-} from '@mui/material';
+  Menu as MuiMenu,
+  MenuItem,
+  Button,
+  Checkbox,
+  ListItemText,
+} from "@mui/material";
+
 import {
   VisibilityOutlined,
 } from '@mui/icons-material';
@@ -17,12 +23,7 @@ import useUser from "../../admin/users/useUser";
 import usePurchaseOrder from "../purchaseOrder/usePurchaseOrder";
 import useReceiptNote from "./useReceiptNote";
 import { getNextCode } from "./receiptNoteService";
-import {
-  Menu,
-  MenuHandler,
-  MenuList,
-  MenuItem
-} from "@material-tailwind/react";
+import DateFilterButton from "@/components/DateFilterButton";
 
 const ReceiptNotePage = () => {
   const [currentPage, setCurrentPage] = useState(0);
@@ -34,12 +35,26 @@ const ReceiptNotePage = () => {
   const [usernames, setUsernames] = useState({});
   const [purchaseOrders, setPurchaseOrders] = useState({});
 
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [categoryAnchorEl, setCategoryAnchorEl] = useState(null);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+
   const {
     receiptNotes,
     totalPages,
     totalElements,
     fetchPaginatedReceiptNotes
   } = useReceiptNote();
+
+  const categoryList = [
+    "Thành phẩm sản xuất",
+    "Hàng hoá gia công",
+    "Hàng hóa trả lại",
+    "Vật tư mua bán",
+    "Nhập kho vật tư thừa",
+    "Khác",
+  ];
 
   // Fetch data on component mount and when page or size changes
   useEffect(() => {
@@ -70,6 +85,7 @@ const ReceiptNotePage = () => {
     setCurrentPage(0);
     fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
   };
+
 
   const columnsConfig = [
     { field: 'receiptCode', headerName: 'Mã phiếu nhập', flex: 1.5, minWidth: 150, editable: false },
@@ -144,7 +160,20 @@ const ReceiptNotePage = () => {
     },
   ];
 
-  const data = receiptNotes.map((receipt) => ({
+  const filteredNotes = receiptNotes.filter((receipt) => {
+    const matchesSearch = receipt.grnCode?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const receiptDate = dayjs(receipt.receiptDate);
+    const matchesStart = startDate ? receiptDate.isSameOrAfter(dayjs(startDate), 'day') : true;
+    const matchesEnd = endDate ? receiptDate.isSameOrBefore(dayjs(endDate), 'day') : true;
+
+    const matchesCategory =
+      selectedCategories.length === 0 || selectedCategories.includes(receipt.category);
+
+    return matchesSearch && matchesStart && matchesEnd && matchesCategory;
+  });
+
+  const data = filteredNotes.map((receipt) => ({
     grnId: receipt.grnId,
     receiptCode: receipt.grnCode,
     category: receipt.category || 'không có dữ liệu',
@@ -173,50 +202,50 @@ const ReceiptNotePage = () => {
                 console.error("Không lấy được mã phiếu nhập:", error);
               }
             }}
-            // customButtons={
-            //   <Menu placement="bottom-end">
-            //     <MenuHandler>
-            //       <Button
-            //         size="sm"
-            //         color="white"
-            //         className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none hover:shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
-            //         variant="contained"
-            //         ripple={true}
-            //       >
-            //         <div className='flex items-center gap-2'>
-            //           <FaPlus className="h-4 w-4" />
-            //           <span>Thêm Phiếu Nhập</span>
-            //         </div>
-            //       </Button>
-            //     </MenuHandler>
-            //     <MenuList>
-            //       <MenuItem
-            //         className="hover:bg-green-900/10 rounded-[4px]"
-            //         onClick={() => navigate("/user/purchaseOrder")}
-            //       >
-            //         <span className="text-gray-700 hover:text-green-900">Vật tư mua bán</span>
-            //       </MenuItem>
-            //       <MenuItem
-            //         className="hover:bg-green-900/10 rounded-[4px]"
-            //         onClick={() => navigate("/user/receiptNote/general")}
-            //       >
-            //         <span className="text-gray-700 hover:text-green-900">Thành phẩm sản xuất</span>
-            //       </MenuItem>
-            //       <MenuItem
-            //         className="hover:bg-green-900/10 rounded-[4px]"
-            //         onClick={() => navigate("/user/issueNote")}
-            //       >
-            //         <span className="text-gray-700 hover:text-green-900">Hàng hóa gia công</span>
-            //       </MenuItem>
-            //       <MenuItem
-            //         className="hover:bg-green-900/10 rounded-[4px]"
-            //         onClick={() => navigate("/user/receiptNote/manual", { state: { category: "Hàng hóa trả lại" } })}
-            //       >
-            //         <span className="text-gray-700 hover:text-green-900">Hàng hóa trả lại</span>
-            //       </MenuItem>
-            //     </MenuList>
-            //   </Menu>
-            // }
+          // customButtons={
+          //   <Menu placement="bottom-end">
+          //     <MenuHandler>
+          //       <Button
+          //         size="sm"
+          //         color="white"
+          //         className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none hover:shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+          //         variant="contained"
+          //         ripple={true}
+          //       >
+          //         <div className='flex items-center gap-2'>
+          //           <FaPlus className="h-4 w-4" />
+          //           <span>Thêm Phiếu Nhập</span>
+          //         </div>
+          //       </Button>
+          //     </MenuHandler>
+          //     <MenuList>
+          //       <MenuItem
+          //         className="hover:bg-green-900/10 rounded-[4px]"
+          //         onClick={() => navigate("/user/purchaseOrder")}
+          //       >
+          //         <span className="text-gray-700 hover:text-green-900">Vật tư mua bán</span>
+          //       </MenuItem>
+          //       <MenuItem
+          //         className="hover:bg-green-900/10 rounded-[4px]"
+          //         onClick={() => navigate("/user/receiptNote/general")}
+          //       >
+          //         <span className="text-gray-700 hover:text-green-900">Thành phẩm sản xuất</span>
+          //       </MenuItem>
+          //       <MenuItem
+          //         className="hover:bg-green-900/10 rounded-[4px]"
+          //         onClick={() => navigate("/user/issueNote")}
+          //       >
+          //         <span className="text-gray-700 hover:text-green-900">Hàng hóa gia công</span>
+          //       </MenuItem>
+          //       <MenuItem
+          //         className="hover:bg-green-900/10 rounded-[4px]"
+          //         onClick={() => navigate("/user/receiptNote/manual", { state: { category: "Hàng hóa trả lại" } })}
+          //       >
+          //         <span className="text-gray-700 hover:text-green-900">Hàng hóa trả lại</span>
+          //       </MenuItem>
+          //     </MenuList>
+          //   </Menu>
+          // }
           />
           <div className="py-2 flex items-center justify-between gap-2">
             {/* Items per page */}
@@ -241,13 +270,119 @@ const ReceiptNotePage = () => {
               </Typography>
             </div>
 
-            {/* Search input */}
-            <TableSearch
-              value={searchTerm}
-              onChange={setSearchTerm}
-              onSearch={handleSearch}
-              placeholder="Tìm kiếm phiếu nhập"
-            />
+            <div className="mb-3 flex flex-wrap items-center gap-4">
+
+              {/* Filter by date */}
+              <DateFilterButton
+                startDate={startDate}
+                endDate={endDate}
+                setStartDate={setStartDate}
+                setEndDate={setEndDate}
+                setCurrentPage={setCurrentPage}
+              />
+
+              {/* Filter by category */}
+              <div>
+                <Button
+                  onClick={(e) => setCategoryAnchorEl(e.currentTarget)}
+                  size="sm"
+                  variant={selectedCategories.length > 0 ? "outlined" : "contained"}
+                  sx={{
+                    ...(selectedCategories.length > 0
+                      ? {
+                        backgroundColor: "#ffffff",
+                        boxShadow: "none",
+                        borderColor: "#089456",
+                        color: "#089456",
+                        px: 1.5,
+                        textTransform: "none",
+                      }
+                      : {
+                        backgroundColor: "#0ab067",
+                        color: "#ffffff",
+                        px: 1.5,
+                        textTransform: "none",
+                      }),
+                  }}
+                >
+                  {selectedCategories.length > 0 ? (
+                    <span className="flex items-center gap-[5px]">
+                      {selectedCategories[0]}
+                      {selectedCategories.length > 1 && (
+                        <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin">
+                          +{selectedCategories.length - 1}
+                        </span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-[5px]">
+                      Phân loại nhập
+                      <FaAngleDown className="h-4 w-4" />
+                    </span>
+                  )}
+                </Button>
+
+                <MuiMenu
+                  anchorEl={categoryAnchorEl}
+                  open={Boolean(categoryAnchorEl)}
+                  onClose={() => setCategoryAnchorEl(null)}
+                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                >
+                  {categoryList.map((category) => (
+                    <MenuItem
+                      key={category}
+                      onClick={() => {
+                        const isSelected = selectedCategories.includes(category);
+                        const updated = isSelected
+                          ? selectedCategories.filter((c) => c !== category)
+                          : [...selectedCategories, category];
+                        setSelectedCategories(updated);
+                      }}
+                      sx={{ paddingLeft: "7px", minWidth: "200px" }}
+                    >
+                      <Checkbox
+                        color="success"
+                        size="small"
+                        checked={selectedCategories.includes(category)}
+                      />
+                      <ListItemText primary={category} />
+                    </MenuItem>
+                  ))}
+                  {selectedCategories.length > 0 && (
+                    <div className="flex px-4 justify-end">
+                      <Button
+                        variant="text"
+                        size="medium"
+                        onClick={() => {
+                          setSelectedCategories([]);
+                          setCurrentPage(0);
+                        }}
+                        sx={{
+                          color: "#000000DE",
+                          "&:hover": {
+                            backgroundColor: "transparent",
+                            textDecoration: "underline",
+                          },
+                        }}
+                      >
+                        Xoá
+                      </Button>
+                    </div>
+                  )}
+                </MuiMenu>
+
+              </div>
+
+              {/* Search input */}
+              <div className="w-[250px]">
+                <TableSearch
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                  onSearch={handleSearch}
+                  placeholder="Tìm kiếm phiếu nhập"
+                />
+              </div>
+            </div>
           </div>
 
           <Table
