@@ -274,7 +274,6 @@ const PurchaseRequestPage = () => {
                             </Typography>
                         </div>
                         <div className="mb-3 flex flex-wrap items-center gap-4">
-
                             {/* Filter by date */}
                             <DateFilterButton
                                 startDate={startDate}
