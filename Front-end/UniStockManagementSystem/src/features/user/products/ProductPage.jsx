@@ -446,7 +446,7 @@ const ProductPage = () => {
                   value={searchTerm}
                   onChange={setSearchTerm}
                   onSearch={handleSearch}
-                  placeholder="Tìm kiếm phiếu nhập"
+                  placeholder="Tìm kiếm sản phẩm"
                 />
               </div>
             </div>
