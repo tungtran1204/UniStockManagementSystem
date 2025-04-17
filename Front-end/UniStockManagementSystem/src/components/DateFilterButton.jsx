@@ -64,7 +64,7 @@ const DateFilterButton = ({
           )
         ) : (
           <span className="flex items-center gap-[5px]">
-            Thời gian <FaAngleDown className="h-4 w-4" />
+            Khoảng thời gian <FaAngleDown className="h-4 w-4" />
           </span>
         )}
       </Button>

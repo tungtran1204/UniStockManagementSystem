@@ -19,7 +19,6 @@ import java.util.*;
 @RequiredArgsConstructor
 public class InventoryTransactionService {
         private final InventoryTransactionRepository transactionRepo;
-        private final InventoryRepository inventoryRepo;
         private final ProductsRepository productRepo;
         private final MaterialsRepository materialRepo;
         private final StockMovementReportMapper stockMovementReportMapper;
