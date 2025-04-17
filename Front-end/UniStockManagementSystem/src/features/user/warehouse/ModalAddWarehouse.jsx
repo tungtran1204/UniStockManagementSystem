@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -22,7 +22,6 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
   const [warehouseDescription, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});
-  const [warehouseCategories, setWarehouseCategories] = useState([]);
 
   // Danh sách phân loại kho có sẵn
   const categoryOptions = [
@@ -32,8 +31,11 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
     { value: "TL", label: "Hàng hóa trả lại" },
     { value: "NT", label: "Nhập kho vật tư thừa" }
   ];
-
-  const { addWarehouse } = useWarehouse();
+  const [warehouseCategories, setWarehouseCategories] = useState([]);
+  const [availableCategories, setAvailableCategories] = useState(categoryOptions);
+  const { addWarehouse, getUsedCategories, isWarehouseCodeTaken } = useWarehouse();
+  const [isAllCategoriesUsed, setIsAllCategoriesUsed] = useState(false);
+  const [isActive, setIsActive] = useState(true);
 
   const validateFields = (field, value) => {
     let errors = { ...error };
@@ -41,8 +43,8 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
     if (field === "warehouseCode") {
       if (!value.trim()) {
         errors.warehouseCode = "Mã kho không được để trống.";
-      } else if (!/^[A-Za-z0-9_-]{1,10}$/.test(value)) {
-        errors.warehouseCode = "Mã kho chỉ được chứa chữ, số, dấu '-' hoặc '_', từ 1 đến 10 ký tự.";
+      } else if (!/^[A-Za-z0-9_-]{1,50}$/.test(value)) {
+        errors.warehouseCode = "Mã kho chỉ chứa chữ, số, dấu '-' hoặc '_', không vượt quá 50 ký tự.";
       } else {
         delete errors.warehouseCode;
       }
@@ -52,15 +54,15 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
       if (!value.trim()) {
         errors.warehouseName = "Tên kho không được để trống.";
       } else if (value.length > 100) {
-        errors.warehouseName = "Tên kho không được vượt quá 100 ký tự.";
+        errors.warehouseName = "Tên kho không vượt quá 100 ký tự.";
       } else {
         delete errors.warehouseName;
       }
     }
 
     if (field === "warehouseDescription") {
-      if (value.length > 200) {
-        errors.warehouseDescription = "Mô tả không được vượt quá 200 ký tự.";
+      if (value.length > 255) {
+        errors.warehouseDescription = "Mô tả quá dài.";
       } else {
         delete errors.warehouseDescription;
       }
@@ -101,30 +103,47 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
     setLoading(true);
     try {
       // Lấy danh sách label thay vì value để lưu
-      const categoryLabels = warehouseCategories.map(cat => 
+      const categoryLabels = warehouseCategories.map(cat =>
         categoryOptions.find(opt => opt.value === cat)?.label
       );
-      
-      await addWarehouse({ 
-        warehouseCode, 
-        warehouseName, 
-        warehouseDescription, 
-        warehouseCategories: categoryLabels 
+      const goodCategory = categoryLabels.length > 0 ? categoryLabels.join(", ") : null;
+
+      await addWarehouse({
+        warehouseCode,
+        warehouseName,
+        warehouseDescription,
+        goodCategory,
+        isActive,
       });
       alert("Thêm kho thành công!");
       onAdd?.();
       onClose();
     } catch (error) {
-      console.error("Lỗi khi thêm kho:", error);
-      alert("Lỗi khi thêm kho!");
+      const message = error?.response?.data?.message || "Lỗi không xác định.";
+      alert("Lỗi khi thêm kho: " + message);
+      console.error("Chi tiết lỗi:", error);    
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    const fetchAndFilterCategories = async () => {
+      const usedLabels = await getUsedCategories();
+      const filtered = categoryOptions.filter(opt => !usedLabels.includes(opt.label));
+      setAvailableCategories(filtered);
+      setIsAllCategoriesUsed(filtered.length === 0);
+    };
+
+    if (show) {
+      fetchAndFilterCategories();
+    }
+  }, [show]);
+
+
   return (
-    <Dialog 
-      open={show} 
+    <Dialog
+      open={show}
       onClose={onClose}
       maxWidth="md"
       fullWidth
@@ -134,17 +153,17 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
         <Typography variant="h5" component="div">
           Thêm kho
         </Typography>
-        <IconButton 
-          edge="end" 
-          color="inherit" 
-          onClick={onClose} 
+        <IconButton
+          edge="end"
+          color="inherit"
+          onClick={onClose}
           aria-label="close"
         >
           <CloseIcon />
         </IconButton>
       </DialogTitle>
       <Divider />
-      
+
       {/* Body của Dialog */}
       <DialogContent sx={{ py: 3 }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
@@ -159,10 +178,27 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
               placeholder="Mã kho"
               color="success"
               value={warehouseCode}
-              onChange={(e) => {
-                setWarehouseCode(e.target.value);
-                validateFields("warehouseCode", e.target.value);
+              onChange={async (e) => {
+                const uppercased = e.target.value.toUpperCase();
+                setWarehouseCode(uppercased);
+                validateFields("warehouseCode", uppercased);
+
+                if (uppercased && /^[A-Za-z0-9_-]{1,50}$/.test(uppercased)) {
+                  const exists = await isWarehouseCodeTaken(uppercased);
+                  if (exists) {
+                    setError(prev => ({
+                      ...prev,
+                      warehouseCode: "Mã kho đã tồn tại trong hệ thống."
+                    }));
+                  } else {
+                    setError(prev => {
+                      const { warehouseCode, ...rest } = prev;
+                      return rest;
+                    });
+                  }
+                }
               }}
+
               error={!!error.warehouseCode}
               helperText={error.warehouseCode}
             />
@@ -187,55 +223,61 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
             />
           </Box>
         </Box>
-        
+
         <Box sx={{ mb: 2 }}>
           <Typography variant="body1" sx={{ mb: 1 }}>
             Phân loại kho
             <span style={{ color: '#f44336' }}> *</span>
           </Typography>
-          <Autocomplete
-            multiple
-            options={categoryOptions}
-            getOptionLabel={(option) => option.label}
-            value={categoryOptions.filter(option => warehouseCategories.includes(option.value))}
-            onChange={(event, selectedOptions) => {
-              const values = selectedOptions.map(option => option.value);
-              setWarehouseCategories(values);
-              if (values.length > 0) {
-                const newErrors = { ...error };
-                delete newErrors.warehouseCategories;
-                setError(newErrors);
-              }
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                fullWidth
-                size="small"
-                color="success"
-                placeholder="Chọn phân loại kho"
-                error={!!error.warehouseCategories}
-                helperText={error.warehouseCategories}
-              />
-            )}
-            renderTags={(selected, getTagProps) =>
-              selected.map((option, index) => (
-                <Chip
-                  {...getTagProps({ index })}
-                  key={option.value}
-                  label={option.label}
-                  color="success"
-                  variant="outlined"
+          {isAllCategoriesUsed ? (
+            <Typography sx={{ fontStyle: "italic", color: "gray", mt: 1 }}>
+              Tất cả phân loại kho đã được gán. Không còn phân loại nào để chọn.
+            </Typography>
+          ) : (
+            <Autocomplete
+              multiple
+              options={availableCategories}
+              getOptionLabel={(option) => option.label}
+              value={categoryOptions.filter(option => warehouseCategories.includes(option.value))}
+              onChange={(event, selectedOptions) => {
+                const values = selectedOptions.map(option => option.value);
+                setWarehouseCategories(values);
+                if (values.length > 0) {
+                  const newErrors = { ...error };
+                  delete newErrors.warehouseCategories;
+                  setError(newErrors);
+                }
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  fullWidth
                   size="small"
+                  color="success"
+                  placeholder="Chọn phân loại kho"
+                  error={!!error.warehouseCategories}
+                  helperText={error.warehouseCategories}
                 />
-              ))
-            }
-            slotProps={{
-              popper: {
-                sx: { zIndex: 9999 }, // Cố định z-index trong Popper
-              },
-            }}
-          />
+              )}
+              renderTags={(selected, getTagProps) =>
+                selected.map((option, index) => (
+                  <Chip
+                    {...getTagProps({ index })}
+                    key={option.value}
+                    label={option.label}
+                    color="success"
+                    variant="outlined"
+                    size="small"
+                  />
+                ))
+              }
+              slotProps={{
+                popper: {
+                  sx: { zIndex: 9999 }, // Cố định z-index trong Popper
+                },
+              }}
+            />
+          )}
         </Box>
 
         <Box>
@@ -258,6 +300,29 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
             helperText={error.warehouseDescription}
           />
         </Box>
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="body1" sx={{ mb: 1 }}>
+            Trạng thái kho
+            <span style={{ color: '#f44336' }}> *</span>
+          </Typography>
+          <TextField
+            select
+            fullWidth
+            size="small"
+            color="success"
+            value={isActive ? "active" : "inactive"}
+            onChange={(e) => {
+              setIsActive(e.target.value === "active");
+            }}
+            SelectProps={{
+              native: true,
+            }}
+          >
+            <option value="active">Hoạt động</option>
+            <option value="inactive">Không hoạt động</option>
+          </TextField>
+        </Box>
+
       </DialogContent>
 
       {/* Footer của Dialog */}
@@ -271,8 +336,8 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
         </Button>
         <Button
           variant="contained"
-          sx={{ 
-            bgcolor: '#0ab067', 
+          sx={{
+            bgcolor: '#0ab067',
             '&:hover': { bgcolor: '#089456' },
             ml: 1
           }}

@@ -68,4 +68,21 @@ public class WarehouseController {
         return ResponseEntity.ok(updatedWarehouse);
     }
 
+    @GetMapping("/used-categories")
+    public ResponseEntity<List<String>> getUsedWarehouseCategories() {
+        List<String> usedCategories = warehouseService.getUsedWarehouseCategories();
+        return ResponseEntity.ok(usedCategories);
+    }
+
+    @GetMapping("/check-warehouse-code/{warehouseCode}")
+    public ResponseEntity<Map<String, Boolean>> checkWarehouseCode(
+            @PathVariable String warehouseCode,
+            @RequestParam(required = false) Long excludeId
+    ) {
+        boolean exists = warehouseService.isWarehouseCodeExists(warehouseCode, excludeId);
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("exists", exists);
+        return ResponseEntity.ok(response);
+    }
+
 }

@@ -8,7 +8,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import vn.unistock.unistockmanagementsystem.entities.Warehouse;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -19,10 +21,13 @@ public class WarehouseService {
     private final WarehouseMapper warehouseMapper;
 
     public Warehouse addWarehouse(WarehouseDTO warehouseDTO) {
-        Warehouse warehouse =  new Warehouse();
         if (warehouseRepository.existsByWarehouseName(warehouseDTO.getWarehouseName()))
-            throw new RuntimeException("Kho đã tồn tại");
-        warehouse = warehouseMapper.toEntity(warehouseDTO);
+            throw new RuntimeException("Tên kho đã tồn tại");
+
+        if (warehouseRepository.existsByWarehouseCode(warehouseDTO.getWarehouseCode()))
+            throw new RuntimeException("Mã kho đã tồn tại");
+
+        Warehouse warehouse = warehouseMapper.toEntity(warehouseDTO);
         return warehouseRepository.save(warehouse);
     }
 
@@ -55,4 +60,20 @@ public class WarehouseService {
         return  warehouseRepository.save(warehouse);
     }
 
+    public List<String> getUsedWarehouseCategories() {
+        List<Warehouse> warehouses = warehouseRepository.findAll();
+        return warehouses.stream()
+                .map(Warehouse::getGoodCategory)
+                .filter(Objects::nonNull)
+                .flatMap(cat -> Arrays.stream(cat.split(",\\s*")))
+                .distinct()
+                .toList();
+    }
+
+    public boolean isWarehouseCodeExists(String warehouseCode, Long excludeId) {
+        if (excludeId != null) {
+            return warehouseRepository.existsByWarehouseCodeAndWarehouseIdNot(warehouseCode, excludeId);
+        }
+        return warehouseRepository.existsByWarehouseCode(warehouseCode);
+    }
 }
