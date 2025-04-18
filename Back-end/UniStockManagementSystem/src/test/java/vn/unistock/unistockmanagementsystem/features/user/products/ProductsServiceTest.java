@@ -36,8 +36,6 @@ import vn.unistock.unistockmanagementsystem.entities.ProductMaterial;
 import vn.unistock.unistockmanagementsystem.entities.ProductType;
 import vn.unistock.unistockmanagementsystem.entities.Unit;
 import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
-import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsDTO;
-import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.productTypes.ProductTypeRepository;
 import vn.unistock.unistockmanagementsystem.features.user.units.UnitRepository;
 import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;

@@ -269,8 +269,8 @@ const MaterialPage = () => {
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
                 <CardBody className="pb-2 bg-white rounded-xl">
                     <PageHeader
-                        title="Danh sách nguyên vật liệu"
-                        addButtonLabel="Thêm nguyên vật liệu"
+                        title="Danh sách vật tư"
+                        addButtonLabel="Thêm vật tư"
                         onAdd={() => navigate("/user/materials/add")}
                         onImport={() => setShowImportPopup(true)}
                         onExport={handleExport}

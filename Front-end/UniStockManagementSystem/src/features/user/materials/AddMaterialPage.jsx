@@ -76,7 +76,8 @@ const AddMaterialPage = () => {
                 ]);
 
                 setUnits(unitsData);
-                setMaterialCategories(categoriesData);
+                setMaterialCategories(categoriesData.content || []);
+
 
                 // Map lại dữ liệu suppliers theo định dạng mới
                 // ✅ Map suppliers đúng định dạng (lọc theo partnerType và partnerCode)
@@ -398,7 +399,7 @@ const AddMaterialPage = () => {
                                     onFileSelect={(file) => {
                                         const imageUrl = URL.createObjectURL(file);
                                         setPreviewImage(imageUrl);
-                                        setEditedMaterial((prev) => ({
+                                        setNewMaterial((prev) => ({
                                             ...prev,
                                             image: file,
                                         }));

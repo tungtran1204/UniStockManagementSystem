@@ -71,7 +71,6 @@ public class SaleOrdersController {
             @PathVariable Long orderId,
             @RequestBody PrepareMaterialForSaleOrderDTO request
     ) {
-        System.out.println("🔍 [DEBUG] Nhận request chuẩn bị vật tư cho đơn hàng: " + orderId);
         request.setSaleOrderId(orderId); // Gán thủ công nếu cần xử lý bên trong service
         saleOrdersService.setPreparingMaterialStatus(request);
         return ResponseEntity.ok("Đơn hàng đã chuyển sang trạng thái 'Đang chuẩn bị vật tư'.");

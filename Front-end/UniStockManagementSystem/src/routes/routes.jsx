@@ -210,7 +210,7 @@ export const routes = [
         subPages: [
           {
             icon: <Bars3BottomRightIcon {...icon} />,
-            name: "Nguyên vật liệu",
+            name: "Vật tư",
             path: "/user/materials",
             element: <MaterialPage />,
             roles: ["USER"],
