@@ -85,3 +85,29 @@ export const getWarehouseList = async () => {
     throw error;
   }
 };
+
+export const fetchUsedWarehouseCategories = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/used-categories`, {
+      headers: authHeader()
+    });
+    return response.data; // trả về mảng string: ["Thành phẩm sản xuất", "Hàng hóa trả lại", ...]
+  } catch (error) {
+    console.error("Lỗi khi lấy phân loại kho đã sử dụng:", error);
+    throw error;
+  }
+};
+
+export const checkWarehouseCode = async (warehouseCode, excludeId = null) => {
+  try {
+    const params = excludeId ? `?excludeId=${excludeId}` : "";
+    const response = await axios.get(
+      `http://localhost:8080/api/unistock/user/warehouses/check-warehouse-code/${warehouseCode}${params}`,
+      { headers: authHeader() }
+    );
+    return response.data.exists;
+  } catch (error) {
+    console.error("Lỗi kiểm tra mã kho:", error);
+    return false;
+  }
+};

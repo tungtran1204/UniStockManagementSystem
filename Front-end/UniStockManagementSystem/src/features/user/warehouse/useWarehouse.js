@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchWarehouses, updateWarehouseStatus, createWarehouse, updateWarehouse } from "./warehouseService";
+import { fetchWarehouses, updateWarehouseStatus, createWarehouse, updateWarehouse, fetchUsedWarehouseCategories, checkWarehouseCode } from "./warehouseService";
 console.log("createWarehouse:", createWarehouse); 
 
 const useWarehouse = () => {
@@ -70,6 +70,20 @@ const useWarehouse = () => {
     }
   };
 
+  const getUsedCategories = async () => {
+    try {
+      const result = await fetchUsedWarehouseCategories();
+      return result;
+    } catch (error) {
+      console.error("Error fetching used categories:", error);
+      return [];
+    }
+  };
+
+  const isWarehouseCodeTaken = async (code, excludeId = null) => {
+    return await checkWarehouseCode(code, excludeId);
+  };
+
   return {
     warehouses,
     fetchPaginatedWarehouses,
@@ -79,6 +93,8 @@ const useWarehouse = () => {
     addWarehouse,
     editWarehouse,
     fetchListWarehouses,
+    getUsedCategories,
+    isWarehouseCodeTaken
   };
 };
 

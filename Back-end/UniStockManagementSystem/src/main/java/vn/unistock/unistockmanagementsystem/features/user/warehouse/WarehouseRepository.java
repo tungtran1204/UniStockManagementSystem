@@ -13,6 +13,8 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
     boolean existsByWarehouseName(String warehouseName);
     Page<Warehouse> findAll(Pageable pageable);
     List<Warehouse> findAllByIsActive(Boolean isActive);
+    boolean existsByWarehouseCode(String warehouseCode);
+    boolean existsByWarehouseCodeAndWarehouseIdNot(String warehouseCode, Long warehouseId);
 
     Warehouse findByWarehouseName(String warehouseName);
     Warehouse findByWarehouseId(Long warehouseId);
