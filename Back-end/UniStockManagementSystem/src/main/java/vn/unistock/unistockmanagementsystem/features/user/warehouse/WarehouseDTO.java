@@ -2,7 +2,7 @@ package vn.unistock.unistockmanagementsystem.features.user.warehouse;
 
 import jakarta.persistence.Column;
 import lombok.*;
-import vn.unistock.unistockmanagementsystem.validation.CommonStatus;
+
 
 @Getter
 @Setter
@@ -15,4 +15,5 @@ public class WarehouseDTO {
     private String warehouseName;
     private String warehouseDescription;
     private Boolean isActive;
+    private String goodCategory;
 }

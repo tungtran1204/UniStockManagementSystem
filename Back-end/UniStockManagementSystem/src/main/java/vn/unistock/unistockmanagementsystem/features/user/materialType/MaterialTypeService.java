@@ -2,64 +2,73 @@ package vn.unistock.unistockmanagementsystem.features.user.materialType;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import vn.unistock.unistockmanagementsystem.entities.MaterialType;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class MaterialTypeService {
     private final MaterialTypeRepository materialTypeRepository;
+    private final MaterialTypeMapper materialTypeMapper;
 
-    public Page<MaterialType> getAllMaterialTypes(Pageable pageable) {
-        return materialTypeRepository.findAll(pageable);
+    public Page<MaterialTypeDTO> getAllMaterialTypes(Pageable pageable) {
+        return materialTypeRepository.findAll(pageable).map(materialTypeMapper::toDTO);
     }
 
-    public MaterialType getMaterialTypeById(Long id) {
-        return materialTypeRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy loại nguyên liệu với ID: " + id));
+    public List<MaterialTypeDTO> getActiveMaterialTypes() {
+        return materialTypeRepository.findAllByStatusTrue().stream()
+                .map(materialTypeMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
-    public MaterialType createMaterialType(MaterialType materialType, String createdBy) {
-        materialTypeRepository.findByName(materialType.getName())
-                .ifPresent(existingType -> {
-                    throw new RuntimeException("Tên loại nguyên liệu '" + materialType.getName() + "' đã tồn tại!");
-                });
-
-        materialType.setCreatedBy("Admin"); // Gán trực tiếp "Admin", không cần parse
-        materialType.setCreatedAt(LocalDateTime.now());
-        materialType.setStatus(true);
-        return materialTypeRepository.save(materialType);
+    public MaterialTypeDTO getMaterialTypeById(Long id) {
+        MaterialType materialType = materialTypeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Không tìm thấy danh mục vật tư"));
+        return materialTypeMapper.toDTO(materialType);
     }
 
     @Transactional
-    public MaterialType updateMaterialType(Long id, MaterialType materialType) {
-        MaterialType existingMaterialType = materialTypeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy loại nguyên liệu"));
+    public MaterialTypeDTO createMaterialType(MaterialTypeDTO dto, String createdBy) {
+        MaterialType materialType = materialTypeMapper.toEntity(dto);
+        materialType.setCreatedBy(createdBy);
+        materialType.setCreatedAt(LocalDateTime.now());
+        materialType.setStatus(true);
 
-        existingMaterialType.setName(materialType.getName());
-        existingMaterialType.setDescription(materialType.getDescription());
-        existingMaterialType.setStatus(materialType.isStatus());
-        existingMaterialType.setUpdatedAt(LocalDateTime.now());
-
-        return materialTypeRepository.save(existingMaterialType);
+        MaterialType saved = materialTypeRepository.save(materialType);
+        return materialTypeMapper.toDTO(saved);
     }
 
-    public MaterialType toggleStatus(Long id, Boolean newStatus) {
+    @Transactional
+    public MaterialTypeDTO updateMaterialType(Long id, MaterialTypeDTO dto) {
         MaterialType materialType = materialTypeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy loại nguyên liệu"));
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Không tìm thấy danh mục vật tư"));
 
-        materialType.setStatus(newStatus); // Đổi từ setUsing thành setStatus
-        return materialTypeRepository.save(materialType);
+        materialType.setName(dto.getName());
+        materialType.setDescription(dto.getDescription());
+        materialType.setUpdatedAt(LocalDateTime.now());
+        materialType.setUpdatedBy("Admin");
+
+        MaterialType saved = materialTypeRepository.save(materialType);
+        return materialTypeMapper.toDTO(saved);
     }
 
-    public List<MaterialType> getActiveMaterialTypes() {
-        return materialTypeRepository.findAllByStatusTrue(); // Đổi từ findAllByUsingTrue
+    @Transactional
+    public MaterialTypeDTO toggleStatus(Long id, boolean status) {
+        MaterialType materialType = materialTypeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Không tìm thấy danh mục vật tư"));
+
+        materialType.setStatus(status);
+        MaterialType saved = materialTypeRepository.save(materialType);
+        return materialTypeMapper.toDTO(saved);
     }
 }

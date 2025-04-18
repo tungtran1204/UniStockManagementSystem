@@ -8,7 +8,6 @@ import vn.unistock.unistockmanagementsystem.entities.Product;
 import vn.unistock.unistockmanagementsystem.entities.ProductMaterial;
 import vn.unistock.unistockmanagementsystem.entities.ProductType;
 import vn.unistock.unistockmanagementsystem.entities.Unit;
-import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsDTO;
 
 import java.util.List;
 import java.util.stream.Collectors;

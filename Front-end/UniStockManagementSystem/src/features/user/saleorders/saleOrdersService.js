@@ -123,7 +123,7 @@ export const getTotalQuantityOfProduct = async (productId) => {
 export const getProductMaterialsByProduct = async (productId) => {
   try {
     const response = await axios.get(
-      `${import.meta.env.VITE_API_URL}/user/product-materials/${productId}?page=0&size=100`,
+      `${import.meta.env.VITE_API_URL}/user/products/product-materials/${productId}?page=0&size=100`,
       { headers: authHeader() }
     );
     // Giả định BE trả về dữ liệu ở response.data.content

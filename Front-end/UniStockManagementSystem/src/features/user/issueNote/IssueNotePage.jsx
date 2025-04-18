@@ -85,8 +85,8 @@ const IssueNotePage = () => {
     category: note.category || "N/A",
     description: note.description || "Không có ghi chú",
     issueDate: note.issueDate,
-    createdByUserName: note.createdByUserName || "Đang tải...",
-    soId: note.soId,
+    createdByUserName: note.createdByUserName ,
+    soId: note.soId, 
     soCode: note.soCode || "Không có"
   }));
 

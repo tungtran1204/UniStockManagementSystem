@@ -26,6 +26,8 @@ import Table from "@/components/Table";
 import SuccessAlert from "@/components/SuccessAlert";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { getPurchaseRequestById } from "./PurchaseRequestService";
+import DateFilterButton from "@/components/DateFilterButton";
+import StatusFilterButton from "@/components/StatusFilterButton";
 
 const PurchaseRequestPage = () => {
     const {
@@ -47,6 +49,13 @@ const PurchaseRequestPage = () => {
     const [pageSize, setPageSize] = useState(10);
     const { createOrdersFromRequest } = usePurchaseOrder();
 
+    //state for filter and search const [selectedStatuses, setSelectedStatuses] = useState([]);
+    const [selectedStatuses, setSelectedStatuses] = useState([]);
+    const [startDate, setStartDate] = useState(null);
+    const [endDate, setEndDate] = useState(null);
+    const [statusAnchorEl, setStatusAnchorEl] = useState(null);
+    const [allStatuses, setAllStatuses] = useState([]);
+
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -62,6 +71,55 @@ const PurchaseRequestPage = () => {
     useEffect(() => {
         fetchPurchaseRequests(currentPage, pageSize, searchTerm);
     }, [currentPage, pageSize, searchTerm]);
+
+    useEffect(() => {
+        setAllStatuses(purchaseRequestStatus);
+    }, []);
+
+    //list status for filter 
+    const purchaseRequestStatus = [
+        {
+            value: "PENDING",
+            label: "Chờ xác nhận",
+            className: "bg-blue-50 text-blue-800",
+        },
+        {
+            value: "CONFIRMED",
+            label: "Xác nhận",
+            className: "bg-green-50 text-green-800",
+        },
+        {
+            value: "CANCELLED",
+            label: "Đã hủy",
+            className: "bg-gray-100 text-gray-800",
+        },
+        {
+            value: "REJECTED",
+            label: "Bị từ chối",
+            className: "bg-red-50 text-red-800",
+        },
+        {
+            value: "PURCHASED",
+            label: "Đã tạo đơn mua",
+            className: "bg-indigo-50 text-indigo-800",
+        },
+    ];
+
+    const filteredRequests = purchaseRequests.filter((request) => {
+        const matchesStatus =
+            selectedStatuses.length === 0 ||
+            selectedStatuses.includes(request.status);
+
+        const matchesSearch =
+            request.purchaseRequestCode?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        return matchesStatus && matchesSearch;
+    });
+
+    const getStatusLabel = (statusCode) => {
+        const found = purchaseRequestStatus.find(s => s.value === statusCode);
+        return found ? found.label : statusCode;
+    };
 
     const handlePageChange = (selectedItem) => {
         setCurrentPage(selectedItem.selected);
@@ -212,7 +270,7 @@ const PurchaseRequestPage = () => {
         purchaseRequestCode: request.purchaseRequestCode,
         purchaseOrderCode: request.saleOrderCode || "Chưa có",
         createdDate: request.createdDate,
-        status: request.status,
+        status: getStatusLabel(request.status),
         rejectionReason: request.rejectionReason,
     }));
 
@@ -250,12 +308,37 @@ const PurchaseRequestPage = () => {
                                 bản ghi mỗi trang
                             </Typography>
                         </div>
-                        <TableSearch
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            onSearch={handleSearch}
-                            placeholder="Tìm kiếm theo mã đơn hàng hoặc đối tác"
-                        />
+                        <div className="mb-3 flex flex-wrap items-center gap-4">
+                            {/* Filter by date */}
+                            <DateFilterButton
+                                startDate={startDate}
+                                endDate={endDate}
+                                setStartDate={setStartDate}
+                                setEndDate={setEndDate}
+                                setCurrentPage={setCurrentPage}
+                            />
+
+                            {/* Filter by status */}
+                            <StatusFilterButton
+                                anchorEl={statusAnchorEl}
+                                setAnchorEl={setStatusAnchorEl}
+                                selectedStatuses={selectedStatuses}
+                                setSelectedStatuses={setSelectedStatuses}
+                                allStatuses={allStatuses}
+                                buttonLabel="Trạng thái"
+                            />
+
+                            {/* Search input */}
+                            <div className="w-[250px]">
+                                <TableSearch
+                                    value={searchTerm}
+                                    onChange={setSearchTerm}
+                                    onSearch={handleSearch}
+                                    placeholder="Tìm kiếm yêu cầu mua vật tư..."
+                                />
+                            </div>
+
+                        </div>
                     </div>
 
                     <Table

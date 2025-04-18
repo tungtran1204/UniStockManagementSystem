@@ -661,7 +661,7 @@ const InventoryReportPage = () => {
                                 </span>
                             ) : (
                                 <span className="flex items-center gap-[5px]">
-                                    Loại vật tư <FaAngleDown className="h-4 w-4" />
+                                    Danh mục vật tư <FaAngleDown className="h-4 w-4" />
                                 </span>
                             )}
                         </Button>

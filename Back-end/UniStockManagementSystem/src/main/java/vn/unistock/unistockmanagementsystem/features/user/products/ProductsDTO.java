@@ -2,7 +2,6 @@ package vn.unistock.unistockmanagementsystem.features.user.products;
 
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
-import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsDTO;
 
 import java.time.LocalDateTime;
 import java.util.List;

@@ -1,35 +1,23 @@
 package vn.unistock.unistockmanagementsystem.features.user.purchaseRequests;
 
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import vn.unistock.unistockmanagementsystem.entities.PurchaseRequest;
-import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersDTO;
-
-import java.time.LocalDateTime;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/unistock/user/purchase-requests")
 @RequiredArgsConstructor
 public class PurchaseRequestController {
-
-    private static final Logger logger = LoggerFactory.getLogger(PurchaseRequestController.class);
-
     private final PurchaseRequestService purchaseRequestService;
 
     @GetMapping
     public ResponseEntity<Page<PurchaseRequestDTO>> getAllPurchaseRequests(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        logger.info("Fetching purchase requests - Page: {}, Size: {}", page, size);
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<PurchaseRequestDTO> requests = purchaseRequestService.getAllPurchaseRequests(pageable);
         return ResponseEntity.ok(requests);
@@ -38,22 +26,18 @@ public class PurchaseRequestController {
 
     @GetMapping("/next-code")
     public ResponseEntity<String> getNextRequestCode() {
-        logger.info("Fetching next request code");
         String nextCode = purchaseRequestService.getNextRequestCode();
-        logger.info("Next request code generated: {}", nextCode);
         return ResponseEntity.ok(nextCode);
     }
 
     @GetMapping("/{purchaseRequestId}")
     public ResponseEntity<PurchaseRequestDTO> getPurchaseRequestById(@PathVariable Long purchaseRequestId) {
-        logger.info("Fetching purchase request by ID: {}", purchaseRequestId);
         PurchaseRequestDTO request = purchaseRequestService.getPurchaseRequestById(purchaseRequestId);
         return ResponseEntity.ok(request);
     }
 
     @PostMapping("/manual")
     public ResponseEntity<PurchaseRequestDTO> createManualPurchaseRequest(@RequestBody PurchaseRequestDTO dto) {
-        logger.info("Creating manual purchase request: {}", dto);
         PurchaseRequestDTO response = purchaseRequestService.createManualPurchaseRequest(dto);
         return ResponseEntity.ok(response);
     }
@@ -61,7 +45,7 @@ public class PurchaseRequestController {
     @PutMapping("/{purchaseRequestId}/status")
     public ResponseEntity<PurchaseRequestDTO> updateStatus(
             @PathVariable Long purchaseRequestId,
-            @RequestBody UpdateStatusRequest request) {
+            @RequestBody UpdateStatusRequestDTO request) {
         PurchaseRequestDTO updatedRequest =
                 purchaseRequestService.updatePurchaseRequestStatus(purchaseRequestId, request.getStatus(), request.getRejectionReason());
         return ResponseEntity.ok(updatedRequest);

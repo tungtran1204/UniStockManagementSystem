@@ -16,16 +16,16 @@ import TableSearch from '@/components/TableSearch';
 import SuccessAlert from "@/components/SuccessAlert";
 import {
   Card,
-  CardHeader,
   CardBody,
   Typography,
   Tooltip,
 } from "@material-tailwind/react";
 import usePurchaseOrder from "./usePurchaseOrder";
-import useReceiptNote from "../receiptNote/useReceiptNote";
+import useReceiptNote from "../receiptNote/useReceiptNote"
 import { getNextCode } from "../receiptNote/receiptNoteService";
 import { getSaleOrderByPurchaseOrderId } from "./purchaseOrderService";
-
+import DateFilterButton from "@/components/DateFilterButton";
+import StatusFilterButton from "@/components/StatusFilterButton";
 
 const PurchaseOrderPage = () => {
   const navigate = useNavigate();
@@ -42,6 +42,14 @@ const PurchaseOrderPage = () => {
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
+
+  //state for filter and search 
+  const [selectedStatuses, setSelectedStatuses] = useState([]);
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [statusAnchorEl, setStatusAnchorEl] = useState(null);
+  const [allStatuses, setAllStatuses] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const {
     purchaseOrders,
@@ -118,10 +126,17 @@ const PurchaseOrderPage = () => {
 
   // Filter orders client-side
   const filteredOrders = purchaseOrders
-    .filter((order) =>
-      Object.values(order).some((value) =>
+    .filter((order) => {
+      const matchesSearch = Object.values(order).some((value) =>
         value && value.toString().toLowerCase().includes(searchKeyword.toLowerCase())
-      ) && (selectedStatus ? order.status === selectedStatus : true)
+      );
+    
+      const matchesStatus =
+        selectedStatuses.length === 0 || selectedStatuses.includes(order.status);
+    
+      return matchesSearch && matchesStatus;
+    }
+    
     )
     .sort((a, b) => {
       if (!sortColumn) return 0;
@@ -142,15 +157,39 @@ const PurchaseOrderPage = () => {
       }
     });
 
+  const purchaseOrderStatus = [
+    {
+      value: "PENDING",
+      label: "Chờ nhận",
+      className: "bg-yellow-100 text-yellow-800",
+    },
+    {
+      value: "IN_PROGRESS",
+      label: "Đã nhập một phần",
+      className: "bg-blue-50 text-blue-800",
+    },
+    {
+      value: "COMPLETED",
+      label: "Hoàn thành",
+      className: "bg-green-50 text-green-800",
+    },
+    {
+      value: "CANCELED",
+      label: "Hủy",
+      className: "bg-gray-100 text-gray-800",
+    },
+  ];
+
+  useEffect(() => {
+    setAllStatuses(purchaseOrderStatus);
+  }, []);
+
   const getStatusLabel = (statusCode) => {
-    const statusMap = {
-      PENDING: "Chờ nhận",
-      IN_PROGRESS: "Đã nhập một phần",
-      COMPLETED: "Hoàn thành",
-      CANCELED: "Hủy",
-    };
-    return statusMap[statusCode] || "Không xác định";
+    const status = purchaseOrderStatus.find(s => s.value === statusCode);
+    return status ? status.label : statusCode;
   };
+
+
 
   const getStatusClass = (statusCode) => {
     switch (statusCode) {
@@ -166,7 +205,6 @@ const PurchaseOrderPage = () => {
         return "bg-gray-50 text-gray-800";
     }
   };
-
 
   const handlePageChange = (selectedItem) => {
     setCurrentPage(selectedItem.selected);
@@ -199,6 +237,11 @@ const PurchaseOrderPage = () => {
 
   const [receiptCode, setReceiptCode] = useState("");
   const navigator = useNavigate();
+
+  const handleSearch = () => {
+    fetchPurchaseRequests(0, pageSize, searchTerm);
+    setCurrentPage(0);
+};
 
   useEffect(() => {
     // Check if location.state exists and has nextCode
@@ -328,16 +371,37 @@ const PurchaseOrderPage = () => {
               </Typography>
             </div>
 
-            {/* Search bar */}
-            <TableSearch
-              value={searchKeyword}
-              onChange={setSearchKeyword}
-              onSearch={() => {
-                console.log("Tìm kiếm đơn mua:", searchKeyword);
-                // Could call an API search here if server-side search is preferred
-              }}
-              placeholder="Tìm kiếm đơn mua"
-            />
+            <div className="mb-3 flex flex-wrap items-center gap-4">
+              {/* Filter by date */}
+              <DateFilterButton
+                startDate={startDate}
+                endDate={endDate}
+                setStartDate={setStartDate}
+                setEndDate={setEndDate}
+                setCurrentPage={setCurrentPage}
+              />
+
+              {/* Filter by status */}
+              <StatusFilterButton
+                anchorEl={statusAnchorEl}
+                setAnchorEl={setStatusAnchorEl}
+                selectedStatuses={selectedStatuses}
+                setSelectedStatuses={setSelectedStatuses}
+                allStatuses={allStatuses}
+                buttonLabel="Trạng thái"
+              />
+
+              {/* Search input */}
+              <div className="w-[250px]">
+                <TableSearch
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                  onSearch={handleSearch}
+                  placeholder="Tìm kiếm đơn mua..."
+                />
+              </div>
+
+            </div>
           </div>
 
           {/* Data table */}

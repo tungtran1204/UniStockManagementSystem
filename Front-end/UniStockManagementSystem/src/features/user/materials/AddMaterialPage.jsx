@@ -48,7 +48,8 @@ const AddMaterialPage = () => {
                 ]);
 
                 setUnits(unitsData);
-                setMaterialCategories(categoriesData);
+                setMaterialCategories(categoriesData.content || []);
+
 
                 // Map lại dữ liệu suppliers theo định dạng mới
                 // ✅ Map suppliers đúng định dạng (lọc theo partnerType và partnerCode)

@@ -20,6 +20,8 @@ import { useNavigate } from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
+import DateFilterButton from "@/components/DateFilterButton";
+import StatusFilterButton from "@/components/StatusFilterButton";
 import SuccessAlert from "@/components/SuccessAlert";
 
 const SaleOrdersPage = () => {
@@ -36,6 +38,62 @@ const SaleOrdersPage = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
+  //state for filter and search
+  const [selectedStatuses, setSelectedStatuses] = useState([]);
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [statusAnchorEl, setStatusAnchorEl] = useState(null);
+  const [allStatuses, setAllStatuses] = useState([]);
+
+  //list status for filter
+  const saleOrderStatuses = [
+    {
+      value: "PROCESSING_NO_REQUEST",
+      label: "Chưa có yêu cầu",
+      className: "bg-gray-100 text-gray-800",
+    },
+    {
+      value: "PROCESSING_PENDING_REQUEST",
+      label: "Đang chờ yêu cầu được duyệt",
+      className: "bg-blue-50 text-blue-800",
+    },
+    {
+      value: "PROCESSING_REJECTED_REQUEST",
+      label: "Yêu cầu bị từ chối",
+      className: "bg-pink-50 text-pink-800",
+    },
+    {
+      value: "PREPARING_MATERIAL",
+      label: "Đang chuẩn bị",
+      className: "bg-yellow-100 text-amber-800",
+    },
+    {
+      value: "PARTIALLY_ISSUED",
+      label: "Đã xuất một phần",
+      className: "bg-indigo-50 text-indigo-800",
+    },
+    {
+      value: "COMPLETED",
+      label: "Hoàn thành",
+      className: "bg-green-50 text-green-800",
+    },
+    {
+      value: "CANCELLED",
+      label: "Đã huỷ",
+      className: "bg-red-50 text-red-800",
+    },
+  ];
+
+  // Handle search
+  const handleSearch = () => {
+    // Reset to first page when searching
+    setCurrentPage(0);
+    fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
+  };
+
+  useEffect(() => {
+    setAllStatuses(saleOrderStatuses);
+  }, []);
 
   useEffect(() => {
     // Gọi API lấy danh sách khi thay đổi trang/pageSize
@@ -72,27 +130,52 @@ const SaleOrdersPage = () => {
 
   // Lọc danh sách
   const filteredOrders = saleOrders.filter(
-    (order) =>
-      (order.orderCode &&
-        order.orderCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (order.partnerName &&
-        order.partnerName.toLowerCase().includes(searchTerm.toLowerCase()))
+    (order) => {
+      const matchesSearch =
+        (order.orderCode &&
+          order.orderCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (order.partnerName &&
+          order.partnerName.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      // Nếu không chọn filter trạng thái thì luôn true
+      const matchesStatus =
+        selectedStatuses.length === 0 ||
+        selectedStatuses.includes(order.statusLabel || getStatusLabel(order.status));
+
+      return matchesSearch && matchesStatus;
+    }
   );
 
+
   const getStatusLabel = (status) => {
-    switch (status) {
-      case "PROCESSING": return "Đang xử lý";
-      case "PREPARING_MATERIAL": return "Đang chuẩn bị vật tư";
-      case "CANCELLED": return "Đã huỷ";
-      default: return status;
-    }
+    const statusObj = saleOrderStatuses.find((s) => s.value === status);
+    return statusObj?.label || status;
   };
 
   const columnsConfig = [
     { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
     { field: 'orderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false, filterable: false },
     { field: 'partnerName', headerName: 'Khách hàng', flex: 2, minWidth: 200, editable: false, filterable: false },
-    { field: 'status', headerName: 'Trạng thái', flex: 1.5, minWidth: 150, editable: false, filterable: false },
+    {
+      field: 'status',
+      headerName: 'Trạng thái',
+      flex: 1.5,
+      minWidth: 150,
+      editable: false,
+      filterable: false,
+      renderCell: (params) => {
+        console.log("params.row", params.row);
+        const statusObj = saleOrderStatuses.find((s) => s.value === params.row.status);
+        return (
+          <div
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                      ${statusObj?.className}`}
+          >
+            {statusObj?.label}
+          </div>
+        );
+      },
+    },
     {
       field: 'orderDate',
       headerName: 'Ngày đặt hàng',
@@ -130,7 +213,7 @@ const SaleOrdersPage = () => {
     index: currentPage * pageSize + index + 1,
     orderCode: order.orderCode || "N/A",
     partnerName: order.partnerName || "N/A",
-    status: order.statusLabel || getStatusLabel(order.status),
+    status: order.status,
     orderDate: order.orderDate,
   }));
 
@@ -173,17 +256,38 @@ const SaleOrdersPage = () => {
               </Typography>
             </div>
 
-            {/* Search input */}
-            <TableSearch
-              value={searchTerm}
-              onChange={setSearchTerm}
-              onSearch={() => {
-                // Thêm hàm xử lý tìm kiếm vào đây nếu có
-                console.log("Tìm kiếm đơn hàng:", searchTerm);
-              }}
-              placeholder="Tìm kiếm đơn hàng"
-            />
+            <div className="mb-3 flex flex-wrap items-center gap-4">
 
+              {/* Filter by date */}
+              <DateFilterButton
+                startDate={startDate}
+                endDate={endDate}
+                setStartDate={setStartDate}
+                setEndDate={setEndDate}
+                setCurrentPage={setCurrentPage}
+              />
+
+              {/* Filter by status */}
+              <StatusFilterButton
+                anchorEl={statusAnchorEl}
+                setAnchorEl={setStatusAnchorEl}
+                selectedStatuses={selectedStatuses}
+                setSelectedStatuses={setSelectedStatuses}
+                allStatuses={allStatuses}
+                buttonLabel="Trạng thái"
+              />
+
+              {/* Search input */}
+              <div className="w-[250px]">
+                <TableSearch
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                  onSearch={handleSearch}
+                  placeholder="Tìm kiếm đơn hàng"
+                />
+              </div>
+
+            </div>
           </div>
 
           {/* Bảng đơn hàng */}

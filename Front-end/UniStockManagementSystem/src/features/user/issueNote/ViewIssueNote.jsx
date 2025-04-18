@@ -58,7 +58,7 @@ const ViewIssueNote = () => {
         const issueNote = await fetchIssueNoteDetail(id);
         setData(issueNote);
         if (issueNote.createdBy) {
-          setCreator(issueNote.createdByUserName || "Không xác định");
+          setCreator(issueNote.createdByUserName);
         }
         // Nếu có tham chiếu (soId), cập nhật giá trị tham chiếu
         if (issueNote.soId) {

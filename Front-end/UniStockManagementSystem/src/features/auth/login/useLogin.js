@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
-import { login, fetchProfile } from "../../../services/authService";
+import {  login, fetchProfile } from "./authService";
+
 
 const useLogin = () => {
   const { user, setUser, isAuth, setIsAuth } = useAuth();
