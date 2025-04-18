@@ -32,6 +32,12 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
     { value: "TL", label: "Hàng hóa trả lại" },
     { value: "NT", label: "Vật tư thừa sau sản xuất" }
   ];
+
+  const statusOptions = [
+    { value: true, label: "Hoạt động" },
+    { value: false, label: "Không hoạt động" },
+  ];
+
   const [warehouseCategories, setWarehouseCategories] = useState([]);
   const [availableCategories, setAvailableCategories] = useState(categoryOptions);
   const { addWarehouse, getUsedCategories, isWarehouseCodeTaken } = useWarehouse();
@@ -74,7 +80,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
 
   const validateCategories = () => {
     let errors = { ...error };
-    if (warehouseCategories.length === 0) {
+    if (!isAllCategoriesUsed && warehouseCategories.length === 0) {
       errors.warehouseCategories = "Vui lòng chọn ít nhất một phân loại kho.";
       setError(errors);
       return false;
@@ -303,30 +309,32 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
           {error.warehouseDescription && <Typography variant="small" color="red">{error.warehouseDescription}</Typography>}
         </div>
 
-        <div className="mt-2">
+        <divdiv className="mt-2">
           <Typography variant="medium" className="text-black">
             Trạng thái kho
             <span className="text-red-500"> *</span>
           </Typography>
-          <TextField
-            select
-            fullWidth
-            size="small"
-            color="success"
-            value={isActive ? "active" : "inactive"}
-            onChange={(e) => {
-              setIsActive(e.target.value === "active");
+          <Autocomplete
+            options={statusOptions}
+            getOptionLabel={(option) => option.label}
+            value={statusOptions.find(opt => opt.value === isActive)}
+            onChange={(e, newValue) => {
+              if (newValue) {
+                setIsActive(newValue.value);
+              }
             }}
-            slotProps={{
-              select: {
-                native: true,
-              },
-            }}
-          >
-            <option value="active">Hoạt động</option>
-            <option value="inactive">Không hoạt động</option>
-          </TextField>
-        </div>
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                fullWidth
+                size="small"
+                color="success"
+                placeholder="Chọn trạng thái kho"
+              />
+            )}
+          />
+        </divdiv>
+
       </DialogBody>
 
       {/* Footer của Dialog */}

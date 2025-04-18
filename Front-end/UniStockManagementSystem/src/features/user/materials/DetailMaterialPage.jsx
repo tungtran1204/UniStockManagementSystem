@@ -10,7 +10,8 @@ import {
 import { TextField, Button as MuiButton, Autocomplete, IconButton, Divider } from '@mui/material';
 import { FaEdit, FaArrowLeft, FaSave, FaTimes, FaTimesCircle } from "react-icons/fa";
 import Select from "react-select";
-import { fetchUnits, fetchMaterialCategories, getMaterialById, updateMaterial } from "./materialService";
+import { fetchMaterialCategories, getMaterialById, updateMaterial } from "./materialService";
+import { fetchActiveUnits } from "../unit/unitService";
 import { getPartnersByType } from "../partner/partnerService";
 import PageHeader from '@/components/PageHeader';
 import SuccessAlert from "@/components/SuccessAlert";
@@ -42,7 +43,7 @@ const DetailMaterialPage = () => {
       try {
         const [materialData, unitsData, categoriesData, suppliersData] = await Promise.all([
           getMaterialById(id),
-          fetchUnits(),
+          fetchActiveUnits(),
           fetchMaterialCategories(),
           getPartnersByType(SUPPLIER_TYPE_ID)
         ]);
