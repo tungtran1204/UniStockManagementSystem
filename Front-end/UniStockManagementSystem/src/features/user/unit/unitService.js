@@ -70,9 +70,9 @@ export const fetchActiveUnits = async () => {
         const response = await axios.get(`${API_URL}/active`, {
             headers: authHeader(),
         });
-        return response.data;
+        return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
         console.error("❌ Lỗi khi lấy danh sách đơn vị tính đang hoạt động:", error);
-        throw error;
+        return [];
     }
 };

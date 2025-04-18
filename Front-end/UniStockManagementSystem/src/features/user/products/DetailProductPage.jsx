@@ -10,7 +10,8 @@ import {
 } from "@material-tailwind/react";
 import { TextField, Button as MuiButton, Divider, Autocomplete, IconButton } from '@mui/material';
 import { FaEdit, FaArrowLeft, FaSave, FaTimes, FaPlus, FaTrash, FaTimesCircle } from "react-icons/fa";
-import { getProductById, updateProduct, fetchUnits, fetchProductTypes, checkProductCodeExists } from "./productService";
+import { getProductById, updateProduct, fetchProductTypes, checkProductCodeExists } from "./productService";
+import { fetchActiveUnits } from "../unit/unitService";
 import axios from "axios";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import {
@@ -117,7 +118,7 @@ const DetailProductPage = () => {
                 setInitialValues(updatedProductData);
 
                 const [unitsData, materialsData] = await Promise.all([
-                    fetchUnits(),
+                    fetchActiveUnits(),
                     axios.get(`${import.meta.env.VITE_API_URL}/user/materials`, {
                         headers: authHeader(),
                         withCredentials: true,

@@ -12,8 +12,9 @@ import {
     ClearRounded
 } from '@mui/icons-material';
 import { FaSave, FaArrowLeft, FaPlus, FaTrash } from "react-icons/fa";
-import { checkProductCodeExists, createProduct, fetchUnits, fetchProductTypes } from "./productService";
+import { checkProductCodeExists, createProduct, fetchProductTypes } from "./productService";
 import { checkMaterialCodeExists } from "../materials/materialService";
+import { fetchActiveUnits } from "../unit/unitService";
 import Select from "react-select";
 import axios from "axios";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
@@ -106,7 +107,7 @@ const AddProductPage = () => {
 
     const loadInitialData = async () => {
         try {
-            const unitsData = await fetchUnits();
+            const unitsData = await fetchActiveUnits();
             const productTypesData = await fetchProductTypes();
             setUnits(unitsData);
             setProductTypes(productTypesData);
@@ -495,7 +496,7 @@ const AddProductPage = () => {
     };
 
     const columnsConfig = [
-        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
+        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 30, editable: false, filterable: false },
         {
             field: 'materialCode',
             headerName: 'Mã NVL',

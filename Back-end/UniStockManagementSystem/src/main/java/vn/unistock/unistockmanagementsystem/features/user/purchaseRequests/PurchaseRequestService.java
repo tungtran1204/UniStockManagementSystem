@@ -74,17 +74,16 @@ public class PurchaseRequestService {
             purchaseRequest.setSalesOrder(salesOrder);
         }
 
-        // ✅ Dùng mapper để convert list DTO → entity
+        // Convert list DTO → entity
         List<PurchaseRequestDetail> details = purchaseRequestDetailMapper.toEntityList(dto.getPurchaseRequestDetails());
 
-        // ✅ Gán lại quan hệ thủ công
+        // Gán lại quan hệ cho từng detail
         for (int i = 0; i < details.size(); i++) {
             PurchaseRequestDetail detail = details.get(i);
             PurchaseRequestDetailDTO detailDTO = dto.getPurchaseRequestDetails().get(i);
 
             Material material = materialRepository.findById(detailDTO.getMaterialId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy vật tư với ID: " + detailDTO.getMaterialId()));
-
             Partner partner = partnerRepository.findById(detailDTO.getPartnerId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy nhà cung cấp với ID: " + detailDTO.getPartnerId()));
 
@@ -95,15 +94,24 @@ public class PurchaseRequestService {
 
         purchaseRequest.setPurchaseRequestDetails(details);
 
-        // ✅ Nếu là từ đơn hàng thì xử lý thêm trừ kho sản phẩm
+        // ✅ Nếu là từ đơn hàng thì trừ kho sản phẩm
         if (dto.getSaleOrderId() != null && !CollectionUtils.isEmpty(dto.getUsedProductsFromWarehouses())) {
             SalesOrder saleOrder = purchaseRequest.getSalesOrder();
             reserveProductsForSalesOrder(saleOrder, dto.getUsedProductsFromWarehouses());
         }
 
+        // ✅ Trừ luôn cả kho vật tư
+        if (!CollectionUtils.isEmpty(dto.getPurchaseRequestDetails())) {
+            reserveMaterialsForPurchaseRequest(dto.getPurchaseRequestDetails());
+        }
+
+        // Lưu vào DB
         PurchaseRequest saved = purchaseRequestRepository.save(purchaseRequest);
+
+        // Trả về DTO sau khi lưu
         return purchaseRequestMapper.toDTO(saved);
     }
+
 
 
     public void reserveMaterialsForPurchaseRequest(List<PurchaseRequestDetailDTO> detailDTOs) {
@@ -220,24 +228,8 @@ public class PurchaseRequestService {
 
         if (statusEnum == PurchaseRequest.RequestStatus.CANCELLED) {
             request.setRejectionReason(rejectionReason);
-
-            // Trả lại RESERVED ➝ AVAILABLE (không cần nữa vì đã loại bỏ logic trừ khi tạo)
-            // Không làm gì nếu lúc tạo chưa trừ kho
-        } else if (statusEnum == PurchaseRequest.RequestStatus.CONFIRMED) {
-            request.setRejectionReason(null);
-
-            // ✅ Chỉ trừ kho khi xác nhận yêu cầu
-            List<PurchaseRequestDetailDTO> reserveDTOs = request.getPurchaseRequestDetails().stream()
-                    .map(detail -> {
-                        PurchaseRequestDetailDTO dto = new PurchaseRequestDetailDTO();
-                        dto.setMaterialId(detail.getMaterial().getMaterialId());
-                        dto.setQuantity(detail.getQuantity());
-                        return dto;
-                    })
-                    .collect(Collectors.toList());
-
-            reserveMaterialsForPurchaseRequest(reserveDTOs);
         } else {
+            // Với CONFIRMED hoặc các trạng thái khác: chỉ cập nhật rejectionReason
             request.setRejectionReason(null);
         }
 
@@ -262,9 +254,6 @@ public class PurchaseRequestService {
 
         return purchaseRequestMapper.toDTO(request);
     }
-
-
-
 
     @Transactional
     public String getNextRequestCode() {

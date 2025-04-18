@@ -140,21 +140,6 @@ export const toggleMaterialStatus = async (materialId) => {
   }
 };
 
-// Lấy danh sách đơn vị
-export const fetchUnits = async () => {
-  try {
-    const response = await axios.get(
-      `${import.meta.env.VITE_API_URL}/user/units`,
-      {
-        headers: authHeader(),
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.error("❌ Lỗi khi lấy danh sách đơn vị:", error);
-    throw error;
-  }
-};
 
 // Lấy danh sách danh mục nguyên vật liệu
 export const fetchMaterialCategories = async () => {
