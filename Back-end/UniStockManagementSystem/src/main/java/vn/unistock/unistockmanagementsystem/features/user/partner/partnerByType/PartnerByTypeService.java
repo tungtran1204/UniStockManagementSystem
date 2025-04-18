@@ -56,7 +56,7 @@ public class PartnerByTypeService {
                 .max()
                 .orElse(0); // nếu không có mã nào, bắt đầu từ 1
 
-        return prefix + String.format("%02d", max + 1); // ví dụ: NCC04
+        return prefix + String.format("%05d", max + 1); // ví dụ: NCC04
     }
 }
 

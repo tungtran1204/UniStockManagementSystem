@@ -16,11 +16,17 @@ import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
 import PageHeader from "@/components/PageHeader";
 import Table from "@/components/Table";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import SuccessAlert from "@/components/SuccessAlert";
 
 const UnitPage = () => {
     const { units, fetchUnits, toggleStatus, createUnit, totalPages, totalElements, loading } = useUnit();
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [successAlertOpen, setSuccessAlertOpen] = useState(false);
+    const [successMessage, setSuccessMessage] = useState("");
+    const [pendingToggleRow, setPendingToggleRow] = useState(null);
     const [editUnit, setEditUnit] = useState(null);
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
@@ -42,6 +48,8 @@ const UnitPage = () => {
         try {
             await createUnit(formData);
             setShowCreateModal(false);
+            setSuccessMessage("Thêm đơn vị thành công!"), 
+            setSuccessAlertOpen(true);
             fetchUnits(currentPage, pageSize);
         } catch (error) {
             alert(error.message || "Lỗi khi tạo đơn vị tính");
@@ -61,7 +69,10 @@ const UnitPage = () => {
                     <Switch
                         color="green"
                         checked={params.value}
-                        onChange={() => toggleStatus(params.row.id, params.value)}
+                        onChange={() => {
+                            setPendingToggleRow(params.row);
+                            setConfirmDialogOpen(true);
+                        }}
                         disabled={loading}
                     />
                     <div
@@ -154,7 +165,7 @@ const UnitPage = () => {
                             pageRangeDisplayed={5}
                             onPageChange={handlePageChange}
                             containerClassName="flex items-center gap-1"
-                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                             pageLinkClassName="flex items-center justify-center w-full h-full"
                             previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                             nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -178,9 +189,35 @@ const UnitPage = () => {
                 <EditUnitModal
                     unit={editUnit}
                     onClose={() => setShowEditModal(false)}
-                    onSuccess={() => fetchUnits(currentPage, pageSize)}
+                    onSuccess={() => {
+                        fetchUnits(currentPage, pageSize);
+                        setSuccessMessage("Cập nhật đơn vị thành công!");
+                        setSuccessAlertOpen(true);
+                    }}
                 />
             )}
+
+            <ConfirmDialog
+                open={confirmDialogOpen}
+                onClose={() => setConfirmDialogOpen(false)}
+                onConfirm={() => {
+                    if (pendingToggleRow) {
+                        toggleStatus(pendingToggleRow.id, pendingToggleRow.status); // truyền đúng giá trị mới
+                        setSuccessMessage("Cập nhật trạng thái thành công!");
+                        setSuccessAlertOpen(true);
+                    }
+                    setConfirmDialogOpen(false);
+                }}
+                message={`Bạn có chắc chắn muốn ${pendingToggleRow?.status ? "ngưng hoạt động" : "kích hoạt"} đơn vị tính này không?`}
+                confirmText="Có"
+                cancelText="Không"
+            />
+
+            <SuccessAlert
+                open={successAlertOpen}
+                onClose={() => setSuccessAlertOpen(false)}
+                message={successMessage}
+            />
         </div>
     );
 };
