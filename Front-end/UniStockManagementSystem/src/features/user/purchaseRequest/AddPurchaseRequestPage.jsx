@@ -196,6 +196,7 @@ const AddPurchaseRequestPage = () => {
   };
 
   const handleSupplierChange = (index, selectedOption) => {
+    console.log("selectedOption: ", selectedOption)
     setItems((prev) =>
       prev.map((item, idx) =>
         idx === index
@@ -372,8 +373,7 @@ const AddPurchaseRequestPage = () => {
         }))
       };
       await createPurchaseRequest(payload);
-      alert("Đã lưu yêu cầu mua vật tư thành công!");
-      navigate("/user/purchase-request", { state: { refresh: true } });
+      navigate("/user/purchase-request", { state: { refresh: true, successMessage: "Tạo yêu cầu mua vật tư thành công!" } });
     } catch (error) {
       console.error("Lỗi khi lưu yêu cầu:", error);
       const errorMessage = error.response?.data?.message || "Có lỗi xảy ra khi lưu yêu cầu. Vui lòng thử lại!";
@@ -755,17 +755,19 @@ const AddPurchaseRequestPage = () => {
                             type="number"
                             size="small"
                             fullWidth
-                            value={item.quantity}
+                            value={item.quantity === 0 ? "" : item.quantity}
                             onChange={(e) =>
                               handleQuantityChange(currentPage * pageSize + index, e.target.value)
                             }
-                            InputProps={{
-                              min: 1,
+                            slotProps={{
+                              input: {
+                                inputMode: "numeric",
+                              }
                             }}
                             disabled={fromSaleOrder}
                             color="success"
                             hiddenLabel
-                            placeholder="Số lượng"
+                            placeholder="0"
                             sx={{
                               '& .MuiInputBase-root.Mui-disabled': {
                                 bgcolor: '#eeeeee',
@@ -822,7 +824,7 @@ const AddPurchaseRequestPage = () => {
                 pageRangeDisplayed={5}
                 onPageChange={handlePageChange}
                 containerClassName="flex items-center gap-1"
-                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                 pageLinkClassName="flex items-center justify-center w-full h-full"
                 previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                 nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"

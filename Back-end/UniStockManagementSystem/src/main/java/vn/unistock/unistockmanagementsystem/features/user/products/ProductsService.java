@@ -5,13 +5,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 import vn.unistock.unistockmanagementsystem.entities.Product;
 import vn.unistock.unistockmanagementsystem.entities.ProductMaterial;
 import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
-import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsDTO;
-import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.productTypes.ProductTypeRepository;
 import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
 import vn.unistock.unistockmanagementsystem.features.user.units.UnitRepository;
@@ -32,6 +32,7 @@ public class ProductsService {
     private final MaterialsRepository materialRepository;
     private final ProductMaterialsRepository productMaterialsRepository;
     private final ProductsMapper productsMapper = ProductsMapper.INSTANCE;
+    private final ProductMaterialsMapper productMaterialsMapper;
     private final AzureBlobService azureBlobService;
 
     public Page<ProductsDTO> getAllProducts(int page, int size) {
@@ -186,5 +187,15 @@ public class ProductsService {
             return productsRepository.existsByProductCodeAndProductIdNot(productCode, excludeId);
         }
         return productsRepository.existsByProductCode(productCode);
+    }
+
+
+    // Lay dinh muc vat tu cho san pham
+    public Page<ProductMaterialsDTO> getMaterialsByProduct(Long productId, Pageable pageable) {
+        if (!productsRepository.existsById(productId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm với ID: " + productId);
+        }
+        Page<ProductMaterial> productMaterialsPage = productMaterialsRepository.findByProduct_ProductId(productId, pageable);
+        return productMaterialsPage.map(productMaterialsMapper::toDTO);
     }
 }

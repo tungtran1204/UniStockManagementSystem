@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchWarehouses, updateWarehouseStatus, createWarehouse, updateWarehouse } from "./warehouseService";
+import { fetchWarehouses, updateWarehouseStatus, createWarehouse, updateWarehouse, fetchUsedWarehouseCategories, checkWarehouseCode } from "./warehouseService";
 console.log("createWarehouse:", createWarehouse); 
 
 const useWarehouse = () => {
@@ -9,16 +9,13 @@ const useWarehouse = () => {
   const [currentPage, setCurrentPage] = useState(1); 
   const [pageSize, setPageSize] = useState(10);
 
-  const fetchPaginatedWarehouses = async (page = currentPage, size = pageSize) => {
+  const fetchPaginatedWarehouses = async (page = 1, size = pageSize, search = "", isActive = null) => {
     try {
-      const response = await fetchWarehouses(page, size);
-      console.log("Fetched warehouses:", response.data); // Log fetched warehouses
-      console.log("Total pages:", response.totalPages); // Log total pages
-      console.log("Total elements:", response.totalElements); // Log total elements
-      setWarehouses(response.data || []); // Ensure warehouses is always an array
+      const apiPage = page - 1;
+      const response = await fetchWarehouses(apiPage, size, search, isActive);
+      setWarehouses(response.data || []);
       setTotalPages(response.totalPages);
       setTotalElements(response.totalElements);
-
       setCurrentPage(page);
       setPageSize(size);
     } catch (error) {
@@ -43,8 +40,9 @@ const useWarehouse = () => {
       await updateWarehouseStatus(warehouseId, newStatus);
       await fetchPaginatedWarehouses(currentPage, pageSize);
     } catch (error) {
+      alert(error?.response?.data?.message || "Lỗi khi cập nhật trạng thái kho");
       console.error("Error updating warehouse status:", error);
-    }
+    }    
 };
 
   const editWarehouse = async (warehouseId, updatedWarehouse) => {
@@ -70,6 +68,20 @@ const useWarehouse = () => {
     }
   };
 
+  const getUsedCategories = async () => {
+    try {
+      const result = await fetchUsedWarehouseCategories();
+      return result;
+    } catch (error) {
+      console.error("Error fetching used categories:", error);
+      return [];
+    }
+  };
+
+  const isWarehouseCodeTaken = async (code, excludeId = null) => {
+    return await checkWarehouseCode(code, excludeId);
+  };
+
   return {
     warehouses,
     fetchPaginatedWarehouses,
@@ -79,6 +91,8 @@ const useWarehouse = () => {
     addWarehouse,
     editWarehouse,
     fetchListWarehouses,
+    getUsedCategories,
+    isWarehouseCodeTaken
   };
 };
 

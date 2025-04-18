@@ -6,7 +6,7 @@ import {
   Typography,
   Button,
 } from "@material-tailwind/react";
-import { TextField, Button as MuiButton, IconButton } from '@mui/material';
+import { TextField, Button as MuiButton, Divider } from '@mui/material';
 import PageHeader from '@/components/PageHeader';
 import FilePreviewDialog from "@/components/FilePreviewDialog";
 import useReceiptNote from "./useReceiptNote";
@@ -128,6 +128,7 @@ const ViewReceiptNote = () => {
         console.log("Phiếu nhập: ", receipt);
         if (receipt.createdBy) {
           const user = await getUserById(receipt.createdBy);
+          console.log("Người tạo phiếu nhập: ", user);
           setCreator(user.username || user.email || "Không xác định");
           setPartnerName(receipt.partnerName || "");
           setContactName(receipt.contactName || "");
@@ -161,55 +162,81 @@ const ViewReceiptNote = () => {
 
 
   const handleExportPDF = () => {
+    const formatVietnameseDate = (dateString) => {
+      const date = new Date(dateString);
+      const day = date.getDate();
+      const month = String(date.getMonth() + 1).padStart(2, '0'); // ✅ thêm 0 nếu cần
+      const year = date.getFullYear();
+      return `Ngày ${day} tháng ${month} năm ${year}`;
+    };
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     doc.addFileToVFS("Roboto-Bold.ttf", robotoBoldFont);
     doc.addFont("Roboto-Bold.ttf", "Roboto", "bold");
-    doc.setFont("Roboto", "bold");
     doc.addFileToVFS("Roboto-Regular.ttf", robotoFont);
     doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
-    doc.setFont("Roboto", "normal");
 
+    doc.setFont("Roboto", "bold");
     doc.setFontSize(14);
     doc.text("CÔNG TY TNHH THIÊN NGỌC AN", 14, 20);
+    doc.setFont("Roboto", "normal");
     doc.setFontSize(10);
     doc.text("Đ/C: TL 419 KCN Phùng Xá, Huyện Thạch Thất, TP. Hà Nội", 14, 26);
     doc.text("SĐT: 0909.009.990", 14, 32);
+    doc.setFont("Roboto", "bold");
+    doc.text("Số phiếu: ", 160, 26);
+    doc.setFont("Roboto", "normal");
+    doc.text(`${data.grnCode}`, 176, 26);
 
-    doc.setFontSize(13);
-    doc.text("PHIẾU NHẬP KHO", 90, 40);
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(20);
+    doc.text("PHIẾU NHẬP KHO", 80, 40);
+    doc.setFont("Roboto", "normal");
+    doc.setFontSize(9);
+    doc.text(formatVietnameseDate(data.receiptDate), 110, 45, { align: "center" }); // ✅ Dưới dòng tiêu đề, canh giữa
 
+    doc.setFont("Roboto", "normal");
     doc.setFontSize(10);
-    doc.text(`Số phiếu: ${data.grnCode}`, 14, 48);
-    doc.text(`Loại hàng hóa: ${data.category}`, 14, 60);
+    doc.text(`Người lập phiếu: ${creator}`, 14, 54);
+    if (data.poCode) {
+      doc.text(`Căn cứ theo đơn hàng: ${data.poCode}`, 140, 54);
+    }
+    doc.text(`Phân loại nhập kho: ${data.category}`, 14, 60);
     const descriptionText = `Diễn giải: ${data.description || "Không có"}`;
     const splitDescription = doc.splitTextToSize(descriptionText, 180); // 180mm là chiều rộng tối đa mong muốn
     doc.text(splitDescription, 14, 66);
-    doc.text(`Ngày tạo: ${formatDate(data.receiptDate)}`, 140, 48);
-    doc.text(`Người tạo: ${creator}`, 140, 54);
 
     const descriptionLineCount = splitDescription.length;
     const descriptionHeight = descriptionLineCount * 5; // khoảng cách dòng
 
     const baseY = 66 + descriptionHeight;
 
+    const totalQuantity = data.details.reduce((sum, item) => sum + (item.quantity || 0), 0);
+
     autoTable(doc, {
       startY: baseY,
       head: [[
-        { content: "STT", styles: { halign: 'center' } },
-        { content: "Mã hàng", styles: { halign: 'center' } },
-        { content: "Tên hàng hóa", styles: { halign: 'center' } },
-        { content: "Đơn vị", styles: { halign: 'center' } },
-        { content: "Số lượng nhập", styles: { halign: 'center' } },
-        { content: "Nhập kho", styles: { halign: 'center' } }
+        { content: "STT", styles: { halign: 'center', cellWidth: 12 } },
+        { content: "Mã hàng", styles: { halign: 'center', cellWidth: 35 } },
+        { content: "Tên hàng hóa", styles: { halign: 'center', cellWidth: 60 } },
+        { content: "Đơn vị", styles: { halign: 'center' }, cellWidth: 20 },
+        { content: "Số lượng nhập", styles: { halign: 'center' }, cellWidth: 20 },
+        { content: "Kho nhập", styles: { halign: 'center' }, cellWidth: 40 }
       ]],
-      body: data.details.map((item, index) => [
-        { content: index + 1, styles: { halign: 'center' } },
-        { content: item.materialCode || item.productCode, styles: { halign: 'left' } },
-        { content: item.materialName || item.productName, styles: { halign: 'left' } },
-        { content: item.unitName || "-", styles: { halign: 'center' } },
-        { content: item.quantity, styles: { halign: 'center' } },
-        { content: item.warehouseName, styles: { halign: 'center' } }
-      ]),
+      body: [
+        ...data.details.map((item, index) => [
+          { content: index + 1, styles: { halign: 'center' } },
+          { content: item.materialCode || item.productCode, styles: { halign: 'left' } },
+          { content: item.materialName || item.productName, styles: { halign: 'left' } },
+          { content: item.unitName || "-", styles: { halign: 'center' } },
+          { content: item.quantity, styles: { halign: 'center' } },
+          { content: item.warehouseName, styles: { halign: 'center' } }
+        ]),
+        [
+          { content: "TỔNG CỘNG :", colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
+          { content: totalQuantity, styles: { halign: 'center', fontStyle: 'bold' } },
+          { content: "", styles: { halign: 'center' } },
+        ]
+      ],
       styles: {
         font: "Roboto",
         fontSize: 10,
@@ -222,6 +249,7 @@ const ViewReceiptNote = () => {
         textColor: 20,
         fontSize: 10,
         lineWidth: 0.2,
+        cellPadding: { top: 3, bottom: 3 },
       },
       bodyStyles: {
         textColor: 20,
@@ -235,9 +263,16 @@ const ViewReceiptNote = () => {
 
     const finalY = doc.lastAutoTable.finalY + 12;
     // Căn đều 3 cột trên cùng 1 hàng
-    doc.text("Người giao hàng", 15, finalY);
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(10);
+    doc.text("Người giao hàng", 20, finalY);
     doc.text("Nhân viên kho nhận hàng", 90, finalY);
-    doc.text("Thủ kho", 180, finalY);
+    doc.text("Thủ kho", 175, finalY);
+    doc.setFont("Roboto", "normal");
+    doc.setFontSize(8);
+    doc.text("(Ký, họ tên)", 32, finalY + 5, { align: "center" });
+    doc.text("(Ký, họ tên)", 110, finalY + 5, { align: "center" });
+    doc.text("(Ký, họ tên)", 182, finalY + 5, { align: "center" });
 
     doc.save(`PhieuNhap_${data.grnCode}.pdf`);
   };
@@ -553,7 +588,7 @@ const ViewReceiptNote = () => {
 
           {/* Phân trang cho bảng danh sách hàng hóa */}
           {totalItems > 0 && (
-            <div className="flex items-center justify-between pt-4">
+            <div className="flex items-center justify-between py-4">
               <div className="flex items-center gap-2">
                 <Typography variant="small" color="blue-gray" className="font-normal">
                   Trang {currentPage + 1} / {totalPages} • {totalItems} bản ghi
@@ -568,7 +603,7 @@ const ViewReceiptNote = () => {
                 pageRangeDisplayed={5}
                 onPageChange={({ selected }) => setCurrentPage(selected)}
                 containerClassName="flex items-center gap-1"
-                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                 pageLinkClassName="flex items-center justify-center w-full h-full"
                 previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                 nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -579,8 +614,8 @@ const ViewReceiptNote = () => {
               />
             </div>
           )}
-
-          <div className="mt-6 border-t pt-4 flex justify-end">
+          <Divider />
+          <div className="pt-4 pb-3 flex justify-start">
             <MuiButton
               color="info"
               size="medium"

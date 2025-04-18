@@ -43,7 +43,10 @@ const CreateProductTypeModal = ({ show, onClose, loading, onSuccess }) => {
     if (Object.keys(newErrors).length === 0) {
       try {
         await onSuccess(formData);
-        onClose();
+        onClose({
+          typeName: "",
+          description: "",
+        });
       } catch (error) {
         console.error("Error creating product type:", error);
       }

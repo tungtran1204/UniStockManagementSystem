@@ -13,6 +13,7 @@ import Select from "react-select";
 import { fetchUnits, fetchMaterialCategories, getMaterialById, updateMaterial } from "./materialService";
 import { getPartnersByType } from "../partner/partnerService";
 import PageHeader from '@/components/PageHeader';
+import SuccessAlert from "@/components/SuccessAlert";
 import ImageUploadBox from '@/components/ImageUploadBox';
 
 const customStyles = {
@@ -34,6 +35,7 @@ const DetailMaterialPage = () => {
   const [errors, setErrors] = useState({});
   const [validationErrors, setValidationErrors] = useState({});
   const [previewImage, setPreviewImage] = useState(null);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -131,9 +133,9 @@ const DetailMaterialPage = () => {
 
         await updateMaterial(id, formData);
 
-        alert("Cập nhật thành công!");
         setIsEditing(false);
         const updatedMaterial = await getMaterialById(id);
+        setShowSuccessAlert(true);
         setMaterial({
           ...updatedMaterial,
           supplierIds: updatedMaterial.supplierIds || []
@@ -511,6 +513,12 @@ const DetailMaterialPage = () => {
           </div>
         </CardBody>
       </Card>
+
+      <SuccessAlert
+        open={showSuccessAlert}
+        onClose={() => setShowSuccessAlert(false)}
+        message="Cập nhật sản phẩm thành công!"
+      />
     </div>
   );
 };

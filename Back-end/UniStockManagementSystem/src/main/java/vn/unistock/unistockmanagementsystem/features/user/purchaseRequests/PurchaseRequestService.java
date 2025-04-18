@@ -5,43 +5,36 @@ import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.server.ResponseStatusException;
 import vn.unistock.unistockmanagementsystem.entities.*;
 import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryRepository;
 import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerRepository;
-import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsDTO;
-import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsService;
 import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PurchaseRequestService {
 
-    private static final Logger logger = LoggerFactory.getLogger(PurchaseRequestService.class);
-
     private final PurchaseRequestRepository purchaseRequestRepository;
     private final MaterialsRepository materialRepository;
-    private final PurchaseRequestDetailRepository purchaseRequestDetailRepository;
     private final PartnerRepository partnerRepository;
+    private final SaleOrdersRepository saleOrdersRepository;
+    private final InventoryRepository inventoryRepository;
     private final PurchaseRequestMapper purchaseRequestMapper;
     private final PurchaseRequestDetailMapper purchaseRequestDetailMapper;
-    private final SaleOrdersRepository saleOrdersRepository;
-    private final ProductMaterialsService productMaterialsService;
-    private final InventoryRepository inventoryRepository;
+
 
     public Page<PurchaseRequestDTO> getAllPurchaseRequests(Pageable pageable) {
         Page<PurchaseRequest> page = purchaseRequestRepository.findAll(pageable);
@@ -66,55 +59,52 @@ public class PurchaseRequestService {
 
     @Transactional
     public PurchaseRequestDTO createManualPurchaseRequest(PurchaseRequestDTO dto) {
-        PurchaseRequest purchaseRequest = purchaseRequestMapper.toEntity(dto);
-        purchaseRequest.setCreatedDate(LocalDateTime.now());
+        // Khởi tạo request chính
+        PurchaseRequest purchaseRequest = new PurchaseRequest();
+        purchaseRequest.setPurchaseRequestCode(dto.getPurchaseRequestCode());
+        purchaseRequest.setNotes(dto.getNotes());
         purchaseRequest.setStatus(PurchaseRequest.RequestStatus.PENDING);
+        purchaseRequest.setRejectionReason(null);
+        purchaseRequest.setCreatedDate(LocalDateTime.now());
 
-        SalesOrder salesOrder = null;
-        List<UsedProductWarehouseDTO> usedProducts = dto.getUsedProductsFromWarehouses();
-
+        // Liên kết với đơn hàng nếu có
         if (dto.getSaleOrderId() != null) {
-            salesOrder = saleOrdersRepository.findById(dto.getSaleOrderId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng với ID: " + dto.getSaleOrderId()));
+            SalesOrder salesOrder = saleOrdersRepository.findById(dto.getSaleOrderId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng"));
             purchaseRequest.setSalesOrder(salesOrder);
         }
 
-        List<PurchaseRequestDetail> details = new ArrayList<>();
-        for (PurchaseRequestDetailDTO detailDto : dto.getPurchaseRequestDetails()) {
-            PurchaseRequestDetail detail = purchaseRequestDetailMapper.toEntity(detailDto);
-            Material material = materialRepository.findById(detailDto.getMaterialId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy vật tư với ID: " + detailDto.getMaterialId()));
-            Partner partner = partnerRepository.findById(detailDto.getPartnerId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy nhà cung cấp với ID: " + detailDto.getPartnerId()));
+        // ✅ Dùng mapper để convert list DTO → entity
+        List<PurchaseRequestDetail> details = purchaseRequestDetailMapper.toEntityList(dto.getPurchaseRequestDetails());
 
-            double quantityToBuy = detailDto.getQuantity();
-            if (quantityToBuy <= 0) continue;
+        // ✅ Gán lại quan hệ thủ công
+        for (int i = 0; i < details.size(); i++) {
+            PurchaseRequestDetail detail = details.get(i);
+            PurchaseRequestDetailDTO detailDTO = dto.getPurchaseRequestDetails().get(i);
 
-            detail.setQuantity((int) quantityToBuy);
+            Material material = materialRepository.findById(detailDTO.getMaterialId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy vật tư với ID: " + detailDTO.getMaterialId()));
+
+            Partner partner = partnerRepository.findById(detailDTO.getPartnerId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy nhà cung cấp với ID: " + detailDTO.getPartnerId()));
+
             detail.setMaterial(material);
             detail.setPartner(partner);
             detail.setPurchaseRequest(purchaseRequest);
-            details.add(detail);
         }
-
-        if (details.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không có vật tư nào cần mua!");
-        }
-
-        reserveMaterialsForPurchaseRequest(dto.getPurchaseRequestDetails());
 
         purchaseRequest.setPurchaseRequestDetails(details);
-        purchaseRequest = purchaseRequestRepository.save(purchaseRequest);
 
-        if (salesOrder != null) {
-            reserveProductsForSalesOrder(salesOrder, usedProducts);
-            saleOrdersRepository.save(salesOrder);
+        // ✅ Nếu là từ đơn hàng thì xử lý thêm trừ kho sản phẩm
+        if (dto.getSaleOrderId() != null && !CollectionUtils.isEmpty(dto.getUsedProductsFromWarehouses())) {
+            SalesOrder saleOrder = purchaseRequest.getSalesOrder();
+            reserveProductsForSalesOrder(saleOrder, dto.getUsedProductsFromWarehouses());
         }
 
-        PurchaseRequestDTO responseDTO = purchaseRequestMapper.toDTO(purchaseRequest);
-        responseDTO.setPurchaseRequestDetails(purchaseRequestDetailMapper.toDTOList(details));
-        return responseDTO;
+        PurchaseRequest saved = purchaseRequestRepository.save(purchaseRequest);
+        return purchaseRequestMapper.toDTO(saved);
     }
+
 
     public void reserveMaterialsForPurchaseRequest(List<PurchaseRequestDetailDTO> detailDTOs) {
         for (PurchaseRequestDetailDTO detailDto : detailDTOs) {
@@ -226,39 +216,34 @@ public class PurchaseRequestService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy yêu cầu mua vật tư với ID: " + id));
 
         PurchaseRequest.RequestStatus statusEnum = PurchaseRequest.RequestStatus.valueOf(status);
-        PurchaseRequest.RequestStatus oldStatus = request.getStatus();
         request.setStatus(statusEnum);
 
         if (statusEnum == PurchaseRequest.RequestStatus.CANCELLED) {
             request.setRejectionReason(rejectionReason);
 
-            // Trả trạng thái RESERVED về AVAILABLE cho vật tư
-            List<PurchaseRequestDetail> details = request.getPurchaseRequestDetails();
-            for (PurchaseRequestDetail detail : details) {
-                Material material = detail.getMaterial();
-                double quantityToRelease = detail.getQuantity();
+            // Trả lại RESERVED ➝ AVAILABLE (không cần nữa vì đã loại bỏ logic trừ khi tạo)
+            // Không làm gì nếu lúc tạo chưa trừ kho
+        } else if (statusEnum == PurchaseRequest.RequestStatus.CONFIRMED) {
+            request.setRejectionReason(null);
 
-                List<Inventory> reservedInventories = inventoryRepository.findByMaterialIdAndStatus(material.getMaterialId(), Inventory.InventoryStatus.RESERVED);
-                for (Inventory inventory : reservedInventories) {
-                    if (quantityToRelease <= 0) break;
+            // ✅ Chỉ trừ kho khi xác nhận yêu cầu
+            List<PurchaseRequestDetailDTO> reserveDTOs = request.getPurchaseRequestDetails().stream()
+                    .map(detail -> {
+                        PurchaseRequestDetailDTO dto = new PurchaseRequestDetailDTO();
+                        dto.setMaterialId(detail.getMaterial().getMaterialId());
+                        dto.setQuantity(detail.getQuantity());
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
 
-                    double quantityInInventory = inventory.getQuantity();
-                    double quantityToReleaseFromThis = Math.min(quantityInInventory, quantityToRelease);
-
-                    // Cập nhật trạng thái về AVAILABLE
-                    inventory.setStatus(Inventory.InventoryStatus.AVAILABLE);
-                    inventoryRepository.save(inventory);
-
-                    quantityToRelease -= quantityToReleaseFromThis;
-                }
-            }
+            reserveMaterialsForPurchaseRequest(reserveDTOs);
         } else {
             request.setRejectionReason(null);
         }
 
         purchaseRequestRepository.save(request);
 
-        // Nếu yêu cầu này liên kết với đơn hàng, cập nhật trạng thái đơn hàng và sản phẩm
+        // ✅ Xử lý trạng thái đơn hàng liên quan (nếu có)
         if (request.getSalesOrder() != null) {
             SalesOrder salesOrder = request.getSalesOrder();
             List<PurchaseRequest> allRequests = purchaseRequestRepository.findAllBySalesOrder_OrderId(salesOrder.getOrderId());
@@ -267,28 +252,6 @@ public class PurchaseRequestService {
             boolean anyConfirmed = allRequests.stream().anyMatch(r -> r.getStatus() == PurchaseRequest.RequestStatus.CONFIRMED);
 
             if (statusEnum == PurchaseRequest.RequestStatus.CANCELLED && allCancelled) {
-                // Trả trạng thái RESERVED về AVAILABLE cho sản phẩm
-                List<SalesOrderDetail> details = salesOrder.getDetails();
-                for (SalesOrderDetail detail : details) {
-                    Product product = detail.getProduct();
-                    double quantityToRelease = detail.getQuantity();
-
-                    List<Inventory> reservedInventories = inventoryRepository.findByProductIdAndStatus(product.getProductId(), Inventory.InventoryStatus.RESERVED);
-                    for (Inventory inventory : reservedInventories) {
-                        if (quantityToRelease <= 0) break;
-
-                        double quantityInInventory = inventory.getQuantity();
-                        double quantityToReleaseFromThis = Math.min(quantityInInventory, quantityToRelease);
-
-                        // Cập nhật trạng thái về AVAILABLE
-                        inventory.setStatus(Inventory.InventoryStatus.AVAILABLE);
-                        inventoryRepository.save(inventory);
-
-                        quantityToRelease -= quantityToReleaseFromThis;
-                    }
-                }
-
-                // Cập nhật trạng thái SalesOrder
                 salesOrder.setStatus(SalesOrder.OrderStatus.PROCESSING);
             } else if (statusEnum == PurchaseRequest.RequestStatus.CONFIRMED || anyConfirmed) {
                 salesOrder.setStatus(SalesOrder.OrderStatus.PREPARING_MATERIAL);
@@ -302,6 +265,7 @@ public class PurchaseRequestService {
 
 
 
+
     @Transactional
     public String getNextRequestCode() {
         try {
@@ -309,7 +273,6 @@ public class PurchaseRequestService {
             Long nextId = (maxId != null) ? (maxId + 1) : 1;
             return String.format("YC%05d", nextId);
         } catch (Exception e) {
-            logger.error("Error generating next request code", e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Không thể tạo mã yêu cầu mới: " + e.getMessage(), e);
         }
     }
