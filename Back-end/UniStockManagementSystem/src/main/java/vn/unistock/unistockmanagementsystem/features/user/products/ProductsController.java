@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -12,8 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.unistock.unistockmanagementsystem.entities.Product;
-import vn.unistock.unistockmanagementsystem.features.user.productMaterials.ProductMaterialsDTO;
-import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -27,11 +27,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ProductsController {
     private final ProductsService productsService;
-    private final AzureBlobService azureBlobService;
     private final ExcelService excelService;
 
     @GetMapping
-    public ResponseEntity<Page<ProductsDTO>> getAllProducts(
+        public ResponseEntity<Page<ProductsDTO>> getAllProducts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
@@ -196,6 +195,21 @@ public class ProductsController {
         } catch (IOException e) {
             log.error("❌ Lỗi khi export danh sách sản phẩm:", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    //Lay dinh muc vat cho san pham
+    @GetMapping("/product-materials/{productId}")
+    public ResponseEntity<Page<ProductMaterialsDTO>> getMaterialsByProduct(
+            @PathVariable Long productId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<ProductMaterialsDTO> materialsPage = productsService.getMaterialsByProduct(productId, pageable);
+            return ResponseEntity.ok(materialsPage);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Trả về null nếu không tìm thấy
         }
     }
 }

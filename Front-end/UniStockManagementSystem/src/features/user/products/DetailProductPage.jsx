@@ -78,7 +78,7 @@ const DetailProductPage = () => {
     const fetchProductMaterials = async (productId) => {
         try {
             const response = await axios.get(
-                `${import.meta.env.VITE_API_URL}/user/product-materials/${productId}`,
+                `${import.meta.env.VITE_API_URL}/user/products/product-materials/${productId}`,
                 { headers: authHeader(), params: { page: 0, size: 1000 } }
             );
 
