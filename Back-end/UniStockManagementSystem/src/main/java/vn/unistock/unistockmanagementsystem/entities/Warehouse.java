@@ -35,4 +35,6 @@ public class Warehouse {
     @Column(name = "is_active")
     @ColumnDefault("true")
     private Boolean isActive = true;
+
+    private String goodCategory;
 }

@@ -38,8 +38,8 @@ public class PurchaseRequest {
         PENDING("Chờ xác nhận"),
         CONFIRMED("Xác nhận"),
         CANCELLED("Hủy"),
-        FINISHED("Đã hoàn thành");
-
+        FINISHED("Đã hoàn thành"),
+        PURCHASED("Đã tạo đơn mua");
         private final String label;
 
         RequestStatus(String label) {
