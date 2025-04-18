@@ -173,7 +173,7 @@ public class IssueNoteService {
             // Lưu các dòng chi tiết
             issueNoteDetailRepository.saveAll(issueNote.getDetails());
 
-            // ***** PHẦN MỚI: Cập nhật số lượng nhận (receivedQuantity) của sản phẩm trong đơn hàng *****
+            // ***** PHẦN CẬP NHẬT: Cập nhật số lượng nhận và trạng thái của SalesOrder *****
             if (issueNoteDto.getSoId() != null) {
                 SalesOrder salesOrder = issueNote.getSalesOrder();
                 // Gộp số lượng xuất cho cùng một sản phẩm nếu xuất từ nhiều kho khác nhau
@@ -184,6 +184,10 @@ public class IssueNoteService {
                     }
                 }
                 logger.debug("Export quantities grouped by productId: {}", exportQuantities);
+
+                boolean isFirstIssuance = salesOrder.getStatus() != SalesOrder.OrderStatus.PARTIALLY_ISSUED &&
+                        salesOrder.getStatus() != SalesOrder.OrderStatus.COMPLETED;
+
                 for (Map.Entry<Long, Integer> entry : exportQuantities.entrySet()) {
                     Long productId = entry.getKey();
                     int totalExport = entry.getValue();
@@ -195,9 +199,24 @@ public class IssueNoteService {
                     salesOrderDetail.setReceivedQuantity(salesOrderDetail.getReceivedQuantity() + totalExport);
                     logger.debug("After update: SalesOrderDetail for product ID {} has receivedQuantity={}", productId, salesOrderDetail.getReceivedQuantity());
                 }
+
+                // Cập nhật trạng thái SalesOrder
+                if (isFirstIssuance) {
+                    salesOrder.setStatus(SalesOrder.OrderStatus.PARTIALLY_ISSUED);
+                    logger.debug("SalesOrder ID {} updated to PARTIALLY_ISSUED (first issuance)", salesOrder.getOrderId());
+                }
+
+                // Kiểm tra xem tất cả sản phẩm đã được xuất đủ số lượng chưa
+                boolean allProductsFulfilled = salesOrder.getDetails().stream()
+                        .allMatch(detail -> detail.getReceivedQuantity() >= detail.getQuantity());
+                if (allProductsFulfilled) {
+                    salesOrder.setStatus(SalesOrder.OrderStatus.COMPLETED);
+                    logger.debug("SalesOrder ID {} updated to COMPLETED (all products fulfilled)", salesOrder.getOrderId());
+                }
+
                 salesOrderRepository.save(salesOrder);
             }
-            // ***** KẾT THÚC PHẦN MỚI *****
+            // ***** KẾT THÚC PHẦN CẬP NHẬT *****
 
             // Xử lý ReceiveOutsource cho category = "Gia công"
             if ("Gia công".equals(issueNoteDto.getCategory())) {
@@ -208,7 +227,6 @@ public class IssueNoteService {
                 outsource.setGoodIssueNote(issueNote);
                 outsource.setPartner(Partner.builder().partnerId(issueNoteDto.getPartnerId()).build());
                 outsource.setStatus(ReceiveOutsource.OutsourceStatus.PENDING);
-
 
                 // Tạo danh sách ReceiveOutsourceMaterial
                 List<ReceiveOutsourceMaterial> outsourceMaterials = issueNote.getDetails().stream()
@@ -227,10 +245,8 @@ public class IssueNoteService {
                 receiveOutsourceRepository.save(outsource);
             }
 
-
             // Lưu lại issueNote để đảm bảo đồng bộ
             issueNote = issueNoteRepository.save(issueNote);
-
 
             // Trả về DTO
             return issueNoteMapper.toDTO(issueNote);
