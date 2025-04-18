@@ -4,7 +4,6 @@ import { Card, CardBody, Typography, Button } from "@material-tailwind/react";
 import { TextField, Button as MuiButton } from "@mui/material";
 import PageHeader from "@/components/PageHeader";
 import useIssueNote from "./useIssueNote"; // Sử dụng hook chứa fetchIssueNoteDetail
-import useUser from "../../admin/users/useUser";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -82,7 +81,7 @@ const ViewIssueNote = () => {
         const issueNote = await fetchIssueNoteDetail(id);
         setData(issueNote);
         if (issueNote.createdBy) {
-          setCreator(issueNote.createdByUserName || "Không xác định");
+          setCreator(issueNote.createdByUserName);
         }
         // Nếu có tham chiếu (soId), cập nhật giá trị tham chiếu
         if (issueNote.soId) {

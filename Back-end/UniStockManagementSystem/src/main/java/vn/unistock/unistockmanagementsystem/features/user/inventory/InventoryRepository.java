@@ -21,6 +21,22 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     Optional<Inventory> findByWarehouseAndProduct(Warehouse warehouse, Product product);
 
     @Query("""
+    SELECT i 
+    FROM Inventory i 
+    WHERE (
+          (:productId IS NOT NULL AND i.product IS NOT NULL AND i.product.productId = :productId)
+          OR 
+          (:materialId IS NOT NULL AND i.material IS NOT NULL AND i.material.materialId = :materialId)
+          )
+      AND i.quantity > 0
+      AND i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.AVAILABLE
+      AND i.warehouse.warehouseId <> 3
+""")
+    List<InventoryByWarehouseDTO> findInventoryByAll(@Param("productId") Long productId,
+                                       @Param("materialId") Long materialId);
+
+
+    @Query("""
     SELECT COALESCE(SUM(i.quantity), 0)
     FROM Inventory i
     WHERE i.product.productId = :productId 

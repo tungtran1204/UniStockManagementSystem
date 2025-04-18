@@ -24,6 +24,7 @@ public class IssueNoteDTO {
     private String soCode;
     private Long createdBy;
     private String createdByUserName;
+    private String receiver;
     private List<IssueNoteDetailDTO> details;
     private List<String> paperEvidence;
 }

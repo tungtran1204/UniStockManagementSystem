@@ -16,6 +16,10 @@ import java.util.List;
 public class InventoryService {
     private final InventoryRepository inventoryRepository;
 
+    public List<InventoryByWarehouseDTO> findInventoryByAll(Long productId, Long materialId) {
+        return inventoryRepository.findInventoryByAll(productId, materialId);
+    }
+
     public Double getTotalQuantityOfProduct(Long productId) {
         return inventoryRepository.getTotalQuantityByProductId(productId);
     }

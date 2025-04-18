@@ -13,6 +13,7 @@ import vn.unistock.unistockmanagementsystem.entities.Role;
 import vn.unistock.unistockmanagementsystem.entities.User;
 import vn.unistock.unistockmanagementsystem.entities.UserDetail;
 import vn.unistock.unistockmanagementsystem.features.admin.role.RoleRepository;
+import vn.unistock.unistockmanagementsystem.features.auth.login.LoginService;
 
 import java.util.HashSet;
 import java.util.List;
@@ -26,7 +27,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final UserDetailRepository userDetailRepository;
-
+    private final LoginService loginService;
     private final UserMapper userMapper = UserMapper.INSTANCE;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -156,6 +157,7 @@ public class UserService {
         user.setIsActive(isActive);
         userRepository.save(user);
 
+        loginService.evictUserCache(user.getEmail());
         return userMapper.toDTO(user);
     }
 
