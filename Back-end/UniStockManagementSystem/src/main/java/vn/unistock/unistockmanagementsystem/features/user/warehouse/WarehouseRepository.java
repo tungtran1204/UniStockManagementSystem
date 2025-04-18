@@ -3,6 +3,8 @@ package vn.unistock.unistockmanagementsystem.features.user.warehouse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.unistock.unistockmanagementsystem.entities.Warehouse;
 
@@ -18,4 +20,13 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
 
     Warehouse findByWarehouseName(String warehouseName);
     Warehouse findByWarehouseId(Long warehouseId);
+
+    @Query("SELECT w FROM Warehouse w WHERE " +
+            "(:search IS NULL OR LOWER(w.warehouseCode) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "OR LOWER(w.warehouseName) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "AND (:isActive IS NULL OR w.isActive = :isActive)")
+    Page<Warehouse> searchWarehouses(@Param("search") String search,
+                                     @Param("isActive") Boolean isActive,
+                                     Pageable pageable);
+
 }

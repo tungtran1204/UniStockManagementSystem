@@ -11,10 +11,18 @@ const authHeader = () => {
 
 
 // Fetch all warehouses
-export const fetchWarehouses = async (page, size) => {
+export const fetchWarehouses = async (page, size, search = "", isActive = null) => {
   try {
-    const response = await axios.get(`${API_URL}?page=${page}&size=${size}`, { headers: authHeader() });
-    console.log("Dữ liệu kho:", response.data); // Kiểm tra dữ liệu trả về từ API
+    const params = new URLSearchParams();
+    params.append("page", page);
+    params.append("size", size);
+    if (search) params.append("search", search);
+    if (isActive !== null) params.append("isActive", isActive);
+
+    const response = await axios.get(`${API_URL}?${params.toString()}`, {
+      headers: authHeader()
+    });
+
     return {
       data: response.data.content,
       totalPages: response.data.totalPages,

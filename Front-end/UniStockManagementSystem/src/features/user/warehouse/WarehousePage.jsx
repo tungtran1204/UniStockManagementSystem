@@ -20,6 +20,7 @@ import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
+import StatusFilterButton from "@/components/StatusFilterButton";
 
 // Define the WarehousePage component
 const WarehousePage = () => {
@@ -33,12 +34,49 @@ const WarehousePage = () => {
 
   // State for pagination
   const [currentPage, setCurrentPage] = useState(0); // Current page number
-  const [pageSize, setPageSize] = useState(5); // Number of warehouses per page
+  const [pageSize, setPageSize] = useState(10); // Number of warehouses per page
+
+  const [statusAnchorEl, setStatusAnchorEl] = useState(null);
+  const [selectedStatuses, setSelectedStatuses] = useState([]);
 
   // Fetch warehouses when the component mounts or pagination changes
   useEffect(() => {
-    fetchPaginatedWarehouses(currentPage, pageSize);
-  }, [currentPage, pageSize]);
+    const selectedStatusValue =
+      selectedStatuses.length === 1
+        ? selectedStatuses[0] === true || selectedStatuses[0] === "true"
+          ? true
+          : false
+        : null;
+    fetchPaginatedWarehouses(currentPage + 1, pageSize, searchTerm, selectedStatusValue);
+  }, [currentPage, pageSize, selectedStatuses, searchTerm]);
+
+  const allStatuses = [
+    {
+      value: true,
+      label: "Đang hoạt động",
+      className: "bg-green-50 text-green-800",
+    },
+    {
+      value: false,
+      label: "Ngừng hoạt động",
+      className: "bg-red-50 text-red-800",
+    },
+  ];
+
+  // Handle search
+  const handleSearch = () => {
+    setCurrentPage(0);
+  
+    const trimmedSearchTerm = searchTerm.trim();
+    const selectedStatusValue =
+      selectedStatuses.length === 1
+        ? selectedStatuses[0] === true || selectedStatuses[0] === "true"
+          ? true
+          : false
+        : null;
+  
+    fetchPaginatedWarehouses(1, pageSize, trimmedSearchTerm, selectedStatusValue);
+  }; 
 
   // Handle edit warehouse action
   const handleEditWarehouse = async (warehouse) => {
@@ -163,16 +201,27 @@ const WarehousePage = () => {
               </Typography>
             </div>
 
-            {/* Search input */}
-            <TableSearch
-              value={searchTerm}
-              onChange={setSearchTerm}
-              onSearch={() => {
-                // Thêm hàm xử lý tìm kiếm vào đây nếu có
-                console.log("Tìm kiếm kho:", searchTerm);
-              }}
-              placeholder="Tìm kiếm kho"
-            />
+            <div className="mb-3 flex flex-wrap items-center gap-4">
+              {/* Filter by status */}
+              <StatusFilterButton
+                anchorEl={statusAnchorEl}
+                setAnchorEl={setStatusAnchorEl}
+                selectedStatuses={selectedStatuses}
+                setSelectedStatuses={setSelectedStatuses}
+                allStatuses={allStatuses}
+                buttonLabel="Trạng thái"
+              />
+
+              {/* Search input */}
+              <div className="w-[250px]">
+                <TableSearch
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                  onSearch={handleSearch}
+                  placeholder="Tìm kiếm kho..."
+                />
+              </div>
+            </div>
 
           </div>
 

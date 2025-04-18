@@ -78,4 +78,10 @@ public class WarehouseService {
         }
         return warehouseRepository.existsByWarehouseCode(warehouseCode);
     }
+
+    public Page<Warehouse> searchWarehouses(String search, Boolean isActive, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return warehouseRepository.searchWarehouses(search, isActive, pageable);
+    }
+
 }
