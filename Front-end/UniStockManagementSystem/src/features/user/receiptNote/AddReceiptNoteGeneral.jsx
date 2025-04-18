@@ -103,6 +103,12 @@ const AddReceiptNoteGeneral = () => {
   // Lưu mã phiếu nhập code tạm (nếu có) từ location
   const initialNextCode = location.state?.nextCode;
 
+  // Ẩn kho KPL khỏi dropdown nếu không phải "Hàng hóa trả lại"
+  const isReturnCategory = category === "Hàng hóa trả lại";
+  const filteredWarehouses = warehouses.filter(w =>
+    isReturnCategory || w.warehouseCode !== "KPL"
+  );
+
   // region: useEffect - gọi data, set default values
   useEffect(() => {
     // Ngày lập phiếu mặc định là ngày hiện tại
@@ -253,7 +259,7 @@ const AddReceiptNoteGeneral = () => {
     }
   };
 
-  
+
   const getDefaultWarehouse = (category) => {
     const matchedWarehouse = warehouses.find((w) => {
       if (!w.goodCategory) return false;
@@ -262,7 +268,7 @@ const AddReceiptNoteGeneral = () => {
     });
     return matchedWarehouse ? matchedWarehouse.warehouseCode : "";
   };
-  
+
   // ------------------ Khi chọn chứng từ từ modal => load chi tiết ------------------
   const handleChooseDoc = async (selectedOrder) => {
     setIsChooseDocModalOpen(false);
@@ -434,6 +440,13 @@ const AddReceiptNoteGeneral = () => {
   //Hàm xử lí lưu phiếu nhập
 
   const handleSaveReceipt = async () => {
+
+    let errors = {
+      product: {},
+      warehouse: {},
+      quantity: {}
+    };
+    
     // Nếu chưa chọn category => return
     if (!category) {
       alert("Vui lòng chọn Phân loại nhập kho!");
@@ -482,11 +495,29 @@ const AddReceiptNoteGeneral = () => {
           localErrors[row.id] = "Số lượng không hợp lệ!";
         }
       });
+
+      // ✅ Kiểm tra nếu có nhiều dòng trùng mã hàng + kho
+      const combinationSet = new Set();
+      for (let row of manualItems) {
+        if (!row.selected || !row.warehouse) continue;
+        const key = `${row.selected.code}-${row.warehouse}`;
+        if (combinationSet.has(key)) {
+          hasError = true;
+          localErrors[row.id] = "Hàng hóa và kho đã có trong danh sách! Vui lòng kiểm tra lại!";
+        } else {
+          combinationSet.add(key);
+        }
+      }
+
     }
 
     if (hasError) {
       console.log("Có lỗi validate", localErrors);
-      setQuantityErrors(localErrors);
+      setQuantityErrors({
+        product: {},   // mã hàng
+        warehouse: {}, // kho
+        quantity: {}   // số lượng
+      });
       return;
     }
 
@@ -638,7 +669,7 @@ const AddReceiptNoteGeneral = () => {
           <Autocomplete
             sx={{ width: '100%' }}
             size="small"
-            options={warehouses || []}
+            options={filteredWarehouses}
             getOptionLabel={(option) => option?.warehouseCode + " - " + option?.warehouseName}
             value={warehouses.find(wh => wh.warehouseCode === params.row.warehouse) || null}
             onChange={(e, newValue) => {
@@ -671,26 +702,24 @@ const AddReceiptNoteGeneral = () => {
       filterable: false,
       minWidth: 200,
       renderCell: (params) => {
+        const rowError = quantityErrors[params.row.id];
         return (
-          <div>
+          <div style={{ width: "100%" }}>
             <TextField
               type="number"
               size="small"
               color="success"
-              slotProps={{
-                input: {
-                  inputMode: "numeric",
-                }
-              }}
+              error={!!rowError}
+              helperText={rowError}
               value={params.row.quantity}
               placeholder="0"
               onChange={(e) => handleChangeQuantity(params.row.id, e.target.value)}
               style={{ width: '100%' }}
             />
           </div>
-
         );
       }
+
     },
     {
       field: 'actions',
