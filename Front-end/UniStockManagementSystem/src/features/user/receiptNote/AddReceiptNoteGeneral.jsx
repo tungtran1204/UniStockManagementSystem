@@ -254,19 +254,15 @@ const AddReceiptNoteGeneral = () => {
   };
 
   
-  const getDefaultWarehouse = (warehouseType) => {
-    const warehouseTypeMap = {
-      "Thành phẩm sản xuất": "KTP",
-      "Hàng hóa trả lại": "KPL",
-      "Vật tư mua bán": "KVT",
-      "Hàng hóa gia công": "KVT",
-      "Vật tư thừa sau sản xuất": "KVT",
-    };
-    const warehouseCode = warehouseTypeMap[warehouseType] || "";
-    const defaultWarehouse = warehouses.find(w => w.warehouseCode === warehouseCode);
-    return defaultWarehouse ? defaultWarehouse.warehouseCode : "";
+  const getDefaultWarehouse = (category) => {
+    const matchedWarehouse = warehouses.find((w) => {
+      if (!w.goodCategory) return false;
+      const categories = w.goodCategory.split(",").map(c => c.trim());
+      return categories.includes(category);
+    });
+    return matchedWarehouse ? matchedWarehouse.warehouseCode : "";
   };
-
+  
   // ------------------ Khi chọn chứng từ từ modal => load chi tiết ------------------
   const handleChooseDoc = async (selectedOrder) => {
     setIsChooseDocModalOpen(false);
