@@ -448,6 +448,8 @@ export const routes = [
         roles: ["USER"],
       },
       {
+        layout: "Xuất kho", // Sử dụng icon tương tự như trang quản lý kho
+        name: "Cho tiết phiếu xuất kho",
         path: "/user/issueNote/:id",
         element: <ViewIssueNote />,
         roles: ["USER"],

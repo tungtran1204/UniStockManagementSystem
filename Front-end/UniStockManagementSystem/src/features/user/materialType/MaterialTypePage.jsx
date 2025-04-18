@@ -17,11 +17,17 @@ import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
 import PageHeader from '@/components/PageHeader';
 import Table from "@/components/Table";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import SuccessAlert from "@/components/SuccessAlert";
 
 const MaterialTypePage = () => {
     const { materialTypes, fetchMaterialTypes, toggleStatus, createMaterialType, updateMaterialType, totalPages, totalElements, loading } = useMaterialType();
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [successAlertOpen, setSuccessAlertOpen] = useState(false);
+    const [successMessage, setSuccessMessage] = useState("");
+    const [pendingToggleRow, setPendingToggleRow] = useState(null);
     const [editMaterialType, setEditMaterialType] = useState(null);
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
@@ -44,6 +50,8 @@ const MaterialTypePage = () => {
             await createMaterialType(formData);
             setShowCreateModal(false);
             fetchMaterialTypes(currentPage, pageSize); // Làm mới danh sách
+            setSuccessMessage("Tạo danh mục vật tư thành công!");
+            setSuccessAlertOpen(true);
         } catch (error) {
             alert(error.message || "Lỗi khi tạo loại nguyên liệu");
         }
@@ -54,20 +62,23 @@ const MaterialTypePage = () => {
             await updateMaterialType(materialTypeId, formData);
             setShowEditModal(false);
             fetchMaterialTypes(currentPage, pageSize); // Làm mới danh sách
+            setSuccessMessage("Cập nhật danh mục vật tư thành công!");
+            setSuccessAlertOpen(true);
         } catch (error) {
             alert(error.message || "Lỗi khi cập nhật loại nguyên liệu");
         }
     };
 
     const columnsConfig = [
-        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
-        { field: 'name', headerName: 'Tên loại nguyên liệu', flex: 2, minWidth: 300, editable: false },
+        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
+        { field: 'name', headerName: 'Tên danh mục vật tư', flex: 2, minWidth: 300, editable: false, filterable: false },
         {
             field: 'description',
             headerName: 'Mô tả',
             flex: 2,
             minWidth: 400,
             editable: false,
+            filterable: false,
             renderCell: (params) => params.value || "Chưa có mô tả",
         },
         {
@@ -75,12 +86,17 @@ const MaterialTypePage = () => {
             headerName: 'Trạng thái',
             flex: 1,
             minWidth: 200,
+            editable: false,
+            filterable: false,
             renderCell: (params) => (
                 <div className="flex items-center gap-2">
                     <Switch
                         color="green"
                         checked={params.value}
-                        onChange={() => toggleStatus(params.row.id, params.value)}
+                        onChange={() => {
+                            setPendingToggleRow(params.row);
+                            setConfirmDialogOpen(true);
+                        }}
                         disabled={loading}
                     />
                     <div
@@ -97,6 +113,8 @@ const MaterialTypePage = () => {
             headerName: 'Hành động',
             flex: 0.5,
             minWidth: 100,
+            editable: false,
+            filterable: false,
             renderCell: (params) => (
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
                     <Tooltip content="Chỉnh sửa">
@@ -131,9 +149,9 @@ const MaterialTypePage = () => {
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
                 <CardBody className="pb-2 bg-white rounded-xl">
                     <PageHeader
-                        title="Danh sách loại nguyên liệu"
+                        title="Danh sách danh mục vật tư"
                         onAdd={() => setShowCreateModal(true)}
-                        addButtonLabel="Thêm loại nguyên liệu"
+                        addButtonLabel="Thêm danh mục vật tư"
                         showImport={false}
                         showExport={false}
                     />
@@ -176,7 +194,7 @@ const MaterialTypePage = () => {
                             pageRangeDisplayed={5}
                             onPageChange={handlePageChange}
                             containerClassName="flex items-center gap-1"
-                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                             pageLinkClassName="flex items-center justify-center w-full h-full"
                             previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                             nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -203,6 +221,28 @@ const MaterialTypePage = () => {
                     onSuccess={handleUpdateSuccess}
                 />
             )}
+
+            <ConfirmDialog
+                open={confirmDialogOpen}
+                onClose={() => setConfirmDialogOpen(false)}
+                onConfirm={() => {
+                    if (pendingToggleRow) {
+                        toggleStatus(pendingToggleRow.id, pendingToggleRow.status); // truyền đúng giá trị mới
+                        setSuccessMessage("Cập nhật trạng thái thành công!");
+                        setSuccessAlertOpen(true);
+                    }
+                    setConfirmDialogOpen(false);
+                }}
+                message={`Bạn có chắc chắn muốn ${pendingToggleRow?.status ? "ngưng hoạt động" : "kích hoạt lại"} danh mục vật tư này không?`}
+                confirmText="Có"
+                cancelText="Không"
+            />
+
+            <SuccessAlert
+                open={successAlertOpen}
+                onClose={() => setSuccessAlertOpen(false)}
+                message={successMessage}
+            />
         </div>
     );
 };

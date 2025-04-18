@@ -28,7 +28,7 @@ import Select, { components } from "react-select";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
-import "dayjs/locale/vi"; // Import Tiếng Việt
+import "dayjs/locale/vi";
 import useSaleOrder from "./useSaleOrder";
 import { getPartnersByType, getPartnersByMaterial } from "@/features/user/partner/partnerService";
 import {
@@ -44,70 +44,19 @@ import PageHeader from "@/components/PageHeader";
 import { canCreatePurchaseRequest } from "@/features/user/purchaseRequest/PurchaseRequestService";
 import CancelSaleOrderModal from "./CancelSaleOrderModal";
 import { getTotalQuantityOfMaterial } from "@/features/user/issueNote/issueNoteService";
+import SuccessAlert from "@/components/SuccessAlert";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
-// ------------------ 3 MODE ------------------
 const MODE_VIEW = "view";
 const MODE_EDIT = "edit";
 const MODE_DINHMUC = "dinhMuc";
-// ---------------------------------------------
-
 const CUSTOMER_TYPE_ID = 2;
-
-const AddCustomerDropdownIndicator = (props) => {
-  return (
-    <div style={{ display: "flex", alignItems: "center" }}>
-      <div
-        style={{ cursor: "pointer", padding: "0 8px" }}
-        onClick={(e) => {
-          e.stopPropagation();
-          props.selectProps.onAddCustomer();
-        }}
-      >
-        <FaPlus />
-      </div>
-      <components.DropdownIndicator {...props} />
-    </div>
-  );
-};
-
-const customStyles = {
-  control: (provided, state) => ({
-    ...provided,
-    minWidth: 200,
-    borderColor: state.isFocused ? "black" : provided.borderColor,
-    boxShadow: state.isFocused ? "0 0 0 1px black" : "none",
-    "&:hover": {
-      borderColor: "black",
-    },
-  }),
-  menuPortal: (provided) => ({
-    ...provided,
-    zIndex: 9999, // Đảm bảo dropdown hiển thị trên tất cả các phần tử khác
-  }),
-  menuList: (provided) => ({
-    ...provided,
-  }),
-  option: (provided, state) => ({
-    ...provided,
-    backgroundColor: state.isFocused
-      ? "#f3f4f6"
-      : state.isSelected
-        ? "#e5e7eb"
-        : "transparent",
-    color: "#000",
-    cursor: "pointer",
-    "&:active": {
-      backgroundColor: "#e5e7eb",
-    },
-  }),
-};
 
 const EditSaleOrderPage = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { updateExistingOrder } = useSaleOrder();
 
-  // ---------------- STATE ĐƠN HÀNG ----------------
   const [orderCode, setOrderCode] = useState("");
   const [orderDate, setOrderDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [partnerId, setPartnerId] = useState(null);
@@ -118,44 +67,27 @@ const EditSaleOrderPage = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [description, setDescription] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
   // Mảng dòng sản phẩm
   const [items, setItems] = useState([]);
-
-  // Danh sách KH, SP
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
-
-  // Popup thêm KH
   const [isCreatePartnerPopupOpen, setIsCreatePartnerPopupOpen] = useState(false);
-
-  // Lỗi
   const [customerError, setCustomerError] = useState("");
   const [globalError, setGlobalError] = useState("");
   const [itemsErrors, setItemsErrors] = useState({});
-
-  // Lỗi định mức NVL cho từng sản phẩm
   const [materialErrors, setMaterialErrors] = useState({});
-
-  // Tab hiển thị
   const [activeTab, setActiveTab] = useState("info");
-
-  // Lưu dữ liệu ban đầu (để revert)
   const [originalData, setOriginalData] = useState(null);
-
-  // -------------- 3 MODE: view / edit / dinhMuc ---------------
   const [mode, setMode] = useState(MODE_VIEW);
   const selectRef = useRef(null);
   const [nextId, setNextId] = useState(1);
-
-  // State để hiển thị bảng định mức nguyên vật liệu bên dưới bảng sản phẩm
   const [showMaterialTable, setShowMaterialTable] = useState(false);
-
-  // State lưu kết quả định mức nguyên vật liệu (tính theo: material của 1 product * số product cần SX)
   const [materialRequirements, setMaterialRequirements] = useState([]);
-
-  // Thêm state để lưu kết quả kiểm tra khả năng tạo PurchaseRequest
   const [canCreatePurchaseRequestState, setCanCreatePurchaseRequestState] = useState(false);
+
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
   // Gọi API từ service để kiểm tra khả năng tạo PurchaseRequest
   useEffect(() => {
@@ -166,16 +98,14 @@ const EditSaleOrderPage = () => {
           setCanCreatePurchaseRequestState(canCreate);
         } catch (error) {
           console.error("Lỗi khi kiểm tra khả năng tạo yêu cầu mua vật tư:", error);
-          setCanCreatePurchaseRequestState(false); // Mặc định ẩn nút nếu có lỗi
+          setCanCreatePurchaseRequestState(false);
           setGlobalError("Không thể kiểm tra trạng thái yêu cầu mua vật tư. Vui lòng thử lại sau.");
         }
       }
     };
-
     checkCanCreatePurchaseRequest();
   }, [orderId]);
 
-  // ========== Lấy đơn hàng ==========
   useEffect(() => {
     const fetchOrderDetail = async () => {
       try {
@@ -194,7 +124,6 @@ const EditSaleOrderPage = () => {
         setContactName(orderData.contactName || "");
         setPhoneNumber(orderData.phoneNumber || "");
 
-        // Map orderDetails => items, ban đầu dùng tổng tồn kho (số) cho mode VIEW/EDIT
         const loadedItems = await Promise.all(
           (orderData.orderDetails || []).map(async (detail, index) => {
             let totalQuantity = 0;
@@ -212,6 +141,8 @@ const EditSaleOrderPage = () => {
               quantity: detail.quantity ?? 0,
               inStock: totalQuantity ?? detail.inStock ?? 0,
               usedQuantity: detail.usedQuantity ?? 0,
+              exportedQuantity: detail.receivedQuantity ?? 0,
+              pendingQuantity: (detail.quantity ?? 0) - (detail.receivedQuantity ?? 0),
               produceQuantity: (detail.quantity ?? 0) - (detail.usedQuantity ?? 0),
             };
           })
@@ -245,7 +176,6 @@ const EditSaleOrderPage = () => {
     }
   }, [orderId]);
 
-  // ========== Lấy danh sách KH ==========
   const fetchCustomers = async () => {
     try {
       const res = await getPartnersByType(CUSTOMER_TYPE_ID);
@@ -280,7 +210,6 @@ const EditSaleOrderPage = () => {
     fetchCustomers();
   }, []);
 
-  // ========== Lấy danh sách SP ==========
   useEffect(() => {
     const fetchProductsData = async () => {
       try {
@@ -299,7 +228,6 @@ const EditSaleOrderPage = () => {
     fetchProductsData();
   }, []);
 
-  // ========== Mode handlers ==========
   const handleSetMode = (newMode) => {
     setMode(newMode);
   };
@@ -377,8 +305,9 @@ const EditSaleOrderPage = () => {
   const handleCancelSaleOrder = async (reason) => {
     try {
       await cancelSaleOrder(orderId, reason);
-      alert("Đơn hàng đã được hủy.");
-      navigate("/user/sale-orders");
+      navigate("/user/sale-orders", {
+        state: { successMessage: "Huỷ đơn hàng thành công!" },
+      });
     } catch (error) {
       console.error("Lỗi khi hủy đơn hàng:", error);
       alert("Không thể hủy đơn hàng. Vui lòng thử lại sau.");
@@ -436,6 +365,8 @@ const EditSaleOrderPage = () => {
         quantity: 0,
         inStock: 0,
         usedQuantity: 0,
+        exportedQuantity: 0,
+        pendingQuantity: 0,
         produceQuantity: 0,
       },
     ]);
@@ -465,12 +396,14 @@ const EditSaleOrderPage = () => {
       prev.map((r) =>
         r.id === rowId
           ? {
-            ...r,
-            productId: opt.productId,
-            productCode: opt.value,
-            productName: opt.label.split(" - ")[1] || "",
-            unitName: opt.unit,
-          }
+              ...r,
+              productId: opt.productId,
+              productCode: opt.value,
+              productName: opt.label.split(" - ")[1] || "",
+              unitName: opt.unit,
+              exportedQuantity: 0,
+              pendingQuantity: r.quantity,
+            }
           : r
       )
     );
@@ -509,7 +442,12 @@ const EditSaleOrderPage = () => {
           } else {
             totalUsed = r.usedQuantity;
           }
-          return { ...r, quantity: newQuantity, produceQuantity: newQuantity - totalUsed };
+          return {
+            ...r,
+            quantity: newQuantity,
+            pendingQuantity: newQuantity - r.exportedQuantity,
+            produceQuantity: newQuantity - totalUsed,
+          };
         }
         return r;
       })
@@ -522,7 +460,11 @@ const EditSaleOrderPage = () => {
       prev.map((r) => {
         if (r.id === rowId && !Array.isArray(r.inStock)) {
           const newUsed = Number(val);
-          return { ...r, usedQuantity: newUsed, produceQuantity: r.quantity - newUsed };
+          return {
+            ...r,
+            usedQuantity: newUsed,
+            produceQuantity: r.quantity - newUsed,
+          };
         }
         return r;
       })
@@ -537,7 +479,6 @@ const EditSaleOrderPage = () => {
     }
 
     try {
-      // Lọc các vật tư có quantityToBuy > 0 từ materialRequirements
       const materialsToBuy = materialRequirements.filter((mat) => mat.quantityToBuy > 0);
 
       if (materialsToBuy.length === 0) {
@@ -545,7 +486,6 @@ const EditSaleOrderPage = () => {
         return;
       }
 
-      // Chuẩn bị dữ liệu để chuyển sang trang AddPurchaseRequestPage
       const itemsWithSuppliers = await Promise.all(
         materialsToBuy.map(async (item) => {
           const suppliers = await getPartnersByMaterial(item.materialId);
@@ -564,7 +504,7 @@ const EditSaleOrderPage = () => {
             materialCode: item.materialCode,
             materialName: item.materialName,
             unitName: item.unitName,
-            quantity: item.quantityToBuy, // Sử dụng quantityToBuy thay vì requiredQuantity
+            quantity: item.quantityToBuy,
             supplierId: defaultSupplier ? defaultSupplier.value : "",
             supplierName: defaultSupplier ? defaultSupplier.name : "",
             suppliers: mappedSuppliers,
@@ -584,7 +524,6 @@ const EditSaleOrderPage = () => {
         }))
       );
 
-
       navigate("/user/purchase-request/add", {
         state: {
           fromSaleOrder: true,
@@ -594,7 +533,6 @@ const EditSaleOrderPage = () => {
           usedProductsFromWarehouses: usedProductsFromWarehouses,
         },
       });
-
     } catch (error) {
       console.error("Lỗi khi chuẩn bị dữ liệu yêu cầu mua vật tư:", error);
       alert("Có lỗi xảy ra khi chuẩn bị dữ liệu yêu cầu mua vật tư!");
@@ -632,6 +570,8 @@ const EditSaleOrderPage = () => {
         ex.quantity += cur.quantity;
         ex.inStock += cur.inStock;
         ex.usedQuantity += cur.usedQuantity;
+        ex.exportedQuantity += cur.exportedQuantity;
+        ex.pendingQuantity += cur.pendingQuantity;
         ex.produceQuantity += cur.produceQuantity;
       } else {
         acc.push({ ...cur });
@@ -660,6 +600,7 @@ const EditSaleOrderPage = () => {
         unitName: it.unitName,
         inStock: it.inStock,
         usedQuantity: it.usedQuantity,
+        receivedQuantity: it.exportedQuantity,
         produceQuantity: it.produceQuantity,
       })),
     };
@@ -668,9 +609,10 @@ const EditSaleOrderPage = () => {
 
     try {
       await updateExistingOrder(orderId, payload);
-      alert("Cập nhật đơn hàng thành công!");
       handleSetMode(MODE_VIEW);
-      navigate("/user/sale-orders");
+      navigate("/user/sale-orders", {
+        state: { successMessage: "Cập nhật đơn bán hàng thành công!" },
+      });
     } catch (err) {
       console.error("Lỗi PUT order:", err);
       alert("Lỗi khi cập nhật đơn hàng!");
@@ -682,7 +624,7 @@ const EditSaleOrderPage = () => {
       return (
         <tr>
           <td
-            colSpan={mode === MODE_EDIT ? 10 : mode === MODE_DINHMUC ? 10 : 5}
+            colSpan={mode === MODE_EDIT ? 8 : mode === MODE_DINHMUC ? 9 : 7}
             className="px-4 py-2 text-center text-gray-700"
           >
             Chưa có dòng sản phẩm nào
@@ -795,18 +737,22 @@ const EditSaleOrderPage = () => {
                 type="number"
                 size="small"
                 fullWidth
-                inputProps={{ min: 0 }}
-                value={detail.usedQuantity || 0}
+                slotProps={{
+                  input: {
+                    inputMode: "numeric",
+                  }
+                }}
+                value={detail.usedQuantity === 0 ? "" : detail.usedQuantity}
                 onChange={(e) =>
                   handleDetailUsedQuantityChange(item.id, detailIndex, e.target.value)
                 }
                 color="success"
                 hiddenLabel
-                placeholder="Số lượng"
+                placeholder="0"
               />
             </td>
             {detailIndex === 0 && (
-              <td className="px-4 py-2 text-sm border-r text-[#000000DE] border-[rgba(224,224,224,1)]" rowSpan={details.length}>
+              <td className="px-4 py-2 text-sm border-r text-center text-[#000000DE] border-[rgba(224,224,224,1)]" rowSpan={details.length}>
                 {item.produceQuantity || 0}
               </td>
             )}
@@ -908,6 +854,12 @@ const EditSaleOrderPage = () => {
               </Typography>
             )}
           </td>
+          <td className="px-4 py-2 text-sm border-r text-center border-[rgba(224,224,224,1)]">
+            {item.exportedQuantity || 0}
+          </td>
+          <td className="px-4 py-2 text-sm border-r text-center border-[rgba(224,224,224,1)]">
+            {item.pendingQuantity || 0}
+          </td>
           {mode === MODE_DINHMUC && (
             <>
               <td className="px-4 py-2 text-sm border-r border-[rgba(224,224,224,1)]">
@@ -918,12 +870,16 @@ const EditSaleOrderPage = () => {
                   type="number"
                   size="small"
                   fullWidth
-                  inputProps={{ min: 0 }}
-                  value={item.usedQuantity}
+                  slotProps={{
+                    input: {
+                      inputMode: "numeric",
+                    }
+                  }}
+                  value={item.usedQuantity === 0 ? "" : item.usedQuantity}
                   onChange={(e) => handleUsedQuantityChange(item.id, e.target.value)}
                   color="success"
                   hiddenLabel
-                  placeholder="Số lượng"
+                  placeholder="0"
                 />
               </td>
               <td className="px-4 py-2 text-sm border-r border-[rgba(224,224,224,1)]">
@@ -947,7 +903,6 @@ const EditSaleOrderPage = () => {
     }
   };
 
-  // ===== TÍNH TOÁN NGUYÊN VẬT LIỆU DỰA VÀO SỐ SX =====
   useEffect(() => {
     if (mode === MODE_DINHMUC && showMaterialTable) {
       const recalcMaterialRequirements = async () => {
@@ -978,7 +933,6 @@ const EditSaleOrderPage = () => {
         const results = await Promise.all(promises);
         let aggregated = {};
 
-        // Bước 1: Gộp các NVL theo materialCode
         results.forEach((result) => {
           if (result && result.materials) {
             result.materials.forEach((mat) => {
@@ -987,25 +941,24 @@ const EditSaleOrderPage = () => {
                 aggregated[mat.materialCode].requiredQuantity += requiredQty;
               } else {
                 aggregated[mat.materialCode] = {
-                  materialId: mat.materialId, // Thêm materialId để gọi API
+                  materialId: mat.materialId,
                   materialCode: mat.materialCode,
                   materialName: mat.materialName,
                   requiredQuantity: requiredQty,
                   unitName: mat.unitName,
-                  totalInStock: 0, // Sẽ cập nhật sau khi gọi API
-                  quantityToBuy: 0, // Sẽ tính sau khi có totalInStock
+                  totalInStock: 0,
+                  quantityToBuy: 0,
                 };
               }
             });
           }
         });
 
-        // Bước 2: Gọi API để lấy tổng tồn kho cho từng NVL
         const materialPromises = Object.values(aggregated).map(async (mat) => {
           try {
             const warehouses = await getTotalQuantityOfMaterial(mat.materialId);
             const totalInStock = warehouses.reduce((sum, w) => sum + (w.quantity || 0), 0);
-            const quantityToBuy = Math.max(mat.requiredQuantity - totalInStock, 0); // Nếu âm thì trả về 0
+            const quantityToBuy = Math.max(mat.requiredQuantity - totalInStock, 0);
             return {
               ...mat,
               totalInStock,
@@ -1016,7 +969,7 @@ const EditSaleOrderPage = () => {
             return {
               ...mat,
               totalInStock: 0,
-              quantityToBuy: mat.requiredQuantity, // Nếu lỗi, giả định không có tồn kho
+              quantityToBuy: mat.requiredQuantity,
             };
           }
         });
@@ -1041,7 +994,6 @@ const EditSaleOrderPage = () => {
             showExport={false}
           />
 
-          {/* Tab header */}
           <div className="mb-4 flex border-b">
             <Tabs
               value={activeTab}
@@ -1206,7 +1158,7 @@ const EditSaleOrderPage = () => {
                     options={customers}
                     size="small"
                     getOptionLabel={(option) => `${option.code} - ${option.name}`}
-                    value={customers.find(o => o.code === customerCode) || null}
+                    value={customers.find(o => o.id === partnerId)}
                     onChange={(event, selected) => {
                       handleCustomerChange(selected);
                     }}
@@ -1374,7 +1326,7 @@ const EditSaleOrderPage = () => {
                   </div>
                 )}
               </div>
-              <div className="border border-gray-200 rounded mb-4 overflow-x-auto border-[rgba(224,224,224,1)]">
+              <div className="border border-gray-200 rounded overflow-x-auto border-[rgba(224,224,224,1)]">
                 <table className="w-full text-left min-w-max border-collapse border-[rgba(224,224,224,1)]">
                   <thead className="bg-[#f5f5f5] border-b border-[rgba(224,224,224,1)]">
                     <tr>
@@ -1383,6 +1335,12 @@ const EditSaleOrderPage = () => {
                       <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Tên hàng</th>
                       <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Đơn vị</th>
                       <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Số lượng</th>
+                      {mode !== MODE_DINHMUC && (
+                        <>
+                          <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">SL đã xuất</th>
+                          <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">SL còn lại</th>
+                        </>
+                      )}
                       {mode === MODE_DINHMUC && (
                         <>
                           <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Tên kho</th>
@@ -1399,8 +1357,14 @@ const EditSaleOrderPage = () => {
                   <tbody>{renderTableRows()}</tbody>
                 </table>
               </div>
+
+              {globalError && (
+                <Typography color="red" className="text-sm mt-2">
+                  {globalError}
+                </Typography>
+              )}
               {mode === MODE_EDIT && activeTab === "products" && (
-                <div className="flex gap-2 mb-4">
+                <div className="flex gap-2 my-4">
                   <MuiButton
                     size="small"
                     variant="outlined"
@@ -1424,7 +1388,6 @@ const EditSaleOrderPage = () => {
                   </MuiButton>
                 </div>
               )}
-              {/* Bảng định mức nguyên vật liệu */}
               {mode === MODE_DINHMUC && showMaterialTable && (
                 <div className="mt-4">
                   <Typography variant="h6" className="flex items-center mb-4 text-black">
@@ -1435,6 +1398,7 @@ const EditSaleOrderPage = () => {
                     <table className="w-full text-left min-w-max border-collapse border-[rgba(224,224,224,1)]">
                       <thead className="bg-[#f5f5f5] border-b border-[rgba(224,224,224,1)]">
                         <tr>
+                          <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">STT</th>
                           <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Mã NVL</th>
                           <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Tên NVL</th>
                           <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Số lượng</th>
@@ -1447,6 +1411,7 @@ const EditSaleOrderPage = () => {
                         {materialRequirements.length > 0 ? (
                           materialRequirements.map((mat, index) => (
                             <tr key={index} className="border-b last:border-b-0 hover:bg-gray-50">
+                              <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{index + 1}</td>
                               <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.materialCode}</td>
                               <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.materialName}</td>
                               <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.requiredQuantity}</td>
@@ -1471,11 +1436,6 @@ const EditSaleOrderPage = () => {
           )}
 
           <div className="flex flex-col gap-2">
-            {globalError && (
-              <Typography color="red" className="text-sm text-right">
-                {globalError}
-              </Typography>
-            )}
             <Divider />
             <div className="flex justify-between my-2">
               <MuiButton
@@ -1495,33 +1455,36 @@ const EditSaleOrderPage = () => {
               >
                 <FaArrowLeft className="h-3 w-3" /> Quay lại
               </MuiButton>
-              {mode === MODE_VIEW && originalData?.statusLabel !== "Đã huỷ" && activeTab === "info" && (
-                <MuiButton
-                  size="medium"
-                  color="error"
-                  variant="outlined"
-                  onClick={() => setShowCancelModal(true)}
-                >
-                  Hủy đơn hàng
-                </MuiButton>
-              )}
 
-              {mode === MODE_VIEW && activeTab === "products" && canCreatePurchaseRequestState && originalData?.status !== "CANCELLED" && (
-                <MuiButton
-                  variant="contained"
-                  size="medium"
-                  onClick={handleEdit}
-                  sx={{
-                    boxShadow: 'none',
-                    '&:hover': { boxShadow: 'none' }
-                  }}
-                >
-                  <div className='flex items-center gap-2'>
-                    <FaEdit className="h-4 w-4" />
-                    <span>Chỉnh sửa</span>
-                  </div>
-                </MuiButton>
-              )}
+              <div className="flex items-center gap-2">
+                {mode === MODE_VIEW && originalData?.statusLabel !== "Đã huỷ" && activeTab === "info" && (
+                  <MuiButton
+                    size="medium"
+                    color="error"
+                    variant="outlined"
+                    onClick={() => setShowCancelModal(true)}
+                  >
+                    Hủy đơn hàng
+                  </MuiButton>
+                )}
+
+                {mode === MODE_VIEW && canCreatePurchaseRequestState && originalData?.status !== "CANCELLED" && (
+                  <MuiButton
+                    variant="contained"
+                    size="medium"
+                    onClick={handleEdit}
+                    sx={{
+                      boxShadow: 'none',
+                      '&:hover': { boxShadow: 'none' }
+                    }}
+                  >
+                    <div className='flex items-center gap-2'>
+                      <FaEdit className="h-4 w-4" />
+                      <span>Chỉnh sửa</span>
+                    </div>
+                  </MuiButton>
+                )}
+              </div>
 
               {mode === MODE_EDIT && (
                 <div className="flex items-center gap-2">
@@ -1581,7 +1544,6 @@ const EditSaleOrderPage = () => {
                               quantity: req.requiredQuantity,
                             }))
                             .filter((entry) => entry.quantity > 0);
-
 
                           const payload = {
                             saleOrderId: orderId,
@@ -1643,6 +1605,7 @@ const EditSaleOrderPage = () => {
           }}
         />
       )}
+
     </div>
   );
 };

@@ -186,4 +186,8 @@ AND i.warehouse.warehouseName NOT LIKE '%phế liệu%'
 
     Optional<Inventory> findByMaterial_MaterialIdAndWarehouse_WarehouseIdAndStatus(Long materialId, Long warehouseId, Inventory.InventoryStatus status);
 
+    @Query("SELECT COUNT(i) > 0 FROM Inventory i WHERE i.warehouse.warehouseId = :warehouseId AND i.quantity > 0")
+    boolean existsStockInWarehouse(@Param("warehouseId") Long warehouseId);
+
+
 }

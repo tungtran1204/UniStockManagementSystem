@@ -19,7 +19,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Import Tiếng Việt
 import updateLocale from 'dayjs/plugin/updateLocale';
 
-const ModalEditUser = ({ open, onClose, user, fetchUsers }) => {
+const ModalEditUser = ({ open, onClose, onSuccess, user, fetchUsers }) => {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [password, setPassword] = useState("");
@@ -43,7 +43,11 @@ const ModalEditUser = ({ open, onClose, user, fetchUsers }) => {
       setFullname(user.userDetail?.fullname || "");
       setPhoneNumber(user.userDetail?.phoneNumber || "");
       setAddress(user.userDetail?.address || "");
-      setDateOfBirth(user.userDetail?.dateOfBirth ? dayjs(user.userDetail.dateOfBirth) : null);
+      setDateOfBirth(
+        user.userDetail?.dateOfBirth && dayjs(user.userDetail.dateOfBirth).isValid()
+          ? dayjs(user.userDetail.dateOfBirth)
+          : null
+      );
       setSelectedRoles(new Set(user.roleIds || []));
     }
   }, [user]);
@@ -156,6 +160,7 @@ const ModalEditUser = ({ open, onClose, user, fetchUsers }) => {
     try {
       await updateUser(user.userId, updatedUser);
       fetchUsers();
+      onSuccess("Cập nhật người dùng thành công!")
       onClose();
     } catch (error) {
       console.error("❌ Lỗi khi cập nhật người dùng:", error);

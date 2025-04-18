@@ -11,10 +11,18 @@ const authHeader = () => {
 
 
 // Fetch all warehouses
-export const fetchWarehouses = async (page, size) => {
+export const fetchWarehouses = async (page, size, search = "", isActive = null) => {
   try {
-    const response = await axios.get(`${API_URL}?page=${page}&size=${size}`, { headers: authHeader() });
-    console.log("Dữ liệu kho:", response.data); // Kiểm tra dữ liệu trả về từ API
+    const params = new URLSearchParams();
+    params.append("page", page);
+    params.append("size", size);
+    if (search) params.append("search", search);
+    if (isActive !== null) params.append("isActive", isActive);
+
+    const response = await axios.get(`${API_URL}?${params.toString()}`, {
+      headers: authHeader()
+    });
+
     return {
       data: response.data.content,
       totalPages: response.data.totalPages,
@@ -83,5 +91,31 @@ export const getWarehouseList = async () => {
   } catch (error) {
     console.error("Error fetching warehouse list:", error);
     throw error;
+  }
+};
+
+export const fetchUsedWarehouseCategories = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/used-categories`, {
+      headers: authHeader()
+    });
+    return response.data; // trả về mảng string: ["Thành phẩm sản xuất", "Hàng hóa trả lại", ...]
+  } catch (error) {
+    console.error("Lỗi khi lấy phân loại kho đã sử dụng:", error);
+    throw error;
+  }
+};
+
+export const checkWarehouseCode = async (warehouseCode, excludeId = null) => {
+  try {
+    const params = excludeId ? `?excludeId=${excludeId}` : "";
+    const response = await axios.get(
+      `http://localhost:8080/api/unistock/user/warehouses/check-warehouse-code/${warehouseCode}${params}`,
+      { headers: authHeader() }
+    );
+    return response.data.exists;
+  } catch (error) {
+    console.error("Lỗi kiểm tra mã kho:", error);
+    return false;
   }
 };

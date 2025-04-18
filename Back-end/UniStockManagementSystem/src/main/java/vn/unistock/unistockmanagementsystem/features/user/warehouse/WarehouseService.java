@@ -7,8 +7,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import vn.unistock.unistockmanagementsystem.entities.Warehouse;
+import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryRepository;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -17,12 +20,19 @@ public class WarehouseService {
     private final WarehouseRepository warehouseRepository;
     @Autowired
     private final WarehouseMapper warehouseMapper;
+    @Autowired
+    private final InventoryRepository inventoryRepository;
 
     public Warehouse addWarehouse(WarehouseDTO warehouseDTO) {
-        Warehouse warehouse =  new Warehouse();
         if (warehouseRepository.existsByWarehouseName(warehouseDTO.getWarehouseName()))
-            throw new RuntimeException("Kho đã tồn tại");
-        warehouse = warehouseMapper.toEntity(warehouseDTO);
+            throw new RuntimeException("Tên kho đã tồn tại");
+
+        if (warehouseRepository.existsByWarehouseCode(warehouseDTO.getWarehouseCode()))
+            throw new RuntimeException("Mã kho đã tồn tại");
+
+        Warehouse warehouse = warehouseMapper.toEntity(warehouseDTO);
+        System.out.println("DTO goodCategory: " + warehouseDTO.getGoodCategory());
+        System.out.println("Mapped Entity goodCategory: " + warehouse.getGoodCategory());
         return warehouseRepository.save(warehouse);
     }
 
@@ -42,6 +52,21 @@ public class WarehouseService {
 
     public Warehouse updateWarehouse(Long id, WarehouseDTO warehouseDTO) {
         Warehouse warehouse = getWarehouseById(id);
+
+        boolean isCodeChanged = !warehouse.getWarehouseCode().equals(warehouseDTO.getWarehouseCode());
+        boolean isNameChanged = !warehouse.getWarehouseName().equals(warehouseDTO.getWarehouseName());
+
+        boolean codeExists = isCodeChanged && warehouseRepository.existsByWarehouseCode(warehouseDTO.getWarehouseCode());
+        boolean nameExists = isNameChanged && warehouseRepository.existsByWarehouseName(warehouseDTO.getWarehouseName());
+
+        if (codeExists && nameExists) {
+            throw new IllegalArgumentException("DUPLICATE_CODE_AND_NAME");
+        } else if (codeExists) {
+            throw new IllegalArgumentException("DUPLICATE_CODE");
+        } else if (nameExists) {
+            throw new IllegalArgumentException("DUPLICATE_NAME");
+        }
+
         warehouseMapper.updateEntityFromDto(warehouseDTO, warehouse);
         return warehouseRepository.save(warehouse);
     }
@@ -51,8 +76,36 @@ public class WarehouseService {
 
     public Warehouse updateWarehouseStatus(Long id, Boolean isActive) {
         Warehouse warehouse = getWarehouseById(id);
+        if (!isActive) {
+            boolean hasStock = inventoryRepository.existsStockInWarehouse(id);
+            if (hasStock) {
+                throw new RuntimeException("Thay đổi trạng thái kho không thành công. Không thể dừng hoạt động kho này khi vẫn còn hàng hóa lưu kho.");
+            }
+        }
         warehouse.setIsActive(isActive);
-        return  warehouseRepository.save(warehouse);
+        return warehouseRepository.save(warehouse);
+    }
+
+    public List<String> getUsedWarehouseCategories() {
+        List<Warehouse> warehouses = warehouseRepository.findAll();
+        return warehouses.stream()
+                .map(Warehouse::getGoodCategory)
+                .filter(Objects::nonNull)
+                .flatMap(cat -> Arrays.stream(cat.split(",\\s*")))
+                .distinct()
+                .toList();
+    }
+
+    public boolean isWarehouseCodeExists(String warehouseCode, Long excludeId) {
+        if (excludeId != null) {
+            return warehouseRepository.existsByWarehouseCodeAndWarehouseIdNot(warehouseCode, excludeId);
+        }
+        return warehouseRepository.existsByWarehouseCode(warehouseCode);
+    }
+
+    public Page<Warehouse> searchWarehouses(String search, Boolean isActive, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return warehouseRepository.searchWarehouses(search, isActive, pageable);
     }
 
 }

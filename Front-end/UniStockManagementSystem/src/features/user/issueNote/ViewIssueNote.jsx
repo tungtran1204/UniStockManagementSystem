@@ -1,20 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Card, CardBody, Typography, Button } from "@material-tailwind/react";
-import { TextField, Button as MuiButton } from "@mui/material";
+import { TextField, Button as MuiButton, Divider } from "@mui/material";
 import PageHeader from "@/components/PageHeader";
+import FilePreviewDialog from "@/components/FilePreviewDialog";
 import useIssueNote from "./useIssueNote"; // Sử dụng hook chứa fetchIssueNoteDetail
+import robotoFont from '@/assets/fonts/Roboto-Regular-normal.js';
+import robotoBoldFont from '@/assets/fonts/Roboto-Regular-bold.js';
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
+import "dayjs/locale/vi"; // Import Tiếng Việt
 import Table from "@/components/Table";
 import ReactPaginate from "react-paginate";
 import { ArrowLeftIcon, ArrowRightIcon, ListBulletIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 import { FaArrowLeft } from "react-icons/fa";
-import { XMarkIcon } from "@heroicons/react/24/solid";
-import { Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material";
 
 // Hàm định dạng ngày sử dụng dayjs
 const formatDate = (dateStr) => dayjs(dateStr).format("DD/MM/YYYY");
@@ -38,33 +42,6 @@ const ViewIssueNote = () => {
 
   // State preview file đính kèm
   const [previewFile, setPreviewFile] = useState(null);
-
-  // Các hàm xử lý preview file
-  const getPreviewURL = (file) => {
-    if (!file) return "";
-    if (file instanceof File) return URL.createObjectURL(file);
-    if (typeof file === "string") return file;
-    return "";
-  };
-
-  const getPreviewType = (file) => {
-    if (!file) return "other";
-    let filename = "";
-    if (file instanceof File) {
-      filename = file.name;
-    } else if (typeof file === "string") {
-      const parts = file.split("/");
-      filename = parts[parts.length - 1].split("?")[0];
-    } else {
-      return "other";
-    }
-    const extension = filename.split(".").pop().toLowerCase();
-    if (["jpg", "jpeg", "png", "gif"].includes(extension)) return "image";
-    if (extension === "pdf") return "pdf";
-    if (["doc", "docx", "xls", "xlsx", "ppt", "pptx"].includes(extension))
-      return "office";
-    return "other";
-  };
 
   const handlePreview = (file) => {
     setPreviewFile(file);
@@ -115,12 +92,18 @@ const ViewIssueNote = () => {
       field: "index",
       headerName: "STT",
       minWidth: 50,
+      flex: 0.5,
+      filterable: false,
+      editable: false,
       renderCell: (params) => <div className="text-center">{params.row.index + 1}</div>,
     },
     {
       field: "code",
       headerName: "Mã hàng",
       minWidth: 100,
+      flex: 1,
+      filterable: false,
+      editable: false,
       renderCell: (params) => (
         <div className="text-center">
           {params.row.materialCode || params.row.productCode || ""}
@@ -131,6 +114,9 @@ const ViewIssueNote = () => {
       field: "name",
       headerName: "Tên hàng",
       minWidth: 150,
+      flex: 2,
+      filterable: false,
+      editable: false,
       renderCell: (params) => (
         <div className="text-center">
           {params.row.materialName || params.row.productName || ""}
@@ -141,6 +127,9 @@ const ViewIssueNote = () => {
       field: "unitName",
       headerName: "Đơn vị",
       minWidth: 80,
+      flex: 1,
+      filterable: false,
+      editable: false,
       renderCell: (params) => (
         <div className="text-center">{params.row.unitName || "-"}</div>
       ),
@@ -149,6 +138,9 @@ const ViewIssueNote = () => {
       field: "quantity",
       headerName: "Số lượng",
       minWidth: 80,
+      flex: 1,
+      filterable: false,
+      editable: false,
       renderCell: (params) => (
         <div className="text-center">
           {!isNaN(params.row.quantity) ? params.row.quantity : ""}
@@ -159,6 +151,9 @@ const ViewIssueNote = () => {
       field: "warehouse",
       headerName: "Xuất kho",
       minWidth: 150,
+      flex: 2,
+      filterable: false,
+      editable: false,
       renderCell: (params) => {
         const row = params.row;
         return (
@@ -174,51 +169,117 @@ const ViewIssueNote = () => {
 
   // Export PDF: tương tự ReceiptNote nhưng cập nhật tiêu đề và trường Issue Note
   const handleExportPDF = () => {
+    const formatVietnameseDate = (dateString) => {
+      const date = new Date(dateString);
+      const day = date.getDate();
+      const month = String(date.getMonth() + 1).padStart(2, '0'); // ✅ thêm 0 nếu cần
+      const year = date.getFullYear();
+      return `Ngày ${day} tháng ${month} năm ${year}`;
+    };
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    doc.addFileToVFS("Roboto-Bold.ttf", robotoBoldFont);
+    doc.addFont("Roboto-Bold.ttf", "Roboto", "bold");
+    doc.addFileToVFS("Roboto-Regular.ttf", robotoFont);
+    doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
+
+    doc.setFont("Roboto", "bold");
     doc.setFontSize(14);
     doc.text("CÔNG TY TNHH THIÊN NGỌC AN", 14, 20);
+    doc.setFont("Roboto", "normal");
     doc.setFontSize(10);
     doc.text("Đ/C: TL 419 KCN Phùng Xá, Huyện Thạch Thất, TP. Hà Nội", 14, 26);
     doc.text("SĐT: 0909.009.990", 14, 32);
-    doc.setFontSize(13);
-    doc.text("PHIẾU XUẤT KHO", 90, 40);
+    doc.setFont("Roboto", "bold");
+    doc.text("Số phiếu: ", 160, 26);
+    doc.setFont("Roboto", "normal");
+    doc.text(`${data.ginCode}`, 176, 26);
+
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(20);
+    doc.text("PHIẾU XUẤT KHO", 80, 40);
+    doc.setFont("Roboto", "normal");
+    doc.setFontSize(9);
+    doc.text(formatVietnameseDate(data.issueDate), 110, 45, { align: "center" });
+
+    doc.setFont("Roboto", "normal");
     doc.setFontSize(10);
-    doc.text(`Số phiếu: ${data.ginCode}`, 14, 48);
-    doc.text(`Loại hàng hóa: ${data.category}`, 14, 60);
-    doc.text(`Diễn giải: ${data.description || "Không có"}`, 14, 66);
-    doc.text(`Ngày tạo: ${formatDate(data.issueDate)}`, 140, 48);
-    doc.text(`Người tạo: ${creator}`, 140, 54);
+    doc.text(`Người lập phiếu: ${creator}`, 14, 54);
+    if (data.soCode) {
+      doc.text(`Căn cứ theo đơn hàng: ${data.soCode}`, 140, 54);
+    }
+    doc.text(`Phân loại xuất kho: ${data.category}`, 14, 60);
+    const descriptionText = `Diễn giải: ${data.description || "Không có"}`;
+    const splitDescription = doc.splitTextToSize(descriptionText, 180); // 180mm là chiều rộng tối đa mong muốn
+    doc.text(splitDescription, 14, 66);
+
+    const descriptionLineCount = splitDescription.length;
+    const descriptionHeight = descriptionLineCount * 5; // khoảng cách dòng
+
+    const baseY = 66 + descriptionHeight;
+
+    const totalQuantity = data.details.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
     autoTable(doc, {
-      startY: 74,
-      head: [
+      startY: baseY,
+      head: [[
+        { content: "STT", styles: { halign: 'center', cellWidth: 12 } },
+        { content: "Mã hàng", styles: { halign: 'center', cellWidth: 35 } },
+        { content: "Tên hàng hóa", styles: { halign: 'center', cellWidth: 60 } },
+        { content: "Đơn vị", styles: { halign: 'center' }, cellWidth: 20 },
+        { content: "Số lượng xuất", styles: { halign: 'center' }, cellWidth: 20 },
+        { content: "Kho xuất", styles: { halign: 'center' }, cellWidth: 40 }
+      ]],
+      body: [
+        ...data.details.map((item, index) => [
+          { content: index + 1, styles: { halign: 'center' } },
+          { content: item.materialCode || item.productCode, styles: { halign: 'left' } },
+          { content: item.materialName || item.productName, styles: { halign: 'left' } },
+          { content: item.unitName || "-", styles: { halign: 'center' } },
+          { content: item.quantity, styles: { halign: 'center' } },
+          { content: item.warehouseName, styles: { halign: 'center' } }
+        ]),
         [
-          { content: "STT", styles: { halign: "center" } },
-          { content: "Mã hàng", styles: { halign: "center" } },
-          { content: "Tên hàng", styles: { halign: "center" } },
-          { content: "Đơn vị", styles: { halign: "center" } },
-          { content: "Số lượng xuất", styles: { halign: "center" } },
-          { content: "Xuất kho", styles: { halign: "center" } },
-        ],
+          { content: "TỔNG CỘNG :", colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
+          { content: totalQuantity, styles: { halign: 'center', fontStyle: 'bold' } },
+          { content: "", styles: { halign: 'center' } },
+        ]
       ],
-      body: data.details.map((item, index) => [
-        { content: index + 1, styles: { halign: "center" } },
-        { content: item.materialCode || item.productCode, styles: { halign: "left" } },
-        { content: item.materialName || item.productName, styles: { halign: "left" } },
-        { content: item.unitName || "-", styles: { halign: "center" } },
-        { content: item.quantity, styles: { halign: "center" } },
-        { content: item.warehouseName, styles: { halign: "center" } },
-      ]),
-      styles: { fontSize: 10, cellPadding: 2, valign: "middle" },
-      headStyles: { fillColor: [230, 230, 230], fontStyle: "bold", fontSize: 10 },
-      alternateRowStyles: { fillColor: [245, 245, 245] },
+      styles: {
+        font: "Roboto",
+        fontSize: 10,
+        cellPadding: { top: 2, right: 2, bottom: 2, left: 2 },
+        valign: 'middle',
+        lineWidth: 0.2,
+      },
+      headStyles: {
+        fillColor: [240, 240, 240],
+        textColor: 20,
+        fontSize: 10,
+        lineWidth: 0.2,
+        cellPadding: { top: 3, bottom: 3 },
+      },
+      bodyStyles: {
+        textColor: 20,
+        lineWidth: 0.2,
+      },
+      alternateRowStyles: { fillColor: [255, 255, 255] },
+      tableLineWidth: 0.2,
+      tableLineColor: 200,
       margin: { top: 0, left: 14, right: 14 },
     });
 
     const finalY = doc.lastAutoTable.finalY + 12;
+    // Căn đều 3 cột trên cùng 1 hàng
+    doc.setFont("Roboto", "bold");
+    doc.setFontSize(10);
     doc.text("Người giao hàng", 20, finalY);
-    doc.text("Nhân viên kho nhận hàng", 150, finalY);
-    doc.text("Thủ kho", 20, finalY + 30);
+    doc.text("Nhân viên kho xuất hàng", 90, finalY);
+    doc.text("Thủ kho", 175, finalY);
+    doc.setFont("Roboto", "normal");
+    doc.setFontSize(8);
+    doc.text("(Ký, họ tên)", 32, finalY + 5, { align: "center" });
+    doc.text("(Ký, họ tên)", 110, finalY + 5, { align: "center" });
+    doc.text("(Ký, họ tên)", 182, finalY + 5, { align: "center" });
 
     doc.save(`PhieuXuat_${data.ginCode}.pdf`);
   };
@@ -276,7 +337,7 @@ const ViewIssueNote = () => {
               </Button>
             }
           />
-          <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
+          <Typography variant="h6" className="flex items-center mb-4 text-black">
             <InformationCircleIcon className="h-5 w-5 mr-2" />
             Thông tin chung
           </Typography>
@@ -293,7 +354,14 @@ const ViewIssueNote = () => {
                 variant="outlined"
                 disabled
                 value={data.ginCode}
-                InputProps={{ style: { backgroundColor: "#eeeeee" } }}
+                sx={{
+                  "& .MuiInputBase-root.Mui-disabled": {
+                    bgcolor: "#eeeeee",
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      border: "none",
+                    },
+                  },
+                }}
               />
             </div>
             <div>
@@ -307,22 +375,46 @@ const ViewIssueNote = () => {
                 variant="outlined"
                 disabled
                 value={data.category}
-                InputProps={{ style: { backgroundColor: "#eeeeee" } }}
+                sx={{
+                  "& .MuiInputBase-root.Mui-disabled": {
+                    bgcolor: "#eeeeee",
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      border: "none",
+                    },
+                  },
+                }}
               />
             </div>
             <div>
               <Typography variant="medium" className="mb-1 text-black">
                 Ngày tạo phiếu
               </Typography>
-              <TextField
-                fullWidth
-                size="small"
-                color="success"
-                variant="outlined"
-                disabled
-                value={formatDate(data.issueDate)}
-                InputProps={{ style: { backgroundColor: "#eeeeee" } }}
-              />
+              <style>
+                {`.MuiPickersCalendarHeader-label { text-transform: capitalize !important; }`}
+              </style>
+              <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
+                <DatePicker
+                  value={data.issueDate ? dayjs(data.issueDate) : null}
+                  disabled
+                  format="DD/MM/YYYY"
+                  dayOfWeekFormatter={(weekday) => `${weekday.format("dd")}`}
+                  slotProps={{
+                    textField: {
+                      hiddenLabel: true,
+                      fullWidth: true,
+                      size: "small",
+                    },
+                  }}
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
+                />
+              </LocalizationProvider>
             </div>
             <div>
               <Typography variant="medium" className="mb-1 text-black">
@@ -335,7 +427,14 @@ const ViewIssueNote = () => {
                 variant="outlined"
                 disabled
                 value={creator}
-                InputProps={{ style: { backgroundColor: "#eeeeee" } }}
+                sx={{
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  },
+                }}
               />
             </div>
             <div>
@@ -347,7 +446,7 @@ const ViewIssueNote = () => {
                   to={`/user/sale-orders/${data.soId}`}
                   className="text-blue-600 hover:underline text-sm block mt-1"
                 >
-                  { `${data.soCode}`}
+                  {`${data.soCode}`}
                 </Link>
               ) : (
                 <TextField
@@ -357,7 +456,14 @@ const ViewIssueNote = () => {
                   variant="outlined"
                   disabled
                   value="Không có"
-                  InputProps={{ style: { backgroundColor: "#eeeeee" } }}
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        border: 'none',
+                      },
+                    },
+                  }}
                 />
               )}
             </div>
@@ -368,16 +474,26 @@ const ViewIssueNote = () => {
               {data.paperEvidence && data.paperEvidence.length > 0 ? (
                 <div className="grid grid-cols-3 gap-2 mt-1">
                   {data.paperEvidence.map((url, index) => (
-                    <Button
+                    <MuiButton
                       key={index}
                       variant="outlined"
-                      className="flex items-center justify-between text-xs px-2 py-1 h-9 min-h-0 leading-none"
-                      onClick={() => handlePreview(url)}
+                      color="primary"
+                      disableElevation
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'start',
+                        padding: 0,
+                      }}
+                      className="text-xs w-full gap-2"
                     >
-                      <span className="truncate max-w-[75%]">
+                      <span
+                        className="truncate max-w-[100%] px-2 py-1"
+                        onClick={() => handlePreview(url)}
+                      >
                         {url.split("/").pop()}
                       </span>
-                    </Button>
+                    </MuiButton>
                   ))}
                 </div>
               ) : (
@@ -385,82 +501,12 @@ const ViewIssueNote = () => {
                   Không có
                 </Typography>
               )}
-              <Dialog open={!!previewFile} onClose={handleClosePreview} maxWidth="md" fullWidth>
-                <div className="flex justify-between items-center mr-6">
-                  <DialogTitle>{previewFile?.name}</DialogTitle>
-                  <IconButton size="sm" variant="text" onClick={handleClosePreview}>
-                    <XMarkIcon className="h-6 w-6 stroke-2" />
-                  </IconButton>
-                </div>
-                <DialogContent dividers>
-                  {previewFile &&
-                    (() => {
-                      const type = getPreviewType(previewFile);
-                      const url = getPreviewURL(previewFile);
-                      const renderActions = (
-                        <div className="mt-4 flex justify-center gap-4">
-                          <MuiButton
-                            color="info"
-                            size="medium"
-                            variant="outlined"
-                            onClick={() => window.open(url, "_blank")}
-                            className="flex items-center gap-2"
-                          >
-                            Tải về
-                          </MuiButton>
-                        </div>
-                      );
-                      switch (type) {
-                        case "image":
-                          return (
-                            <>
-                              <img
-                                src={url}
-                                alt="Image Preview"
-                                style={{
-                                  display: "block",
-                                  maxWidth: "100%",
-                                  maxHeight: "80vh",
-                                  margin: "0 auto",
-                                }}
-                              />
-                              {renderActions}
-                            </>
-                          );
-                        case "pdf":
-                          return (
-                            <>
-                              <iframe
-                                src={url}
-                                title="PDF Preview"
-                                style={{
-                                  width: "100%",
-                                  height: "80vh",
-                                  border: "none",
-                                }}
-                              />
-                              {renderActions}
-                            </>
-                          );
-                        default:
-                          return (
-                            <div className="text-center">
-                              <Typography>Không thể xem trước file.</Typography>
-                              <MuiButton
-                                color="info"
-                                size="medium"
-                                variant="outlined"
-                                onClick={() => window.open(url, "_blank")}
-                                className="flex items-center gap-2"
-                              >
-                                Tải về
-                              </MuiButton>
-                            </div>
-                          );
-                      }
-                    })()}
-                </DialogContent>
-              </Dialog>
+              <FilePreviewDialog
+                file={previewFile}
+                open={!!previewFile}
+                onClose={handleClosePreview}
+                showDownload={true}
+              />
             </div>
           </div>
 
@@ -479,12 +525,19 @@ const ViewIssueNote = () => {
                 color="success"
                 value={data.description || "Không có"}
                 disabled
-                InputProps={{ style: { backgroundColor: "#eeeeee" } }}
+                sx={{
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  },
+                }}
               />
             </div>
           </div>
 
-          <Typography variant="h6" className="flex items-center mb-4 text-gray-700">
+          <Typography variant="h6" className="flex items-center mb-4 text-black">
             <ListBulletIcon className="h-5 w-5 mr-2" />
             Danh sách hàng hóa
           </Typography>
@@ -498,7 +551,7 @@ const ViewIssueNote = () => {
 
           {/* Phân trang cho bảng hàng hóa */}
           {totalItems > 0 && (
-            <div className="flex items-center justify-between pt-4">
+            <div className="flex items-center justify-between py-4">
               <div className="flex items-center gap-2">
                 <Typography variant="small" color="blue-gray" className="font-normal">
                   Trang {currentPage + 1} / {totalPagesDetails} • {totalItems} bản ghi
@@ -513,7 +566,7 @@ const ViewIssueNote = () => {
                 pageRangeDisplayed={5}
                 onPageChange={({ selected }) => setCurrentPage(selected)}
                 containerClassName="flex items-center gap-1"
-                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                 pageLinkClassName="flex items-center justify-center w-full h-full"
                 previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                 nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -524,8 +577,8 @@ const ViewIssueNote = () => {
               />
             </div>
           )}
-
-          <div className="mt-6 border-t pt-4 flex justify-end">
+          <Divider />
+          <div className="pt-4 pb-3 flex justify-start">
             <MuiButton
               color="info"
               size="medium"
