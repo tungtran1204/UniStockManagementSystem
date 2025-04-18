@@ -16,7 +16,8 @@ import {
   AllInbox,
   Construction,
   Diversity3,
-  Assessment
+  Assessment,
+  Scale,
 } from '@mui/icons-material';
 
 import { Navigate } from "react-router-dom";
@@ -34,7 +35,6 @@ import PartnerTypePage from "@/features/user/partnerType/PartnerTypePage";
 import PartnerPage from "@/features/user/partner/PartnerPage";
 import MaterialPage from "@/features/user/materials/MaterialPage";
 import MaterialTypePage from "@/features/user/materialType/MaterialTypePage";
-
 import ReceiptNotePage from "../features/user/receiptNote/ReceiptNotePage";
 import AddSaleOrderPage from "../features/user/saleorders/AddSaleOrderPage";
 import AddReceiptNote from "../features/user/receiptNote/AddReceiptNote";
@@ -44,7 +44,6 @@ import PurchaseOrderPage from "../features/user/purchaseOrder/PurchaseOrderPage"
 import AddProductPage from "@/features/user/products/AddProductPage";
 import DetailProductPage from "@/features/user/products/DetailProductPage";
 import PurchaseOrderDetail from "../features/user/purchaseOrder/PurchaseOrderDetail";
-
 import ProductTypePage from "@/features/user/productType/ProductTypePage";
 import PurchaseRequestPage from "@/features/user/purchaseRequest/PurchaseRequestPage";
 import AddPurchaseRequestPage from "../features/user/purchaseRequest/AddPurchaseRequestPage";
@@ -66,6 +65,7 @@ import GoodIssueReportPage from "../features/user/report/GoodIssueReportPage";
 import StockMovementReportPage from "../features/user/report/StockMovementReportPage";
 import PartnerReportPage from "../features/user/report/PartnerReportPage";
 import ViewIssueNote from "../features/user/issueNote/ViewIssueNote";
+import UnitPage from "../features/user/unit/UnitPage";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -119,10 +119,10 @@ export const routes = [
         roles: ["USER"],
       },
       {
-        icon: <ShoppingCart {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
+        icon: <ShoppingCart {...icon} />,
         name: "Bán hàng",
         path: "/user/sale-orders",
-        element: <SaleOrdersPage />, // Trang quản lý đơn hàng 
+        element: <SaleOrdersPage />,
         roles: ["USER"],
       },
       {
@@ -241,11 +241,18 @@ export const routes = [
           {
             icon: <Bars3BottomRightIcon {...icon} />,
             name: "Đối tác",
-            path: "/user/partner/list", // Relative path
+            path: "/user/partner/list",
             element: <PartnerPage />,
             roles: ["USER"],
           },
         ],
+      },
+      {
+        icon: <Scale {...icon} />,
+        name: "Đơn vị tính",
+        path: "/user/unit",
+        element: <UnitPage />,
+        roles: ["USER"],
       },
       {
         icon: <Assessment {...icon} />,
@@ -263,7 +270,7 @@ export const routes = [
           {
             icon: <Bars3BottomRightIcon {...icon} />,
             name: "Nhập kho",
-            path: "/user/report/receipt", // Relative path
+            path: "/user/report/receipt",
             element: <GoodReceiptReportPage />,
             roles: ["USER"],
           },
@@ -343,32 +350,31 @@ export const routes = [
         element: <ProfilePage />,
       },
       {
-        layout: "Bán hàng", // Sử dụng icon tương tự như trang quản lý kho
+        layout: "Bán hàng",
         name: "Thêm đơn hàng",
         path: "/user/sale-orders/add",
-        element: <AddSaleOrderPage />, // Trang quản lý đơn hàng 
+        element: <AddSaleOrderPage />,
         roles: ["USER"],
       },
-
       {
-        layout: "Bán hàng", // Sử dụng icon tương tự như trang quản lý kho
-        name: "CHi tiết đơn hàng",
+        layout: "Bán hàng",
+        name: "Chi tiết đơn hàng",
         path: "/user/sale-orders/:orderId",
-        element: <EditSaleOrderPage />, // Trang quản lý đơn hàng 
+        element: <EditSaleOrderPage />,
         roles: ["USER"],
       },
       {
-        layout: "Nhập kho", // Sử dụng icon tương tự như trang quản lý kho
+        layout: "Nhập kho",
         name: "Thêm phiếu nhập",
         path: "/user/receiptNote/add",
-        element: <AddReceiptNote />, // Trang quản lý đơn hàng 
+        element: <AddReceiptNote />,
         roles: ["USER"],
       },
       {
-        icon: <TableCellsIcon {...icon} />, // Sử dụng icon tương tự như trang quản lý kho
+        icon: <TableCellsIcon {...icon} />,
         name: "Thêm phiếu xuất",
         path: "/user/issueNote/add",
-        element: <AddIssueNote />, // Trang quản lý đơn hàng 
+        element: <AddIssueNote />,
         roles: ["USER"],
       },
       {
@@ -435,7 +441,7 @@ export const routes = [
         roles: ["USER"],
       },
       {
-        layout: "Nhập kho", // Sử dụng icon tương tự như trang quản lý kho
+        layout: "Nhập kho",
         name: "Thêm phiếu nhập",
         path: "/user/receiptNote/general",
         element: <AddReceiptNoteGeneral />,
@@ -445,7 +451,7 @@ export const routes = [
         path: "/user/issueNote/:id",
         element: <ViewIssueNote />,
         roles: ["USER"],
-      }
+      },
     ],
   },
 ];

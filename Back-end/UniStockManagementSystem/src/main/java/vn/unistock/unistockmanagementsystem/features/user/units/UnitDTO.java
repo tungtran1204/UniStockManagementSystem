@@ -10,4 +10,5 @@ import lombok.*;
 public class UnitDTO {
     private Long unitId;
     private String unitName;
+    private Boolean status;
 }
