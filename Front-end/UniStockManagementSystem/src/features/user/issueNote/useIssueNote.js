@@ -1,15 +1,14 @@
-import { useState, useEffect } from "react";
+// useIssueNote.js
+import { useState, useEffect, useCallback } from "react";
 import { createIssueNote, getIssueNote, getIssueNotes, getNextCode, getSaleOrders, getMaterials } from "./issueNoteService";
 
 const useIssueNote = (page = 0, size = 10) => {
   const [saleOrders, setSaleOrders] = useState([]);
-  // Thêm state để lưu danh sách material
   const [materials, setMaterials] = useState([]);
-  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Hàm lấy danh sách Sale Orders (API trả về đối tượng chứa key "content")
+  // Hàm lấy danh sách Sale Orders
   const fetchSaleOrders = async () => {
     setLoading(true);
     try {
@@ -24,39 +23,37 @@ const useIssueNote = (page = 0, size = 10) => {
     }
   };
 
-  // ======= THÊM: Hàm lấy danh sách Materials ======= //
+  // Hàm lấy danh sách Materials
   const fetchMaterials = async () => {
     setLoading(true);
     try {
-      const data = await getMaterials(page, 1000);
-      console.log("Dữ liệu materials:", data);
+      const data = await getMaterials(page, 100000);
+      console.log("Dữ liệu vật tư:", data);
       setMaterials(data.content || []);
     } catch (err) {
-      console.error("Lỗi khi lấy Materials:", err);
+      console.error("Lỗi khi lấy vật tưtư:", err);
       setError(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchIssueNotes = async () => {
+  const fetchProducts = async () => {
     setLoading(true);
     try {
-      const data = await getIssueNotes(page, size);
-      console.log("Dữ liệu issue notes:", data);
-      // Lưu ý: các state setIssueNotes, setTotalPages, setTotalElements chưa được khai báo trong code gốc.
-      setIssueNotes(data.content || []);
-      setTotalPages(data.totalPages);
-      setTotalElements(data.totalElements);
+      const data = await getMaterials(page, 100000);
+      console.log("Dữ liệu sản phẩm:", data);
+      setMaterials(data.content || []);
     } catch (err) {
-      console.error("Lỗi khi lấy Issue Notes:", err);
+      console.error("Lỗi khi lấy sản phẩm:", err);
       setError(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchIssueNoteDetail = async (id) => {
+  // Memoize hàm fetchIssueNoteDetail để tránh thay đổi tham chiếu mỗi lần render
+  const fetchIssueNoteDetail = useCallback(async (id) => {
     setLoading(true);
     try {
       const data = await getIssueNote(id);
@@ -68,9 +65,26 @@ const useIssueNote = (page = 0, size = 10) => {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // Các hàm khác...
+  const fetchIssueNotes = async () => {
+    setLoading(true);
+    try {
+      const data = await getIssueNotes(page, size);
+      console.log("Dữ liệu issue notes:", data);
+      // Giả sử các state setIssueNotes, setTotalPages, setTotalElements đã được khai báo
+      setIssueNotes(data.content || []);
+      setTotalPages(data.totalPages);
+      setTotalElements(data.totalElements);
+    } catch (err) {
+      console.error("Lỗi khi lấy Issue Notes:", err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Hàm thêm phiếu xuất kho
   const addIssueNote = async (noteData) => {
     try {
       const result = await createIssueNote(noteData);
@@ -80,7 +94,6 @@ const useIssueNote = (page = 0, size = 10) => {
     }
   };
 
-  // Hàm lấy mã phiếu xuất kho kế tiếp
   const fetchNextCode = async () => {
     try {
       const result = await getNextCode();
@@ -92,17 +105,18 @@ const useIssueNote = (page = 0, size = 10) => {
 
   useEffect(() => {
     fetchSaleOrders();
-    fetchMaterials();  // Gọi thêm hàm lấy materials
+    fetchMaterials();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, size]);
 
   return { 
     saleOrders, 
-    materials,     // Trả về danh sách material để sử dụng ở component khác
+    materials,     
     loading, 
     error, 
     fetchSaleOrders, 
-    fetchMaterials, // Trả về hàm fetchMaterials
+    fetchMaterials, 
+    fetchProducts,
     addIssueNote, 
     fetchNextCode, 
     fetchIssueNotes, 

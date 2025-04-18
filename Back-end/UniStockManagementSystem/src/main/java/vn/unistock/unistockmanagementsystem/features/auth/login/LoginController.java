@@ -45,10 +45,11 @@ public class LoginController {
             }
 
             // Kiểm tra trạng thái active của user; sử dụng Boolean.TRUE.equals để tránh NullPointerException
-            if (!Boolean.TRUE.equals(user.getIsActive())) {
+            if (user.getIsActive() == null || !user.getIsActive()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body("Tài khoản đã bị khóa!");
             }
+
 
             List<String> roles = user.getRoles().stream()
                     .map(Role::getRoleName)

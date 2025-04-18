@@ -9,7 +9,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -23,7 +22,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MaterialsController {
     private final MaterialsService materialsService;
-    private final AzureBlobService azureBlobService;
     private final MaterialExcelService materialExcelService;
 
     // 🟢 API lấy tất cả nguyên liệu
@@ -35,11 +33,11 @@ public class MaterialsController {
         return ResponseEntity.ok(materialsService.getAllMaterials(page, size));
     }
 
-    @GetMapping("/by-partner/{partnerId}")
-    public ResponseEntity<List<MaterialsDTO>> getMaterialsByPartner(@PathVariable Long partnerId) {
-        List<MaterialsDTO> materials = materialsService.getMaterialsByPartner(partnerId);
-        return ResponseEntity.ok(materials);
-    }
+//    @GetMapping("/by-partner/{partnerId}")
+//    public ResponseEntity<List<MaterialsDTO>> getMaterialsByPartner(@PathVariable Long partnerId) {
+//        List<MaterialsDTO> materials = materialsService.getMaterialsByPartner(partnerId);
+//        return ResponseEntity.ok(materials);
+//    }
 
     // 🟢 API lấy thông tin nguyên liệu theo ID
     @GetMapping("/{id}")
@@ -50,16 +48,10 @@ public class MaterialsController {
     // 🟢 API bật/tắt trạng thái sử dụng
     @PatchMapping("/{id}/toggle-using")
     public ResponseEntity<Map<String, Object>> toggleUsingStatus(@PathVariable Long id) {
-        log.info("📌 [DEBUG] Toggle using status for Material ID: {}", id);
-
         MaterialsDTO updatedMaterial = materialsService.toggleUsingStatus(id);
-
         Map<String, Object> response = new HashMap<>();
         response.put("materialId", id);
         response.put("isUsing", updatedMaterial.getIsUsing());
-
-        log.info("✅ [SUCCESS] Updated isUsing: {}", updatedMaterial.getIsUsing());
-
         return ResponseEntity.ok(response);
     }
 
@@ -75,10 +67,10 @@ public class MaterialsController {
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam(value = "supplierIds", required = false) List<Long> supplierIds
     ) throws IOException {
-        // ✅ Upload ảnh lên Azure nếu có
-        String imageUrl = (image != null && !image.isEmpty()) ? azureBlobService.uploadFile(image) : null;
+        log.info("Received createMaterial request with image: {}, isEmpty: {}",
+                image != null ? image.getOriginalFilename() : "null",
+                image != null && image.isEmpty());
 
-        // ✅ Tạo DTO để lưu nguyên liệu
         MaterialsDTO materialDTO = new MaterialsDTO();
         materialDTO.setMaterialCode(materialCode);
         materialDTO.setMaterialName(materialName);
@@ -86,12 +78,9 @@ public class MaterialsController {
         materialDTO.setUnitId(unitId);
         materialDTO.setTypeId(typeId);
         materialDTO.setIsUsing(isUsingActive);
-        materialDTO.setImageUrl(imageUrl);
         materialDTO.setSupplierIds(supplierIds);
 
-        // ✅ Gọi service để lưu nguyên liệu và trả về DTO
-        MaterialsDTO createdMaterialDTO = materialsService.createMaterial(materialDTO, "Admin");
-
+        MaterialsDTO createdMaterialDTO = materialsService.createMaterial(materialDTO, "Admin", image);
         return ResponseEntity.ok(createdMaterialDTO);
     }
 

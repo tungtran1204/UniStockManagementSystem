@@ -17,11 +17,17 @@ import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
 import PageHeader from '@/components/PageHeader';
 import Table from "@/components/Table";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import SuccessAlert from "@/components/SuccessAlert";
 
 const ProductTypePage = () => {
     const { productTypes, fetchProductTypes, toggleStatus, createProductType, totalPages, totalElements, loading } = useProductType();
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditPopup, setShowEditPopup] = useState(false);
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [successAlertOpen, setSuccessAlertOpen] = useState(false);
+    const [successMessage, setSuccessMessage] = useState("");
+    const [pendingToggleRow, setPendingToggleRow] = useState(null);
     const [editProductType, setEditProductType] = useState(null);
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
@@ -43,6 +49,8 @@ const ProductTypePage = () => {
         try {
             await createProductType(formData); // Sử dụng createProductType từ useProductType
             setShowCreateModal(false);
+            setSuccessMessage("Tạo dòng sản phẩm thành công!");
+            setSuccessAlertOpen(true);
             fetchProductTypes(currentPage, pageSize); // Làm mới danh sách
         } catch (error) {
             alert(error.message || "Lỗi khi tạo dòng sản phẩm");
@@ -50,14 +58,15 @@ const ProductTypePage = () => {
     };
 
     const columnsConfig = [
-        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
-        { field: 'typeName', headerName: 'Tên dòng sản phẩm', flex: 2, minWidth: 300, editable: false },
+        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
+        { field: 'typeName', headerName: 'Tên dòng sản phẩm', flex: 2, minWidth: 300, editable: false, filterable: false },
         {
             field: 'description',
             headerName: 'Mô tả',
             flex: 2,
             minWidth: 400,
             editable: false,
+            filterable: false,
             renderCell: (params) => params.value || "Chưa có mô tả",
         },
         {
@@ -65,12 +74,17 @@ const ProductTypePage = () => {
             headerName: 'Trạng thái',
             flex: 1,
             minWidth: 200,
+            editable: false,
+            filterable: false,
             renderCell: (params) => (
                 <div className="flex items-center gap-2">
                     <Switch
                         color="green"
                         checked={params.value}
-                        onChange={() => toggleStatus(params.row.id, params.value)}
+                        onChange={() => {
+                            setPendingToggleRow(params.row);
+                            setConfirmDialogOpen(true);
+                        }}
                         disabled={loading}
                     />
                     <div
@@ -88,6 +102,8 @@ const ProductTypePage = () => {
             headerName: 'Hành động',
             flex: 0.5,
             minWidth: 100,
+            editable: false,
+            filterable: false,
             renderCell: (params) => (
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
                     <Tooltip content="Chỉnh sửa">
@@ -166,7 +182,7 @@ const ProductTypePage = () => {
                             pageRangeDisplayed={5}
                             onPageChange={handlePageChange}
                             containerClassName="flex items-center gap-1"
-                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                             pageLinkClassName="flex items-center justify-center w-full h-full"
                             previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                             nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -190,9 +206,35 @@ const ProductTypePage = () => {
                 <EditProductTypePopUp
                     productType={editProductType}
                     onClose={() => setShowEditPopup(false)}
-                    onSuccess={() => fetchProductTypes(currentPage, pageSize)}
+                    onSuccess={() => {
+                        fetchProductTypes(currentPage, pageSize);
+                        setSuccessMessage("Cập nhật dòng sản phẩm thành công!");
+                        setSuccessAlertOpen(true);
+                    }}
                 />
             )}
+
+            <ConfirmDialog
+                open={confirmDialogOpen}
+                onClose={() => setConfirmDialogOpen(false)}
+                onConfirm={() => {
+                    if (pendingToggleRow) {
+                        toggleStatus(pendingToggleRow.id, pendingToggleRow.status); // truyền đúng giá trị mới
+                        setSuccessMessage("Cập nhật trạng thái thành công!");
+                        setSuccessAlertOpen(true);
+                    }
+                    setConfirmDialogOpen(false);
+                }}
+                message={`Bạn có chắc chắn muốn ${pendingToggleRow?.status ? "ngưng hoạt động" : "kích hoạt lại"} dòng sản phẩm này không?`}
+                confirmText="Có"
+                cancelText="Không"
+            />
+
+            <SuccessAlert
+                open={successAlertOpen}
+                onClose={() => setSuccessAlertOpen(false)}
+                message={successMessage}
+            />
         </div>
     );
 };

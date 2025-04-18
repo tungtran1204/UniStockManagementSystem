@@ -17,13 +17,15 @@ const ModalAddCustomer = ({ onClose, onSuccess }) => {
   const [errorPartnerName, setErrorPartnerName] = useState("");
   const [errorEmail, setErrorEmail] = useState("");
   const [errorPhone, setErrorPhone] = useState("");
+  const [errorContactName, setErrorContactName] = useState("");
+  const [errorAddress, setErrorAddress] = useState("");
 
   const [newPartner, setNewPartner] = useState({
     partnerName: "",
     address: "",
     phone: "",
     email: "",
-    // Không cho người dùng chọn partnerTypeIds, tự động dùng nhóm 1
+    contactName: "",
   });
 
   const resetErrorMessages = () => {
@@ -31,6 +33,8 @@ const ModalAddCustomer = ({ onClose, onSuccess }) => {
     setErrorPartnerName("");
     setErrorEmail("");
     setErrorPhone("");
+    setErrorContactName("");
+    setErrorAddress("");
   };
 
   const validatePartner = (partner) => {
@@ -41,12 +45,16 @@ const ModalAddCustomer = ({ onClose, onSuccess }) => {
       setErrorPartnerName("Tên đối tác không được để trống.");
       isValid = false;
     }
-    if (!partner.email.trim()) {
-      setErrorEmail("Email không được để trống.");
+    if (!partner.contactName.trim()) {
+      setErrorContactName("Người liên hệ không được để trống.");
       isValid = false;
     }
     if (!partner.phone.trim()) {
       setErrorPhone("Số điện thoại không được để trống.");
+      isValid = false;
+    }
+    if (!partner.address.trim()) {
+      setErrorAddress("Địa chỉ không được để trống.");
       isValid = false;
     }
     return isValid;
@@ -65,7 +73,7 @@ const ModalAddCustomer = ({ onClose, onSuccess }) => {
         address: newPartner.address,
         phone: newPartner.phone,
         email: newPartner.email,
-        // Gửi partnerCodes thay vì partnerTypeIds, vì backend yêu cầu partnerCodes
+        contactName: newPartner.contactName,
         partnerCodes: [code],
       };
 
@@ -123,8 +131,12 @@ const ModalAddCustomer = ({ onClose, onSuccess }) => {
             hiddenLabel
             placeholder="Tên đối tác"
             color="success"
+            error={!!errorPartnerName}
             value={newPartner.partnerName}
-            onChange={(e) => setNewPartner({ ...newPartner, partnerName: e.target.value })}
+            onChange={(e) => {
+              setErrorPartnerName("");
+              setNewPartner({ ...newPartner, partnerName: e.target.value })
+            }}
           />
           {errorPartnerName && <Typography variant="small" color="red">{errorPartnerName}</Typography>}
         </div>
@@ -141,11 +153,14 @@ const ModalAddCustomer = ({ onClose, onSuccess }) => {
             placeholder="Người liên hệ"
             variant="outlined"
             color="success"
-          // value={newPartner.email}
-          // onChange={(e) => setNewPartner({ ...newPartner, email: e.target.value })}
-          // error={!!errorEmail}
-          // helperText={errorEmail}
+            value={newPartner.contactName}
+            onChange={(e) => {
+              setErrorContactName("");
+              setNewPartner({ ...newPartner, contactName: e.target.value })
+            }}
+            error={!!errorContactName}
           />
+          {errorContactName && <Typography variant="small" color="red">{errorContactName}</Typography>}
         </div>
 
         {/* Email & Số điện thoại */}
@@ -160,10 +175,13 @@ const ModalAddCustomer = ({ onClose, onSuccess }) => {
               variant="outlined"
               color="success"
               value={newPartner.email}
-              onChange={(e) => setNewPartner({ ...newPartner, email: e.target.value })}
+              onChange={(e) => {
+                setErrorEmail("");
+                setNewPartner({ ...newPartner, email: e.target.value })
+              }}
               error={!!errorEmail}
-              helperText={errorEmail}
             />
+            {errorEmail && <Typography variant="small" color="red">{errorEmail}</Typography>}
           </div>
           <div>
             <Typography variant="medium" className="text-black">
@@ -178,10 +196,13 @@ const ModalAddCustomer = ({ onClose, onSuccess }) => {
               variant="outlined"
               color="success"
               value={newPartner.phone}
-              onChange={(e) => setNewPartner({ ...newPartner, phone: e.target.value })}
+              onChange={(e) => {
+                setErrorPhone("");
+                setNewPartner({ ...newPartner, phone: e.target.value })
+              }}
               error={!!errorPhone}
-              helperText={errorPhone}
             />
+            {errorPhone && <Typography variant="small" color="red">{errorPhone}</Typography>}
           </div>
         </div>
 
@@ -201,8 +222,13 @@ const ModalAddCustomer = ({ onClose, onSuccess }) => {
             maxRows={2}
             color="success"
             value={newPartner.address}
-            onChange={(e) => setNewPartner({ ...newPartner, address: e.target.value })}
+            onChange={(e) => {
+              setErrorAddress("");
+              setNewPartner({ ...newPartner, address: e.target.value })
+            }}
+            error={!!errorAddress}
           />
+          {errorAddress && <Typography variant="small" color="red">{errorAddress}</Typography>}
         </div>
       </DialogBody>
 

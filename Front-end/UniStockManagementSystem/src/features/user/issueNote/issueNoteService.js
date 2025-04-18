@@ -30,7 +30,20 @@ export const getMaterials = async (page, size) => {
     });
     return response.data;
   } catch (error) {
-    console.error("❌ [getSaleOrders] Lỗi khi lấy danh sách đơn hàng:", error);
+    console.error("Lỗi khi lấy danh sách vật tư:", error);
+    throw error;
+  }
+};
+
+export const getProducts = async (page, size) => {
+  try {
+    const response = await axios.get(`${import.meta.env.VITE_API_URL}/user/products`, {
+      params: { page, size },
+      headers: authHeader(),
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách sản phẩm:", error);
     throw error;
   }
 };

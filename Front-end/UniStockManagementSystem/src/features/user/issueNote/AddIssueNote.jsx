@@ -11,9 +11,14 @@ import {
   Autocomplete,
   IconButton,
   Button as MuiButton,
-  Tooltip
-} from "@mui/material";
-import ClearRoundedIcon from '@mui/icons-material/ClearRounded';
+  Tooltip, 
+  Divider
+} from '@mui/material';
+import {
+  HighlightOffRounded,
+  ClearRounded,
+  Margin
+} from '@mui/icons-material';
 import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { FaPlus, FaTrash, FaArrowLeft, FaSearch } from "react-icons/fa";
@@ -36,11 +41,9 @@ import TableSearch from "@/components/TableSearch";
 
 import { getPartnersByType } from "@/features/user/partner/partnerService";
 import { getSaleOrders, uploadPaperEvidence } from "./issueNoteService";
-// Import thêm hàm getTotalQuantityOfMaterial để lấy tồn kho của NVL
 import { getTotalQuantityOfMaterial } from "./issueNoteService";
 import { getTotalQuantityOfProduct } from "../saleorders/saleOrdersService";
 
-// Import hook hiện có (issue note)
 import useIssueNote from "./useIssueNote";
 
 const OUTSOURCE_TYPE_ID = 3;
@@ -61,9 +64,7 @@ const AddIssueNote = () => {
   const [address, setAddress] = useState("");
   const [partnerCode, setPartnerCode] = useState("");
   const [partnerName, setPartnerName] = useState("");
-  // Thêm state partnerId để lưu ID của đối tác (nếu có)
   const [partnerId, setPartnerId] = useState(null);
-  // Thêm state soId để lưu orderId khi chọn đơn hàng
   const [soId, setSoId] = useState(null);
 
   // ------------------ STATE: Modal Đơn hàng ------------------
@@ -76,8 +77,6 @@ const AddIssueNote = () => {
   const [isCreatePartnerPopupOpen, setIsCreatePartnerPopupOpen] = useState(false);
 
   // ------------------ STATE: Danh sách sản phẩm / Nguyên vật liệu ------------------
-  // Khi category = "Trả lại hàng mua" thì state này sẽ lưu danh sách NVL,
-  // còn với các category khác sẽ lưu danh sách sản phẩm theo cấu trúc ban đầu.
   const [products, setProducts] = useState([]);
 
   // ------------------ Lấy mã phiếu + đặt ngày mặc định ------------------
@@ -136,7 +135,7 @@ const AddIssueNote = () => {
             (pt) => pt.partnerType.typeId === OUTSOURCE_TYPE_ID
           );
           return {
-            id: o.partnerId, // giả sử API trả về partnerId
+            id: o.partnerId,
             code: t?.partnerCode || "",
             label: `${t?.partnerCode || ""} - ${o.partnerName}`,
             name: o.partnerName,
@@ -145,7 +144,7 @@ const AddIssueNote = () => {
             contactName: o.contactName,
           };
         })
-        .filter((c) => c.code !== "");
+        .filter((c) => c.code && c.code.toUpperCase().includes("ĐTGC"));
       setOutsources(mapped);
     } catch (err) {
       console.error("Lỗi fetchOutsources:", err);
@@ -167,7 +166,7 @@ const AddIssueNote = () => {
             (pt) => pt.partnerType.typeId === SUPPLIER_TYPE_ID
           );
           return {
-            id: s.partnerId, // giả sử API trả về partnerId
+            id: s.partnerId,
             code: t?.partnerCode || "",
             label: `${t?.partnerCode || ""} - ${s.partnerName}`,
             name: s.partnerName,
@@ -195,7 +194,6 @@ const AddIssueNote = () => {
     if (category === "Trả lại hàng mua") {
       fetchSuppliers();
     }
-    // Reset các thông tin liên quan khi đổi category
     setReferenceDocument("");
     setSoId(null);
     setPartnerCode("");
@@ -214,7 +212,6 @@ const AddIssueNote = () => {
 
   const handleOrderSelected = async (selectedOrder) => {
     if (!selectedOrder) {
-      // Nếu người dùng xoá chọn
       setReferenceDocument("");
       setSoId(null);
       setPartnerCode("");
@@ -232,7 +229,6 @@ const AddIssueNote = () => {
     setSoId(selectedOrder.id);
     setPartnerCode(selectedOrder.partnerCode);
     setPartnerName(selectedOrder.partnerName);
-    // Nếu đơn hàng có thông tin partner id, có thể setPartnerId(selectedOrder.partnerId);
     setCreateDate(
       selectedOrder.orderDate
         ? dayjs(selectedOrder.orderDate).format("YYYY-MM-DD")
@@ -254,28 +250,36 @@ const AddIssueNote = () => {
         console.error("Lỗi getTotalQuantityOfProduct:", err);
       }
 
-      if (!inStockArr || inStockArr.length === 0) {
-        console.error("Không có dữ liệu tồn kho cho sản phẩm có ID:", detail.productId);
-        continue;
-      }
-
       newProducts.push({
         id: `p-${detail.productId}-${Math.random()}`,
         productId: detail.productId,
         productCode: detail.productCode || "",
         productName: detail.productName || "",
         unitName: detail.unitName || "",
+        unitId: detail.unitId,
         orderQuantity: detail.quantity || 0,
         exportedQuantity: detail.receivedQuantity || 0,
         pendingQuantity: (detail.quantity || 0) - (detail.receivedQuantity || 0),
-        inStock: inStockArr.map((wh) => ({
-          warehouseId: wh.warehouseId,
-          warehouseName: wh.warehouseName || "",
-          quantity: wh.quantity || 0,
-          exportQuantity: 0,
-          error: ""
-        })),
+        inStock: inStockArr && inStockArr.length > 0
+          ? inStockArr.map((wh) => ({
+              warehouseId: wh.warehouseId,
+              warehouseName: wh.warehouseName || "",
+              quantity: wh.quantity || 0,
+              exportQuantity: 0,
+              error: ""
+            }))
+          : [{
+              warehouseId: null,
+              warehouseName: "(Chưa có kho)",
+              quantity: 0,
+              exportQuantity: 0,
+              error: ""
+            }]
       });
+
+      if (!inStockArr || inStockArr.length === 0) {
+        console.warn(`Không có dữ liệu tồn kho cho sản phẩm có ID: ${detail.productId}`);
+      }
     }
     console.log("New products set from selected order:", newProducts);
     setProducts(newProducts);
@@ -288,8 +292,7 @@ const AddIssueNote = () => {
 
   // ------------------ Thêm/Xoá dòng ------------------
   const handleAddRow = () => {
-    if (category === "Trả lại hàng mua") {
-      // Tạo row cho NVL
+    if (category === "Trả lại hàng mua" || category === "Gia công") {
       setProducts((prev) => [
         ...prev,
         {
@@ -298,12 +301,37 @@ const AddIssueNote = () => {
           materialCode: "",
           materialName: "",
           unitName: "",
-          // Không dùng trường quantity riêng, vì mỗi kho sẽ có exportQuantity riêng
-          inventory: [],
+          unitId: null,
+          inventory: [{
+            warehouseId: null,
+            warehouseName: "",
+            quantity: 0,
+            exportQuantity: 0,
+            error: ""
+          }],
+        },
+      ]);
+    } else if (category === "Sản xuất") {
+      setProducts((prev) => [
+        ...prev,
+        {
+          id: `new-${prev.length + 1}`,
+          itemId: null,
+          itemType: null,
+          productCode: "",
+          productName: "",
+          unitName: "",
+          unitId: null,
+          inStock: [{
+            warehouseId: null,
+            warehouseName: "",
+            quantity: 0,
+            exportQuantity: 0,
+            error: ""
+          }],
         },
       ]);
     } else {
-      // Row sản phẩm như cũ
       setProducts((prev) => [
         ...prev,
         {
@@ -312,18 +340,17 @@ const AddIssueNote = () => {
           productCode: "",
           productName: "",
           unitName: "",
+          unitId: null,
           orderQuantity: 1,
           exportedQuantity: 0,
           pendingQuantity: 1,
-          inStock: [
-            {
-              warehouseId: null,
-              warehouseName: "",
-              quantity: 0,
-              exportQuantity: 0,
-              error: ""
-            },
-          ],
+          inStock: [{
+            warehouseId: null,
+            warehouseName: "",
+            quantity: 0,
+            exportQuantity: 0,
+            error: ""
+          }],
         },
       ]);
     }
@@ -352,27 +379,28 @@ const AddIssueNote = () => {
 
   // ------------------ Hàm render bảng thống nhất ------------------
   const renderUnifiedTableBody = () => {
-    if (category === "Trả lại hàng mua") {
-      const displayed = products.slice(
-        currentPage * pageSize,
-        (currentPage + 1) * pageSize
+    const displayed = products.slice(
+      currentPage * pageSize,
+      (currentPage + 1) * pageSize
+    );
+
+    if (displayed.length === 0) {
+      return (
+        <tr>
+          <td colSpan={category === "Bán hàng" ? 11 : 8} className="text-center py-3 text-gray-500">
+            {category === "Gia công" ? "Chưa có nguyên vật liệu nào" : 
+             category === "Sản xuất" ? "Chưa có sản phẩm/nguyên vật liệu nào" : 
+             "Chưa có sản phẩm nào"}
+          </td>
+        </tr>
       );
+    }
 
-      if (displayed.length === 0) {
-        return (
-          <tr>
-            <td colSpan={8} className="text-center py-3 text-gray-500">
-              Chưa có nguyên vật liệu nào
-            </td>
-          </tr>
-        );
-      }
-
-      // Hiển thị giống bảng sản phẩm: mỗi NVL có thể có nhiều kho, dùng flatMap để render nhiều dòng với rowSpan
+    if (category === "Gia công" || category === "Trả lại hàng mua") {
       return displayed.flatMap((nvl, nvlIndex) => {
         const inv = nvl.inventory && nvl.inventory.length > 0 
           ? nvl.inventory 
-          : [{ warehouseId: null, warehouseName: "", quantity: 0, exportQuantity: 0 }];
+          : [{ warehouseId: null, warehouseName: "", quantity: 0, exportQuantity: 0, error: "" }];
         
         return inv.map((wh, whIndex) => {
           const isFirstRow = whIndex === 0;
@@ -405,10 +433,21 @@ const AddIssueNote = () => {
                                     materialName: newValue.materialName,
                                     unitName: newValue.unitName,
                                     unitId: newValue.unitId,
-                                    inventory: inventoryData.map((i) => ({
-                                      ...i,
-                                      exportQuantity: 0
-                                    })),
+                                    inventory: inventoryData && inventoryData.length > 0
+                                      ? inventoryData.map((i) => ({
+                                          warehouseId: i.warehouseId,
+                                          warehouseName: i.warehouseName || "",
+                                          quantity: i.quantity || 0,
+                                          exportQuantity: 0,
+                                          error: ""
+                                        }))
+                                      : [{
+                                          warehouseId: null,
+                                          warehouseName: "(Chưa có kho)",
+                                          quantity: 0,
+                                          exportQuantity: 0,
+                                          error: ""
+                                        }]
                                   };
                                 }
                                 return p;
@@ -427,8 +466,14 @@ const AddIssueNote = () => {
                                   materialCode: "",
                                   materialName: "",
                                   unitName: "",
-                                  unitId: undefined,
-                                  inventory: [],
+                                  unitId: null,
+                                  inventory: [{
+                                    warehouseId: null,
+                                    warehouseName: "(Chưa có kho)",
+                                    quantity: 0,
+                                    exportQuantity: 0,
+                                    error: ""
+                                  }]
                                 };
                               }
                               return p;
@@ -458,7 +503,7 @@ const AddIssueNote = () => {
               <td className="px-3 py-2 border-r text-sm">
                 {wh.warehouseName || "(Chưa có kho)"}
               </td>
-              <td className="px-3 py-2 border-r text-sm">{wh.quantity}</td>
+              <td className="px-3 py-2 border-r text-sm text-right">{wh.quantity}</td>
               <td className="px-3 py-2 border-r text-sm w-24">
                 <input
                   type="number"
@@ -466,6 +511,27 @@ const AddIssueNote = () => {
                   value={wh.exportQuantity || 0}
                   onChange={(e) => {
                     const val = Number(e.target.value);
+                    const maxAllowed = wh.quantity;
+                    if (val > maxAllowed) {
+                      setProducts((prev) =>
+                        prev.map((p) => {
+                          if (p.id === nvl.id) {
+                            const newInv = p.inventory.map((invItem, i) => {
+                              if (i === whIndex) {
+                                return {
+                                  ...invItem,
+                                  error: `SL xuất không được vượt quá tồn kho (${maxAllowed}).`
+                                };
+                              }
+                              return invItem;
+                            });
+                            return { ...p, inventory: newInv };
+                          }
+                          return p;
+                        })
+                      );
+                      return;
+                    }
                     setProducts((prev) =>
                       prev.map((p) => {
                         if (p.id === nvl.id) {
@@ -473,7 +539,8 @@ const AddIssueNote = () => {
                             if (i === whIndex) {
                               return {
                                 ...invItem,
-                                exportQuantity: val
+                                exportQuantity: val,
+                                error: ""
                               };
                             }
                             return invItem;
@@ -485,16 +552,19 @@ const AddIssueNote = () => {
                     );
                   }}
                 />
+                {wh.error && (
+                  <div className="text-red-500 text-xs mt-1">{wh.error}</div>
+                )}
               </td>
               {isFirstRow && (
                 <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm">
-                  <Tooltip title="Xóa nguyên vật liệu">
+                  <Tooltip title="Xóa">
                     <IconButton
                       size="small"
                       color="error"
                       onClick={() => handleDeleteRow(nvl.id)}
                     >
-                      <FaTrash />
+                      <HighlightOffRounded />
                     </IconButton>
                   </Tooltip>
                 </td>
@@ -504,61 +574,149 @@ const AddIssueNote = () => {
         });
       });
     } else if (category === "Sản xuất") {
-      // --------- Xử lý cho SẢN XUẤT (8 cột) ---------
-      const displayed = products.slice(
-        currentPage * pageSize,
-        (currentPage + 1) * pageSize
-      );
+      const combinedItems = [
+        ...(materials || []).map((mat) => ({
+          ...mat,
+          id: mat.materialId,
+          code: mat.materialCode,
+          name: mat.materialName,
+          type: 'material'
+        })),
+        ...(materials || []).map((prod) => ({
+          ...prod,
+          id: prod.materialId,
+          code: prod.materialCode,
+          name: prod.materialName,
+          type: 'product'
+        }))
+      ];
 
-      if (displayed.length === 0) {
-        return (
-          <tr>
-            <td colSpan={8} className="text-center py-3 text-gray-500">
-              Chưa có sản phẩm nào
-            </td>
-          </tr>
-        );
-      }
-
-      return displayed.flatMap((prod, prodIndex) => {
-        return (prod.inStock || []).map((wh, whIndex) => {
+      return displayed.flatMap((item, itemIndex) => {
+        const inv = item.inStock && item.inStock.length > 0 
+          ? item.inStock 
+          : [{ warehouseId: null, warehouseName: "", quantity: 0, exportQuantity: 0, error: "" }];
+        
+        return inv.map((wh, whIndex) => {
           const isFirstRow = whIndex === 0;
-          const rowSpan = prod.inStock ? prod.inStock.length : 1;
-          const maxAllowed = wh.quantity;
+          const rowSpan = inv.length;
           return (
-            <tr key={`${prod.id}-wh-${whIndex}`} className="border-b hover:bg-gray-50">
+            <tr key={`${item.id}-wh-${whIndex}`} className="border-b hover:bg-gray-50">
               {isFirstRow && (
                 <>
                   <td rowSpan={rowSpan} className="px-3 py-2 border-r text-center text-sm">
-                    {currentPage * pageSize + (prodIndex + 1)}
+                    {currentPage * pageSize + itemIndex + 1}
                   </td>
                   <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
-                    {prod.productCode}
+                    <Autocomplete
+                      options={combinedItems}
+                      getOptionLabel={(option) =>
+                        `${option.code} - ${option.name} (${option.type === 'product' ? 'SP' : 'NVL'})`
+                      }
+                      value={combinedItems.find(opt => opt.id === item.itemId && opt.type === item.itemType) || null}
+                      onChange={async (event, newValue) => {
+                        if (newValue) {
+                          try {
+                            let inventoryData = [];
+                            if (newValue.type === 'product') {
+                              inventoryData = await getTotalQuantityOfProduct(newValue.id);
+                            } else {
+                              inventoryData = await getTotalQuantityOfMaterial(newValue.id);
+                            }
+                            setProducts((prev) =>
+                              prev.map((p) => {
+                                if (p.id === item.id) {
+                                  return {
+                                    ...p,
+                                    itemId: newValue.id,
+                                    itemType: newValue.type,
+                                    productCode: newValue.code,
+                                    productName: newValue.name,
+                                    unitName: newValue.unitName || "",
+                                    unitId: newValue.unitId,
+                                    inStock: inventoryData && inventoryData.length > 0
+                                      ? inventoryData.map((i) => ({
+                                          warehouseId: i.warehouseId,
+                                          warehouseName: i.warehouseName || "",
+                                          quantity: i.quantity || 0,
+                                          exportQuantity: 0,
+                                          error: ""
+                                        }))
+                                      : [{
+                                          warehouseId: null,
+                                          warehouseName: "(Chưa có kho)",
+                                          quantity: 0,
+                                          exportQuantity: 0,
+                                          error: ""
+                                        }]
+                                  };
+                                }
+                                return p;
+                              })
+                            );
+                          } catch (error) {
+                            console.error(`Lỗi khi lấy tồn kho ${newValue.type}:`, error);
+                          }
+                        } else {
+                          setProducts((prev) =>
+                            prev.map((p) => {
+                              if (p.id === item.id) {
+                                return {
+                                  ...p,
+                                  itemId: null,
+                                  itemType: null,
+                                  productCode: "",
+                                  productName: "",
+                                  unitName: "",
+                                  unitId: null,
+                                  inStock: [{
+                                    warehouseId: null,
+                                    warehouseName: "(Chưa có kho)",
+                                    quantity: 0,
+                                    exportQuantity: 0,
+                                    error: ""
+                                  }]
+                                };
+                              }
+                              return p;
+                            })
+                          );
+                        }
+                      }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          placeholder="Chọn SP/NVL"
+                          variant="outlined"
+                          size="small"
+                          color="success"
+                        />
+                      )}
+                    />
                   </td>
                   <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
-                    {prod.productName}
+                    {item.productName}
                   </td>
                   <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
-                    {prod.unitName}
+                    {item.unitName}
                   </td>
                 </>
               )}
               <td className="px-3 py-2 border-r text-sm">
                 {wh.warehouseName || "(Chưa có kho)"}
               </td>
-              <td className="px-3 py-2 border-r text-sm text-right">{wh.quantity}</td>
-              <td className="px-3 py-2 border-r text-sm w-24">
+              <td className="px-3 py-2 border-r text-sm w-24 text-center">{wh.quantity}</td>
+              <td className="px-3 py-2 border-r text-sm w-40">
                 <input
                   type="number"
                   className="border p-1 text-right w-[60px]"
                   value={wh.exportQuantity || 0}
-                  max={maxAllowed}
                   onChange={(e) => {
                     const val = Number(e.target.value);
+                    const maxAllowed = wh.quantity;
                     if (val > maxAllowed) {
                       setProducts((prev) =>
                         prev.map((p) => {
-                          if (p.id === prod.id) {
+                          if (p.id === item.id) {
                             const newInStock = p.inStock.map((ins, i) => {
                               if (i === whIndex) {
                                 return {
@@ -574,26 +732,25 @@ const AddIssueNote = () => {
                         })
                       );
                       return;
-                    } else {
-                      setProducts((prev) =>
-                        prev.map((p) => {
-                          if (p.id === prod.id) {
-                            const newInStock = p.inStock.map((ins, i) => {
-                              if (i === whIndex) {
-                                return {
-                                  ...ins,
-                                  exportQuantity: val,
-                                  error: ""
-                                };
-                              }
-                              return ins;
-                            });
-                            return { ...p, inStock: newInStock };
-                          }
-                          return p;
-                        })
-                      );
                     }
+                    setProducts((prev) =>
+                      prev.map((p) => {
+                        if (p.id === item.id) {
+                          const newInStock = p.inStock.map((ins, i) => {
+                            if (i === whIndex) {
+                              return {
+                                ...ins,
+                                exportQuantity: val,
+                                error: ""
+                              };
+                            }
+                            return ins;
+                          });
+                          return { ...p, inStock: newInStock };
+                        }
+                        return p;
+                      })
+                    );
                   }}
                 />
                 {wh.error && (
@@ -601,14 +758,14 @@ const AddIssueNote = () => {
                 )}
               </td>
               {isFirstRow && (
-                <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm">
-                  <Tooltip title="Xóa sản phẩm">
+                <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm w-24">
+                  <Tooltip title="Xóa">
                     <IconButton
                       size="small"
                       color="error"
-                      onClick={() => handleDeleteRow(prod.id)}
+                      onClick={() => handleDeleteRow(item.id)}
                     >
-                      <FaTrash />
+                      <HighlightOffRounded />
                     </IconButton>
                   </Tooltip>
                 </td>
@@ -617,23 +774,7 @@ const AddIssueNote = () => {
           );
         });
       });
-    } else {
-      // --------- Các trường hợp khác (Bán hàng, Gia công) ---------
-      const displayed = products.slice(
-        currentPage * pageSize,
-        (currentPage + 1) * pageSize
-      );
-
-      if (displayed.length === 0) {
-        return (
-          <tr>
-            <td colSpan={11} className="text-center py-3 text-gray-500">
-              Chưa có sản phẩm nào
-            </td>
-          </tr>
-        );
-      }
-
+    } else { // Bán hàng
       return displayed.flatMap((prod, prodIndex) => {
         return (prod.inStock || []).map((wh, whIndex) => {
           const isFirstRow = whIndex === 0;
@@ -681,65 +822,47 @@ const AddIssueNote = () => {
                     type="number"
                     className="border p-1 text-right w-[60px]"
                     value={wh.exportQuantity || 0}
-                    max={category === "Sản xuất" ? maxExport : undefined}
+                    max={maxExport}
                     onChange={(e) => {
                       const val = Number(e.target.value);
-                      if (category === "Sản xuất") {
-                        const maxAllowed = maxExport;
-                        if (maxAllowed !== undefined && val > maxAllowed) {
-                          setProducts((prev) =>
-                            prev.map((p) => {
-                              if (p.id === prod.id) {
-                                const newInStock = p.inStock.map((ins, i) => {
-                                  if (i === whIndex) {
-                                    return {
-                                      ...ins,
-                                      error: `Số lượng xuất không được vượt quá Tồn kho (${wh.quantity}) và SL còn phải xuất (${prod.pendingQuantity}).`
-                                    };
-                                  }
-                                  return ins;
-                                });
-                                return { ...p, inStock: newInStock };
-                              }
-                              return p;
-                            })
-                          );
-                          return;
-                        } else {
-                          setProducts((prev) =>
-                            prev.map((p) => {
-                              if (p.id === prod.id) {
-                                const newInStock = p.inStock.map((ins, i) => {
-                                  if (i === whIndex) {
-                                    return {
-                                      ...ins,
-                                      exportQuantity: val,
-                                      error: ""
-                                    };
-                                  }
-                                  return ins;
-                                });
-                                return { ...p, inStock: newInStock };
-                              }
-                              return p;
-                            })
-                          );
-                        }
-                      } else {
+                      if (maxExport !== undefined && val > maxExport) {
                         setProducts((prev) =>
                           prev.map((p) => {
                             if (p.id === prod.id) {
-                              const newInStock = [...p.inStock];
-                              newInStock[whIndex] = {
-                                ...newInStock[whIndex],
-                                exportQuantity: val
-                              };
+                              const newInStock = p.inStock.map((ins, i) => {
+                                if (i === whIndex) {
+                                  return {
+                                    ...ins,
+                                    error: `Số lượng xuất không được vượt quá Tồn kho (${wh.quantity}) và SL còn phải xuất (${prod.pendingQuantity}).`
+                                  };
+                                }
+                                return ins;
+                              });
                               return { ...p, inStock: newInStock };
                             }
                             return p;
                           })
                         );
+                        return;
                       }
+                      setProducts((prev) =>
+                        prev.map((p) => {
+                          if (p.id === prod.id) {
+                            const newInStock = p.inStock.map((ins, i) => {
+                              if (i === whIndex) {
+                                return {
+                                  ...ins,
+                                  exportQuantity: val,
+                                  error: ""
+                                };
+                              }
+                              return ins;
+                            });
+                            return { ...p, inStock: newInStock };
+                          }
+                          return p;
+                        })
+                      );
                     }}
                   />
                   {wh.error && (
@@ -749,13 +872,13 @@ const AddIssueNote = () => {
               </td>
               {isFirstRow && (
                 <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm">
-                  <Tooltip title="Xóa sản phẩm">
+                  <Tooltip title="Xóa">
                     <IconButton
                       size="small"
                       color="error"
                       onClick={() => handleDeleteRow(prod.id)}
                     >
-                      <FaTrash />
+                      <HighlightOffRounded />
                     </IconButton>
                   </Tooltip>
                 </td>
@@ -780,16 +903,13 @@ const AddIssueNote = () => {
         return;
       }
 
-      // Validate: Nếu category là "Trả lại hàng mua", phải chọn nhà cung cấp (partnerId khác null)
-      if (category === "Trả lại hàng mua" && !partnerId) {
-        alert("Vui lòng chọn nhà cung cấp!");
+      if ((category === "Gia công" || category === "Trả lại hàng mua") && !partnerId) {
+        alert(category === "Gia công" ? "Vui lòng chọn đối tác gia công!" : "Vui lòng chọn nhà cung cấp!");
         return;
       }
 
-      // Validate: SL xuất không được vượt quá SL tồn kho cho từng dòng NVL/sản phẩm
       const isExportExceed = products.some((prod) => {
-        const items =
-          category === "Trả lại hàng mua" ? prod.inventory : prod.inStock;
+        const items = prod.inventory || prod.inStock;
         return items.some((item) => item.exportQuantity > item.quantity);
       });
       if (isExportExceed) {
@@ -799,7 +919,7 @@ const AddIssueNote = () => {
 
       let details = [];
 
-      if (category === "Trả lại hàng mua") {
+      if (category === "Gia công" || category === "Trả lại hàng mua") {
         details = products
           .filter((row) => row.materialId && row.inventory?.length > 0)
           .flatMap((row) =>
@@ -812,17 +932,32 @@ const AddIssueNote = () => {
                 unitId: row.unitId || 1,
               }))
           );
-      } else {
-        details = products.flatMap((prod) =>
-          prod.inStock
-            .filter((wh) => wh.warehouseId && wh.exportQuantity > 0)
-            .map((wh) => ({
-              warehouseId: wh.warehouseId,
-              productId: prod.productId,
-              quantity: wh.exportQuantity,
-              unitId: 1,
-            }))
-        );
+      } else if (category === "Sản xuất") {
+        details = products
+          .filter((row) => row.itemId && row.inStock?.length > 0)
+          .flatMap((row) =>
+            row.inStock
+              .filter((wh) => wh.warehouseId && wh.exportQuantity > 0)
+              .map((wh) => ({
+                warehouseId: wh.warehouseId,
+                [row.itemType === 'product' ? 'productId' : 'materialId']: row.itemId,
+                quantity: wh.exportQuantity,
+                unitId: row.unitId || 1,
+              }))
+          );
+      } else { // Bán hàng
+        details = products
+          .filter((row) => row.productId && row.inStock?.length > 0)
+          .flatMap((row) =>
+            row.inStock
+              .filter((wh) => wh.warehouseId && wh.exportQuantity > 0)
+              .map((wh) => ({
+                warehouseId: wh.warehouseId,
+                productId: row.productId,
+                quantity: wh.exportQuantity,
+                unitId: row.unitId || 1,
+              }))
+          );
       }
 
       if (details.length === 0) {
@@ -830,16 +965,16 @@ const AddIssueNote = () => {
         return;
       }
 
-      // Cập nhật payload thêm partnerId nếu có
       const payload = {
         ginCode: issueNoteCode,
         category,
-        partnerId, // gửi Partner ID
+        partnerId,
         issueDate: `${createdDate}T00:00:00`,
         description,
         details,
         soId,
         createdBy: 1,
+        receiver: category === "Sản xuất" ? contactName : null,
       };
 
       console.log("Sending payload:", payload);
@@ -858,8 +993,7 @@ const AddIssueNote = () => {
             console.error("Error uploading paper evidence:", uploadError);
           }
         }
-        alert("Tạo phiếu xuất kho thành công!");
-        navigate("/user/issueNote");
+        navigate("/user/issueNote", { state: { successMessage: "Tạo phiếu xuất kho thành công!" } });
       }
     } catch (error) {
       console.error("Lỗi khi thêm phiếu xuất:", error);
@@ -890,7 +1024,6 @@ const AddIssueNote = () => {
           </Typography>
 
           <div className="grid gap-x-12 gap-y-4 mb-4 grid-cols-3">
-            {/* Phân loại */}
             <div>
               <Typography variant="medium" className="mb-1 text-black">
                 Phân loại xuất kho <span className="text-red-500">*</span>
@@ -910,7 +1043,6 @@ const AddIssueNote = () => {
                 <MenuItem value="Trả lại hàng mua">Trả lại hàng mua</MenuItem>
               </TextField>
             </div>
-            {/* Mã phiếu */}
             <div>
               <Typography variant="medium" className="mb-1 text-black">
                 Mã phiếu
@@ -932,11 +1064,13 @@ const AddIssueNote = () => {
                 }}
               />
             </div>
-            {/* Ngày lập phiếu */}
             <div>
               <Typography variant="medium" className="mb-1 text-black">
                 Ngày lập phiếu
               </Typography>
+              <style>
+                {`.MuiPickersCalendarHeader-label { text-transform: capitalize; }`}
+              </style>
               <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
                 <DatePicker
                   value={createdDate ? dayjs(createdDate) : null}
@@ -948,6 +1082,20 @@ const AddIssueNote = () => {
                   format="DD/MM/YYYY"
                   dayOfWeekFormatter={(weekday) => `${weekday.format("dd")}`}
                   slotProps={{
+                    day: {
+                      sx: () => ({
+                        "&.Mui-selected": {
+                          backgroundColor: "#0ab067 !important",
+                          color: "white",
+                        },
+                        "&.Mui-selected:hover": {
+                          backgroundColor: "#089456 !important",
+                        },
+                        "&:hover": {
+                          backgroundColor: "#0894561A !important",
+                        },
+                      }),
+                    },
                     textField: {
                       hiddenLabel: true,
                       fullWidth: true,
@@ -960,7 +1108,6 @@ const AddIssueNote = () => {
             </div>
           </div>
 
-          {/* Form tùy theo Category */}
           {category === "Bán hàng" && (
             <div className="grid grid-cols-3 gap-x-12 gap-y-4 mb-4">
               <div>
@@ -1011,7 +1158,7 @@ const AddIssueNote = () => {
                                 }}
                                 size="small"
                               >
-                                <ClearRoundedIcon fontSize="18px" />
+                                <ClearRounded fontSize="18px" />
                               </IconButton>
                             )}
                             {params.InputProps.endAdornment}
@@ -1079,7 +1226,9 @@ const AddIssueNote = () => {
                   sx={{
                     "& .MuiInputBase-root.Mui-disabled": {
                       bgcolor: "#eeeeee",
-                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        border: "none",
+                      },
                     },
                   }}
                 />
@@ -1123,18 +1272,6 @@ const AddIssueNote = () => {
                   onChange={(e) => setContactName(e.target.value)}
                 />
               </div>
-              <div className="col-span-2">
-                <Typography variant="medium" className="mb-1 text-black">
-                  Bộ phận
-                </Typography>
-                <TextField
-                  fullWidth
-                  size="small"
-                  color="success"
-                  variant="outlined"
-                  type="text"
-                />
-              </div>
             </div>
           )}
 
@@ -1149,9 +1286,7 @@ const AddIssueNote = () => {
                   disableClearable
                   clearIcon={null}
                   size="small"
-                  getOptionLabel={(option) =>
-                    `${option.code} - ${option.name}`
-                  }
+                  getOptionLabel={(option) => option.code || ""}
                   value={outsources.find((o) => o.code === partnerCode) || null}
                   onChange={(event, sel) => {
                     if (sel) {
@@ -1159,8 +1294,16 @@ const AddIssueNote = () => {
                       setPartnerName(sel.name);
                       setAddress(sel.address);
                       setContactName(sel.contactName);
-                      setPartnerId(sel.id); // Lưu luôn partnerId
+                      setPartnerId(sel.id);
                     }
+                  }}
+                  slotProps={{
+                    paper: {
+                      sx: {
+                        maxHeight: 300,
+                        overflowY: "auto",
+                      },
+                    },
                   }}
                   renderInput={(params) => (
                     <TextField
@@ -1193,7 +1336,7 @@ const AddIssueNote = () => {
                                 }}
                                 size="small"
                               >
-                                <ClearRoundedIcon fontSize="18px" />
+                                <ClearRounded fontSize="18px" />
                               </IconButton>
                             )}
                             {params.InputProps.endAdornment}
@@ -1272,8 +1415,6 @@ const AddIssueNote = () => {
                 </Typography>
                 <Autocomplete
                   options={suppliers}
-                  disableClearable
-                  clearIcon={null}
                   size="small"
                   getOptionLabel={(option) => option.code || ""}
                   value={suppliers.find((o) => o.code === partnerCode) || null}
@@ -1283,7 +1424,7 @@ const AddIssueNote = () => {
                       setPartnerName(sel.name);
                       setAddress(sel.address);
                       setContactName(sel.contactName);
-                      setPartnerId(sel.id); // Lưu partnerId khi chọn NCC
+                      setPartnerId(sel.id);
                     }
                   }}
                   slotProps={{
@@ -1300,38 +1441,6 @@ const AddIssueNote = () => {
                       hiddenLabel
                       {...params}
                       placeholder="Mã nhà cung cấp"
-                      InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                          <div className="flex items-center space-x-1">
-                            <IconButton
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenCreatePartnerPopup();
-                              }}
-                              size="small"
-                            >
-                              <FaPlus fontSize="small" />
-                            </IconButton>
-                            {partnerCode && (
-                              <IconButton
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPartnerCode("");
-                                  setPartnerName("");
-                                  setAddress("");
-                                  setContactName("");
-                                  setPartnerId(null);
-                                }}
-                                size="small"
-                              >
-                                <ClearRoundedIcon fontSize="18px" />
-                              </IconButton>
-                            )}
-                            {params.InputProps.endAdornment}
-                          </div>
-                        ),
-                      }}
                     />
                   )}
                 />
@@ -1396,7 +1505,6 @@ const AddIssueNote = () => {
             </div>
           )}
 
-          {/* Lý do xuất + File đính kèm */}
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <Typography variant="medium" className="mb-1 text-black">
@@ -1420,10 +1528,8 @@ const AddIssueNote = () => {
               </Typography>
               <FileUploadBox files={files} setFiles={setFiles} maxFiles={3} />
             </div>
-          </div>
-
-          {/* Dropdown phân trang */}
-          <div className="py-2 flex items-center justify-between gap-2">
+            </div>
+            <div className="py-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-light">
                 Hiển thị
@@ -1448,8 +1554,7 @@ const AddIssueNote = () => {
             </div>
           </div>
 
-          {/* Render bảng */}
-          {category === "Trả lại hàng mua" ? (
+          {category === "Gia công" || category === "Trả lại hàng mua" ? (
             <div className="border rounded mb-4 overflow-x-auto">
               <table className="w-full border-collapse text-sm">
                 <thead className="bg-gray-50 border-b">
@@ -1508,7 +1613,6 @@ const AddIssueNote = () => {
             </div>
           )}
 
-          {/* Phần nút Thêm dòng/Xoá hết dòng - giữ nguyên code gốc */}
           {category !== "Bán hàng" && (
             <div className="flex gap-2 mb-4">
               <MuiButton size="small" variant="outlined" onClick={handleAddRow}>
@@ -1532,14 +1636,14 @@ const AddIssueNote = () => {
           )}
 
           {totalElements > 0 && (
-            <div className="flex items-center justify-between pt-4">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Typography
                   variant="small"
                   color="blue-gray"
                   className="font-normal"
                 >
-                  Trang {currentPage + 1} / {totalPages} • {totalElements} sản phẩm
+                  Trang {currentPage + 1} / {totalPages} • {totalElements} {category === "Gia công" ? "nguyên vật liệu" : "sản phẩm"}
                 </Typography>
               </div>
               <ReactPaginate
@@ -1551,7 +1655,7 @@ const AddIssueNote = () => {
                 pageRangeDisplayed={5}
                 onPageChange={handlePageChange}
                 containerClassName="flex items-center gap-1"
-                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                 pageLinkClassName="flex items-center justify-center w-full h-full"
                 previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                 nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -1562,8 +1666,8 @@ const AddIssueNote = () => {
               />
             </div>
           )}
-
-          <div className="mt-6 border-t pt-4 flex justify-between">
+          <Divider sx={{ marginY: "16px" }} />
+          <div className="mt-4 mb-2 flex justify-between">
             <MuiButton
               color="info"
               size="medium"
@@ -1579,7 +1683,7 @@ const AddIssueNote = () => {
             >
               <FaArrowLeft className="h-3 w-3" /> Quay lại
             </MuiButton>
-            <div className="flex items-center justify-end gap-2 pb-2">
+            <div className="flex items-center justify-end gap-2">
               <MuiButton size="medium" color="error" variant="outlined">
                 Hủy
               </MuiButton>

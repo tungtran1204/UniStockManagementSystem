@@ -76,7 +76,12 @@ public class SalesOrder {
     public enum OrderStatus {
         PROCESSING,          // Đang xử lý
         PREPARING_MATERIAL, // Đang chuẩn bị vật tư
-        CANCELLED           // Đã hủy
+        CANCELLED,           // Đã hủy
+        PROCESSING_NO_REQUEST, // Chưa có yêu cầu
+        PROCESSING_PENDING_REQUEST, // Đang chờ yêu cầu mua được duyệt
+        PROCESSING_REJECTED_REQUEST, // Yêu cầu mua bị từ chối
+        PARTIALLY_ISSUED, // Đã xuất 1 phần
+        COMPLETED, // Đã hoàn thành
     }
     @JsonIgnore
     public String getStatusLabel() {
@@ -84,6 +89,11 @@ public class SalesOrder {
             case PROCESSING -> "Đang xử lý";
             case PREPARING_MATERIAL -> "Đang chuẩn bị vật tư";
             case CANCELLED -> "Đã hủy";
+            case PROCESSING_NO_REQUEST -> "Chưa có yêu cầu";
+            case PROCESSING_PENDING_REQUEST -> "Yêu cầu đang chờ duyệt";
+            case PROCESSING_REJECTED_REQUEST -> "Yêu cầu bị từ chối";
+            case PARTIALLY_ISSUED -> "Đã xuất một phần";
+            case COMPLETED -> "Đã hoàn thành";
         };
     }
 

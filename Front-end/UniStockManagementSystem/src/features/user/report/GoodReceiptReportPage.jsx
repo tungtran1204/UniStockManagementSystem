@@ -18,6 +18,10 @@ import DateFilterButton from "@/components/DateFilterButton";
 import QuantityFilterButton from "@/components/QuantityFilterButton";
 import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Import Tiếng Việt
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import robotoFont from '@/assets/fonts/Roboto-Regular-normal.js';
+import robotoBoldFont from '@/assets/fonts/Roboto-Regular-bold.js';
 import { getGoodReceiptReportPaginated } from "./reportService";
 import { getWarehouseList } from "../warehouse/warehouseService";
 
@@ -58,7 +62,7 @@ const GoodReceiptReportPage = () => {
                 categories: selectedCategories,
                 warehouses: selectedWarehouses,
                 quantityFilters,
-                itemType: selectedItemType 
+                itemType: selectedItemType
             });
 
             const data = response.data.content.map((item, index) => ({
@@ -112,6 +116,121 @@ const GoodReceiptReportPage = () => {
         fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
     };
 
+    // handle export PDF
+    const handleExportPDF = () => {
+        const formatVietnameseDate = (dateString) => {
+            const date = new Date(dateString);
+            const day = date.getDate();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `Ngày ${day} tháng ${month} năm ${year}`;
+        };
+
+        const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+        doc.addFileToVFS("Roboto-Bold.ttf", robotoBoldFont);
+        doc.addFont("Roboto-Bold.ttf", "Roboto", "bold");
+        doc.addFileToVFS("Roboto-Regular.ttf", robotoFont);
+        doc.addFont("Roboto-Regular.ttf", "Roboto", "normal");
+
+        doc.setFont("Roboto", "bold");
+        doc.setFontSize(14);
+        doc.text("CÔNG TY TNHH THIÊN NGỌC AN", 14, 20);
+        doc.setFont("Roboto", "normal");
+        doc.setFontSize(10);
+        doc.text("Đ/C: TL 419 KCN Phùng Xá, Huyện Thạch Thất, TP. Hà Nội", 14, 26);
+        doc.text("SĐT: 0909.009.990", 14, 32);
+
+        doc.setFont("Roboto", "bold");
+        doc.setFontSize(20);
+        doc.text("BÁO CÁO NHẬP KHO", 150, 40, { align: "center" });
+
+        doc.setFont("Roboto", "normal");
+        doc.setFontSize(9);
+        doc.text(formatVietnameseDate(new Date()), 150, 45, { align: "center" });
+
+        doc.setFontSize(11);
+        if (selectedWarehouses.length === 1) {
+            const wh = selectedWarehouses[0];
+            doc.text(`Kho nhập: ${wh.warehouseCode || ""} - ${wh.warehouseName}`, 150, 53, { align: "center" });
+        } else if (selectedWarehouses.length > 1) {
+            doc.text("Kho nhập: Nhiều kho được chọn", 150, 53, { align: "center" });
+        } else {
+            doc.text("Kho nhập: Tất cả kho", 150, 53, { align: "center" });
+        }
+
+        const totalQuantity = reportData.reduce((sum, item) => sum + (item.itemQuantity || 0), 0);
+
+        autoTable(doc, {
+            startY: 60,
+            head: [[
+                { content: "STT", styles: { halign: 'center', cellWidth: 12 } },
+                { content: "Mã phiếu nhập", styles: { halign: 'center', cellWidth: 20 } },
+                { content: "Ngày nhập", styles: { halign: 'center', cellWidth: 25 } },
+                { content: "Phân loại nhập", styles: { halign: 'center', cellWidth: 40 } },
+                { content: "Mã hàng", styles: { halign: 'center', cellWidth: 40 } },
+                { content: "Tên hàng", styles: { halign: 'center', cellWidth: 60 } },
+                { content: "Đơn vị", styles: { halign: 'center' }, cellWidth: 20 },
+                { content: "Số lượng", styles: { halign: 'center', cellWidth: 25 } },
+                { content: "Kho nhập", styles: { halign: 'center' }, cellWidth: 30 }
+            ]],
+            body: [
+                ...reportData.map((item, index) => [
+                    { content: index + 1, styles: { halign: 'center' } },
+                    { content: item.receiptCode, styles: { halign: 'center' } },
+                    { content: dayjs(item.receiptDate).format("DD/MM/YYYY"), styles: { halign: 'center' } },
+                    { content: item.category, styles: { halign: 'left' } },
+                    { content: item.itemCode, styles: { halign: 'left' } },
+                    { content: item.itemName, styles: { halign: 'left' } },
+                    { content: item.itemUnit, styles: { halign: 'center' } },
+                    { content: item.itemQuantity, styles: { halign: 'center' } },
+                    { content: item.toWarehouse, styles: { halign: 'left' } },
+                ]),
+                [
+                    { content: "TỔNG CỘNG :", colSpan: 7, styles: { halign: 'right', fontStyle: 'bold' } },
+                    { content: totalQuantity, styles: { halign: 'center', fontStyle: 'bold' } },
+                    { content: "", styles: { halign: 'center' } },
+                ]
+            ],
+            styles: {
+                font: "Roboto",
+                fontSize: 10,
+                cellPadding: { top: 2, right: 2, bottom: 2, left: 2 },
+                valign: 'middle',
+                lineWidth: 0.2,
+                overflow: 'linebreak',
+            },
+            headStyles: {
+                fillColor: [240, 240, 240],
+                textColor: 20,
+                fontSize: 10,
+                lineWidth: 0.2,
+            },
+            bodyStyles: {
+                textColor: 20,
+                lineWidth: 0.2,
+            },
+            alternateRowStyles: { fillColor: [255, 255, 255] },
+            tableLineWidth: 0.2,
+            tableLineColor: 200,
+            margin: { top: 0, left: 14, right: 14 },
+        });
+
+        const finalY = doc.lastAutoTable.finalY + 12;
+        // Căn đều 3 cột trên cùng 1 hàng
+        doc.setFont("Roboto", "bold");
+        doc.setFontSize(10);
+        doc.text("Người lập biểu", 30, finalY);
+        doc.text("Kế toán trưởng", 140, finalY);
+        doc.text("Giám đốc", 250, finalY);
+        doc.setFont("Roboto", "normal");
+        doc.setFontSize(8);
+        doc.text("(Ký, họ tên)", 42, finalY + 5, { align: "center" });
+        doc.text("(Ký, họ tên)", 152, finalY + 5, { align: "center" });
+        doc.text("(Ký, họ tên)", 258, finalY + 5, { align: "center" });
+
+        doc.save("BaoCaoNhapKho.pdf");
+    };
+
     //Lấy hết category nhập kho
     const categoryList = [
         "Thành phẩm sản xuất",
@@ -138,7 +257,8 @@ const GoodReceiptReportPage = () => {
 
 
     const columnsConfig = [
-        { field: 'stt', headerName: 'STT', flex: 1, minWidth: 20, editable: false, filterable: false },
+        { field: 'stt', headerName: 'STT', flex: 1, minWidth: 80, editable: false, filterable: false },
+        { field: 'receiptCode', headerName: 'Mã phiếu nhập', flex: 1, minWidth: 120, editable: false, filterable: false },
         {
             field: 'receiptDate',
             headerName: 'Ngày nhập',
@@ -148,6 +268,7 @@ const GoodReceiptReportPage = () => {
             filterable: false,
             renderCell: (params) => params.value ? dayjs(params.value).format("DD/MM/YYYY") : "",
         },
+        { field: 'category', headerName: 'Phân loại nhập', flex: 2, minWidth: 200, editable: false, filterable: false },
         {
             field: 'itemCode',
             headerName: 'Mã hàng',
@@ -193,9 +314,6 @@ const GoodReceiptReportPage = () => {
             filterable: false,
             //dùng renderCell để cấu hình data
         },
-        { field: 'category', headerName: 'Phân loại nhập', flex: 2, minWidth: 200, editable: false, filterable: false },
-        { field: 'receiptCode', headerName: 'Mã phiếu nhập', flex: 1, minWidth: 120, editable: false, filterable: false },
-
     ];
 
     const data = reportData;
@@ -239,6 +357,7 @@ const GoodReceiptReportPage = () => {
                         title="Báo cáo nhập kho"
                         showAdd={false}
                         showImport={false}
+                        onExport={handleExportPDF}
                     />
 
                     <div className="mb-3 flex flex-wrap items-center gap-4">

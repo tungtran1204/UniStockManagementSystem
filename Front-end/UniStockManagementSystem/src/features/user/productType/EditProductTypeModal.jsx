@@ -31,7 +31,7 @@ const EditProductTypePopUp = ({ productType, onClose, onSuccess }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.put(`/api/ProductType/${productType.typeId}`, formData);
+            await axios.put(`/api/product-types/${productType.id}`, formData);
             onSuccess();
             onClose();
         } catch (error) {

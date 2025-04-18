@@ -210,7 +210,7 @@ export const routes = [
         subPages: [
           {
             icon: <Bars3BottomRightIcon {...icon} />,
-            name: "Nguyên vật liệu",
+            name: "Vật tư",
             path: "/user/materials",
             element: <MaterialPage />,
             roles: ["USER"],
@@ -442,6 +442,8 @@ export const routes = [
         roles: ["USER"],
       },
       {
+        layout: "Xuất kho", // Sử dụng icon tương tự như trang quản lý kho
+        name: "Cho tiết phiếu xuất kho",
         path: "/user/issueNote/:id",
         element: <ViewIssueNote />,
         roles: ["USER"],

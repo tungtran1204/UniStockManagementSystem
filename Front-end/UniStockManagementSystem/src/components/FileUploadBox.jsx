@@ -31,12 +31,6 @@ const FileUploadBox = ({ files, setFiles, maxFiles = 3 }) => {
         setFiles(files.filter((_, i) => i !== index));
     };
 
-    const getPreviewType = (file) => {
-        if (file.type.startsWith("image/")) return "image";
-        if (file.type === "application/pdf") return "pdf";
-        return "other";
-    };
-
     const handlePreview = (file) => {
         setPreviewFile(file);
     };

@@ -23,9 +23,12 @@ public class WarehouseController {
     private final WarehouseService warehouseService;
 
     @PostMapping
-    public ResponseEntity<Warehouse> addWarehouse(@Valid @RequestBody WarehouseDTO warehouseDTO){
-        Warehouse newWarehouse = warehouseService.addWarehouse(warehouseDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(newWarehouse);
+    public ResponseEntity<?> addWarehouse(@Valid @RequestBody WarehouseDTO warehouseDTO){
+        try {
+            return ResponseEntity.ok(warehouseService.addWarehouse(warehouseDTO));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
     }
 
     @GetMapping("/list")
@@ -35,11 +38,13 @@ public class WarehouseController {
     }
 
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getAllWarehouses(
+    public ResponseEntity<Map<String, Object>> getWarehouses(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean isActive
     ) {
-        Page<Warehouse> warehousePage = warehouseService.getAllWarehouses(page, size);
+        Page<Warehouse> warehousePage = warehouseService.searchWarehouses(search, isActive, page, size);
 
         Map<String, Object> response = new HashMap<>();
         response.put("content", warehousePage.getContent());
@@ -50,6 +55,7 @@ public class WarehouseController {
     }
 
 
+
     @GetMapping("/{warehouseId}")
     public ResponseEntity<Warehouse> getWarehouseById(@PathVariable Long warehouseId){
         Warehouse warehouse = warehouseService.getWarehouseById(warehouseId);
@@ -57,15 +63,35 @@ public class WarehouseController {
     }
 
     @PatchMapping("/{warehouseId}")
-    public ResponseEntity<Warehouse> updateWarehouse(@Valid @PathVariable Long warehouseId, @RequestBody WarehouseDTO warehouseDTO){
-        Warehouse updatedWarehouse = warehouseService.updateWarehouse(warehouseId, warehouseDTO);
-        return ResponseEntity.ok(updatedWarehouse);
+    public ResponseEntity<?> updateWarehouse(@Valid @PathVariable Long warehouseId, @RequestBody WarehouseDTO warehouseDTO){
+        try {
+            return ResponseEntity.ok(warehouseService.updateWarehouse(warehouseId, warehouseDTO));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
     }
 
     @PatchMapping("/{warehouseId}/status")
     public ResponseEntity<Warehouse> updateWarehouseStatus(@PathVariable Long warehouseId, @RequestBody Map<String, Boolean> status){
         Warehouse updatedWarehouse = warehouseService.updateWarehouseStatus(warehouseId, status.get("isActive"));
         return ResponseEntity.ok(updatedWarehouse);
+    }
+
+    @GetMapping("/used-categories")
+    public ResponseEntity<List<String>> getUsedWarehouseCategories() {
+        List<String> usedCategories = warehouseService.getUsedWarehouseCategories();
+        return ResponseEntity.ok(usedCategories);
+    }
+
+    @GetMapping("/check-warehouse-code/{warehouseCode}")
+    public ResponseEntity<Map<String, Boolean>> checkWarehouseCode(
+            @PathVariable String warehouseCode,
+            @RequestParam(required = false) Long excludeId
+    ) {
+        boolean exists = warehouseService.isWarehouseCodeExists(warehouseCode, excludeId);
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("exists", exists);
+        return ResponseEntity.ok(response);
     }
 
 }

@@ -3,6 +3,7 @@ package vn.unistock.unistockmanagementsystem.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -12,6 +13,8 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -23,7 +26,19 @@ public class GlobalExceptionHandler {
         errorResponse.setStatus((HttpStatus.BAD_REQUEST.value()));
         errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
         errorResponse.setError(HttpStatus.BAD_REQUEST.getReasonPhrase());
-        errorResponse.setMessage(e.getMessage());
+
+        if (e instanceof MethodArgumentNotValidException ex) {
+            Map<String, String> fieldErrors = new HashMap<>();
+            ex.getBindingResult().getFieldErrors().forEach(error ->
+                    fieldErrors.put(error.getField(), error.getDefaultMessage())
+            );
+
+            errorResponse.setMessage("Validation failed");
+            errorResponse.setFieldErrorMessages(fieldErrors); // ✅ map lỗi chi tiết
+        } else {
+            errorResponse.setMessage(e.getMessage());
+        }
+
         return errorResponse;
     }
 

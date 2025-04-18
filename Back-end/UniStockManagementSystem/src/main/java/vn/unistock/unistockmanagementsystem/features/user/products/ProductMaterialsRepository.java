@@ -1,4 +1,4 @@
-package vn.unistock.unistockmanagementsystem.features.user.productMaterials;
+package vn.unistock.unistockmanagementsystem.features.user.products;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
