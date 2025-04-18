@@ -253,18 +253,14 @@ const AddReceiptNoteGeneral = () => {
     }
   };
 
-  // region: Helper function
-  /**
-   * Trả về kho mặc định dựa trên loại nhập kho (category).
-   * Tuỳ chỉnh theo business logic.
-   */
+  
   const getDefaultWarehouse = (warehouseType) => {
     const warehouseTypeMap = {
       "Thành phẩm sản xuất": "KTP",
       "Hàng hóa trả lại": "KPL",
       "Vật tư mua bán": "KVT",
       "Hàng hóa gia công": "KVT",
-      "Nhập kho vật tư thừa": "KVT",
+      "Vật tư thừa sau sản xuất": "KVT",
     };
     const warehouseCode = warehouseTypeMap[warehouseType] || "";
     const defaultWarehouse = warehouses.find(w => w.warehouseCode === warehouseCode);
@@ -745,7 +741,7 @@ const AddReceiptNoteGeneral = () => {
   const getDropdownListByCategory = () => {
     if (category === "Thành phẩm sản xuất" || category === "Hàng hóa trả lại") {
       return productList || [];
-    } else if (category === "Nhập kho vật tư thừa") {
+    } else if (category === "Vật tư thừa sau sản xuất") {
       return materialList || [];
     } else if (category === "Khác") {
       return combinedList || [];
@@ -822,7 +818,7 @@ const AddReceiptNoteGeneral = () => {
                 <MenuItem value="Vật tư mua bán">Vật tư mua bán</MenuItem>
                 <MenuItem value="Hàng hóa gia công">Hàng hóa gia công</MenuItem>
                 <MenuItem value="Hàng hóa trả lại">Hàng hóa trả lại</MenuItem>
-                <MenuItem value="Nhập kho vật tư thừa">Nhập kho vật tư thừa</MenuItem>
+                <MenuItem value="Vật tư thừa sau sản xuất">Vật tư thừa sau sản xuất</MenuItem>
                 <MenuItem value="Khác">Khác</MenuItem>
               </TextField>
             </div>
