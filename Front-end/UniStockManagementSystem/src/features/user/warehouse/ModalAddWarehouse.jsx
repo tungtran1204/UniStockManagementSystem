@@ -86,46 +86,49 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
 
   const handleSave = async () => {
     if (Object.keys(error).length > 0) return;
-
-    // Validate tất cả các trường trước khi lưu
+  
     if (!warehouseCode.trim()) {
       setError({ ...error, warehouseCode: "Mã kho không được để trống." });
       return;
     }
-
+  
     if (!warehouseName.trim()) {
       setError({ ...error, warehouseName: "Tên kho không được để trống." });
       return;
     }
-
+  
     if (!validateCategories()) return;
-
+  
     setLoading(true);
     try {
-      // Lấy danh sách label thay vì value để lưu
       const categoryLabels = warehouseCategories.map(cat =>
         categoryOptions.find(opt => opt.value === cat)?.label
       );
       const goodCategory = categoryLabels.length > 0 ? categoryLabels.join(", ") : null;
-
-      await addWarehouse({
+  
+      const data = {
         warehouseCode,
         warehouseName,
         warehouseDescription,
         goodCategory,
         isActive,
-      });
+      };
+  
+      console.log("📤 Dữ liệu gửi về backend:", data); // ✅ LOG kiểm tra
+  
+      await addWarehouse(data);
+  
       alert("Thêm kho thành công!");
       onAdd?.();
       onClose();
     } catch (error) {
       const message = error?.response?.data?.message || "Lỗi không xác định.";
       alert("Lỗi khi thêm kho: " + message);
-      console.error("Chi tiết lỗi:", error);    
+      console.error("Chi tiết lỗi:", error);
     } finally {
       setLoading(false);
     }
-  };
+  };  
 
   useEffect(() => {
     const fetchAndFilterCategories = async () => {
@@ -188,7 +191,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
                   if (exists) {
                     setError(prev => ({
                       ...prev,
-                      warehouseCode: "Mã kho đã tồn tại trong hệ thống."
+                      warehouseCode: "Mã kho đã tồn tại."
                     }));
                   } else {
                     setError(prev => {

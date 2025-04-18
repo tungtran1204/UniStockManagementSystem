@@ -28,6 +28,8 @@ public class WarehouseService {
             throw new RuntimeException("Mã kho đã tồn tại");
 
         Warehouse warehouse = warehouseMapper.toEntity(warehouseDTO);
+        System.out.println("DTO goodCategory: " + warehouseDTO.getGoodCategory());
+        System.out.println("Mapped Entity goodCategory: " + warehouse.getGoodCategory());
         return warehouseRepository.save(warehouse);
     }
 
