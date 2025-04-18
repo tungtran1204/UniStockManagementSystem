@@ -164,18 +164,18 @@ const SaleOrdersPage = () => {
       editable: false,
       filterable: false,
       renderCell: (params) => {
-        console.log("params.row", params.row);
-        const statusObj = saleOrderStatuses.find((s) => s.value === params.row.status);
+        const statusLabel = params.row.statusLabel || "Không rõ trạng thái";
+        const statusObj = saleOrderStatuses.find((s) => s.label === statusLabel);
         return (
           <div
             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                      ${statusObj?.className}`}
+              ${statusObj?.className || "bg-gray-50 text-gray-800"}`}
           >
-            {statusObj?.label}
+            {statusLabel}
           </div>
         );
       },
-    },
+    },    
     {
       field: 'orderDate',
       headerName: 'Ngày đặt hàng',
@@ -214,6 +214,7 @@ const SaleOrdersPage = () => {
     orderCode: order.orderCode || "N/A",
     partnerName: order.partnerName || "N/A",
     status: order.status,
+    statusLabel: order.statusLabel,
     orderDate: order.orderDate,
   }));
 
