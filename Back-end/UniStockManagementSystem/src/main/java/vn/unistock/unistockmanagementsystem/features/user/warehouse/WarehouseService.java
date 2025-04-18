@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import vn.unistock.unistockmanagementsystem.entities.Warehouse;
+import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryRepository;
 
 import java.util.Arrays;
 import java.util.List;
@@ -19,6 +20,8 @@ public class WarehouseService {
     private final WarehouseRepository warehouseRepository;
     @Autowired
     private final WarehouseMapper warehouseMapper;
+    @Autowired
+    private final InventoryRepository inventoryRepository;
 
     public Warehouse addWarehouse(WarehouseDTO warehouseDTO) {
         if (warehouseRepository.existsByWarehouseName(warehouseDTO.getWarehouseName()))
@@ -58,8 +61,14 @@ public class WarehouseService {
 
     public Warehouse updateWarehouseStatus(Long id, Boolean isActive) {
         Warehouse warehouse = getWarehouseById(id);
+        if (!isActive) {
+            boolean hasStock = inventoryRepository.existsStockInWarehouse(id);
+            if (hasStock) {
+                throw new RuntimeException("Thay đổi trạng thái kho không thành công. Không thể dừng hoạt động kho này khi vẫn còn hàng hóa lưu kho.");
+            }
+        }
         warehouse.setIsActive(isActive);
-        return  warehouseRepository.save(warehouse);
+        return warehouseRepository.save(warehouse);
     }
 
     public List<String> getUsedWarehouseCategories() {
@@ -78,4 +87,10 @@ public class WarehouseService {
         }
         return warehouseRepository.existsByWarehouseCode(warehouseCode);
     }
+
+    public Page<Warehouse> searchWarehouses(String search, Boolean isActive, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return warehouseRepository.searchWarehouses(search, isActive, pageable);
+    }
+
 }

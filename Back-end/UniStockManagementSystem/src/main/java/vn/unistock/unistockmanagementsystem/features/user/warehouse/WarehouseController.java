@@ -35,11 +35,13 @@ public class WarehouseController {
     }
 
     @GetMapping
-    public ResponseEntity<Map<String, Object>> getAllWarehouses(
+    public ResponseEntity<Map<String, Object>> getWarehouses(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean isActive
     ) {
-        Page<Warehouse> warehousePage = warehouseService.getAllWarehouses(page, size);
+        Page<Warehouse> warehousePage = warehouseService.searchWarehouses(search, isActive, page, size);
 
         Map<String, Object> response = new HashMap<>();
         response.put("content", warehousePage.getContent());
@@ -48,6 +50,7 @@ public class WarehouseController {
 
         return ResponseEntity.ok(response);
     }
+
 
 
     @GetMapping("/{warehouseId}")

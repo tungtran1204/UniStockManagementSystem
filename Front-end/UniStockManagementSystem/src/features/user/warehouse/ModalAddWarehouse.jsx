@@ -29,7 +29,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
     { value: "VT", label: "Vật tư mua bán" },
     { value: "GC", label: "Hàng hóa gia công" },
     { value: "TL", label: "Hàng hóa trả lại" },
-    { value: "NT", label: "Nhập kho vật tư thừa" }
+    { value: "NT", label: "Vật tư thừa sau sản xuất" }
   ];
   const [warehouseCategories, setWarehouseCategories] = useState([]);
   const [availableCategories, setAvailableCategories] = useState(categoryOptions);
@@ -234,7 +234,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
           </Typography>
           {isAllCategoriesUsed ? (
             <Typography sx={{ fontStyle: "italic", color: "gray", mt: 1 }}>
-              Tất cả phân loại kho đã được gán. Không còn phân loại nào để chọn.
+              Tất cả phân loại hàng hóa mặc định cho kho đã được gán. Không còn phân loại nào để chọn.
             </Typography>
           ) : (
             <Autocomplete
@@ -257,7 +257,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
                   fullWidth
                   size="small"
                   color="success"
-                  placeholder="Chọn phân loại kho"
+                  placeholder="Chọn phân loại kho hàng hóa "
                   error={!!error.warehouseCategories}
                   helperText={error.warehouseCategories}
                 />
