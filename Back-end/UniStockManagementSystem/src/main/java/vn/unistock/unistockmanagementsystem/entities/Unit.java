@@ -22,8 +22,4 @@ public class Unit {
     @Column(name = "unit_name", unique = true, nullable = false)
     private String unitName;
 
-//    @OneToMany(mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
-//    @JsonIgnore
-//    private List<Product> products;
-
 }

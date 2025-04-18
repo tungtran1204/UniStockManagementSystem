@@ -75,6 +75,8 @@ public class IssueNoteService {
 
     @Autowired
     private SaleOrdersRepository salesOrderRepository;
+    @Autowired
+    private ReceiveOutsourceRepository receiveOutsourceRepository;
 
     // Lấy danh sách phiếu xuất kho (sắp xếp giảm dần theo issueDate)
     public Page<IssueNoteDTO> getAllIssueNotes(int page, int size) {
@@ -107,6 +109,10 @@ public class IssueNoteService {
             if (issueNoteDto.getPartnerId() != null) {
                 Partner partner = Partner.builder().partnerId(issueNoteDto.getPartnerId()).build();
                 issueNote.setPartner(partner);
+            }
+
+            if (issueNoteDto.getReceiver() != null) {
+                issueNote.setReceiver(issueNoteDto.getReceiver());
             }
 
             // Xử lý salesOrder nếu có soId
@@ -193,8 +199,38 @@ public class IssueNoteService {
             }
             // ***** KẾT THÚC PHẦN MỚI *****
 
+            // Xử lý ReceiveOutsource cho category = "Gia công"
+            if ("Gia công".equals(issueNoteDto.getCategory())) {
+                if (issueNoteDto.getPartnerId() == null) {
+                    throw new RuntimeException("PartnerId is required for outsourcing");
+                }
+                ReceiveOutsource outsource = new ReceiveOutsource();
+                outsource.setGoodIssueNote(issueNote);
+                outsource.setPartner(Partner.builder().partnerId(issueNoteDto.getPartnerId()).build());
+                outsource.setStatus(ReceiveOutsource.OutsourceStatus.PENDING);
+
+
+                // Tạo danh sách ReceiveOutsourceMaterial
+                List<ReceiveOutsourceMaterial> outsourceMaterials = issueNote.getDetails().stream()
+                        .filter(detail -> detail.getMaterial() != null)
+                        .map(detail -> {
+                            ReceiveOutsourceMaterial rom = new ReceiveOutsourceMaterial();
+                            rom.setReceiveOutsource(outsource);
+                            rom.setMaterial(detail.getMaterial());
+                            rom.setQuantity(detail.getQuantity());
+                            rom.setUnit(detail.getUnit());
+                            rom.setWarehouse(detail.getWarehouse());
+                            return rom;
+                        }).collect(Collectors.toList());
+
+                outsource.setMaterials(outsourceMaterials);
+                receiveOutsourceRepository.save(outsource);
+            }
+
+
             // Lưu lại issueNote để đảm bảo đồng bộ
             issueNote = issueNoteRepository.save(issueNote);
+
 
             // Trả về DTO
             return issueNoteMapper.toDTO(issueNote);

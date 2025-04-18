@@ -43,6 +43,9 @@ public class GoodIssueNote {
     @JoinColumn(name = "partner_id")
     private Partner partner;
 
+    @Column(name = "receiver", nullable = true)
+    private String receiver;
+
     @ManyToOne
     @JoinColumn(name = "created_by", nullable = false)
     @NotNull(message = "Created by is required")

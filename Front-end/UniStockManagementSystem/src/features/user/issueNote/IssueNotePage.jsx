@@ -69,11 +69,11 @@ const IssueNotePage = () => {
   // Map dữ liệu cho bảng; nếu không có ginId, tạo id dự phòng
   const data = filteredIssueNotes.map((note, index) => ({
     id: note.ginId ? note.ginId : `${currentPage}-${index}`,
-    ginCode: note.ginCode || "N/A",
-    category: note.category || "N/A",
+    ginCode: note.ginCode || "Không có",
+    category: note.category || "Không có",
     description: note.description || "Không có ghi chú",
     issueDate: note.issueDate,
-    createdByUserName: note.createdByUserName || "Đang tải...",
+    createdByUserName: note.createdByUserName ,
     soId: note.soId, 
     soCode: note.soCode || "Không có"
   }));

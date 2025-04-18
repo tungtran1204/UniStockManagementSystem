@@ -1,14 +1,19 @@
 import React, { useState } from 'react';
 import {
-    Dialog,
-    DialogHeader,
-    DialogBody,
-    DialogFooter,
-    Typography,
-    Button,
-} from "@material-tailwind/react";
-import { TextField, Divider, Button as MuiButton, IconButton } from "@mui/material";
-import { XMarkIcon } from "@heroicons/react/24/outline";
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Typography,
+  TextField,
+  Divider,
+  Button,
+  IconButton,
+  Box,
+  Autocomplete,
+  Chip
+} from "@mui/material";
+import CloseIcon from '@mui/icons-material/Close';
 import useWarehouse from "./useWarehouse";
 
 const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
@@ -17,6 +22,16 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
   const [warehouseDescription, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});
+  const [warehouseCategories, setWarehouseCategories] = useState([]);
+
+  // Danh sách phân loại kho có sẵn
+  const categoryOptions = [
+    { value: "TP", label: "Thành phẩm sản xuất" },
+    { value: "VT", label: "Vật tư mua bán" },
+    { value: "GC", label: "Hàng hóa gia công" },
+    { value: "TL", label: "Hàng hóa trả lại" },
+    { value: "NT", label: "Nhập kho vật tư thừa" }
+  ];
 
   const { addWarehouse } = useWarehouse();
 
@@ -54,12 +69,48 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
     setError(errors);
   };
 
+  const validateCategories = () => {
+    let errors = { ...error };
+    if (warehouseCategories.length === 0) {
+      errors.warehouseCategories = "Vui lòng chọn ít nhất một phân loại kho.";
+      setError(errors);
+      return false;
+    } else {
+      delete errors.warehouseCategories;
+      setError(errors);
+      return true;
+    }
+  };
+
   const handleSave = async () => {
     if (Object.keys(error).length > 0) return;
 
+    // Validate tất cả các trường trước khi lưu
+    if (!warehouseCode.trim()) {
+      setError({ ...error, warehouseCode: "Mã kho không được để trống." });
+      return;
+    }
+
+    if (!warehouseName.trim()) {
+      setError({ ...error, warehouseName: "Tên kho không được để trống." });
+      return;
+    }
+
+    if (!validateCategories()) return;
+
     setLoading(true);
     try {
-      await addWarehouse({ warehouseCode, warehouseName, warehouseDescription });
+      // Lấy danh sách label thay vì value để lưu
+      const categoryLabels = warehouseCategories.map(cat => 
+        categoryOptions.find(opt => opt.value === cat)?.label
+      );
+      
+      await addWarehouse({ 
+        warehouseCode, 
+        warehouseName, 
+        warehouseDescription, 
+        warehouseCategories: categoryLabels 
+      });
       alert("Thêm kho thành công!");
       onAdd?.();
       onClose();
@@ -71,37 +122,40 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
     }
   };
 
-  if (!show) return null;
-
   return (
-    <Dialog open={true} handler={onClose} size="md" className="px-4 py-2">
+    <Dialog 
+      open={show} 
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+    >
       {/* Header của Dialog */}
-      <DialogHeader className="flex justify-between items-center pb-2">
-        <Typography variant="h4" color="blue-gray">
+      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
+        <Typography variant="h5" component="div">
           Thêm kho
         </Typography>
-        <IconButton
-          size="small"
-          onClick={onClose}
+        <IconButton 
+          edge="end" 
+          color="inherit" 
+          onClick={onClose} 
+          aria-label="close"
         >
-          <XMarkIcon className="h-5 w-5 stroke-2" />
+          <CloseIcon />
         </IconButton>
-      </DialogHeader>
-      <Divider variant="middle" />
+      </DialogTitle>
+      <Divider />
+      
       {/* Body của Dialog */}
-      <DialogBody className="space-y-4 pb-6 pt-6">
-
-        {/* Mã kho & Tên kho */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Typography variant="medium" className="text-black">
+      <DialogContent sx={{ py: 3 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 2 }}>
+          <Box>
+            <Typography variant="body1" sx={{ mb: 1 }}>
               Mã kho
-              <span className="text-red-500"> *</span>
+              <span style={{ color: '#f44336' }}> *</span>
             </Typography>
             <TextField
               fullWidth
               size="small"
-              hiddenLabel
               placeholder="Mã kho"
               color="success"
               value={warehouseCode}
@@ -109,19 +163,18 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
                 setWarehouseCode(e.target.value);
                 validateFields("warehouseCode", e.target.value);
               }}
-              error={!!error.warehouseName}
+              error={!!error.warehouseCode}
+              helperText={error.warehouseCode}
             />
-            {error.warehouseCode && <Typography variant="small" color="red">{error.warehouseCode}</Typography>}
-          </div>
-          <div>
-            <Typography variant="medium" className="text-black">
+          </Box>
+          <Box>
+            <Typography variant="body1" sx={{ mb: 1 }}>
               Tên kho
-              <span className="text-red-500"> *</span>
+              <span style={{ color: '#f44336' }}> *</span>
             </Typography>
             <TextField
               fullWidth
               size="small"
-              hiddenLabel
               placeholder="Tên kho"
               color="success"
               value={warehouseName}
@@ -130,22 +183,69 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
                 validateFields("warehouseName", e.target.value);
               }}
               error={!!error.warehouseName}
+              helperText={error.warehouseName}
             />
-            {error.warehouseName && <Typography variant="small" color="red">{error.warehouseName}</Typography>}
-          </div>
-        </div>
+          </Box>
+        </Box>
+        
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="body1" sx={{ mb: 1 }}>
+            Phân loại kho
+            <span style={{ color: '#f44336' }}> *</span>
+          </Typography>
+          <Autocomplete
+            multiple
+            options={categoryOptions}
+            getOptionLabel={(option) => option.label}
+            value={categoryOptions.filter(option => warehouseCategories.includes(option.value))}
+            onChange={(event, selectedOptions) => {
+              const values = selectedOptions.map(option => option.value);
+              setWarehouseCategories(values);
+              if (values.length > 0) {
+                const newErrors = { ...error };
+                delete newErrors.warehouseCategories;
+                setError(newErrors);
+              }
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                fullWidth
+                size="small"
+                color="success"
+                placeholder="Chọn phân loại kho"
+                error={!!error.warehouseCategories}
+                helperText={error.warehouseCategories}
+              />
+            )}
+            renderTags={(selected, getTagProps) =>
+              selected.map((option, index) => (
+                <Chip
+                  {...getTagProps({ index })}
+                  key={option.value}
+                  label={option.label}
+                  color="success"
+                  variant="outlined"
+                  size="small"
+                />
+              ))
+            }
+            slotProps={{
+              popper: {
+                sx: { zIndex: 9999 }, // Cố định z-index trong Popper
+              },
+            }}
+          />
+        </Box>
 
-        {/* Mô tả */}
-        <div>
-          <Typography variant="medium" className="text-black">
+        <Box>
+          <Typography variant="body1" sx={{ mb: 1 }}>
             Mô tả
           </Typography>
           <TextField
             fullWidth
             size="small"
-            hiddenLabel
             placeholder="Mô tả"
-            variant="outlined"
             multiline
             rows={3}
             color="success"
@@ -154,32 +254,34 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
               setDescription(e.target.value);
               validateFields("warehouseDescription", e.target.value);
             }}
+            error={!!error.warehouseDescription}
+            helperText={error.warehouseDescription}
           />
-          {error.warehouseDescription && <Typography variant="small" color="red">{error.warehouseDescription}</Typography>}
-        </div>
-      </DialogBody>
+        </Box>
+      </DialogContent>
 
       {/* Footer của Dialog */}
-      <DialogFooter className="pt-0">
-        <MuiButton
-          size="medium"
-          color="error"
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button
           variant="outlined"
+          color="error"
           onClick={onClose}
         >
           Hủy
-        </MuiButton>
+        </Button>
         <Button
-          size="lg"
-          color="white"
-          variant="text"
-          className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-3 rounded-[4px] transition-all duration-200 ease-in-out"
-          ripple={true}
+          variant="contained"
+          sx={{ 
+            bgcolor: '#0ab067', 
+            '&:hover': { bgcolor: '#089456' },
+            ml: 1
+          }}
           onClick={handleSave}
+          disabled={loading}
         >
           Lưu
         </Button>
-      </DialogFooter>
+      </DialogActions>
     </Dialog>
   );
 };
