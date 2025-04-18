@@ -20,6 +20,9 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     Optional<Inventory> findByWarehouseAndMaterial(Warehouse warehouse, Material material);
     Optional<Inventory> findByWarehouseAndProduct(Warehouse warehouse, Product product);
 
+    Optional<Inventory> findByWarehouseAndMaterialAndStatus(Warehouse warehouse, Material material, Inventory.InventoryStatus status);
+    Optional<Inventory> findByWarehouseAndProductAndStatus(Warehouse warehouse, Product product, Inventory.InventoryStatus status);
+
     @Query("""
     SELECT i 
     FROM Inventory i 

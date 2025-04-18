@@ -27,6 +27,7 @@ import useReceiptNote from "./useReceiptNote";
 import { getNextCode } from "./receiptNoteService";
 import "dayjs/locale/vi"; // Import Tiếng Việt
 import DateFilterButton from "@/components/DateFilterButton";
+import dayjs from "dayjs";
 
 const ReceiptNotePage = () => {
   const [currentPage, setCurrentPage] = useState(0);
