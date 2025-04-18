@@ -309,7 +309,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
           {error.warehouseDescription && <Typography variant="small" color="red">{error.warehouseDescription}</Typography>}
         </div>
 
-        <divdiv className="mt-2">
+        <div className="mt-2">
           <Typography variant="medium" className="text-black">
             Trạng thái kho
             <span className="text-red-500"> *</span>
@@ -332,8 +332,13 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
                 placeholder="Chọn trạng thái kho"
               />
             )}
+            slotProps={{
+              popper: {
+                  sx: { zIndex: 9999 }, // Cố định z-index trong Popper
+              },
+          }}
           />
-        </divdiv>
+        </div>
 
       </DialogBody>
 

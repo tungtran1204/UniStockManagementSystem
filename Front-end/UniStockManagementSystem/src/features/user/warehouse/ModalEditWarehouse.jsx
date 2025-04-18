@@ -11,6 +11,7 @@ import { TextField, Divider, Button as MuiButton, IconButton, Autocomplete } fro
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import useWarehouse from "./useWarehouse";
 import { InputBase } from "@mui/material";
+import { fetchWarehouses } from "./warehouseService";
 
 const ModalEditWarehouse = ({ open, onClose, warehouse, onSuccess }) => {
   const [warehouseCode, setWarehouseCode] = useState("");
