@@ -40,8 +40,9 @@ const useWarehouse = () => {
       await updateWarehouseStatus(warehouseId, newStatus);
       await fetchPaginatedWarehouses(currentPage, pageSize);
     } catch (error) {
+      alert(error?.response?.data?.message || "Lỗi khi cập nhật trạng thái kho");
       console.error("Error updating warehouse status:", error);
-    }
+    }    
 };
 
   const editWarehouse = async (warehouseId, updatedWarehouse) => {
