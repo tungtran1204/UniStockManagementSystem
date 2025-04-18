@@ -94,12 +94,14 @@ export const getWarehouseList = async () => {
   }
 };
 
-export const fetchUsedWarehouseCategories = async () => {
+export const fetchUsedWarehouseCategories = async (excludeWarehouseId = null) => {
   try {
-    const response = await axios.get(`${API_URL}/used-categories`, {
-      headers: authHeader()
-    });
-    return response.data; // trả về mảng string: ["Thành phẩm sản xuất", "Hàng hóa trả lại", ...]
+    const url = excludeWarehouseId
+    ? `${API_URL}/used-categories?excludeWarehouseId=${excludeWarehouseId}`
+    : `${API_URL}/used-categories`;
+
+  const response = await axios.get(url, { headers: authHeader() });
+  return response.data;
   } catch (error) {
     console.error("Lỗi khi lấy phân loại kho đã sử dụng:", error);
     throw error;

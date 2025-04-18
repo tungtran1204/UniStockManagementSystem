@@ -66,7 +66,7 @@ const WarehousePage = () => {
   // Handle search
   const handleSearch = () => {
     setCurrentPage(0);
-  
+
     const trimmedSearchTerm = searchTerm.trim();
     const selectedStatusValue =
       selectedStatuses.length === 1
@@ -74,9 +74,9 @@ const WarehousePage = () => {
           ? true
           : false
         : null;
-  
+
     fetchPaginatedWarehouses(1, pageSize, trimmedSearchTerm, selectedStatusValue);
-  }; 
+  };
 
   // Handle edit warehouse action
   const handleEditWarehouse = async (warehouse) => {
@@ -262,7 +262,10 @@ const WarehousePage = () => {
       </Card>
 
       {/* Modal Add Warehouse */}
-      {openAddModal && <ModalAddWarehouse show={openAddModal} onClose={() => setOpenAddModal(false)} onAdd={() => fetchPaginatedWarehouses(currentPage, pageSize)} />}
+      {openAddModal && <ModalAddWarehouse show={openAddModal} onClose={() => setOpenAddModal(false)} onAdd={() => {
+        setCurrentPage(0); 
+        fetchPaginatedWarehouses(1, pageSize);
+      }} />}
 
       {/* Modal Edit Warehouse */}
       {openEditModal && <ModalEditWarehouse open={openEditModal} onClose={() => setOpenEditModal(false)} warehouse={selectedWarehouse} fetchWarehouses={fetchPaginatedWarehouses} />}

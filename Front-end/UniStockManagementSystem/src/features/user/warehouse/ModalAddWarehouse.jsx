@@ -31,6 +31,12 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
     { value: "TL", label: "Hàng hóa trả lại" },
     { value: "NT", label: "Vật tư thừa sau sản xuất" }
   ];
+
+  const statusOptions = [
+    { value: true, label: "Hoạt động" },
+    { value: false, label: "Không hoạt động" },
+  ];
+
   const [warehouseCategories, setWarehouseCategories] = useState([]);
   const [availableCategories, setAvailableCategories] = useState(categoryOptions);
   const { addWarehouse, getUsedCategories, isWarehouseCodeTaken } = useWarehouse();
@@ -73,7 +79,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
 
   const validateCategories = () => {
     let errors = { ...error };
-    if (warehouseCategories.length === 0) {
+    if (!isAllCategoriesUsed && warehouseCategories.length === 0) {
       errors.warehouseCategories = "Vui lòng chọn ít nhất một phân loại kho.";
       setError(errors);
       return false;
@@ -86,26 +92,26 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
 
   const handleSave = async () => {
     if (Object.keys(error).length > 0) return;
-  
+
     if (!warehouseCode.trim()) {
       setError({ ...error, warehouseCode: "Mã kho không được để trống." });
       return;
     }
-  
+
     if (!warehouseName.trim()) {
       setError({ ...error, warehouseName: "Tên kho không được để trống." });
       return;
     }
-  
+
     if (!validateCategories()) return;
-  
+
     setLoading(true);
     try {
       const categoryLabels = warehouseCategories.map(cat =>
         categoryOptions.find(opt => opt.value === cat)?.label
       );
       const goodCategory = categoryLabels.length > 0 ? categoryLabels.join(", ") : null;
-  
+
       const data = {
         warehouseCode,
         warehouseName,
@@ -113,11 +119,11 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
         goodCategory,
         isActive,
       };
-  
+
       console.log("📤 Dữ liệu gửi về backend:", data); // ✅ LOG kiểm tra
-  
+
       await addWarehouse(data);
-  
+
       alert("Thêm kho thành công!");
       onAdd?.();
       onClose();
@@ -128,7 +134,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
     } finally {
       setLoading(false);
     }
-  };  
+  };
 
   useEffect(() => {
     const fetchAndFilterCategories = async () => {
@@ -303,27 +309,31 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
             helperText={error.warehouseDescription}
           />
         </Box>
+
         <Box sx={{ mt: 2 }}>
           <Typography variant="body1" sx={{ mb: 1 }}>
             Trạng thái kho
             <span style={{ color: '#f44336' }}> *</span>
           </Typography>
-          <TextField
-            select
-            fullWidth
-            size="small"
-            color="success"
-            value={isActive ? "active" : "inactive"}
-            onChange={(e) => {
-              setIsActive(e.target.value === "active");
+          <Autocomplete
+            options={statusOptions}
+            getOptionLabel={(option) => option.label}
+            value={statusOptions.find(opt => opt.value === isActive)}
+            onChange={(e, newValue) => {
+              if (newValue) {
+                setIsActive(newValue.value);
+              }
             }}
-            SelectProps={{
-              native: true,
-            }}
-          >
-            <option value="active">Hoạt động</option>
-            <option value="inactive">Không hoạt động</option>
-          </TextField>
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                fullWidth
+                size="small"
+                color="success"
+                placeholder="Chọn trạng thái kho"
+              />
+            )}
+          />
         </Box>
 
       </DialogContent>

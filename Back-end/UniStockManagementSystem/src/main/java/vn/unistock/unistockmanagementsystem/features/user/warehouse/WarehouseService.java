@@ -52,9 +52,37 @@ public class WarehouseService {
 
     public Warehouse updateWarehouse(Long id, WarehouseDTO warehouseDTO) {
         Warehouse warehouse = getWarehouseById(id);
+
+        // ✅ Kiểm tra trùng tên
+        if (warehouseRepository.existsByWarehouseName(warehouseDTO.getWarehouseName())
+                && !warehouseDTO.getWarehouseName().equals(warehouse.getWarehouseName())) {
+            throw new RuntimeException("Tên kho đã tồn tại");
+        }
+
+        // ✅ Kiểm tra trùng phân loại (ràng buộc nghiệp vụ)
+        String goodCategory = warehouseDTO.getGoodCategory();
+        List<String> newCategories = goodCategory != null
+                ? Arrays.stream(goodCategory.split(",\\s*")).toList()
+                : List.of();
+
+        List<Warehouse> otherWarehouses = warehouseRepository.findAllByWarehouseIdNot(id);
+
+        for (Warehouse other : otherWarehouses) {
+            if (other.getGoodCategory() == null) continue;
+
+            List<String> otherCategories = Arrays.stream(other.getGoodCategory().split(",\\s*")).toList();
+            for (String cat : newCategories) {
+                if (otherCategories.contains(cat)) {
+                    throw new RuntimeException("Phân loại '" + cat + "' đã được gán cho kho khác.");
+                }
+            }
+        }
+
+        // ✅ Áp dụng cập nhật
         warehouseMapper.updateEntityFromDto(warehouseDTO, warehouse);
         return warehouseRepository.save(warehouse);
     }
+
     public void deleteWarehouse(Long id) {
         warehouseRepository.deleteById(id);
     }
@@ -71,16 +99,6 @@ public class WarehouseService {
         return warehouseRepository.save(warehouse);
     }
 
-    public List<String> getUsedWarehouseCategories() {
-        List<Warehouse> warehouses = warehouseRepository.findAll();
-        return warehouses.stream()
-                .map(Warehouse::getGoodCategory)
-                .filter(Objects::nonNull)
-                .flatMap(cat -> Arrays.stream(cat.split(",\\s*")))
-                .distinct()
-                .toList();
-    }
-
     public boolean isWarehouseCodeExists(String warehouseCode, Long excludeId) {
         if (excludeId != null) {
             return warehouseRepository.existsByWarehouseCodeAndWarehouseIdNot(warehouseCode, excludeId);
@@ -91,6 +109,19 @@ public class WarehouseService {
     public Page<Warehouse> searchWarehouses(String search, Boolean isActive, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return warehouseRepository.searchWarehouses(search, isActive, pageable);
+    }
+
+    public List<String> getUsedWarehouseCategories(Long excludeWarehouseId) {
+        List<Warehouse> warehouses = excludeWarehouseId != null
+                ? warehouseRepository.findAllByWarehouseIdNot(excludeWarehouseId)
+                : warehouseRepository.findAll();
+
+        return warehouses.stream()
+                .map(Warehouse::getGoodCategory)
+                .filter(Objects::nonNull)
+                .flatMap(cat -> Arrays.stream(cat.split(",\\s*")))
+                .distinct()
+                .toList();
     }
 
 }

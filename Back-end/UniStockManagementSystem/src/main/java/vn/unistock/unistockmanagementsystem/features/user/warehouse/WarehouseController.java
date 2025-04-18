@@ -72,8 +72,9 @@ public class WarehouseController {
     }
 
     @GetMapping("/used-categories")
-    public ResponseEntity<List<String>> getUsedWarehouseCategories() {
-        List<String> usedCategories = warehouseService.getUsedWarehouseCategories();
+    public ResponseEntity<List<String>> getUsedWarehouseCategories(
+            @RequestParam(required = false) Long excludeWarehouseId) {
+        List<String> usedCategories = warehouseService.getUsedWarehouseCategories(excludeWarehouseId);
         return ResponseEntity.ok(usedCategories);
     }
 
