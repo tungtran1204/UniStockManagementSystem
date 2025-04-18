@@ -1,44 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Input,
-} from "@material-tailwind/react";
 import { TextField, Autocomplete, IconButton } from '@mui/material';
-import Select from "react-select";
-
-const customStyles = {
-  control: (provided, state) => ({
-    ...provided,
-    minWidth: 150,
-    // Thiết lập viền duy nhất cho control:
-    border: state.isFocused ? "1px solid black" : "1px solid #ccc",
-    boxShadow: "none",
-    "&:hover": {
-      border: "1px solid black",
-    },
-  }),
-  menuList: (provided) => ({
-    ...provided,
-  }),
-  option: (provided, state) => ({
-    ...provided,
-    backgroundColor: state.isFocused
-      ? "#f3f4f6"
-      : state.isSelected
-        ? "#e5e7eb"
-        : "transparent",
-    color: "#000",
-    cursor: "pointer",
-    "&:active": {
-      backgroundColor: "#e5e7eb",
-    },
-  }),
-  menuPortal: (base) => ({
-    ...base,
-    zIndex: 9999,
-  }),
-};
-
-
 
 // Hàm kiểm tra số lượng nhập hợp lệ
 const isValidQuantity = (inputQty, orderedQty, receivedQty) => {
@@ -197,12 +158,14 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
                 fullWidth
                 value={quantity}
                 onChange={handleQuantityChange}
-                InputProps={{
-                  min: 1,
+                slotProps={{
+                  input: {
+                    inputMode: "numeric",
+                  }
                 }}
                 color="success"
                 hiddenLabel
-                placeholder="Số lượng"
+                placeholder="0"
               />
               {quantityError && (
                 <p className="text-red-500 text-xs mt-1">{quantityError}</p>

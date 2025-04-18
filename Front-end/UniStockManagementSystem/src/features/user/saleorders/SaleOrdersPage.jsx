@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Card,
   CardBody,
@@ -41,8 +42,20 @@ const SaleOrdersPage = () => {
     fetchPaginatedSaleOrders(currentPage, pageSize);
   }, [currentPage, pageSize]);
 
-  const navigate = useNavigate(); // ✅ Định nghĩa useNavigate
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+
+  useEffect(() => {
+    if (location.state?.successMessage) {
+      console.log("Component mounted, location.state:", location.state?.successMessage);
+      setAlertMessage(location.state.successMessage);
+      setShowSuccessAlert(true);
+      // Xóa state để không hiển thị lại nếu người dùng refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const handleAddOrder = async () => {
     const code = await getNextCode();
@@ -76,16 +89,17 @@ const SaleOrdersPage = () => {
   };
 
   const columnsConfig = [
-    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
-    { field: 'orderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false },
-    { field: 'partnerName', headerName: 'Khách hàng', flex: 2, minWidth: 200, editable: false },
-    { field: 'status', headerName: 'Trạng thái', flex: 1.5, minWidth: 150, editable: false },
+    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
+    { field: 'orderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false, filterable: false },
+    { field: 'partnerName', headerName: 'Khách hàng', flex: 2, minWidth: 200, editable: false, filterable: false },
+    { field: 'status', headerName: 'Trạng thái', flex: 1.5, minWidth: 150, editable: false, filterable: false },
     {
       field: 'orderDate',
       headerName: 'Ngày đặt hàng',
       flex: 1.5,
       minWidth: 150,
       editable: false,
+      filterable: false,
       renderCell: (params) => params.value ? dayjs(params.value).format("DD/MM/YYYY") : "N/A",
     },
     {
@@ -93,6 +107,8 @@ const SaleOrdersPage = () => {
       headerName: 'Hành động',
       flex: 0.5,
       minWidth: 100,
+      editable: false,
+      filterable: false,
       renderCell: (params) => (
         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
           <Tooltip content="Xem chi tiết">
@@ -191,7 +207,7 @@ const SaleOrdersPage = () => {
               pageRangeDisplayed={5}
               onPageChange={handlePageChange}
               containerClassName="flex items-center gap-1"
-              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
               pageLinkClassName="flex items-center justify-center w-full h-full"
               previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -204,10 +220,15 @@ const SaleOrdersPage = () => {
         </CardBody>
       </Card>
 
-      <SuccessAlert
+      {/* <SuccessAlert
         open={showSuccessAlert}
         onClose={() => setShowSuccessAlert(false)}
         message="Huỷ đơn hàng thành công!"
+      /> */}
+      <SuccessAlert
+        open={showSuccessAlert}
+        onClose={() => setShowSuccessAlert(false)}
+        message={alertMessage}
       />
     </div>
   );

@@ -37,6 +37,7 @@ import {
   getTotalQuantityOfProduct,
   getProductMaterialsByProduct,
   cancelSaleOrder,
+  setPreparingStatus,
 } from "./saleOrdersService";
 import ModalAddCustomer from "./ModalAddCustomer";
 import PageHeader from "@/components/PageHeader";
@@ -44,6 +45,7 @@ import { canCreatePurchaseRequest } from "@/features/user/purchaseRequest/Purcha
 import CancelSaleOrderModal from "./CancelSaleOrderModal";
 import { getTotalQuantityOfMaterial } from "@/features/user/issueNote/issueNoteService";
 import SuccessAlert from "@/components/SuccessAlert";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 // ------------------ 3 MODE ------------------
 const MODE_VIEW = "view";
@@ -109,6 +111,8 @@ const EditSaleOrderPage = () => {
   // Thêm state để lưu kết quả kiểm tra khả năng tạo PurchaseRequest
   const [canCreatePurchaseRequestState, setCanCreatePurchaseRequestState] = useState(false);
 
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+
   // Gọi API từ service để kiểm tra khả năng tạo PurchaseRequest
   useEffect(() => {
     const checkCanCreatePurchaseRequest = async () => {
@@ -145,7 +149,6 @@ const EditSaleOrderPage = () => {
         setAddress(orderData.address || "");
         setContactName(orderData.contactName || "");
         setPhoneNumber(orderData.phoneNumber || "");
-
         // Map orderDetails => items, ban đầu dùng tổng tồn kho (số) cho mode VIEW/EDIT
         const loadedItems = await Promise.all(
           (orderData.orderDetails || []).map(async (detail, index) => {
@@ -329,8 +332,9 @@ const EditSaleOrderPage = () => {
   const handleCancelSaleOrder = async (reason) => {
     try {
       await cancelSaleOrder(orderId, reason);
-      setShowSuccessAlert(true);
-      navigate("/user/sale-orders");
+      navigate("/user/sale-orders", {
+        state: { successMessage: "Huỷ đơn hàng thành công!" },
+      });
     } catch (error) {
       console.error("Lỗi khi hủy đơn hàng:", error);
       alert("Không thể hủy đơn hàng. Vui lòng thử lại sau.");
@@ -620,9 +624,10 @@ const EditSaleOrderPage = () => {
 
     try {
       await updateExistingOrder(orderId, payload);
-      alert("Cập nhật đơn hàng thành công!");
       handleSetMode(MODE_VIEW);
-      navigate("/user/sale-orders");
+      navigate("/user/sale-orders", {
+        state: { successMessage: "Cập nhật đơn bán hàng thành công!" },
+      });
     } catch (err) {
       console.error("Lỗi PUT order:", err);
       alert("Lỗi khi cập nhật đơn hàng!");
@@ -747,14 +752,18 @@ const EditSaleOrderPage = () => {
                 type="number"
                 size="small"
                 fullWidth
-                inputProps={{ min: 0 }}
-                value={detail.usedQuantity || 0}
+                slotProps={{
+                  input: {
+                    inputMode: "numeric",
+                  }
+                }}
+                value={detail.usedQuantity === 0 ? "" : detail.usedQuantity}
                 onChange={(e) =>
                   handleDetailUsedQuantityChange(item.id, detailIndex, e.target.value)
                 }
                 color="success"
                 hiddenLabel
-                placeholder="Số lượng"
+                placeholder="0"
               />
             </td>
             {detailIndex === 0 && (
@@ -870,12 +879,16 @@ const EditSaleOrderPage = () => {
                   type="number"
                   size="small"
                   fullWidth
-                  inputProps={{ min: 0 }}
-                  value={item.usedQuantity}
+                  slotProps={{
+                    input: {
+                      inputMode: "numeric",
+                    }
+                  }}
+                  value={item.usedQuantity === 0 ? "" : item.usedQuantity}
                   onChange={(e) => handleUsedQuantityChange(item.id, e.target.value)}
                   color="success"
                   hiddenLabel
-                  placeholder="Số lượng"
+                  placeholder="0"
                 />
               </td>
               <td className="px-4 py-2 text-sm border-r border-[rgba(224,224,224,1)]">
@@ -1158,7 +1171,7 @@ const EditSaleOrderPage = () => {
                     options={customers}
                     size="small"
                     getOptionLabel={(option) => `${option.code} - ${option.name}`}
-                    value={customers.find(o => o.code === customerCode) || null}
+                    value={customers.find(o => o.id === partnerId)}
                     onChange={(event, selected) => {
                       handleCustomerChange(selected);
                     }}
@@ -1393,6 +1406,7 @@ const EditSaleOrderPage = () => {
                     <table className="w-full text-left min-w-max border-collapse border-[rgba(224,224,224,1)]">
                       <thead className="bg-[#f5f5f5] border-b border-[rgba(224,224,224,1)]">
                         <tr>
+                          <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">STT</th>
                           <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Mã NVL</th>
                           <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Tên NVL</th>
                           <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Số lượng</th>
@@ -1405,6 +1419,7 @@ const EditSaleOrderPage = () => {
                         {materialRequirements.length > 0 ? (
                           materialRequirements.map((mat, index) => (
                             <tr key={index} className="border-b last:border-b-0 hover:bg-gray-50">
+                              <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{index + 1}</td>
                               <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.materialCode}</td>
                               <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.materialName}</td>
                               <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.requiredQuantity}</td>
@@ -1502,21 +1517,81 @@ const EditSaleOrderPage = () => {
                 </div>
               )}
 
-              {canCreatePurchaseRequestState && mode === MODE_DINHMUC && originalData?.status !== "CANCELLED" && (
-                <Button
-                  size="lg"
-                  color="white"
-                  variant="text"
-                  className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
-                  ripple={true}
-                  onClick={handleCreatePurchaseRequest}
-                >
-                  <div className="flex items-center gap-2">
-                    <FaCheck />
-                    <span>Tạo yêu cầu mua vật tư</span>
-                  </div>
-                </Button>
-              )}
+              {canCreatePurchaseRequestState &&
+                mode === MODE_DINHMUC &&
+                originalData?.status !== "CANCELLED" &&
+                originalData?.status === "PROCESSING" &&
+                activeTab === "products" &&
+                showMaterialTable && (
+                  materialRequirements.every((mat) => mat.quantityToBuy === 0) ? (
+                    <Button
+                      size="lg"
+                      color="white"
+                      variant="text"
+                      className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                      ripple={true}
+                      onClick={async () => {
+                        try {
+                          const usedProductsFromWarehouses = items.flatMap((item) =>
+                            (item.inStock || [])
+                              .filter((d) => d.usedQuantity > 0)
+                              .map((d) => ({
+                                productId: item.productId,
+                                productCode: item.productCode,
+                                productName: item.productName,
+                                unitName: item.unitName,
+                                quantity: d.usedQuantity,
+                                warehouseId: d.warehouseId,
+                                warehouseName: d.warehouseName,
+                              }))
+                          );
+
+                          const usedMaterialsFromWarehouses = materialRequirements
+                            .map((req) => ({
+                              materialId: req.materialId,
+                              quantity: req.requiredQuantity,
+                            }))
+                            .filter((entry) => entry.quantity > 0);
+
+
+                          const payload = {
+                            saleOrderId: orderId,
+                            usedProductsFromWarehouses,
+                            usedMaterialsFromWarehouses,
+                          };
+
+                          console.log("🔍 Gửi setPreparingStatus với payload:", payload);
+
+                          await setPreparingStatus(payload);
+                          alert("Đơn hàng đã được chuyển sang trạng thái 'Đang chuẩn bị vật tư'.");
+                          navigate("/user/sale-orders");
+                        } catch (err) {
+                          console.error("Lỗi khi chuyển trạng thái đơn hàng:", err);
+                          alert("Không thể chuyển trạng thái đơn hàng.");
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <FaCheck />
+                        <span>Chuẩn bị vật tư</span>
+                      </div>
+                    </Button>
+                  ) : (
+                    <Button
+                      size="lg"
+                      color="white"
+                      variant="text"
+                      className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                      ripple={true}
+                      onClick={handleCreatePurchaseRequest}
+                    >
+                      <div className="flex items-center gap-2">
+                        <FaCheck />
+                        <span>Tạo yêu cầu mua vật tư</span>
+                      </div>
+                    </Button>
+                  )
+                )}
             </div>
           </div>
         </CardBody>
@@ -1540,24 +1615,6 @@ const EditSaleOrderPage = () => {
         />
       )}
 
-      {/* <ConfirmDialog
-        open={confirmDialogOpen}
-        onClose={() => setConfirmDialogOpen(false)}
-        onConfirm={() => {
-          onConfirm(reason);
-          handleClose();
-        }}
-        message="Bạn có chắc chắn muốn huỷ đơn hàng này không?"
-        subMessage="Việc huỷ đơn hàng cũng sẽ huỷ yêu cầu mua vật tư cho đơn hàng này."
-        confirmText="Có"
-        cancelText="Không"
-      /> */}
-
-      <SuccessAlert
-        open={showSuccessAlert}
-        onClose={() => setShowSuccessAlert(false)}
-        message="Huỷ đơn hàng thành công!"
-      />
     </div>
   );
 };

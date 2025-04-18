@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import {
     Card,
     CardBody,
@@ -22,6 +23,8 @@ import { useNavigate } from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
+import SuccessAlert from "@/components/SuccessAlert";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { getPurchaseRequestById } from "./PurchaseRequestService";
 
 const PurchaseRequestPage = () => {
@@ -33,12 +36,28 @@ const PurchaseRequestPage = () => {
         getNextCode,
     } = usePurchaseRequest();
 
+    const [showConfirmDialog, setShowConfirmDialog] = useState({ open: false, message: "" });
+    const [selectedRequestId, setSelectedRequestId] = useState(null);
+    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+    const [alertMessage, setAlertMessage] = useState("");
+    const location = useLocation();
+
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
     const { createOrdersFromRequest } = usePurchaseOrder();
 
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (location.state?.successMessage) {
+            console.log("Component mounted, location.state:", location.state?.successMessage);
+            setAlertMessage(location.state.successMessage);
+            setShowSuccessAlert(true);
+            // Xóa state để không hiển thị lại nếu người dùng refresh
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
 
     useEffect(() => {
         fetchPurchaseRequests(currentPage, pageSize, searchTerm);
@@ -63,12 +82,18 @@ const PurchaseRequestPage = () => {
         setCurrentPage(0);
     };
 
-    const handleCreatePurchaseOrder = async (requestId) => {
-        const confirm = window.confirm("Bạn có muốn tạo đơn mua hàng cho yêu cầu này không?");
-        if (!confirm) return;
+    const handleConfirmCreatePurchaseOrder = (requestId) => {
+        setSelectedRequestId(requestId);
+        setShowConfirmDialog({
+            open: true,
+            message: "Bạn có chắc chắn muốn tạo đơn hàng mua vật tư từ yêu cầu này không?",
+        });
+    };
 
+    const handleCreatePurchaseOrder = async () => {
+        if (!selectedRequestId) return;
         try {
-            const selectedRequest = await getPurchaseRequestById(requestId);
+            const selectedRequest = await getPurchaseRequestById(selectedRequestId);
             console.log("📦 Chi tiết yêu cầu mua vật tư:", selectedRequest);
             if (!selectedRequest || !selectedRequest.purchaseRequestDetails) {
                 throw new Error("Yêu cầu mua không có vật tư nào");
@@ -88,11 +113,14 @@ const PurchaseRequestPage = () => {
 
 
             const response = await createOrdersFromRequest(payload);
-            alert(`Đã tạo ${response.orders.length} đơn hàng thành công.`);
-            navigate("/user/purchaseOrder");
+            navigate("/user/purchaseOrder", { state: { successMessage: `Tạo ${response.orders.length} đơn hàng mua vật tư thành công!` } });
         } catch (error) {
             console.error("Lỗi tạo đơn hàng:", error);
             alert("Không thể tạo đơn mua hàng. Vui lòng thử lại.");
+            setShowConfirmDialog({
+                open: false,
+                message: "",
+            });
         }
     };
 
@@ -167,7 +195,7 @@ const PurchaseRequestPage = () => {
                             <IconButton
                                 size="small"
                                 color="success"
-                                onClick={() => handleCreatePurchaseOrder(params.row.id)}
+                                onClick={() => handleConfirmCreatePurchaseOrder(params.row.id)}
                             >
                                 <AddShoppingCartRounded />
                             </IconButton>
@@ -248,7 +276,7 @@ const PurchaseRequestPage = () => {
                             pageRangeDisplayed={5}
                             onPageChange={handlePageChange}
                             containerClassName="flex items-center gap-1"
-                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                             pageLinkClassName="flex items-center justify-center w-full h-full"
                             previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                             nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -260,6 +288,23 @@ const PurchaseRequestPage = () => {
                     </div>
                 </CardBody>
             </Card>
+            <SuccessAlert
+                open={showSuccessAlert}
+                onClose={() => setShowSuccessAlert(false)}
+                message={alertMessage}
+            />
+
+            <ConfirmDialog
+                open={showConfirmDialog.open}
+                onClose={() => setShowConfirmDialog({
+                    open: false,
+                    message: "",
+                })}
+                onConfirm={handleCreatePurchaseOrder}
+                message={showConfirmDialog.message}
+                confirmText="Có"
+                cancelText="Không"
+            />
         </div>
     );
 };

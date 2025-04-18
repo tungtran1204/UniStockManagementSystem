@@ -377,7 +377,7 @@ const AddReceiptNoteGeneral = () => {
         id: prev.length + 1,
         selected: null, // chưa chọn
         warehouse: defaultWarehouseCode, // Gán kho mặc định
-        quantity: 0,
+        quantity: "",
       }
     ]);
   };
@@ -561,8 +561,7 @@ const AddReceiptNoteGeneral = () => {
       }
 
       console.log("Lưu thành công");
-      alert("Tạo phiếu nhập thành công!");
-      navigate("/user/receiptNote");
+      navigate("/user/receiptNote", { state: { successMessage: "Tạo phiếu nhập kho thành công!" } });
     } catch (err) {
       console.error("❌ Lỗi khi lưu phiếu nhập:", err);
       let msg = err?.response?.data?.message || err.message || "Lỗi không xác định!";
@@ -585,15 +584,13 @@ const AddReceiptNoteGeneral = () => {
       renderCell: (params) => params.value ?? "",
     },
     {
-      field: 'item',
-      headerName: 'Hàng hoá / Vật tư',
-      minWidth: 400,
+      field: 'itemCode',
+      headerName: 'Mã hàng',
+      minWidth: 300,
       editable: false,
       filterable: false,
       renderCell: (params) => {
-        // params.row sẽ chứa { selected, warehouse, quantity, ... }
-        // Lấy danh sách hiển thị:
-        const dropdownList = getDropdownListByCategory(); // hàm ở trên
+        const dropdownList = getDropdownListByCategory();
         return (
           <Autocomplete
             sx={{ width: '100%', paddingY: '0.5rem' }}
@@ -601,30 +598,36 @@ const AddReceiptNoteGeneral = () => {
             options={dropdownList}
             getOptionLabel={(option) => option?.code + " - " + option?.name}
             value={params.row.selected || null}
-            onChange={(e, newValue) => {
-              // newValue là {id, code, name, unit, type}...
-              // Cập nhật state
-              handleChangeSelectedItem(params.row.id, newValue);
-            }}
+            onChange={(e, newValue) => handleChangeSelectedItem(params.row.id, newValue)}
             renderInput={(params) => (
               <TextField
                 {...params}
                 color="success"
                 variant="outlined"
-                placeholder="Chọn sản phẩm / vật tư"
+                placeholder="Chọn mã hàng"
                 size="small"
               />
             )}
           />
         );
-      },
+      }
+    },
+    {
+      field: 'itemName',
+      headerName: 'Tên hàng',
+      minWidth: 300,
+      editable: false,
+      filterable: false,
+      renderCell: (params) => (
+        <span>{params.row.selected?.name || ""}</span>
+      )
     },
     {
       field: 'unit',
       headerName: 'Đơn vị',
       editable: false,
       filterable: false,
-      minWidth: 150,
+      minWidth: 100,
       renderCell: (params) => {
         // Hiển thị unit dựa trên params.row.selected
         return (
@@ -637,7 +640,7 @@ const AddReceiptNoteGeneral = () => {
       headerName: 'Kho nhập',
       editable: false,
       filterable: false,
-      minWidth: 300,
+      minWidth: 250,
       renderCell: (params) => {
         return (
           <Autocomplete
@@ -682,8 +685,13 @@ const AddReceiptNoteGeneral = () => {
               type="number"
               size="small"
               color="success"
-              inputProps={{ min: 0 }}
+              slotProps={{
+                input: {
+                  inputMode: "numeric",
+                }
+              }}
               value={params.row.quantity}
+              placeholder="0"
               onChange={(e) => handleChangeQuantity(params.row.id, e.target.value)}
               style={{ width: '100%' }}
             />
@@ -867,7 +875,7 @@ const AddReceiptNoteGeneral = () => {
                           <>
                             <IconButton onClick={() => setIsChooseDocModalOpen(true)}
                               size="small">
-                              <Search fontSize="20px"/>
+                              <Search fontSize="20px" />
                             </IconButton>
                             {params.InputProps.endAdornment}
                           </>

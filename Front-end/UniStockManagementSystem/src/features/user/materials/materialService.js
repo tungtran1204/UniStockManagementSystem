@@ -24,21 +24,31 @@ export const getAllMaterials = async (page = 0, size = 10) => {
     console.log("📌 [getAllMaterials] API Response:", response.data);
 
     if (response.data && response.data.content) {
-      const categories = await fetchMaterialCategories(); // Lấy danh mục để ánh xạ
+      // 🔄 Lấy danh mục loại vật tư và đảm bảo là mảng
+      const rawCategories = await fetchMaterialCategories();
+      const categories = Array.isArray(rawCategories.content)
+        ? rawCategories.content
+        : Array.isArray(rawCategories)
+          ? rawCategories
+          : [];
+
+      // ✅ Gắn tên danh mục cho từng vật tư
+      const materials = response.data.content.map((material) => {
+        let typeName = material.typeName || "Không có danh mục";
+        if (material.typeId) {
+          const category = categories.find(
+            (cat) => cat.materialTypeId === material.typeId
+          );
+          typeName = category ? category.name : typeName;
+        }
+        return {
+          ...material,
+          typeName,
+        };
+      });
+
       return {
-        materials: response.data.content.map((material) => {
-          let typeName = material.typeName || "Không có danh mục";
-          if (material.typeId) {
-            const category = categories.find(
-              (cat) => cat.materialTypeId === material.typeId
-            );
-            typeName = category ? category.name : typeName;
-          }
-          return {
-            ...material,
-            typeName: typeName,
-          };
-        }),
+        materials,
         totalPages: response.data.totalPages || 1,
         totalElements:
           response.data.totalElements || response.data.content.length,
@@ -56,6 +66,7 @@ export const getAllMaterials = async (page = 0, size = 10) => {
     throw error;
   }
 };
+
 
 // Lấy nguyên vật liệu theo ID
 export const getMaterialById = async (materialId) => {

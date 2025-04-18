@@ -13,6 +13,7 @@ import {
 } from '@mui/icons-material';
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
+import SuccessAlert from "@/components/SuccessAlert";
 import {
   Card,
   CardHeader,
@@ -28,6 +29,19 @@ import { getSaleOrderByPurchaseOrderId } from "./purchaseOrderService";
 
 const PurchaseOrderPage = () => {
   const navigate = useNavigate();
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.successMessage) {
+      console.log("Component mounted, location.state:", location.state?.successMessage);
+      setAlertMessage(location.state.successMessage);
+      setShowSuccessAlert(true);
+      // Xóa state để không hiển thị lại nếu người dùng refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const {
     purchaseOrders,
@@ -184,12 +198,13 @@ const PurchaseOrderPage = () => {
   };
 
   const [receiptCode, setReceiptCode] = useState("");
-  const location = useNavigate();
+  const navigator = useNavigate();
 
   useEffect(() => {
     // Check if location.state exists and has nextCode
-    if (location.state?.nextCode) {
-      setReceiptCode(location.state.nextCode);
+    console.log("navigator state:", navigator.state);
+    if (navigator.state?.nextCode) {
+      setReceiptCode(navigator.state.nextCode);
     } else {
       // If not, get the next code from the API
       getNextCode().then(setReceiptCode).catch(console.error);
@@ -197,16 +212,18 @@ const PurchaseOrderPage = () => {
   }, [location]);
 
   const columnsConfig = [
-    { field: 'poCode', headerName: 'Mã đơn', flex: 1.5, minWidth: 150, editable: false },
-    { field: 'supplierName', headerName: 'Nhà cung cấp', flex: 2, minWidth: 200, editable: false },
-    { field: 'supplierContactName', headerName: 'Người liên hệ', flex: 1.5, minWidth: 150, editable: false },
-    { field: 'supplierPhone', headerName: 'Số điện thoại', flex: 1.5, minWidth: 150, editable: false },
+    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
+    { field: 'poCode', headerName: 'Mã đơn', flex: 1.5, minWidth: 150, editable: false, filterable: false },
+    { field: 'supplierName', headerName: 'Nhà cung cấp', flex: 2, minWidth: 200, editable: false, filterable: false },
+    { field: 'supplierContactName', headerName: 'Người liên hệ', flex: 1.5, minWidth: 150, editable: false, filterable: false },
+    { field: 'supplierPhone', headerName: 'Số điện thoại', flex: 1.5, minWidth: 150, editable: false, filterable: false },
     {
       field: 'orderDate',
       headerName: 'Ngày tạo đơn',
       flex: 1.5,
       minWidth: 150,
       editable: false,
+      filterable: false,
       renderCell: (params) => new Date(params.value).toLocaleDateString("vi-VN"),
     },
     {
@@ -214,6 +231,8 @@ const PurchaseOrderPage = () => {
       headerName: "Trạng thái",
       flex: 1.5,
       minWidth: 150,
+      editable: false,
+      filterable: false,
       renderCell: (params) => {
         const label = getStatusLabel(params.value);
         const className = getStatusClass(params.value);
@@ -231,6 +250,8 @@ const PurchaseOrderPage = () => {
       headerName: 'Hành động',
       flex: 0.5,
       minWidth: 100,
+      filterable: false,
+      editable: false,
       renderCell: (params) => (
         <div className="flex space-x-2">
           {/* Nút Xem Chi Tiết */}
@@ -261,8 +282,9 @@ const PurchaseOrderPage = () => {
     },
   ];
 
-  const data = purchaseOrders.map((order) => ({
+  const data = purchaseOrders.map((order, index) => ({
     id: order.poId,
+    index: currentPage * pageSize + index + 1,
     poCode: order.poCode,
     supplierName: order.supplierName || "không có thông tin",
     supplierContactName: order.supplierContactName || "không có thông tin",
@@ -280,6 +302,7 @@ const PurchaseOrderPage = () => {
             onExport={printOrders}
             showAdd={false}
             showImport={false}
+            showExport={false}
           />
           {error && <Typography className="text-center text-red-500 py-4">{error}</Typography>}
 
@@ -337,7 +360,7 @@ const PurchaseOrderPage = () => {
               pageRangeDisplayed={5}
               onPageChange={handlePageChange}
               containerClassName="flex items-center gap-1"
-              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
               pageLinkClassName="flex items-center justify-center w-full h-full"
               previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -349,6 +372,12 @@ const PurchaseOrderPage = () => {
           </div>
         </CardBody>
       </Card>
+
+      <SuccessAlert
+        open={showSuccessAlert}
+        onClose={() => setShowSuccessAlert(false)}
+        message={alertMessage}
+      />
     </div>
   );
 };

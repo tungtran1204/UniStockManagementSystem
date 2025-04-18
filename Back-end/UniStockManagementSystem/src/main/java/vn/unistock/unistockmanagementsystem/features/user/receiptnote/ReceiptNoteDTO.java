@@ -26,4 +26,8 @@ public class ReceiptNoteDTO {
     private String phone;
     private List<ReceiptNoteDetailDTO> details;
     private List<String> paperEvidence;
+    private String createdByUsername;
+    private String createdByEmail;
+    private String poCode;
+    private String ginCode;
 }

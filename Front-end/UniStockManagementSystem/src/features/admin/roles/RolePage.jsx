@@ -153,7 +153,6 @@ function RolePage() {
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
-
         <CardBody className="pb-2 bg-white rounded-xl overflow-x-auto">
           <PageHeader
             title="Danh sách Vai Trò"

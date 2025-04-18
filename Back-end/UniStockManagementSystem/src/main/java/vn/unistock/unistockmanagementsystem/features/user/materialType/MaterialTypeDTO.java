@@ -12,5 +12,5 @@ public class MaterialTypeDTO {
     private Long materialTypeId;
     private String name;
     private String description;
-    private boolean isUsing;
+    private boolean status;
 }

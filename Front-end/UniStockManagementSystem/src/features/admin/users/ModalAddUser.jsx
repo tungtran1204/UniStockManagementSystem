@@ -14,7 +14,7 @@ import { checkEmailExists, createUser } from "../users/userService";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
-const ModalAddUser = ({ open, onClose, fetchUsers }) => {
+const ModalAddUser = ({ open, onClose, onSuccess, fetchUsers }) => {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [password, setPassword] = useState("");
@@ -129,6 +129,7 @@ const ModalAddUser = ({ open, onClose, fetchUsers }) => {
       const response = await createUser(userData);
       fetchUsers();
       console.log("✅ User đã tạo:", response);
+      onSuccess("Tạo người dùng thành công!");
       onClose();
     } catch (error) {
       console.error("❌ Lỗi khi tạo user:", error);

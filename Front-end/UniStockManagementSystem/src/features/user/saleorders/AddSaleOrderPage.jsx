@@ -260,8 +260,9 @@ const AddSaleOrderPage = () => {
 
     try {
       await addOrder(payload);
-      alert("Đã lưu đơn hàng thành công!");
-      navigate("/user/sale-orders");
+      navigate("/user/sale-orders", {
+        state: { successMessage: "Tạo đơn bán hàng thành công!" },
+      });
     } catch (error) {
       console.error("Lỗi khi lưu đơn hàng:", error);
       alert("Lỗi khi lưu đơn hàng. Vui lòng thử lại!");
@@ -734,7 +735,7 @@ const AddSaleOrderPage = () => {
                 pageRangeDisplayed={5}
                 onPageChange={handlePageChange}
                 containerClassName="flex items-center gap-1"
-                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                 pageLinkClassName="flex items-center justify-center w-full h-full"
                 previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                 nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"

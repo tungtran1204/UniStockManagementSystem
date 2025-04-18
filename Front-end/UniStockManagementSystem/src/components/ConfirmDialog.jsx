@@ -22,7 +22,7 @@ const ConfirmDialog = ({
     onClose,
     onConfirm,
     message = "Are you sure?",
-    subMessage = "This action cannot be undone.",
+    subMessage = "",
     confirmText = "Yes, delete it!",
     cancelText = "Cancel",
 }) => {

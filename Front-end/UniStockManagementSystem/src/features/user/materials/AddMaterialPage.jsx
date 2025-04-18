@@ -12,34 +12,6 @@ import PageHeader from '@/components/PageHeader';
 import ImageUploadBox from '@/components/ImageUploadBox';
 import { getPartnersByType } from "../partner/partnerService";
 
-const customStyles = {
-    control: (provided, state) => ({
-        ...provided,
-        minWidth: 200,
-        borderColor: state.isFocused ? "black" : provided.borderColor,
-        boxShadow: state.isFocused ? "0 0 0 1px black" : "none",
-        "&:hover": {
-            borderColor: "black",
-        },
-    }),
-    menuList: (provided) => ({
-        ...provided,
-    }),
-    option: (provided, state) => ({
-        ...provided,
-        backgroundColor: state.isFocused
-            ? "#f3f4f6"
-            : state.isSelected
-                ? "#e5e7eb"
-                : "transparent",
-        color: "#000",
-        cursor: "pointer",
-        "&:active": {
-            backgroundColor: "#e5e7eb",
-        },
-    }),
-};
-
 const SUPPLIER_TYPE_ID = 2; // Thêm constant này ở đầu file
 
 const AddMaterialPage = () => {
@@ -190,8 +162,7 @@ const AddMaterialPage = () => {
                 // Gọi API tạo material
                 await createMaterial(formData);
 
-                alert("Tạo nguyên vật liệu thành công!");
-                navigate("/user/materials");
+                navigate("/user/materials", { state: { successMessage: "Tạo nguyên vật liệu thành công!" } });
             } catch (error) {
                 console.error("Create material error:", error);
                 setErrors({

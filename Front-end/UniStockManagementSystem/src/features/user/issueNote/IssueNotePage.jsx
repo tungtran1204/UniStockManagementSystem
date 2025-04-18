@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { Card, CardBody, Typography, Tooltip } from "@material-tailwind/react";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
@@ -8,6 +8,7 @@ import { VisibilityOutlined } from '@mui/icons-material';
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
+import SuccessAlert from "@/components/SuccessAlert";
 import { getIssueNotes } from "./issueNoteService";
 
 const IssueNotePage = () => {
@@ -21,13 +22,27 @@ const IssueNotePage = () => {
   const [showImportPopup, setShowImportPopup] = useState(false);
   const navigate = useNavigate();
 
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.successMessage) {
+      console.log("Component mounted, location.state:", location.state?.successMessage);
+      setAlertMessage(location.state.successMessage);
+      setShowSuccessAlert(true);
+      // Xóa state để không hiển thị lại nếu người dùng refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
   useEffect(() => {
     fetchPaginatedIssueNotes(currentPage, pageSize);
   }, [currentPage, pageSize]);
 
   const fetchPaginatedIssueNotes = async (page, size, search = "") => {
     try {
-      // API trả về dạng: { totalPages, content: [ { ginId, ginCode, description, category, issueDate, soId, createdBy, details, ... } ] }
+      // API trả về dạng: { totalPages, content: [ { ginId, ginCode, description, category, issueDate, soCode, createdByUsername, details, ... } ] }
       const data = await getIssueNotes(page, size);
       setIssueNotes(data.content || []);
       setTotalPages(data.totalPages);
@@ -65,68 +80,81 @@ const IssueNotePage = () => {
   // Map dữ liệu cho bảng; nếu không có ginId, tạo id dự phòng
   const data = filteredIssueNotes.map((note, index) => ({
     id: note.ginId ? note.ginId : `${currentPage}-${index}`,
+    index: currentPage * pageSize + index + 1,
     ginCode: note.ginCode || "N/A",
     category: note.category || "N/A",
     description: note.description || "Không có ghi chú",
     issueDate: note.issueDate,
-    createdBy: note.createdBy || "Đang tải...",
-    reference: note.soId // Dùng soId làm tham chiếu (Sales Order id)
+    createdByUserName: note.createdByUserName || "Đang tải...",
+    soId: note.soId,
+    soCode: note.soCode || "Không có"
   }));
 
-  // Các cột hiển thị giống ReceiptNotePage nhưng thay đổi tên trường cho phù hợp với IssueNote
+  // Cấu hình các cột hiển thị; thay createdBy và soId bằng createdByUsername và soCode
   const columnsConfig = [
-    { field: 'ginCode', headerName: 'Mã phiếu xuất', flex: 1.5, minWidth: 150 },
-    { field: 'category', headerName: 'Loại hàng hóa', flex: 2, minWidth: 100 },
-    { field: 'description', headerName: 'Mô tả', flex: 2, minWidth: 150 },
+    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
+    { field: 'ginCode', headerName: 'Mã phiếu xuất', flex: 1.5, minWidth: 150, editable: false, filterable: false },
+    { field: 'category', headerName: 'Loại hàng hóa', flex: 2, minWidth: 100, editable: false, filterable: false },
+    { field: 'description', headerName: 'Mô tả', flex: 2, minWidth: 150, editable: false, filterable: false },
     {
       field: 'issueDate',
       headerName: 'Ngày lập phiếu',
       flex: 1.5,
       minWidth: 150,
+      editable: false,
+      filterable: false,
       renderCell: (params) => {
         if (!params.value) return "Không có dữ liệu";
         return new Date(params.value).toLocaleDateString("vi-VN");
       },
     },
     {
-      field: 'createdBy',
+      field: 'createdByUserName',
       headerName: 'Người tạo phiếu',
       flex: 1.5,
       minWidth: 100,
+      editable: false,
+      filterable: false,
       renderCell: (params) => params.value,
     },
     {
-      field: 'reference',
-      headerName: 'Tham chiếu',
+      field: 'soCode',
+      headerName: 'Mã đơn hàng',
       flex: 1.5,
       minWidth: 150,
+      editable: false,
+      filterable: false,
       renderCell: (params) => {
-        const soId = params.value;
-        if (soId) {
+        const soCode = params.value;
+        if (soCode && soCode !== "Không có") {
           return (
             <span
-              onClick={() => navigate(`/user/saleOrder/${soId}`)}
+              onClick={() => navigate(`/user/sale-orders/${params.row.soId}`)}
               className="text-blue-600 hover:underline cursor-pointer"
             >
-              SO{soId}
+              {soCode}
             </span>
           );
         }
-        return " - ";
+        return "Không có";
       },
     },
+
     {
       field: 'actions',
       headerName: 'Hành động',
       flex: 0.5,
       minWidth: 100,
+      editable: false,
+      filterable: false,
       renderCell: (params) => (
         <div className="flex justify-center w-full">
           <Tooltip content="Xem chi tiết">
+
             <IconButton
               size="small"
-              onClick={() => handleViewIssue(params.row)}
               color="primary"
+              onClick={() => handleViewIssue(params.row)}
             >
               <VisibilityOutlined />
             </IconButton>
@@ -144,8 +172,8 @@ const IssueNotePage = () => {
             title="Danh sách phiếu xuất kho"
             addButtonLabel="Thêm phiếu xuất"
             onAdd={handleAdd}
-            onImport={() => setShowImportPopup(true)}
-            onExport={() => { /* export Excel */ }}
+            showImport={false}
+            showExport={false}
           />
           <div className="py-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -207,6 +235,12 @@ const IssueNotePage = () => {
           </div>
         </CardBody>
       </Card>
+
+      <SuccessAlert
+        open={showSuccessAlert}
+        onClose={() => setShowSuccessAlert(false)}
+        message={alertMessage}
+      />
     </div>
   );
 };

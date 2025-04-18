@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
     Card,
     CardHeader,
@@ -21,38 +21,11 @@ import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import ImageUploadBox from '@/components/ImageUploadBox';
 import Table from "@/components/Table";
+import SuccessAlert from "@/components/SuccessAlert";
 
 const authHeader = () => {
     const token = localStorage.getItem("token");
     return token ? { Authorization: `Bearer ${token}` } : {};
-};
-
-const customStyles = {
-    control: (provided, state) => ({
-        ...provided,
-        minWidth: 200,
-        borderColor: state.isFocused ? "black" : provided.borderColor,
-        boxShadow: state.isFocused ? "0 0 0 1px black" : "none",
-        "&:hover": {
-            borderColor: "black",
-        },
-    }),
-    menuList: (provided) => ({
-        ...provided,
-    }),
-    option: (provided, state) => ({
-        ...provided,
-        backgroundColor: state.isFocused
-            ? "#f3f4f6"
-            : state.isSelected
-                ? "#e5e7eb"
-                : "transparent",
-        color: "#000",
-        cursor: "pointer",
-        "&:active": {
-            backgroundColor: "#e5e7eb",
-        },
-    }),
 };
 
 const DetailProductPage = () => {
@@ -74,6 +47,7 @@ const DetailProductPage = () => {
     const [tableSearchQuery, setTableSearchQuery] = useState("");
     const [currentRow, setCurrentRow] = useState(-1);
     const [quantityErrors, setQuantityErrors] = useState({}); // Thêm state cho lỗi số lượng
+    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
     const fetchProductMaterials = async (productId) => {
         try {
@@ -264,7 +238,7 @@ const DetailProductPage = () => {
 
                 setIsEditing(false);
                 setPreviewImage(null);
-                alert("Cập nhật sản phẩm thành công!");
+                setShowSuccessAlert(true);
             } catch (error) {
                 console.error("❌ Error:", error.response?.data || error.message);
                 alert("Lỗi khi cập nhật sản phẩm: " + (error.response?.data?.message || error.message));
@@ -420,12 +394,14 @@ const DetailProductPage = () => {
     };
 
     const columnsConfig = [
-        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50 },
+        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, filterable: false, editable: false },
         {
             field: 'materialCode',
             headerName: 'Mã NVL',
             flex: 1.5,
             minWidth: 250,
+            filterable: false,
+            editable: false,
             renderCell: (params) => (
                 isEditing ? (
                     <Autocomplete
@@ -463,13 +439,15 @@ const DetailProductPage = () => {
                 )
             )
         },
-        { field: 'materialName', headerName: 'Tên NVL', flex: 2, minWidth: 400 },
-        { field: 'unitName', headerName: 'Đơn vị', flex: 1, minWidth: 100 },
+        { field: 'materialName', headerName: 'Tên NVL', flex: 2, minWidth: 400, editable: false, filterable: false },
+        { field: 'unitName', headerName: 'Đơn vị', flex: 1, minWidth: 100, editable: false, filterable: false },
         {
             field: 'quantity',
             headerName: 'Số lượng',
             flex: 1,
             minWidth: 100,
+            editable: false,
+            filterable: false,
             renderCell: (params) => (
                 <div className="w-full py-2">
                     <TextField
@@ -482,7 +460,7 @@ const DetailProductPage = () => {
                         onChange={(e) => handleQuantityChange(params.row.index - 1, e.target.value)}
                         color="success"
                         hiddenLabel
-                        placeholder="Số lượng"
+                        placeholder="0"
                         sx={{
                             '& .MuiInputBase-root.Mui-disabled': {
                                 bgcolor: '#eeeeee',
@@ -514,6 +492,8 @@ const DetailProductPage = () => {
             headerName: 'Thao tác',
             flex: 0.5,
             minWidth: 100,
+            editable: false,
+            filterable: false,
             renderCell: (params) => (
                 isEditing && (
                     <IconButton
@@ -837,7 +817,7 @@ const DetailProductPage = () => {
                                     pageRangeDisplayed={5}
                                     onPageChange={handlePageChange}
                                     containerClassName="flex items-center gap-1"
-                                    pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                                    pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                                     pageLinkClassName="flex items-center justify-center w-full h-full"
                                     previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                                     nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -935,6 +915,11 @@ const DetailProductPage = () => {
                     </div>
                 </CardBody>
             </Card>
+            <SuccessAlert
+                open={showSuccessAlert}
+                onClose={() => setShowSuccessAlert(false)}
+                message="Cập nhật sản phẩm thành công!"
+            />
         </div>
     );
 };

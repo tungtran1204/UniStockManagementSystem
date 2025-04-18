@@ -11,8 +11,8 @@ import {
   Autocomplete,
   IconButton,
   Button as MuiButton,
-  Divider,
-  Tooltip
+  Tooltip, 
+  Divider
 } from '@mui/material';
 import {
   HighlightOffRounded,
@@ -342,11 +342,8 @@ const AddIssueNote = () => {
   // ------------------ Pagination cho sản phẩm/NVL ------------------
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const totalPages = Math.ceil(
-    category === "Trả lại hàng mua" ? products.length : products.length / pageSize
-  );
-  const totalElements =
-    category === "Trả lại hàng mua" ? products.length : products.length;
+  const totalPages = Math.ceil(products.length / pageSize);
+  const totalElements = products.length;
 
   useEffect(() => {
     if (currentPage >= totalPages) {
@@ -378,10 +375,10 @@ const AddIssueNote = () => {
 
       // Hiển thị giống bảng sản phẩm: mỗi NVL có thể có nhiều kho, dùng flatMap để render nhiều dòng với rowSpan
       return displayed.flatMap((nvl, nvlIndex) => {
-        const inv = nvl.inventory && nvl.inventory.length > 0
-          ? nvl.inventory
+        const inv = nvl.inventory && nvl.inventory.length > 0 
+          ? nvl.inventory 
           : [{ warehouseId: null, warehouseName: "", quantity: 0, exportQuantity: 0 }];
-
+        
         return inv.map((wh, whIndex) => {
           const isFirstRow = whIndex === 0;
           const rowSpan = inv.length;
@@ -500,7 +497,7 @@ const AddIssueNote = () => {
                     <IconButton
                       size="small"
                       color="error"
-                      onClick={() => handleDeleteRow(prod.id)}
+                      onClick={() => handleDeleteRow(nvl.id)}
                     >
                       <HighlightOffRounded />
                     </IconButton>
@@ -511,8 +508,8 @@ const AddIssueNote = () => {
           );
         });
       });
-    } else if (category === "Bán hàng") {
-      // --------- Xử lý cho BÁN HÀNG (8 cột) ---------
+    } else if (category === "Sản xuất") {
+      // --------- Xử lý cho SẢN XUẤT (8 cột) ---------
       const displayed = products.slice(
         currentPage * pageSize,
         (currentPage + 1) * pageSize
@@ -683,7 +680,7 @@ const AddIssueNote = () => {
         });
       });
     } else {
-      // --------- Các trường hợp khác: Sản xuất, Gia công ---------
+      // --------- Các trường hợp khác (Bán hàng, Gia công) ---------
       const displayed = products.slice(
         currentPage * pageSize,
         (currentPage + 1) * pageSize
@@ -705,7 +702,7 @@ const AddIssueNote = () => {
           const rowSpan = prod.inStock ? prod.inStock.length : 1;
           const maxExport =
             typeof wh.quantity === "number" &&
-              typeof prod.pendingQuantity === "number"
+            typeof prod.pendingQuantity === "number"
               ? Math.min(wh.quantity, prod.pendingQuantity)
               : undefined;
 
@@ -725,13 +722,13 @@ const AddIssueNote = () => {
                   <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
                     {prod.unitName}
                   </td>
-                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm text-center">
+                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-center text-sm">
                     {prod.orderQuantity}
                   </td>
-                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm text-center">
+                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-center text-sm">
                     {prod.exportedQuantity}
                   </td>
-                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm text-center">
+                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-center text-sm">
                     {prod.pendingQuantity}
                   </td>
                 </>
@@ -746,10 +743,10 @@ const AddIssueNote = () => {
                     type="number"
                     className="border p-1 text-right w-[60px]"
                     value={wh.exportQuantity || 0}
-                    max={category === "Bán hàng" ? maxExport : undefined}
+                    max={category === "Sản xuất" ? maxExport : undefined}
                     onChange={(e) => {
                       const val = Number(e.target.value);
-                      if (category === "Bán hàng") {
+                      if (category === "Sản xuất") {
                         const maxAllowed = maxExport;
                         if (maxAllowed !== undefined && val > maxAllowed) {
                           setProducts((prev) =>
@@ -923,8 +920,7 @@ const AddIssueNote = () => {
             console.error("Error uploading paper evidence:", uploadError);
           }
         }
-        alert("Tạo phiếu xuất kho thành công!");
-        navigate("/user/issueNote");
+        navigate("/user/issueNote", { state: { successMessage: "Tạo phiếu xuất kho thành công!" } });
       }
     } catch (error) {
       console.error("Lỗi khi thêm phiếu xuất:", error);
@@ -974,11 +970,6 @@ const AddIssueNote = () => {
                 <MenuItem value="Gia công">Gia công</MenuItem>
                 <MenuItem value="Trả lại hàng mua">Trả lại hàng mua</MenuItem>
               </TextField>
-              {!category && (
-                <Typography variant="small" className="text-red-500 mt-1">
-                  Vui lòng chọn phân loại xuất kho
-                </Typography>
-              )}
             </div>
             {/* Mã phiếu */}
             <div>
@@ -1360,8 +1351,8 @@ const AddIssueNote = () => {
                 <Autocomplete
                   options={suppliers}
                   size="small"
-                  getOptionLabel={(option) => `${option.code} - ${option.name}`}
-                  value={suppliers.find(o => o.code === partnerCode) || null}
+                  getOptionLabel={(option) => option.code || ""}
+                  value={suppliers.find((o) => o.code === partnerCode) || null}
                   onChange={(event, sel) => {
                     if (sel) {
                       setPartnerCode(sel.code);
@@ -1481,6 +1472,32 @@ const AddIssueNote = () => {
             </div>
           </div>
 
+          {/* Dropdown phân trang */}
+          <div className="py-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Typography variant="small" color="blue-gray" className="font-light">
+                Hiển thị
+              </Typography>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(0);
+                }}
+                className="border rounded px-2 py-1"
+              >
+                {[5, 10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                bản ghi mỗi trang
+              </Typography>
+            </div>
+          </div>
+
           {/* Render bảng */}
           {category === "Trả lại hàng mua" ? (
             <div className="border rounded mb-4 overflow-x-auto">
@@ -1500,7 +1517,7 @@ const AddIssueNote = () => {
                 <tbody>{renderUnifiedTableBody()}</tbody>
               </table>
             </div>
-          ) : category === "Bán hàng" ? (
+          ) : category === "Sản xuất" ? (
             <div className="border rounded mb-4 overflow-x-auto">
               <table className="w-full border-collapse text-sm">
                 <thead className="bg-gray-50 border-b">
@@ -1541,6 +1558,7 @@ const AddIssueNote = () => {
             </div>
           )}
 
+          {/* Phần nút Thêm dòng/Xoá hết dòng - giữ nguyên code gốc */}
           {category !== "Bán hàng" && (
             <div className="flex gap-2 mb-4">
               <MuiButton size="small" variant="outlined" onClick={handleAddRow}>
@@ -1583,7 +1601,7 @@ const AddIssueNote = () => {
                 pageRangeDisplayed={5}
                 onPageChange={handlePageChange}
                 containerClassName="flex items-center gap-1"
-                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                 pageLinkClassName="flex items-center justify-center w-full h-full"
                 previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                 nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -1595,7 +1613,7 @@ const AddIssueNote = () => {
             </div>
           )}
           <Divider sx={{ marginY: "16px" }} />
-          <div className="my-4 flex justify-between">
+          <div className="mt-4 mb-2 flex justify-between">
             <MuiButton
               color="info"
               size="medium"
@@ -1611,12 +1629,8 @@ const AddIssueNote = () => {
             >
               <FaArrowLeft className="h-3 w-3" /> Quay lại
             </MuiButton>
-            <div className="flex justify-end gap-2">
-              <MuiButton
-                size="medium"
-                color="error"
-                variant="outlined"
-              >
+            <div className="flex items-center justify-end gap-2">
+              <MuiButton size="medium" color="error" variant="outlined">
                 Hủy
               </MuiButton>
               <Button

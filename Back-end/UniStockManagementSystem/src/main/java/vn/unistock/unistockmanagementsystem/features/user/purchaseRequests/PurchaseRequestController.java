@@ -70,11 +70,11 @@ public class PurchaseRequestController {
 
 
 
-    @PostMapping("/sale-order/{saleOrderId}")
-    public ResponseEntity<PurchaseRequestDTO> createFromSaleOrder(@PathVariable Long saleOrderId) {
-        PurchaseRequestDTO purchaseRequestDTO = purchaseRequestService.createFromSaleOrder(saleOrderId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(purchaseRequestDTO);
-    }
+//    @PostMapping("/sale-order/{saleOrderId}")
+//    public ResponseEntity<PurchaseRequestDTO> createFromSaleOrder(@PathVariable Long saleOrderId) {
+//        PurchaseRequestDTO purchaseRequestDTO = purchaseRequestService.createFromSaleOrder(saleOrderId);
+//        return ResponseEntity.status(HttpStatus.CREATED).body(purchaseRequestDTO);
+//    }
 
 
     @GetMapping("/can-create-purchase-request/{orderId}")

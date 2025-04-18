@@ -1,41 +1,64 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import {
     Dialog,
     DialogHeader,
     DialogBody,
     DialogFooter,
     Typography,
-    Input,
     Button,
 } from "@material-tailwind/react";
 import { TextField, Divider, Button as MuiButton, IconButton } from "@mui/material";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
-const EditProductTypePopUp = ({ productType, onClose, onSuccess }) => {
+const EditMaterialTypeModal = ({ materialType, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
-        typeName: "",
+        name: "",
         description: "",
+        status: true,
     });
     const [validationErrors, setValidationErrors] = useState({});
 
     useEffect(() => {
-        if (productType) {
+        if (materialType) {
             setFormData({
-                typeName: productType.typeName,
-                description: productType.description,
+                name: materialType.name,
+                description: materialType.description,
+                status: materialType.status,
             });
         }
-    }, [productType]);
+    }, [materialType]);
+
+    // Hàm kiểm tra chuỗi có chứa toàn khoảng trắng hoặc trống không
+    const isEmptyOrWhitespace = (str) => !str || /^\s*$/.test(str);
+
+    // Hàm xử lý khi thay đổi tên loại nguyên liệu
+    const handleNameChange = (newName) => {
+        setFormData({ ...formData, name: newName });
+        if (!isEmptyOrWhitespace(newName)) {
+            setValidationErrors((prev) => ({ ...prev, name: "" }));
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        try {
-            await axios.put(`/api/product-types/${productType.id}`, formData);
-            onSuccess();
-            onClose();
-        } catch (error) {
-            console.error("Error updating product type:", error);
+
+        const newErrors = {};
+        if (isEmptyOrWhitespace(formData.name)) {
+            newErrors.name = "Tên loại nguyên liệu không được để trống hoặc chỉ chứa khoảng trắng!";
+        }
+
+        setValidationErrors(newErrors);
+
+        if (Object.keys(newErrors).length === 0) {
+            try {
+                if (!materialType.materialTypeId) {
+                    throw new Error("ID của loại nguyên liệu không hợp lệ!");
+                }
+                await onSuccess(materialType.materialTypeId, formData);
+                onClose();
+            } catch (error) {
+                console.error("Error updating material type:", error);
+            }
         }
     };
 
@@ -44,35 +67,35 @@ const EditProductTypePopUp = ({ productType, onClose, onSuccess }) => {
             {/* Header của Dialog */}
             <DialogHeader className="flex justify-between items-center pb-2">
                 <Typography variant="h4" color="blue-gray">
-                    Chỉnh sửa dòng sản phẩm
+                    Chỉnh sửa loại nguyên liệu
                 </Typography>
-                <IconButton
-                    size="small"
-                    onClick={onClose}
-                >
+                <IconButton size="small" onClick={onClose}>
                     <XMarkIcon className="h-5 w-5 stroke-2" />
                 </IconButton>
             </DialogHeader>
             <Divider variant="middle" />
             {/* Body của Dialog */}
             <DialogBody className="space-y-4 pb-6 pt-6">
-                {/* Tên dòng sản phẩm */}
+                {/* Tên loại nguyên liệu */}
                 <div>
                     <Typography variant="medium" className="text-black">
-                        Tên dòng sản phẩm
+                        Tên loại nguyên liệu
                         <span className="text-red-500"> *</span>
                     </Typography>
                     <TextField
                         fullWidth
                         size="small"
                         hiddenLabel
-                        placeholder="Tên dòng sản phẩm"
+                        placeholder="Tên loại nguyên liệu"
                         color="success"
-                        value={formData.typeName}
-                        onChange={(e) =>
-                            setFormData({ ...formData, typeName: e.target.value })
-                        }
+                        value={formData.name}
+                        onChange={(e) => handleNameChange(e.target.value)}
                     />
+                    {validationErrors.name && (
+                        <Typography variant="small" color="red">
+                            {validationErrors.name}
+                        </Typography>
+                    )}
                 </div>
 
                 {/* Mô tả */}
@@ -120,4 +143,4 @@ const EditProductTypePopUp = ({ productType, onClose, onSuccess }) => {
     );
 };
 
-export default EditProductTypePopUp;
+export default EditMaterialTypeModal;

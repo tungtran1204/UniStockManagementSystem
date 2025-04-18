@@ -81,14 +81,20 @@ const PurchaseOrderDetail = () => {
     try {
       const response = await fetch("/templates/MAU_DON_DAT_HANG.xlsx"); // File đặt trong public/templates
       const arrayBuffer = await response.arrayBuffer();
-
+      const formatVietnameseDate = (dateString) => {
+        const date = new Date(dateString);
+        const day = date.getDate();
+        const month = String(date.getMonth() + 1).padStart(2, '0'); // ✅ thêm 0 nếu cần
+        const year = date.getFullYear();
+        return `Ngày ${day} tháng ${month} năm ${year}`;
+      };
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(arrayBuffer);
       const sheet = workbook.getWorksheet(3); // Sheet
 
       // --- Ghi thông tin đơn hàng ---
       sheet.getCell("B7").value = order.poCode || "";
-      sheet.getCell("B6").value = new Date(order.orderDate).toLocaleDateString("vi-VN");
+      sheet.getCell("B6").value = formatVietnameseDate(order.orderDate);
       sheet.getCell("B9").value = order.supplierName || "";
       sheet.getCell("B11").value = order.supplierContactName || "";
       sheet.getCell("B12").value = order.supplierPhone || "";

@@ -25,6 +25,7 @@ import RejectPurchaseRequestModal from "./RejectPurchaseRequestModal";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from '@/components/Table';
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const DetailPurchaseRequestPage = () => {
     const { id } = useParams();
@@ -37,6 +38,7 @@ const DetailPurchaseRequestPage = () => {
     const [pageSize, setPageSize] = useState(5);
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [showApproveConfirm, setShowApproveConfirm] = useState({ open: false, message: "" });
 
     const statusLabels = {
         PENDING: "Chờ duyệt",
@@ -77,13 +79,9 @@ const DetailPurchaseRequestPage = () => {
     };
 
     const handleApprove = async () => {
-        const confirmed = window.confirm("Bạn có chắc chắn muốn duyệt yêu cầu mua vật tư này không?");
-        if (!confirmed) return;
-
         try {
             await updatePurchaseRequestStatus(id, "CONFIRMED");
-            alert("✅ Đã duyệt yêu cầu mua vật tư thành công.");
-            navigate("/user/purchase-request");
+            navigate("/user/purchase-request", { state: { successMessage: "Đã duyệt yêu cầu mua vật tư thành công!" } });
         } catch (error) {
             console.error("Lỗi duyệt yêu cầu:", error);
             alert("❌ Không thể duyệt yêu cầu. Vui lòng thử lại.");
@@ -436,7 +434,10 @@ const DetailPurchaseRequestPage = () => {
                                     size="medium"
                                     variant="outlined"
                                     color="success"
-                                    onClick={handleApprove}
+                                    onClick={() => setShowApproveConfirm({
+                                        open: true,
+                                        message: "Bạn có chắc chắn muốn duyệt yêu cầu này không?",
+                                    })}
                                 >
                                     <CheckRounded className="pr-1" />
                                     Duyệt
@@ -464,6 +465,24 @@ const DetailPurchaseRequestPage = () => {
                 show={showRejectModal}
                 handleClose={() => setShowRejectModal(false)}
                 onConfirm={handleReject}
+            />
+
+            <ConfirmDialog
+                open={showApproveConfirm.open}
+                onClose={() => setShowApproveConfirm({
+                    open: false,
+                    message: "",
+                })}
+                onConfirm={() => {
+                    setShowApproveConfirm({
+                        open: false,
+                        message: "",
+                    });
+                    handleApprove();
+                }}
+                message={showApproveConfirm.message}
+                confirmText="Có"
+                cancelText="Không"
             />
         </div>
     );
