@@ -339,8 +339,7 @@ const AddProductPage = () => {
                 );
 
                 if (response.data) {
-                    alert("Tạo sản phẩm thành công!");
-                    navigate("/user/products");
+                    navigate("/user/products", { state: { successMessage: "Tạo sản phẩm thành công!" } });
                 }
             } catch (error) {
                 console.error("Create product error:", error);
@@ -496,7 +495,7 @@ const AddProductPage = () => {
     };
 
     const columnsConfig = [
-        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
+        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
         {
             field: 'materialCode',
             headerName: 'Mã NVL',
@@ -555,7 +554,7 @@ const AddProductPage = () => {
         },
         {
             field: 'quantity',
-            headerName: 'Số lượng *',
+            headerName: 'Số lượng',
             flex: 1,
             minWidth: 100,
             editable: false,
@@ -859,7 +858,7 @@ const AddProductPage = () => {
                                     pageRangeDisplayed={5}
                                     onPageChange={handlePageChange}
                                     containerClassName="flex items-center gap-1"
-                                    pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                                    pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                                     pageLinkClassName="flex items-center justify-center w-full h-full"
                                     previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                                     nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"

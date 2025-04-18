@@ -44,6 +44,8 @@ import PageHeader from "@/components/PageHeader";
 import { canCreatePurchaseRequest } from "@/features/user/purchaseRequest/PurchaseRequestService";
 import CancelSaleOrderModal from "./CancelSaleOrderModal";
 import { getTotalQuantityOfMaterial } from "@/features/user/issueNote/issueNoteService";
+import SuccessAlert from "@/components/SuccessAlert";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 // ------------------ 3 MODE ------------------
 const MODE_VIEW = "view";
@@ -52,55 +54,6 @@ const MODE_DINHMUC = "dinhMuc";
 // ---------------------------------------------
 
 const CUSTOMER_TYPE_ID = 2;
-
-const AddCustomerDropdownIndicator = (props) => {
-  return (
-    <div style={{ display: "flex", alignItems: "center" }}>
-      <div
-        style={{ cursor: "pointer", padding: "0 8px" }}
-        onClick={(e) => {
-          e.stopPropagation();
-          props.selectProps.onAddCustomer();
-        }}
-      >
-        <FaPlus />
-      </div>
-      <components.DropdownIndicator {...props} />
-    </div>
-  );
-};
-
-const customStyles = {
-  control: (provided, state) => ({
-    ...provided,
-    minWidth: 200,
-    borderColor: state.isFocused ? "black" : provided.borderColor,
-    boxShadow: state.isFocused ? "0 0 0 1px black" : "none",
-    "&:hover": {
-      borderColor: "black",
-    },
-  }),
-  menuPortal: (provided) => ({
-    ...provided,
-    zIndex: 9999, // Đảm bảo dropdown hiển thị trên tất cả các phần tử khác
-  }),
-  menuList: (provided) => ({
-    ...provided,
-  }),
-  option: (provided, state) => ({
-    ...provided,
-    backgroundColor: state.isFocused
-      ? "#f3f4f6"
-      : state.isSelected
-        ? "#e5e7eb"
-        : "transparent",
-    color: "#000",
-    cursor: "pointer",
-    "&:active": {
-      backgroundColor: "#e5e7eb",
-    },
-  }),
-};
 
 const EditSaleOrderPage = () => {
   const { orderId } = useParams();
@@ -118,6 +71,7 @@ const EditSaleOrderPage = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [description, setDescription] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
   // Mảng dòng sản phẩm
   const [items, setItems] = useState([]);
@@ -157,6 +111,8 @@ const EditSaleOrderPage = () => {
   // Thêm state để lưu kết quả kiểm tra khả năng tạo PurchaseRequest
   const [canCreatePurchaseRequestState, setCanCreatePurchaseRequestState] = useState(false);
 
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+
   // Gọi API từ service để kiểm tra khả năng tạo PurchaseRequest
   useEffect(() => {
     const checkCanCreatePurchaseRequest = async () => {
@@ -193,7 +149,6 @@ const EditSaleOrderPage = () => {
         setAddress(orderData.address || "");
         setContactName(orderData.contactName || "");
         setPhoneNumber(orderData.phoneNumber || "");
-
         // Map orderDetails => items, ban đầu dùng tổng tồn kho (số) cho mode VIEW/EDIT
         const loadedItems = await Promise.all(
           (orderData.orderDetails || []).map(async (detail, index) => {
@@ -377,8 +332,9 @@ const EditSaleOrderPage = () => {
   const handleCancelSaleOrder = async (reason) => {
     try {
       await cancelSaleOrder(orderId, reason);
-      alert("Đơn hàng đã được hủy.");
-      navigate("/user/sale-orders");
+      navigate("/user/sale-orders", {
+        state: { successMessage: "Huỷ đơn hàng thành công!" },
+      });
     } catch (error) {
       console.error("Lỗi khi hủy đơn hàng:", error);
       alert("Không thể hủy đơn hàng. Vui lòng thử lại sau.");
@@ -668,9 +624,10 @@ const EditSaleOrderPage = () => {
 
     try {
       await updateExistingOrder(orderId, payload);
-      alert("Cập nhật đơn hàng thành công!");
       handleSetMode(MODE_VIEW);
-      navigate("/user/sale-orders");
+      navigate("/user/sale-orders", {
+        state: { successMessage: "Cập nhật đơn bán hàng thành công!" },
+      });
     } catch (err) {
       console.error("Lỗi PUT order:", err);
       alert("Lỗi khi cập nhật đơn hàng!");
@@ -795,14 +752,18 @@ const EditSaleOrderPage = () => {
                 type="number"
                 size="small"
                 fullWidth
-                inputProps={{ min: 0 }}
-                value={detail.usedQuantity || 0}
+                slotProps={{
+                  input: {
+                    inputMode: "numeric",
+                  }
+                }}
+                value={detail.usedQuantity === 0 ? "" : detail.usedQuantity}
                 onChange={(e) =>
                   handleDetailUsedQuantityChange(item.id, detailIndex, e.target.value)
                 }
                 color="success"
                 hiddenLabel
-                placeholder="Số lượng"
+                placeholder="0"
               />
             </td>
             {detailIndex === 0 && (
@@ -918,12 +879,16 @@ const EditSaleOrderPage = () => {
                   type="number"
                   size="small"
                   fullWidth
-                  inputProps={{ min: 0 }}
-                  value={item.usedQuantity}
+                  slotProps={{
+                    input: {
+                      inputMode: "numeric",
+                    }
+                  }}
+                  value={item.usedQuantity === 0 ? "" : item.usedQuantity}
                   onChange={(e) => handleUsedQuantityChange(item.id, e.target.value)}
                   color="success"
                   hiddenLabel
-                  placeholder="Số lượng"
+                  placeholder="0"
                 />
               </td>
               <td className="px-4 py-2 text-sm border-r border-[rgba(224,224,224,1)]">
@@ -1206,7 +1171,7 @@ const EditSaleOrderPage = () => {
                     options={customers}
                     size="small"
                     getOptionLabel={(option) => `${option.code} - ${option.name}`}
-                    value={customers.find(o => o.code === customerCode) || null}
+                    value={customers.find(o => o.id === partnerId)}
                     onChange={(event, selected) => {
                       handleCustomerChange(selected);
                     }}
@@ -1374,7 +1339,7 @@ const EditSaleOrderPage = () => {
                   </div>
                 )}
               </div>
-              <div className="border border-gray-200 rounded mb-4 overflow-x-auto border-[rgba(224,224,224,1)]">
+              <div className="border border-gray-200 rounded overflow-x-auto border-[rgba(224,224,224,1)]">
                 <table className="w-full text-left min-w-max border-collapse border-[rgba(224,224,224,1)]">
                   <thead className="bg-[#f5f5f5] border-b border-[rgba(224,224,224,1)]">
                     <tr>
@@ -1399,8 +1364,14 @@ const EditSaleOrderPage = () => {
                   <tbody>{renderTableRows()}</tbody>
                 </table>
               </div>
+
+              {globalError && (
+                <Typography color="red" className="text-sm mt-2">
+                  {globalError}
+                </Typography>
+              )}
               {mode === MODE_EDIT && activeTab === "products" && (
-                <div className="flex gap-2 mb-4">
+                <div className="flex gap-2 my-4">
                   <MuiButton
                     size="small"
                     variant="outlined"
@@ -1435,6 +1406,7 @@ const EditSaleOrderPage = () => {
                     <table className="w-full text-left min-w-max border-collapse border-[rgba(224,224,224,1)]">
                       <thead className="bg-[#f5f5f5] border-b border-[rgba(224,224,224,1)]">
                         <tr>
+                          <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">STT</th>
                           <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Mã NVL</th>
                           <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Tên NVL</th>
                           <th className="px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Số lượng</th>
@@ -1447,6 +1419,7 @@ const EditSaleOrderPage = () => {
                         {materialRequirements.length > 0 ? (
                           materialRequirements.map((mat, index) => (
                             <tr key={index} className="border-b last:border-b-0 hover:bg-gray-50">
+                              <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{index + 1}</td>
                               <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.materialCode}</td>
                               <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.materialName}</td>
                               <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.requiredQuantity}</td>
@@ -1471,11 +1444,6 @@ const EditSaleOrderPage = () => {
           )}
 
           <div className="flex flex-col gap-2">
-            {globalError && (
-              <Typography color="red" className="text-sm text-right">
-                {globalError}
-              </Typography>
-            )}
             <Divider />
             <div className="flex justify-between my-2">
               <MuiButton
@@ -1495,33 +1463,36 @@ const EditSaleOrderPage = () => {
               >
                 <FaArrowLeft className="h-3 w-3" /> Quay lại
               </MuiButton>
-              {mode === MODE_VIEW && originalData?.statusLabel !== "Đã huỷ" && activeTab === "info" && (
-                <MuiButton
-                  size="medium"
-                  color="error"
-                  variant="outlined"
-                  onClick={() => setShowCancelModal(true)}
-                >
-                  Hủy đơn hàng
-                </MuiButton>
-              )}
 
-              {mode === MODE_VIEW && activeTab === "products" && canCreatePurchaseRequestState && originalData?.status !== "CANCELLED" && (
-                <MuiButton
-                  variant="contained"
-                  size="medium"
-                  onClick={handleEdit}
-                  sx={{
-                    boxShadow: 'none',
-                    '&:hover': { boxShadow: 'none' }
-                  }}
-                >
-                  <div className='flex items-center gap-2'>
-                    <FaEdit className="h-4 w-4" />
-                    <span>Chỉnh sửa</span>
-                  </div>
-                </MuiButton>
-              )}
+              <div className="flex items-center gap-2">
+                {mode === MODE_VIEW && originalData?.statusLabel !== "Đã huỷ" && activeTab === "info" && (
+                  <MuiButton
+                    size="medium"
+                    color="error"
+                    variant="outlined"
+                    onClick={() => setShowCancelModal(true)}
+                  >
+                    Hủy đơn hàng
+                  </MuiButton>
+                )}
+
+                {mode === MODE_VIEW && canCreatePurchaseRequestState && originalData?.status !== "CANCELLED" && (
+                  <MuiButton
+                    variant="contained"
+                    size="medium"
+                    onClick={handleEdit}
+                    sx={{
+                      boxShadow: 'none',
+                      '&:hover': { boxShadow: 'none' }
+                    }}
+                  >
+                    <div className='flex items-center gap-2'>
+                      <FaEdit className="h-4 w-4" />
+                      <span>Chỉnh sửa</span>
+                    </div>
+                  </MuiButton>
+                )}
+              </div>
 
               {mode === MODE_EDIT && (
                 <div className="flex items-center gap-2">
@@ -1643,6 +1614,7 @@ const EditSaleOrderPage = () => {
           }}
         />
       )}
+
     </div>
   );
 };

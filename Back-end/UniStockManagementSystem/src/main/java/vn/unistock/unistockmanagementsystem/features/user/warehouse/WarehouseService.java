@@ -52,6 +52,21 @@ public class WarehouseService {
 
     public Warehouse updateWarehouse(Long id, WarehouseDTO warehouseDTO) {
         Warehouse warehouse = getWarehouseById(id);
+
+        boolean isCodeChanged = !warehouse.getWarehouseCode().equals(warehouseDTO.getWarehouseCode());
+        boolean isNameChanged = !warehouse.getWarehouseName().equals(warehouseDTO.getWarehouseName());
+
+        boolean codeExists = isCodeChanged && warehouseRepository.existsByWarehouseCode(warehouseDTO.getWarehouseCode());
+        boolean nameExists = isNameChanged && warehouseRepository.existsByWarehouseName(warehouseDTO.getWarehouseName());
+
+        if (codeExists && nameExists) {
+            throw new IllegalArgumentException("DUPLICATE_CODE_AND_NAME");
+        } else if (codeExists) {
+            throw new IllegalArgumentException("DUPLICATE_CODE");
+        } else if (nameExists) {
+            throw new IllegalArgumentException("DUPLICATE_NAME");
+        }
+
         warehouseMapper.updateEntityFromDto(warehouseDTO, warehouse);
         return warehouseRepository.save(warehouse);
     }

@@ -25,6 +25,8 @@ import { BiSolidEdit } from "react-icons/bi";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import SuccessAlert from "@/components/SuccessAlert";
 
 const UserPage = () => {
   const {
@@ -39,6 +41,9 @@ const UserPage = () => {
   const [openEditModal, setOpenEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState({ open: false, message: "" });
+  const [successAlert, setSuccessAlert] = useState({ open: false, message: "" });
+  const [selectedUserToToggle, setSelectedUserToToggle] = useState(null);
 
   // State quản lý phân trang
   const [currentPage, setCurrentPage] = useState(0);
@@ -64,6 +69,24 @@ const UserPage = () => {
   // Xử lý đổi trang
   const handlePageChange = (selectedItem) => {
     setCurrentPage(selectedItem.selected);
+  };
+
+  const handleConfirmToggleStatus = async () => {
+    if (!selectedUserToToggle) return;
+
+    try {
+      await toggleStatus(selectedUserToToggle.userId, selectedUserToToggle.isActive);
+      setSuccessAlert({
+        open: true,
+        message: "Cập nhật trạng thái người dùng thành công!",
+      });
+      fetchPaginatedUsers(currentPage, pageSize);
+    } catch (error) {
+      console.error("❌ Lỗi khi thay đổi trạng thái:", error);
+    } finally {
+      setConfirmDialogOpen(false);
+      setSelectedUserToToggle(null);
+    }
   };
 
   // Lọc user theo searchTerm
@@ -136,7 +159,13 @@ const UserPage = () => {
             checked={params.row.isActive}
             onChange={() => {
               if (!params.row.roleNames.includes("ADMIN")) {
-                toggleStatus(params.row.userId, params.row.isActive);
+                setSelectedUserToToggle(params.row);
+                setConfirmDialogOpen({
+                  open: true,
+                  message: params.row.isActive
+                    ? "Bạn có chắc chắn muốn ngưng hoạt động người dùng này không?"
+                    : "Bạn có chắc chắn muốn kích hoạt người dùng này không?",
+                });
               }
             }}
             disabled={params.row.roleNames.includes("ADMIN")}
@@ -257,7 +286,7 @@ const UserPage = () => {
               pageRangeDisplayed={5}
               onPageChange={handlePageChange}
               containerClassName="flex items-center gap-1"
-              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
               pageLinkClassName="flex items-center justify-center w-full h-full"
               previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -276,6 +305,7 @@ const UserPage = () => {
           open={openAddModal}
           onClose={() => setOpenAddModal(false)}
           fetchUsers={fetchPaginatedUsers}
+          onSuccess={(message) => setSuccessAlert({ open: true, message })}
         />
       )}
 
@@ -286,8 +316,24 @@ const UserPage = () => {
           onClose={() => setOpenEditModal(false)}
           user={selectedUser}
           fetchUsers={fetchPaginatedUsers}
+          onSuccess={(message) => setSuccessAlert({ open: true, message })}
         />
       )}
+
+      <ConfirmDialog
+        open={confirmDialogOpen.open}
+        onClose={() => setConfirmDialogOpen(false)}
+        onConfirm={handleConfirmToggleStatus}
+        message= {confirmDialogOpen.message}
+        confirmText="Có"
+        cancelText="Không"
+      />
+
+      <SuccessAlert
+        open={successAlert.open}
+        onClose={() => setSuccessAlert({ open: false, message: "" })}
+        message={successAlert.message}
+      />
     </div>
   );
 };

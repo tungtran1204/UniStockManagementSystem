@@ -11,9 +11,14 @@ import {
   Autocomplete,
   IconButton,
   Button as MuiButton,
-  Tooltip
-} from "@mui/material";
-import ClearRoundedIcon from '@mui/icons-material/ClearRounded';
+  Tooltip, 
+  Divider
+} from '@mui/material';
+import {
+  HighlightOffRounded,
+  ClearRounded,
+  Margin
+} from '@mui/icons-material';
 import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { FaPlus, FaTrash, FaArrowLeft, FaSearch } from "react-icons/fa";
@@ -553,13 +558,13 @@ const AddIssueNote = () => {
               </td>
               {isFirstRow && (
                 <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm">
-                  <Tooltip title="Xóa nguyên vật liệu">
+                  <Tooltip title="Xóa">
                     <IconButton
                       size="small"
                       color="error"
                       onClick={() => handleDeleteRow(nvl.id)}
                     >
-                      <FaTrash />
+                      <HighlightOffRounded />
                     </IconButton>
                   </Tooltip>
                 </td>
@@ -699,8 +704,8 @@ const AddIssueNote = () => {
               <td className="px-3 py-2 border-r text-sm">
                 {wh.warehouseName || "(Chưa có kho)"}
               </td>
-              <td className="px-3 py-2 border-r text-sm text-right">{wh.quantity}</td>
-              <td className="px-3 py-2 border-r text-sm w-24">
+              <td className="px-3 py-2 border-r text-sm w-24 text-center">{wh.quantity}</td>
+              <td className="px-3 py-2 border-r text-sm w-40">
                 <input
                   type="number"
                   className="border p-1 text-right w-[60px]"
@@ -753,14 +758,14 @@ const AddIssueNote = () => {
                 )}
               </td>
               {isFirstRow && (
-                <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm">
-                  <Tooltip title="Xóa sản phẩm/nguyên vật liệu">
+                <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm w-24">
+                  <Tooltip title="Xóa">
                     <IconButton
                       size="small"
                       color="error"
                       onClick={() => handleDeleteRow(item.id)}
                     >
-                      <FaTrash />
+                      <HighlightOffRounded />
                     </IconButton>
                   </Tooltip>
                 </td>
@@ -867,13 +872,13 @@ const AddIssueNote = () => {
               </td>
               {isFirstRow && (
                 <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm">
-                  <Tooltip title="Xóa sản phẩm">
+                  <Tooltip title="Xóa">
                     <IconButton
                       size="small"
                       color="error"
                       onClick={() => handleDeleteRow(prod.id)}
                     >
-                      <FaTrash />
+                      <HighlightOffRounded />
                     </IconButton>
                   </Tooltip>
                 </td>
@@ -988,8 +993,7 @@ const AddIssueNote = () => {
             console.error("Error uploading paper evidence:", uploadError);
           }
         }
-        alert("Tạo phiếu xuất kho thành công!");
-        navigate("/user/issueNote");
+        navigate("/user/issueNote", { state: { successMessage: "Tạo phiếu xuất kho thành công!" } });
       }
     } catch (error) {
       console.error("Lỗi khi thêm phiếu xuất:", error);
@@ -1064,6 +1068,9 @@ const AddIssueNote = () => {
               <Typography variant="medium" className="mb-1 text-black">
                 Ngày lập phiếu
               </Typography>
+              <style>
+                {`.MuiPickersCalendarHeader-label { text-transform: capitalize; }`}
+              </style>
               <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
                 <DatePicker
                   value={createdDate ? dayjs(createdDate) : null}
@@ -1075,6 +1082,20 @@ const AddIssueNote = () => {
                   format="DD/MM/YYYY"
                   dayOfWeekFormatter={(weekday) => `${weekday.format("dd")}`}
                   slotProps={{
+                    day: {
+                      sx: () => ({
+                        "&.Mui-selected": {
+                          backgroundColor: "#0ab067 !important",
+                          color: "white",
+                        },
+                        "&.Mui-selected:hover": {
+                          backgroundColor: "#089456 !important",
+                        },
+                        "&:hover": {
+                          backgroundColor: "#0894561A !important",
+                        },
+                      }),
+                    },
                     textField: {
                       hiddenLabel: true,
                       fullWidth: true,
@@ -1137,7 +1158,7 @@ const AddIssueNote = () => {
                                 }}
                                 size="small"
                               >
-                                <ClearRoundedIcon fontSize="18px" />
+                                <ClearRounded fontSize="18px" />
                               </IconButton>
                             )}
                             {params.InputProps.endAdornment}
@@ -1315,7 +1336,7 @@ const AddIssueNote = () => {
                                 }}
                                 size="small"
                               >
-                                <ClearRoundedIcon fontSize="18px" />
+                                <ClearRounded fontSize="18px" />
                               </IconButton>
                             )}
                             {params.InputProps.endAdornment}
@@ -1394,8 +1415,6 @@ const AddIssueNote = () => {
                 </Typography>
                 <Autocomplete
                   options={suppliers}
-                  disableClearable
-                  clearIcon={null}
                   size="small"
                   getOptionLabel={(option) => option.code || ""}
                   value={suppliers.find((o) => o.code === partnerCode) || null}
@@ -1422,38 +1441,6 @@ const AddIssueNote = () => {
                       hiddenLabel
                       {...params}
                       placeholder="Mã nhà cung cấp"
-                      InputProps={{
-                        ...params.InputProps,
-                        endAdornment: (
-                          <div className="flex items-center space-x-1">
-                            <IconButton
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenCreatePartnerPopup();
-                              }}
-                              size="small"
-                            >
-                              <FaPlus fontSize="small" />
-                            </IconButton>
-                            {partnerCode && (
-                              <IconButton
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPartnerCode("");
-                                  setPartnerName("");
-                                  setAddress("");
-                                  setContactName("");
-                                  setPartnerId(null);
-                                }}
-                                size="small"
-                              >
-                                <ClearRoundedIcon fontSize="18px" />
-                              </IconButton>
-                            )}
-                            {params.InputProps.endAdornment}
-                          </div>
-                        ),
-                      }}
                     />
                   )}
                 />
@@ -1649,7 +1636,7 @@ const AddIssueNote = () => {
           )}
 
           {totalElements > 0 && (
-            <div className="flex items-center justify-between pt-4">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Typography
                   variant="small"
@@ -1668,7 +1655,7 @@ const AddIssueNote = () => {
                 pageRangeDisplayed={5}
                 onPageChange={handlePageChange}
                 containerClassName="flex items-center gap-1"
-                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                 pageLinkClassName="flex items-center justify-center w-full h-full"
                 previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                 nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -1679,8 +1666,8 @@ const AddIssueNote = () => {
               />
             </div>
           )}
-
-          <div className="mt-6 border-t pt-4 flex justify-between">
+          <Divider sx={{ marginY: "16px" }} />
+          <div className="mt-4 mb-2 flex justify-between">
             <MuiButton
               color="info"
               size="medium"
@@ -1696,7 +1683,7 @@ const AddIssueNote = () => {
             >
               <FaArrowLeft className="h-3 w-3" /> Quay lại
             </MuiButton>
-            <div className="flex items-center justify-end gap-2 pb-2">
+            <div className="flex items-center justify-end gap-2">
               <MuiButton size="medium" color="error" variant="outlined">
                 Hủy
               </MuiButton>

@@ -15,7 +15,9 @@ import ReactPaginate from "react-paginate";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
-import { useNavigate } from "react-router-dom";
+import SuccessAlert from "@/components/SuccessAlert";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
     exportExcel,
     createMaterial,
@@ -92,6 +94,22 @@ const MaterialPage = () => {
         isActive: "true",
         supplierIds: []
     });
+
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [pendingToggleRow, setPendingToggleRow] = useState(null);
+    const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+    const [alertMessage, setAlertMessage] = useState("");
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state?.successMessage) {
+            console.log("Component mounted, location.state:", location.state?.successMessage);
+            setAlertMessage(location.state.successMessage);
+            setShowSuccessAlert(true);
+            // Xóa state để không hiển thị lại nếu người dùng refresh
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -206,7 +224,10 @@ const MaterialPage = () => {
                         <Switch
                             color="green"
                             checked={params.value}
-                            onChange={() => handleToggleStatus(params.row.id)}
+                            onChange={() => {
+                                setPendingToggleRow(params.row);
+                                setConfirmDialogOpen(true);
+                            }}
                         />
                         <div
                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
@@ -224,6 +245,8 @@ const MaterialPage = () => {
             headerName: 'Hành động',
             flex: 0.5,
             minWidth: 50,
+            editable: false,
+            filterable: false,
             renderCell: (params) => (
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
                     <Tooltip content="Xem chi tiết">
@@ -440,7 +463,7 @@ const MaterialPage = () => {
                             pageRangeDisplayed={5}
                             onPageChange={handlePageChangeWrapper}
                             containerClassName="flex items-center gap-1"
-                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                             pageLinkClassName="flex items-center justify-center w-full h-full"
                             previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                             nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -460,6 +483,28 @@ const MaterialPage = () => {
                     onSuccess={fetchPaginatedMaterials}
                 />
             )}
+
+            <ConfirmDialog
+                open={confirmDialogOpen}
+                onClose={() => setConfirmDialogOpen(false)}
+                onConfirm={() => {
+                    if (pendingToggleRow) {
+                        handleToggleStatus(pendingToggleRow.id); // truyền đúng giá trị mới
+                        setAlertMessage("Cập nhật trạng thái thành công!");
+                        setShowSuccessAlert(true);
+                    }
+                    setConfirmDialogOpen(false);
+                }}
+                message={`Bạn có chắc chắn muốn ${pendingToggleRow?.isUsing ? "ngưng hoạt động" : "kích hoạt lại"} nguyên vật liệu này không?`}
+                confirmText="Có"
+                cancelText="Không"
+            />
+
+            <SuccessAlert
+                open={showSuccessAlert}
+                onClose={() => setShowSuccessAlert(false)}
+                message={alertMessage}
+            />
         </div>
     );
 };

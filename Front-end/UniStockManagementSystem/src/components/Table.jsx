@@ -59,10 +59,11 @@ const SingleClickEditing = ({ data, columnsConfig, enableSelection, columnVisibi
                 onCellClick={handleCellClick}
                 columnVisibilityModel={columnVisibilityModel}
                 onColumnVisibilityModelChange={onColumnVisibilityModelChange}
-                columnHeaderHeight={headerHeight ?? 40} 
+                columnHeaderHeight={headerHeight ?? 40}
                 getRowHeight={() => 'auto'}
                 hideFooter={true}
                 checkboxSelection={enableSelection}
+                autoHeight
                 localeText={{
                     columnMenuSortAsc: 'Sắp xếp tăng dần',
                     columnMenuSortDesc: 'Sắp xếp giảm dần',
@@ -76,7 +77,7 @@ const SingleClickEditing = ({ data, columnsConfig, enableSelection, columnVisibi
                 }}
                 sx={{
                     fontFamily: 'Roboto, sans-serif',
-                    overflow: 'hidden',
+                    overflow: 'hidden',    
                     '& .MuiDataGrid-row': {
                         minHeight: '40px !important', // Đảm bảo hàng không thấp hơn 40px
                     },

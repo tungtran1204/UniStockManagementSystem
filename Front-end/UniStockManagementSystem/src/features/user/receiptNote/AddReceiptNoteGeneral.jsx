@@ -377,7 +377,7 @@ const AddReceiptNoteGeneral = () => {
         id: prev.length + 1,
         selected: null, // chưa chọn
         warehouse: defaultWarehouseCode, // Gán kho mặc định
-        quantity: 0,
+        quantity: "",
       }
     ]);
   };
@@ -561,8 +561,7 @@ const AddReceiptNoteGeneral = () => {
       }
 
       console.log("Lưu thành công");
-      alert("Tạo phiếu nhập thành công!");
-      navigate("/user/receiptNote");
+      navigate("/user/receiptNote", { state: { successMessage: "Tạo phiếu nhập kho thành công!" } });
     } catch (err) {
       console.error("❌ Lỗi khi lưu phiếu nhập:", err);
       let msg = err?.response?.data?.message || err.message || "Lỗi không xác định!";
@@ -587,8 +586,9 @@ const AddReceiptNoteGeneral = () => {
     {
       field: 'itemCode',
       headerName: 'Mã hàng',
-      minWidth: 150,
+      minWidth: 300,
       editable: false,
+      filterable: false,
       renderCell: (params) => {
         const dropdownList = getDropdownListByCategory();
         return (
@@ -615,8 +615,9 @@ const AddReceiptNoteGeneral = () => {
     {
       field: 'itemName',
       headerName: 'Tên hàng',
-      minWidth: 250,
+      minWidth: 300,
       editable: false,
+      filterable: false,
       renderCell: (params) => (
         <span>{params.row.selected?.name || ""}</span>
       )
@@ -646,7 +647,7 @@ const AddReceiptNoteGeneral = () => {
             sx={{ width: '100%' }}
             size="small"
             options={warehouses || []}
-            getOptionLabel={(option) => option?.warehouseCode || ""}
+            getOptionLabel={(option) => option?.warehouseCode + " - " + option?.warehouseName}
             value={warehouses.find(wh => wh.warehouseCode === params.row.warehouse) || null}
             onChange={(e, newValue) => {
               // Cập nhật state
@@ -684,8 +685,13 @@ const AddReceiptNoteGeneral = () => {
               type="number"
               size="small"
               color="success"
-              inputProps={{ min: 0 }}
+              slotProps={{
+                input: {
+                  inputMode: "numeric",
+                }
+              }}
               value={params.row.quantity}
+              placeholder="0"
               onChange={(e) => handleChangeQuantity(params.row.id, e.target.value)}
               style={{ width: '100%' }}
             />
@@ -699,7 +705,7 @@ const AddReceiptNoteGeneral = () => {
       headerName: 'Hành động',
       editable: false,
       filterable: false,
-      minWidth: 50,
+      minWidth: 100,
       renderCell: (params) => (
         <IconButton
           size="small"
