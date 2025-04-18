@@ -104,12 +104,13 @@ public class ReceiptNoteService {
                     .details(new ArrayList<>())
                     .build();
 
-            // lưu đối tác nếu nhập hàng bán bị trả lại
+            // Lưu đối tác nếu nhập hàng bán bị trả lại
             if (grnDto.getPartnerId() != null) {
                 Partner partner = Partner.builder().partnerId(grnDto.getPartnerId()).build();
                 grn.setPartner(partner);
             }
 
+            // Kiểm tra liên kết với SalesOrder qua PurchaseOrder
             boolean hasSaleOrder = false;
             if (grnDto.getPoId() != null) {
                 PurchaseOrder po = purchaseOrderRepository.findById(grnDto.getPoId())
@@ -118,7 +119,10 @@ public class ReceiptNoteService {
                 try {
                     purchaseOrderService.getSaleOrderFromPurchaseOrder(po.getPoId());
                     hasSaleOrder = true;
-                } catch (Exception ignored) {}
+                    logger.debug("PurchaseOrder ID {} is linked to a SalesOrder, setting hasSaleOrder = true", po.getPoId());
+                } catch (Exception ignored) {
+                    logger.debug("PurchaseOrder ID {} is not linked to a SalesOrder, hasSaleOrder = false", po.getPoId());
+                }
             }
 
             grn = receiptNoteRepository.save(grn);
@@ -153,7 +157,7 @@ public class ReceiptNoteService {
                     if (detail.getUnit() == null) detail.setUnit(material.getUnit());
                     updateInventoryAndTransaction(warehouse, material, null, detailDto.getQuantity(), hasSaleOrder, grn);
 
-                    // ✅ Cập nhật PO Detail
+                    // Cập nhật PurchaseOrderDetail nếu có poId
                     if (grnDto.getPoId() != null) {
                         PurchaseOrderDetail pod = purchaseOrderDetailRepository.findByPurchaseOrderPoId(grnDto.getPoId()).stream()
                                 .filter(d -> d.getMaterial().getMaterialId().equals(detailDto.getMaterialId()))
@@ -162,34 +166,31 @@ public class ReceiptNoteService {
                         pod.setReceivedQuantity(pod.getReceivedQuantity() + detailDto.getQuantity().intValue());
                         purchaseOrderDetailRepository.save(pod);
                     }
-
                 } else if (detailDto.getProductId() != null) {
                     Product product = productRepository.findById(detailDto.getProductId())
                             .orElseThrow(() -> new RuntimeException("Product not found with ID: " + detailDto.getProductId()));
                     detail.setProduct(product);
                     if (detail.getUnit() == null) detail.setUnit(product.getUnit());
                     updateInventoryAndTransaction(warehouse, null, product, detailDto.getQuantity(), hasSaleOrder, grn);
-                }
-                if (detailDto.getMaterialId() == null && detailDto.getProductId() == null) {
+                } else {
                     throw new RuntimeException("Chi tiết phiếu phải có sản phẩm hoặc vật tư.");
                 }
                 details.add(detail);
             }
+
             goodReceiptDetailRepository.saveAll(details);
+
+            // Cập nhật trạng thái PurchaseOrder nếu có
             if (grnDto.getPoId() != null) {
                 List<PurchaseOrderDetail> poDetails = purchaseOrderDetailRepository.findByPurchaseOrderPoId(grnDto.getPoId());
-
                 boolean allReceived = poDetails.stream()
                         .allMatch(detail -> detail.getOrderedQuantity() - detail.getReceivedQuantity() <= 0);
-
-
-                PurchaseOrder po = poDetails.get(0).getPurchaseOrder(); // đã load ở trên
-
+                PurchaseOrder po = poDetails.get(0).getPurchaseOrder();
                 po.setStatus(allReceived ? PurchaseOrder.OrderStatus.COMPLETED : PurchaseOrder.OrderStatus.IN_PROGRESS);
                 purchaseOrderRepository.save(po);
             }
-            return receiptNoteMapper.toDTO(grn);
 
+            return receiptNoteMapper.toDTO(grn);
         } catch (Exception e) {
             logger.error("❌ Lỗi khi tạo phiếu nhập kho: {}", e.getMessage(), e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi khi lưu phiếu nhập: " + e.getMessage());
@@ -197,12 +198,14 @@ public class ReceiptNoteService {
     }
 
     private void updateInventoryAndTransaction(Warehouse warehouse, Material material, Product product, Double quantity, boolean hasSaleOrder, GoodReceiptNote grn) {
-        Inventory.InventoryStatus status = hasSaleOrder ? Inventory.InventoryStatus.RESERVED : Inventory.InventoryStatus.AVAILABLE;
         Inventory inventory = null;
 
         if (material != null) {
-            inventory = inventoryRepository.findByWarehouseAndMaterial(warehouse, material)
-                    .filter(i -> i.getStatus() == status)
+            // Xác định status cho material dựa trên hasSaleOrder
+            Inventory.InventoryStatus status = hasSaleOrder ? Inventory.InventoryStatus.RESERVED : Inventory.InventoryStatus.AVAILABLE;
+
+            // Sử dụng phương thức mới với status
+            inventory = inventoryRepository.findByWarehouseAndMaterialAndStatus(warehouse, material, status)
                     .orElse(null);
             if (inventory == null) {
                 inventory = Inventory.builder()
@@ -228,8 +231,11 @@ public class ReceiptNoteService {
         }
 
         if (product != null) {
-            inventory = inventoryRepository.findByWarehouseAndProduct(warehouse, product)
-                    .filter(i -> i.getStatus() == status)
+            // Luôn sử dụng status = AVAILABLE cho product
+            Inventory.InventoryStatus status = Inventory.InventoryStatus.AVAILABLE;
+
+            // Sử dụng phương thức mới với status
+            inventory = inventoryRepository.findByWarehouseAndProductAndStatus(warehouse, product, status)
                     .orElse(null);
             if (inventory == null) {
                 inventory = Inventory.builder()
