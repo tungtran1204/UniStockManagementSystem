@@ -22,8 +22,9 @@ import {
     exportExcel,
     createMaterial,
     fetchMaterialCategories,
-    fetchUnits,
+
 } from "./materialService";
+import { fetchActiveUnits } from "../unit/unitService";
 import { getPartnersByType } from "../partner/partnerService";
 import {
     CardBody,
@@ -115,7 +116,7 @@ const MaterialPage = () => {
         const fetchData = async () => {
             try {
                 const [unitsData, categoriesData, suppliersData] = await Promise.all([
-                    fetchUnits(),
+                    fetchActiveUnits(),
                     fetchMaterialCategories(),
                     getPartnersByType(1)
                 ]);

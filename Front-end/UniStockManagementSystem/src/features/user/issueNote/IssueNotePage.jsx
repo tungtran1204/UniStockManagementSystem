@@ -92,10 +92,10 @@ const IssueNotePage = () => {
 
   // Cấu hình các cột hiển thị; thay createdBy và soId bằng createdByUsername và soCode
   const columnsConfig = [
-    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
-    { field: 'ginCode', headerName: 'Mã phiếu xuất', flex: 1.5, minWidth: 150, editable: false, filterable: false },
-    { field: 'category', headerName: 'Loại hàng hóa', flex: 2, minWidth: 100, editable: false, filterable: false },
-    { field: 'description', headerName: 'Mô tả', flex: 2, minWidth: 150, editable: false, filterable: false },
+  	{ field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
+    { field: 'ginCode', headerName: 'Mã phiếu xuất', flex: 1.5, minWidth: 150 },
+    { field: 'category', headerName: 'Phân loại xuất kho', flex: 2, minWidth: 100 },
+    
     {
       field: 'issueDate',
       headerName: 'Ngày lập phiếu',
@@ -119,7 +119,7 @@ const IssueNotePage = () => {
     },
     {
       field: 'soCode',
-      headerName: 'Mã đơn hàng',
+      headerName: 'Tham chiếu',
       flex: 1.5,
       minWidth: 150,
       editable: false,
