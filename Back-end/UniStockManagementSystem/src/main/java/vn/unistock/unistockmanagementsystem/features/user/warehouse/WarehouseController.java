@@ -23,9 +23,12 @@ public class WarehouseController {
     private final WarehouseService warehouseService;
 
     @PostMapping
-    public ResponseEntity<Warehouse> addWarehouse(@Valid @RequestBody WarehouseDTO warehouseDTO){
-        Warehouse newWarehouse = warehouseService.addWarehouse(warehouseDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(newWarehouse);
+    public ResponseEntity<?> addWarehouse(@Valid @RequestBody WarehouseDTO warehouseDTO){
+        try {
+            return ResponseEntity.ok(warehouseService.addWarehouse(warehouseDTO));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
     }
 
     @GetMapping("/list")
@@ -60,9 +63,12 @@ public class WarehouseController {
     }
 
     @PatchMapping("/{warehouseId}")
-    public ResponseEntity<Warehouse> updateWarehouse(@Valid @PathVariable Long warehouseId, @RequestBody WarehouseDTO warehouseDTO){
-        Warehouse updatedWarehouse = warehouseService.updateWarehouse(warehouseId, warehouseDTO);
-        return ResponseEntity.ok(updatedWarehouse);
+    public ResponseEntity<?> updateWarehouse(@Valid @PathVariable Long warehouseId, @RequestBody WarehouseDTO warehouseDTO){
+        try {
+            return ResponseEntity.ok(warehouseService.updateWarehouse(warehouseId, warehouseDTO));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
     }
 
     @PatchMapping("/{warehouseId}/status")

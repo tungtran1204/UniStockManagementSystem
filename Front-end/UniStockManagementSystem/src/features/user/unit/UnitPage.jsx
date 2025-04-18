@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
-import useMaterialType from "./useMaterialType";
-import CreateMaterialTypeModal from "./CreateMaterialTypeModal";
-import EditMaterialTypeModal from "./EditMaterialTypeModal";
+import useUnit from "./useUnit";
+import CreateUnitModal from "./CreateUnitModal";
+import EditUnitModal from "./EditUnitModal";
 import {
     Card,
-    CardHeader,
     CardBody,
     Typography,
     Button,
@@ -15,26 +14,20 @@ import { IconButton } from "@mui/material";
 import ModeEditOutlineOutlinedIcon from '@mui/icons-material/ModeEditOutlineOutlined';
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import ReactPaginate from "react-paginate";
-import PageHeader from '@/components/PageHeader';
+import PageHeader from "@/components/PageHeader";
 import Table from "@/components/Table";
-import ConfirmDialog from "@/components/ConfirmDialog";
-import SuccessAlert from "@/components/SuccessAlert";
 
-const MaterialTypePage = () => {
-    const { materialTypes, fetchMaterialTypes, toggleStatus, createMaterialType, updateMaterialType, totalPages, totalElements, loading } = useMaterialType();
+const UnitPage = () => {
+    const { units, fetchUnits, toggleStatus, createUnit, totalPages, totalElements, loading } = useUnit();
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
-    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-    const [successAlertOpen, setSuccessAlertOpen] = useState(false);
-    const [successMessage, setSuccessMessage] = useState("");
-    const [pendingToggleRow, setPendingToggleRow] = useState(null);
-    const [editMaterialType, setEditMaterialType] = useState(null);
+    const [editUnit, setEditUnit] = useState(null);
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
 
     useEffect(() => {
-        fetchMaterialTypes(currentPage, pageSize);
-    }, [currentPage, pageSize, fetchMaterialTypes]);
+        fetchUnits(currentPage, pageSize);
+    }, [currentPage, pageSize, fetchUnits]);
 
     const handlePageChange = (selectedItem) => {
         setCurrentPage(selectedItem.selected);
@@ -42,66 +35,38 @@ const MaterialTypePage = () => {
 
     const handlePageSizeChange = (e) => {
         setPageSize(Number(e.target.value));
-        setCurrentPage(0); // Reset về trang đầu khi thay đổi kích thước trang
+        setCurrentPage(0);
     };
 
     const handleCreateSuccess = async (formData) => {
         try {
-            await createMaterialType(formData);
+            await createUnit(formData);
             setShowCreateModal(false);
-            fetchMaterialTypes(currentPage, pageSize); // Làm mới danh sách
-            setSuccessMessage("Tạo danh mục vật tư thành công!");
-            setSuccessAlertOpen(true);
+            fetchUnits(currentPage, pageSize);
         } catch (error) {
-            alert(error.message || "Lỗi khi tạo loại nguyên liệu");
-        }
-    };
-
-    const handleUpdateSuccess = async (materialTypeId, formData) => {
-        try {
-            await updateMaterialType(materialTypeId, formData);
-            setShowEditModal(false);
-            fetchMaterialTypes(currentPage, pageSize); // Làm mới danh sách
-            setSuccessMessage("Cập nhật danh mục vật tư thành công!");
-            setSuccessAlertOpen(true);
-        } catch (error) {
-            alert(error.message || "Lỗi khi cập nhật loại nguyên liệu");
+            alert(error.message || "Lỗi khi tạo đơn vị tính");
         }
     };
 
     const columnsConfig = [
-        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
-        { field: 'name', headerName: 'Tên danh mục vật tư', flex: 2, minWidth: 300, editable: false, filterable: false },
-        {
-            field: 'description',
-            headerName: 'Mô tả',
-            flex: 2,
-            minWidth: 400,
-            editable: false,
-            filterable: false,
-            renderCell: (params) => params.value || "Chưa có mô tả",
-        },
+        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
+        { field: 'unitName', headerName: 'Tên đơn vị tính', flex: 2, minWidth: 300, editable: false },
         {
             field: 'status',
             headerName: 'Trạng thái',
             flex: 1,
             minWidth: 200,
-            editable: false,
-            filterable: false,
             renderCell: (params) => (
                 <div className="flex items-center gap-2">
                     <Switch
                         color="green"
                         checked={params.value}
-                        onChange={() => {
-                            setPendingToggleRow(params.row);
-                            setConfirmDialogOpen(true);
-                        }}
+                        onChange={() => toggleStatus(params.row.id, params.value)}
                         disabled={loading}
                     />
                     <div
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                      ${params.value ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}
+                        ${params.value ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}
                     >
                         {params.value ? "Đang hoạt động" : "Ngừng hoạt động"}
                     </div>
@@ -113,16 +78,13 @@ const MaterialTypePage = () => {
             headerName: 'Hành động',
             flex: 0.5,
             minWidth: 100,
-            editable: false,
-            filterable: false,
             renderCell: (params) => (
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
                     <Tooltip content="Chỉnh sửa">
                         <IconButton
                             size="small"
                             onClick={() => {
-                                console.log("👉 params.row trước khi chỉnh sửa:", params.row);
-                                setEditMaterialType(params.row);
+                                setEditUnit(params.row);
                                 setShowEditModal(true);
                             }}
                             color="primary"
@@ -135,13 +97,11 @@ const MaterialTypePage = () => {
         },
     ];
 
-    const data = materialTypes.map((type, index) => ({
-        id: type.materialTypeId, // DataGrid cần `id`
-        materialTypeId: type.materialTypeId,
-        index: currentPage * pageSize + index + 1,
-        name: type.name,
-        description: type.description,
-        status: type.status,
+    const data = units.map((unit, index) => ({
+        id: unit.unitId,
+        index: (currentPage * pageSize) + index + 1,
+        unitName: unit.unitName,
+        status: unit.status,
     }));
 
     return (
@@ -149,9 +109,9 @@ const MaterialTypePage = () => {
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
                 <CardBody className="pb-2 bg-white rounded-xl">
                     <PageHeader
-                        title="Danh sách danh mục vật tư"
+                        title="Danh sách đơn vị tính"
                         onAdd={() => setShowCreateModal(true)}
-                        addButtonLabel="Thêm danh mục vật tư"
+                        addButtonLabel="Thêm đơn vị tính"
                         showImport={false}
                         showExport={false}
                     />
@@ -194,7 +154,7 @@ const MaterialTypePage = () => {
                             pageRangeDisplayed={5}
                             onPageChange={handlePageChange}
                             containerClassName="flex items-center gap-1"
-                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
+                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                             pageLinkClassName="flex items-center justify-center w-full h-full"
                             previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                             nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -207,44 +167,22 @@ const MaterialTypePage = () => {
                 </CardBody>
             </Card>
 
-            <CreateMaterialTypeModal
+            <CreateUnitModal
                 show={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
                 loading={loading}
                 onSuccess={handleCreateSuccess}
             />
 
-            {showEditModal && editMaterialType && (
-                <EditMaterialTypeModal
-                    materialType={editMaterialType}
+            {showEditModal && editUnit && (
+                <EditUnitModal
+                    unit={editUnit}
                     onClose={() => setShowEditModal(false)}
-                    onSuccess={handleUpdateSuccess}
+                    onSuccess={() => fetchUnits(currentPage, pageSize)}
                 />
             )}
-
-            <ConfirmDialog
-                open={confirmDialogOpen}
-                onClose={() => setConfirmDialogOpen(false)}
-                onConfirm={() => {
-                    if (pendingToggleRow) {
-                        toggleStatus(pendingToggleRow.id, pendingToggleRow.status); // truyền đúng giá trị mới
-                        setSuccessMessage("Cập nhật trạng thái thành công!");
-                        setSuccessAlertOpen(true);
-                    }
-                    setConfirmDialogOpen(false);
-                }}
-                message={`Bạn có chắc chắn muốn ${pendingToggleRow?.status ? "ngưng hoạt động" : "kích hoạt lại"} danh mục vật tư này không?`}
-                confirmText="Có"
-                cancelText="Không"
-            />
-
-            <SuccessAlert
-                open={successAlertOpen}
-                onClose={() => setSuccessAlertOpen(false)}
-                message={successMessage}
-            />
         </div>
     );
 };
 
-export default MaterialTypePage;
+export default UnitPage;

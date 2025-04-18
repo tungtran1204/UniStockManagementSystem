@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Card,
   CardBody,
@@ -21,8 +22,7 @@ import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
 import DateFilterButton from "@/components/DateFilterButton";
 import StatusFilterButton from "@/components/StatusFilterButton";
-// Nếu cần edit:
-// import ModalEditSaleOrder from "./ModalEditSaleOrder";
+import SuccessAlert from "@/components/SuccessAlert";
 
 const SaleOrdersPage = () => {
   const {
@@ -48,39 +48,39 @@ const SaleOrdersPage = () => {
   //list status for filter
   const saleOrderStatuses = [
     {
-      //value: "PROCESSING_NO_REQUEST",
+      value: "PROCESSING_NO_REQUEST",
       label: "Chưa có yêu cầu",
       className: "bg-gray-100 text-gray-800",
     },
     {
-      //value: "PROCESSING_PENDING_REQUEST",
+      value: "PROCESSING_PENDING_REQUEST",
       label: "Đang chờ yêu cầu được duyệt",
       className: "bg-blue-50 text-blue-800",
     },
     {
-      //value: "PROCESSING_REJECTED_REQUEST",
+      value: "PROCESSING_REJECTED_REQUEST",
       label: "Yêu cầu bị từ chối",
-      className: "bg-red-50 text-red-800",
+      className: "bg-pink-50 text-pink-800",
     },
     {
-      //value: "PREPARING",
+      value: "PREPARING_MATERIAL",
       label: "Đang chuẩn bị",
       className: "bg-yellow-100 text-amber-800",
     },
     {
-      //value: "PARTIALLY_ISSUED",
+      value: "PARTIALLY_ISSUED",
       label: "Đã xuất một phần",
       className: "bg-indigo-50 text-indigo-800",
     },
     {
-      //value: "COMPLETED",
+      value: "COMPLETED",
       label: "Hoàn thành",
       className: "bg-green-50 text-green-800",
     },
     {
-      //value: "CANCELLED",
+      value: "CANCELLED",
       label: "Đã huỷ",
-      className: "bg-red-100 text-red-800",
+      className: "bg-red-50 text-red-800",
     },
   ];
 
@@ -100,8 +100,20 @@ const SaleOrdersPage = () => {
     fetchPaginatedSaleOrders(currentPage, pageSize);
   }, [currentPage, pageSize]);
 
-  const navigate = useNavigate(); // ✅ Định nghĩa useNavigate
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
 
+  useEffect(() => {
+    if (location.state?.successMessage) {
+      console.log("Component mounted, location.state:", location.state?.successMessage);
+      setAlertMessage(location.state.successMessage);
+      setShowSuccessAlert(true);
+      // Xóa state để không hiển thị lại nếu người dùng refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const handleAddOrder = async () => {
     const code = await getNextCode();
@@ -124,37 +136,53 @@ const SaleOrdersPage = () => {
           order.orderCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (order.partnerName &&
           order.partnerName.toLowerCase().includes(searchTerm.toLowerCase()));
-  
+
       // Nếu không chọn filter trạng thái thì luôn true
       const matchesStatus =
         selectedStatuses.length === 0 ||
         selectedStatuses.includes(order.statusLabel || getStatusLabel(order.status));
-  
+
       return matchesSearch && matchesStatus;
     }
   );
-  
+
 
   const getStatusLabel = (status) => {
-    switch (status) {
-      case "PROCESSING": return "Đang xử lý";
-      case "PREPARING_MATERIAL": return "Đang chuẩn bị vật tư";
-      case "CANCELLED": return "Đã huỷ";
-      default: return status;
-    }
+    const statusObj = saleOrderStatuses.find((s) => s.value === status);
+    return statusObj?.label || status;
   };
 
   const columnsConfig = [
-    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
-    { field: 'orderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false },
-    { field: 'partnerName', headerName: 'Khách hàng', flex: 2, minWidth: 200, editable: false },
-    { field: 'status', headerName: 'Trạng thái', flex: 1.5, minWidth: 150, editable: false },
+    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
+    { field: 'orderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false, filterable: false },
+    { field: 'partnerName', headerName: 'Khách hàng', flex: 2, minWidth: 200, editable: false, filterable: false },
+    {
+      field: 'status',
+      headerName: 'Trạng thái',
+      flex: 1.5,
+      minWidth: 150,
+      editable: false,
+      filterable: false,
+      renderCell: (params) => {
+        console.log("params.row", params.row);
+        const statusObj = saleOrderStatuses.find((s) => s.value === params.row.status);
+        return (
+          <div
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                      ${statusObj?.className}`}
+          >
+            {statusObj?.label}
+          </div>
+        );
+      },
+    },
     {
       field: 'orderDate',
       headerName: 'Ngày đặt hàng',
       flex: 1.5,
       minWidth: 150,
       editable: false,
+      filterable: false,
       renderCell: (params) => params.value ? dayjs(params.value).format("DD/MM/YYYY") : "N/A",
     },
     {
@@ -162,6 +190,8 @@ const SaleOrdersPage = () => {
       headerName: 'Hành động',
       flex: 0.5,
       minWidth: 100,
+      editable: false,
+      filterable: false,
       renderCell: (params) => (
         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
           <Tooltip content="Xem chi tiết">
@@ -183,7 +213,7 @@ const SaleOrdersPage = () => {
     index: currentPage * pageSize + index + 1,
     orderCode: order.orderCode || "N/A",
     partnerName: order.partnerName || "N/A",
-    status: order.statusLabel || getStatusLabel(order.status),
+    status: order.status,
     orderDate: order.orderDate,
   }));
 
@@ -281,7 +311,7 @@ const SaleOrdersPage = () => {
               pageRangeDisplayed={5}
               onPageChange={handlePageChange}
               containerClassName="flex items-center gap-1"
-              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
               pageLinkClassName="flex items-center justify-center w-full h-full"
               previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -293,6 +323,17 @@ const SaleOrdersPage = () => {
           </div>
         </CardBody>
       </Card>
+
+      {/* <SuccessAlert
+        open={showSuccessAlert}
+        onClose={() => setShowSuccessAlert(false)}
+        message="Huỷ đơn hàng thành công!"
+      /> */}
+      <SuccessAlert
+        open={showSuccessAlert}
+        onClose={() => setShowSuccessAlert(false)}
+        message={alertMessage}
+      />
     </div>
   );
 };

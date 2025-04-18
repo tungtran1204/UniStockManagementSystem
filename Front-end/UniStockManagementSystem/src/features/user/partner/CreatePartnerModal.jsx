@@ -25,6 +25,8 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
     const [errorPartnerCodes, setErrorPartnerCodes] = useState("");
     const [errorEmail, setErrorEmail] = useState("");
     const [errorPhone, setErrorPhone] = useState("");
+    const [errorContactName, setErrorContactName] = useState("");
+    const [errorAddress, setErrorAddress] = useState("");
 
     const [newPartner, setNewPartner] = useState({
         partnerName: "",
@@ -59,6 +61,11 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
     const resetErrorMessages = () => {
         setErrorMessage("");
         setErrorPartnerName("");
+        setErrorEmail("");
+        setErrorPhone("");
+        setErrorContactName("");
+        setErrorAddress("");
+        setErrorPartnerCodes("");
     };
 
     const validatePartner = (partner) => {
@@ -67,6 +74,19 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
 
         if (!partner.partnerName.trim()) {
             setErrorPartnerName("Tên đối tác không được để trống.");
+            isValid = false;
+        }
+
+        if (!partner.contactName.trim()) {
+            setErrorContactName("Người liên hệ không được để trống.");
+            isValid = false;
+        }
+        if (!partner.phone.trim()) {
+            setErrorPhone("Số điện thoại không được để trống.");
+            isValid = false;
+        }
+        if (!partner.address.trim()) {
+            setErrorAddress("Địa chỉ không được để trống.");
             isValid = false;
         }
 
@@ -101,7 +121,6 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
 
     const handleCreatePartner = async () => {
         if (!validatePartner(newPartner)) return;
-
         try {
             const partnerData = {
                 partnerName: newPartner.partnerName,
@@ -124,9 +143,16 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
                 } else if (errorCode === "NO_PARTNER_TYPE") {
                     setErrorPartnerCodes("Hãy chọn ít nhất một nhóm đối tác.");
                 }
-            } else {
-                alert("Lỗi khi tạo nhóm đối tác! Vui lòng thử lại.");
-            }
+            } 
+            if (error.response?.status === 400 && error.response?.data.fieldErrorMessages) {
+                // ✅ Đây là lỗi validation từ backend trả về dạng ErrorResponse
+                setErrorPartnerName(error.response.data.fieldErrorMessages.partnerName || "");
+                setErrorEmail(error.response.data.fieldErrorMessages.email || "");
+                setErrorPhone(error.response.data.fieldErrorMessages.phone || "");
+                setErrorContactName(error.response.data.fieldErrorMessages.contactName || "");
+                setErrorAddress(error.response.data.fieldErrorMessages.address || "");
+
+            } 
         }
     };
 
@@ -161,6 +187,7 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
                         hiddenLabel
                         placeholder="Tên đối tác"
                         color="success"
+                        error={!!errorPartnerName}
                         value={newPartner.partnerName}
                         onChange={(e) => setNewPartner({ ...newPartner, partnerName: e.target.value })}
                     />
@@ -186,6 +213,7 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
                         onChange={(event, selectedOptions) => {
                             handlePartnerTypeChange(selectedOptions);
                         }}
+                        error={!!errorPartnerCodes}
                         renderInput={(params) => (
                             <TextField
                                 color="success"
@@ -200,6 +228,7 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
                             },
                         }}
                     />
+                    {errorPartnerCodes && <Typography variant="small" color="red">{errorPartnerCodes}</Typography>}
                 </div>
 
                 {/* Mã đối tác */}
@@ -231,9 +260,11 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
                         placeholder="Người liên hệ"
                         variant="outlined"
                         color="success"
+                        error={!!errorContactName}
                         value={newPartner.contactName}
                         onChange={(e) => setNewPartner({ ...newPartner, contactName: e.target.value })}
                     />
+                    {errorContactName && <Typography variant="small" color="red">{errorContactName}</Typography>}
                 </div>
 
                 {/* Email & Số điện thoại */}
@@ -250,8 +281,8 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
                             value={newPartner.email}
                             onChange={(e) => setNewPartner({ ...newPartner, email: e.target.value })}
                             error={!!errorEmail}
-                            helperText={errorEmail}
                         />
+                        {errorEmail && <Typography variant="small" color="red">{errorEmail}</Typography>}
                     </div>
                     <div>
                         <Typography variant="medium" className="text-black">
@@ -268,8 +299,8 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
                             value={newPartner.phone}
                             onChange={(e) => setNewPartner({ ...newPartner, phone: e.target.value })}
                             error={!!errorPhone}
-                            helperText={errorPhone}
                         />
+                        {errorPhone && <Typography variant="small" color="red">{errorPhone}</Typography>}
                     </div>
                 </div>
 
@@ -288,9 +319,11 @@ const CreatePartnerModal = ({ onClose, onSuccess }) => {
                         multiline
                         maxRows={2}
                         color="success"
+                        error={!!errorAddress}
                         value={newPartner.address}
                         onChange={(e) => setNewPartner({ ...newPartner, address: e.target.value })}
                     />
+                    {errorAddress && <Typography variant="small" color="red">{errorAddress}</Typography>}
                 </div>
             </DialogBody>
 

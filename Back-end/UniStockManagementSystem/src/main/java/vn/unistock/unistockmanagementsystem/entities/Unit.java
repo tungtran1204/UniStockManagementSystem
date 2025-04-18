@@ -22,4 +22,7 @@ public class Unit {
     @Column(name = "unit_name", unique = true, nullable = false)
     private String unitName;
 
+    @Column(name = "status", nullable = false)
+    private Boolean status = true;
+
 }

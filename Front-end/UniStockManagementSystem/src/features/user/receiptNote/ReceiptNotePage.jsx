@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { Card, CardHeader, CardBody, Typography, Tooltip } from "@material-tailwind/react";
 import { FaPlus, FaEye, FaAngleDown } from "react-icons/fa";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import dayjs from 'dayjs';
+
 import {
   IconButton,
   Menu as MuiMenu,
@@ -19,10 +21,12 @@ import {
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
+import SuccessAlert from "@/components/SuccessAlert";
 import useUser from "../../admin/users/useUser";
 import usePurchaseOrder from "../purchaseOrder/usePurchaseOrder";
 import useReceiptNote from "./useReceiptNote";
 import { getNextCode } from "./receiptNoteService";
+import "dayjs/locale/vi"; // Import Tiếng Việt
 import DateFilterButton from "@/components/DateFilterButton";
 import dayjs from "dayjs";
 
@@ -40,6 +44,20 @@ const ReceiptNotePage = () => {
   const [endDate, setEndDate] = useState(null);
   const [categoryAnchorEl, setCategoryAnchorEl] = useState(null);
   const [selectedCategories, setSelectedCategories] = useState([]);
+
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.successMessage) {
+      console.log("Component mounted, location.state:", location.state?.successMessage);
+      setAlertMessage(location.state.successMessage);
+      setShowSuccessAlert(true);
+      // Xóa state để không hiển thị lại nếu người dùng refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const {
     receiptNotes,
@@ -89,14 +107,16 @@ const ReceiptNotePage = () => {
 
 
   const columnsConfig = [
-    { field: 'receiptCode', headerName: 'Mã phiếu nhập', flex: 1.5, minWidth: 150, editable: false },
-    { field: 'category', headerName: 'Phân loại nhập kho', flex: 2, minWidth: 100, editable: false },
+    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
+    { field: 'receiptCode', headerName: 'Mã phiếu nhập', flex: 1.5, minWidth: 150, editable: false, filterable: false },
+    { field: 'category', headerName: 'Phân loại nhập kho', flex: 2, minWidth: 100, editable: false, filterable: false },
     {
       field: 'createdDate',
       headerName: 'Ngày lập phiếu',
       flex: 1.5,
       minWidth: 150,
       editable: false,
+      filterable: false,
       renderCell: (params) => new Date(params.value).toLocaleDateString("vi-VN"),
     },
     {
@@ -105,6 +125,7 @@ const ReceiptNotePage = () => {
       flex: 1.5,
       minWidth: 150,
       editable: false,
+      filterable: false,
       renderCell: (params) => {
         const user = usernames[params.value];
         return user || "Không có dữ liệu";
@@ -116,6 +137,7 @@ const ReceiptNotePage = () => {
       flex: 1.5,
       minWidth: 150,
       editable: false,
+      filterable: false,
       renderCell: (params) => {
         const receipt = params.row;
         const label = receipt.poCode || receipt.ginCode || "-";
@@ -145,6 +167,8 @@ const ReceiptNotePage = () => {
       headerName: 'Hành động',
       flex: 0.5,
       minWidth: 100,
+      editable: false,
+      filterable: false,
       renderCell: (params) => (
         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
           <Tooltip content="Xem chi tiết">
@@ -174,8 +198,9 @@ const ReceiptNotePage = () => {
     return matchesSearch && matchesStart && matchesEnd && matchesCategory;
   });
 
-  const data = filteredNotes.map((receipt) => ({
+  const data = filteredNotes.map((receipt, index) => ({
     grnId: receipt.grnId,
+    index: currentPage * pageSize + index + 1,
     receiptCode: receipt.grnCode,
     category: receipt.category || 'không có dữ liệu',
     createdDate: receipt.receiptDate,
@@ -294,15 +319,26 @@ const ReceiptNotePage = () => {
                         backgroundColor: "#ffffff",
                         boxShadow: "none",
                         borderColor: "#089456",
+                        textTransform: "none",
                         color: "#089456",
                         px: 1.5,
-                        textTransform: "none",
+                        "&:hover": {
+                          backgroundColor: "#0894561A",
+                          borderColor: "#089456",
+                          boxShadow: "none",
+                        },
                       }
                       : {
                         backgroundColor: "#0ab067",
+                        boxShadow: "none",
+                        textTransform: "none",
                         color: "#ffffff",
                         px: 1.5,
-                        textTransform: "none",
+                        "&:hover": {
+                          backgroundColor: "#089456",
+                          borderColor: "#089456",
+                          boxShadow: "none",
+                        },
                       }),
                   }}
                 >
@@ -310,7 +346,7 @@ const ReceiptNotePage = () => {
                     <span className="flex items-center gap-[5px]">
                       {selectedCategories[0]}
                       {selectedCategories.length > 1 && (
-                        <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin">
+                        <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin ">
                           +{selectedCategories.length - 1}
                         </span>
                       )}
@@ -409,7 +445,7 @@ const ReceiptNotePage = () => {
               pageRangeDisplayed={5}
               onPageChange={handlePageChangeWrapper}
               containerClassName="flex items-center gap-1"
-              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
               pageLinkClassName="flex items-center justify-center w-full h-full"
               previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -421,6 +457,12 @@ const ReceiptNotePage = () => {
           </div>
         </CardBody>
       </Card>
+
+      <SuccessAlert
+        open={showSuccessAlert}
+        onClose={() => setShowSuccessAlert(false)}
+        message={alertMessage}
+      />
     </div>
   );
 };

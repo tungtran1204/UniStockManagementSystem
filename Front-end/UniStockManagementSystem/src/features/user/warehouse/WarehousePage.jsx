@@ -21,6 +21,8 @@ import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
 import StatusFilterButton from "@/components/StatusFilterButton";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import SuccessAlert from "@/components/SuccessAlert";
 
 // Define the WarehousePage component
 const WarehousePage = () => {
@@ -31,7 +33,10 @@ const WarehousePage = () => {
   const [openEditModal, setOpenEditModal] = useState(false); // State to control Edit Modal visibility
   const [selectedWarehouse, setSelectedWarehouse] = useState(null); // State to store selected warehouse for editing
   const [searchTerm, setSearchTerm] = useState(""); // State for search term
-
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [successAlertOpen, setSuccessAlertOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [pendingToggleRow, setPendingToggleRow] = useState(null);
   // State for pagination
   const [currentPage, setCurrentPage] = useState(0); // Current page number
   const [pageSize, setPageSize] = useState(10); // Number of warehouses per page
@@ -96,26 +101,24 @@ const WarehousePage = () => {
   };
 
   const columnsConfig = [
-    { field: 'warehouseCode', headerName: 'Mã kho', flex: 1, minWidth: 50, editable: false },
-    { field: 'warehouseName', headerName: 'Tên kho', flex: 2, minWidth: 600, editable: false },
+    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
+    { field: 'warehouseCode', headerName: 'Mã kho', flex: 1, minWidth: 50, editable: false, filterable: false },
+    { field: 'warehouseName', headerName: 'Tên kho', flex: 2, minWidth: 600, editable: false, filterable: false },
     {
       field: 'isActive',
       headerName: 'Trạng thái',
       flex: 1,
       minWidth: 250,
+      editable: false,
+      filterable: false,
       renderCell: (params) => (
         <div className="flex items-center gap-2">
           <Switch
             color="green"
             checked={params.value}
             onChange={() => {
-              const confirmMessage = params.value
-                ? "Bạn có chắc muốn vô hiệu hóa kho này không?"
-                : "Bạn có chắc muốn kích hoạt kho này không?";
-
-              if (window.confirm(confirmMessage)) {
-                toggleStatus(params.row.id, params.value);
-              }
+              setPendingToggleRow(params.row);
+              setConfirmDialogOpen(true);
             }}
           />
           <div
@@ -133,6 +136,8 @@ const WarehousePage = () => {
       headerName: 'Hành động',
       flex: 0.5,
       minWidth: 100,
+      editable: false,
+      filterable: false,
       renderCell: (params) => (
         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
           <Tooltip content="Chỉnh sửa">
@@ -149,20 +154,20 @@ const WarehousePage = () => {
     },
   ];
 
-  const data = warehouses.map((warehouse) => ({
-    id: warehouse.warehouseId,
-    warehouseCode: warehouse.warehouseCode,
-    warehouseName: warehouse.warehouseName,
-    isActive: warehouse.isActive,
-  }));
-
-
   // Filter warehouses based on search term
   const filteredWarehouses = warehouses.filter(
     (warehouse) =>
       (warehouse.warehouseCode && warehouse.warehouseCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (warehouse.warehouseName && warehouse.warehouseName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const data = filteredWarehouses.map((warehouse, index) => ({
+    id: warehouse.warehouseId,
+    index: (currentPage * pageSize) + index + 1,
+    warehouseCode: warehouse.warehouseCode,
+    warehouseName: warehouse.warehouseName,
+    isActive: warehouse.isActive,
+  }));
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -248,7 +253,7 @@ const WarehousePage = () => {
               pageRangeDisplayed={5}
               onPageChange={handlePageChange}
               containerClassName="flex items-center gap-1"
-              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+              pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
               pageLinkClassName="flex items-center justify-center w-full h-full"
               previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
               nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -265,10 +270,33 @@ const WarehousePage = () => {
       {openAddModal && <ModalAddWarehouse show={openAddModal} onClose={() => setOpenAddModal(false)} onAdd={() => {
         setCurrentPage(0); 
         fetchPaginatedWarehouses(1, pageSize);
+        setSuccessMessage("Thêm kho thành công!"), setSuccessAlertOpen(true);
       }} />}
 
       {/* Modal Edit Warehouse */}
-      {openEditModal && <ModalEditWarehouse open={openEditModal} onClose={() => setOpenEditModal(false)} warehouse={selectedWarehouse} fetchWarehouses={fetchPaginatedWarehouses} />}
+      {openEditModal && <ModalEditWarehouse open={openEditModal} onClose={() => setOpenEditModal(false)} warehouse={selectedWarehouse} onSuccess={() => { fetchPaginatedWarehouses(currentPage, pageSize), setSuccessMessage("Cập nhật kho thành công!"), setSuccessAlertOpen(true); }} />}
+
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        onClose={() => setConfirmDialogOpen(false)}
+        onConfirm={() => {
+          if (pendingToggleRow) {
+            toggleStatus(pendingToggleRow.id, pendingToggleRow.isActive); // truyền đúng giá trị mới
+            setSuccessMessage("Cập nhật trạng thái thành công!");
+            setSuccessAlertOpen(true);
+          }
+          setConfirmDialogOpen(false);
+        }}
+        message={`Bạn có chắc chắn muốn ${pendingToggleRow?.isActive ? "ngưng hoạt động" : "kích hoạt"} kho này không?`}
+        confirmText="Có"
+        cancelText="Không"
+      />
+
+      <SuccessAlert
+        open={successAlertOpen}
+        onClose={() => setSuccessAlertOpen(false)}
+        message={successMessage}
+      />
     </div>
   );
 };

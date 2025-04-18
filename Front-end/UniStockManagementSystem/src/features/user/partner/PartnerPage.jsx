@@ -74,11 +74,11 @@ const PartnerPage = () => {
     };
 
     const columnsConfig = [
-        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
+        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 80, editable: false, filterable: false },
         {
             field: 'partnerCode',
             headerName: 'Mã đối tác',
-            minWidth: 90,
+            minWidth: 100,
             flex: 1,
             editable: false,
             filterable: false,
@@ -122,8 +122,10 @@ const PartnerPage = () => {
         {
             field: 'actions',
             headerName: 'Hành động',
-            minWidth: 80,
+            minWidth: 100,
             flex: 0.5,
+            editable: false,
+            filterable: false,
             renderCell: (params) => (
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
                     <Tooltip content="Chỉnh sửa">
@@ -171,8 +173,8 @@ const PartnerPage = () => {
                     <PageHeader
                         title="Danh sách đối tác"
                         onAdd={() => setShowCreatePopup(true)}
-                        onImport={() => setShowImportPopup(true)}
-                        // onExport={exportExcel}
+                        showImport={false}
+                        showExport={false}
                         addButtonLabel="Thêm đối tác"
                     />
                     {showCreatePopup && (
@@ -259,7 +261,7 @@ const PartnerPage = () => {
                             pageRangeDisplayed={5}
                             onPageChange={handlePageChangeWrapper}
                             containerClassName="flex items-center gap-1"
-                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                             pageLinkClassName="flex items-center justify-center w-full h-full"
                             previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                             nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
@@ -271,47 +273,6 @@ const PartnerPage = () => {
                     </div>
                 </CardBody>
             </Card>
-
-            {/* Popup import Excel */}
-            {/* {showImportPopup && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-96">
-                        <div className="flex justify-between items-center mb-4">
-                            <Typography variant="h6">Import Excel</Typography>
-                            <button
-                                className="text-gray-500 hover:text-gray-700"
-                                onClick={() => setShowImportPopup(false)}
-                            >
-                                ✕
-                            </button>
-                        </div>
-                        <div className="mb-4">
-                            <input
-                                type="file"
-                                accept=".xlsx, .xls"
-                                onChange={(e) => setFile(e.target.files[0])}
-                                className="w-full p-2 border rounded"
-                            />
-                        </div>
-                        <div className="flex justify-end gap-2">
-                            <Button
-                                color="gray"
-                                onClick={() => setShowImportPopup(false)}
-                                disabled={loading}
-                            >
-                                Hủy
-                            </Button>
-                            <Button
-                                color="blue"
-                                onClick={handleImport}
-                                disabled={loading}
-                            >
-                                {loading ? "Đang xử lý..." : "Import"}
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )} */}
         </div>
     );
 };

@@ -12,10 +12,11 @@ import { XMarkIcon } from "@heroicons/react/24/outline";
 import useWarehouse from "./useWarehouse";
 import { InputBase } from "@mui/material";
 
-const ModalEditWarehouse = ({ open, onClose, warehouse, fetchWarehouses }) => {
+const ModalEditWarehouse = ({ open, onClose, warehouse, onSuccess }) => {
   const [warehouseCode, setWarehouseCode] = useState("");
   const [warehouseName, setWarehouseName] = useState("");
   const [warehouseDescription, setDescription] = useState("");
+  const [isActive, setIsActive] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});
   const [openDropdown, setOpenDropdown] = useState(false);
@@ -118,8 +119,6 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, fetchWarehouses }) => {
   };
 
   const handleUpdate = async () => {
-    if (Object.keys(error).length > 0) return;
-
     setLoading(true);
     try {
       const goodCategory = selectedCategories.length > 0 ? selectedCategories.join(", ") : null;

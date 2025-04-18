@@ -7,40 +7,13 @@ import {
     Typography,
 } from "@material-tailwind/react";
 import { TextField, Button as MuiButton, Autocomplete, IconButton, Divider } from '@mui/material';
-import { checkMaterialCodeExists, fetchUnits, fetchMaterialCategories, createMaterial } from "./materialService";
+import { checkMaterialCodeExists, fetchMaterialCategories, createMaterial } from "./materialService";
+import { fetchActiveUnits } from "../unit/unitService";
 import PageHeader from '@/components/PageHeader';
 import ImageUploadBox from '@/components/ImageUploadBox';
 import { getPartnersByType } from "../partner/partnerService";
 
-const customStyles = {
-    control: (provided, state) => ({
-        ...provided,
-        minWidth: 200,
-        borderColor: state.isFocused ? "black" : provided.borderColor,
-        boxShadow: state.isFocused ? "0 0 0 1px black" : "none",
-        "&:hover": {
-            borderColor: "black",
-        },
-    }),
-    menuList: (provided) => ({
-        ...provided,
-    }),
-    option: (provided, state) => ({
-        ...provided,
-        backgroundColor: state.isFocused
-            ? "#f3f4f6"
-            : state.isSelected
-                ? "#e5e7eb"
-                : "transparent",
-        color: "#000",
-        cursor: "pointer",
-        "&:active": {
-            backgroundColor: "#e5e7eb",
-        },
-    }),
-};
-
-const SUPPLIER_TYPE_ID = 2; // Thêm constant này ở đầu file
+const SUPPLIER_TYPE_ID = 2;
 
 const AddMaterialPage = () => {
     const navigate = useNavigate();
@@ -70,23 +43,20 @@ const AddMaterialPage = () => {
         const loadInitialData = async () => {
             try {
                 const [unitsData, categoriesData, suppliersData] = await Promise.all([
-                    fetchUnits(),
+                    fetchActiveUnits(), // Sửa thành fetchActiveUnits
                     fetchMaterialCategories(),
                     getPartnersByType(SUPPLIER_TYPE_ID)
                 ]);
 
-                setUnits(unitsData);
+                // Đảm bảo unitsData là mảng
+                setUnits(Array.isArray(unitsData) ? unitsData : []);
                 setMaterialCategories(categoriesData.content || []);
 
-
-                // Map lại dữ liệu suppliers theo định dạng mới
-                // ✅ Map suppliers đúng định dạng (lọc theo partnerType và partnerCode)
                 const mappedSuppliers = (suppliersData?.partners || [])
                     .map((s) => {
                         const t = s.partnerTypes.find(
                             (pt) => pt.partnerType.typeId === SUPPLIER_TYPE_ID
                         );
-                        console.log("supplier: ", s);
                         return {
                             value: s.partnerId,
                             label: s.partnerName,
@@ -96,13 +66,13 @@ const AddMaterialPage = () => {
                             contactName: s.contactName,
                         };
                     })
-                    .filter((s) => s.code !== "");
+                    .filter((s) => s.partnerCode !== "");
 
                 setSuppliers(mappedSuppliers);
-
             } catch (error) {
                 console.error("❌ Lỗi khi tải dữ liệu ban đầu:", error);
                 setErrors({ message: "Lỗi khi tải dữ liệu ban đầu" });
+                setUnits([]);
             }
         };
 
@@ -169,7 +139,6 @@ const AddMaterialPage = () => {
         if (Object.keys(newErrors).length === 0 && !materialCodeError) {
             try {
                 setLoading(true);
-                // Gọi API createMaterial
                 const formData = new FormData();
                 formData.append("materialCode", newMaterial.materialCode.trim());
                 formData.append("materialName", newMaterial.materialName.trim());
@@ -178,21 +147,17 @@ const AddMaterialPage = () => {
                 formData.append("typeId", parseInt(newMaterial.typeId));
                 formData.append("isActive", true);
 
-                // Thay đổi cách gửi supplierIds
                 newMaterial.supplierIds.forEach(id => {
                     formData.append("supplierIds", id);
                 });
-
 
                 if (newMaterial.image) {
                     formData.append("image", newMaterial.image);
                 }
 
-                // Gọi API tạo material
                 await createMaterial(formData);
 
-                alert("Tạo nguyên vật liệu thành công!");
-                navigate("/user/materials");
+                navigate("/user/materials", { state: { successMessage: "Tạo nguyên vật liệu thành công!" } });
             } catch (error) {
                 console.error("Create material error:", error);
                 setErrors({
@@ -253,11 +218,13 @@ const AddMaterialPage = () => {
                                     <span className="text-red-500"> *</span>
                                 </Typography>
                                 <Autocomplete
-                                    options={units}
+                                    options={Array.isArray(units) ? units : []}
                                     size="small"
                                     getOptionLabel={(option) => option.unitName || ""}
                                     value={
-                                        units.find((unit) => unit.unitId === newMaterial.unitId) || null
+                                        Array.isArray(units) && newMaterial.unitId
+                                            ? units.find((unit) => unit.unitId === newMaterial.unitId) || null
+                                            : null
                                     }
                                     onChange={(event, selectedUnit) => {
                                         setNewMaterial(prev => ({ ...prev, unitId: selectedUnit ? selectedUnit.unitId : "" }));

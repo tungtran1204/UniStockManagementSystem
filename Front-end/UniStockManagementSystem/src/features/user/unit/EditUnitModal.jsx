@@ -1,50 +1,64 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import {
     Dialog,
     DialogHeader,
     DialogBody,
     DialogFooter,
     Typography,
-    Input,
     Button,
 } from "@material-tailwind/react";
 import { TextField, Divider, Button as MuiButton, IconButton } from "@mui/material";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 
-const EditProductTypePopUp = ({ productType, onClose, onSuccess }) => {
+const EditUnitModal = ({ unit, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
-        typeName: "",
-        description: "",
+        unitName: "",
+        status: true,
     });
     const [validationErrors, setValidationErrors] = useState({});
 
     useEffect(() => {
-        if (productType) {
+        if (unit) {
             setFormData({
-                typeName: productType.typeName,
-                description: productType.description,
+                unitName: unit.unitName,
+                status: unit.status,
             });
         }
-    }, [productType]);
+    }, [unit]);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            await axios.put(`/api/product-types/${productType.id}`, formData);
-            onSuccess();
-            onClose();
-        } catch (error) {
-            console.error("Error updating product type:", error);
+    const isEmptyOrWhitespace = (str) => !str || /^\s*$/.test(str);
+
+    const handleUnitNameChange = (newName) => {
+        setFormData({ ...formData, unitName: newName });
+        if (!isEmptyOrWhitespace(newName)) {
+            setValidationErrors((prev) => ({ ...prev, unitName: "" }));
+        }
+    };
+
+    const handleSubmit = async () => {
+        const newErrors = {};
+
+        if (isEmptyOrWhitespace(formData.unitName)) {
+            newErrors.unitName = "Tên đơn vị tính không được để trống hoặc chỉ chứa khoảng trắng!";
+        }
+
+        setValidationErrors(newErrors);
+
+        if (Object.keys(newErrors).length === 0) {
+            try {
+                await onSuccess(unit.id, formData);
+                onClose();
+            } catch (error) {
+                console.error("Error updating unit:", error);
+            }
         }
     };
 
     return (
         <Dialog open={true} handler={onClose} size="md" className="px-4 py-2">
-            {/* Header của Dialog */}
             <DialogHeader className="flex justify-between items-center pb-2">
                 <Typography variant="h4" color="blue-gray">
-                    Chỉnh sửa dòng sản phẩm
+                    Chỉnh sửa đơn vị tính
                 </Typography>
                 <IconButton
                     size="small"
@@ -54,48 +68,28 @@ const EditProductTypePopUp = ({ productType, onClose, onSuccess }) => {
                 </IconButton>
             </DialogHeader>
             <Divider variant="middle" />
-            {/* Body của Dialog */}
             <DialogBody className="space-y-4 pb-6 pt-6">
-                {/* Tên dòng sản phẩm */}
                 <div>
                     <Typography variant="medium" className="text-black">
-                        Tên dòng sản phẩm
+                        Tên đơn vị tính
                         <span className="text-red-500"> *</span>
                     </Typography>
                     <TextField
                         fullWidth
                         size="small"
                         hiddenLabel
-                        placeholder="Tên dòng sản phẩm"
+                        placeholder="Tên đơn vị tính"
                         color="success"
-                        value={formData.typeName}
-                        onChange={(e) =>
-                            setFormData({ ...formData, typeName: e.target.value })
-                        }
+                        value={formData.unitName}
+                        onChange={(e) => handleUnitNameChange(e.target.value)}
                     />
-                </div>
-
-                {/* Mô tả */}
-                <div>
-                    <Typography variant="medium" className="text-black">
-                        Mô tả
-                    </Typography>
-                    <TextField
-                        fullWidth
-                        size="small"
-                        hiddenLabel
-                        placeholder="Mô tả"
-                        variant="outlined"
-                        multiline
-                        rows={3}
-                        color="success"
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    />
+                    {validationErrors.unitName && (
+                        <Typography variant="small" color="red">
+                            {validationErrors.unitName}
+                        </Typography>
+                    )}
                 </div>
             </DialogBody>
-
-            {/* Footer của Dialog */}
             <DialogFooter className="pt-0">
                 <MuiButton
                     size="medium"
@@ -120,4 +114,4 @@ const EditProductTypePopUp = ({ productType, onClose, onSuccess }) => {
     );
 };
 
-export default EditProductTypePopUp;
+export default EditUnitModal;

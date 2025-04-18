@@ -145,18 +145,6 @@ export const toggleProductStatus = async (productId) => {
   }
 };
 
-export const fetchUnits = async () => {
-  try {
-    const response = await axios.get(`${API_URL}/units`, {
-      headers: authHeader(),
-    });
-    console.log("📌 [fetchUnits] API Response:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("❌ Lỗi khi lấy danh sách đơn vị:", error.response?.data || error.message);
-    throw error;
-  }
-};
 
 export const fetchProductTypes = async () => {
   try {

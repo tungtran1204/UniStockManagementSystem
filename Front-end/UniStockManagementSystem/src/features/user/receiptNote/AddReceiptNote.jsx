@@ -283,8 +283,7 @@ const AddReceiptNote = () => {
         await uploadPaperEvidenceService(response.grnId, "GOOD_RECEIPT_NOTE", files);
       }
 
-      alert("Lưu phiếu nhập thành công!");
-      navigate("/user/receiptNote");
+      navigate("/user/receiptNote", { state: { successMessage: "Tạo phiếu nhập kho thành công!" } });
     } catch (error) {
       console.error("Lỗi khi lưu phiếu nhập:", error);
 
@@ -737,7 +736,7 @@ const AddReceiptNote = () => {
                 pageRangeDisplayed={5}
                 onPageChange={handlePageChangeWrapper}
                 containerClassName="flex items-center gap-1"
-                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
                 pageLinkClassName="flex items-center justify-center w-full h-full"
                 previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
                 nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
