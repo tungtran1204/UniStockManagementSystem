@@ -8,6 +8,8 @@ import vn.unistock.unistockmanagementsystem.entities.PartnerByTypeKey;
 import vn.unistock.unistockmanagementsystem.entities.PartnerType;
 import vn.unistock.unistockmanagementsystem.features.user.partnerType.PartnerTypeService;
 
+import java.util.List;
+
 @Service
 public class PartnerByTypeService {
     @Autowired
@@ -41,12 +43,20 @@ public class PartnerByTypeService {
             throw new IllegalArgumentException("Nhóm đối tác không tồn tại!");
         }
 
-        // Đếm số lượng partner có cùng loại
-        long count = partnerByTypeRepository.countByPartnerType(partnerType);
+        String prefix = partnerType.getTypeCode(); // ví dụ: "NCC"
 
-        // Tạo mã đối tác theo định dạng: <partnerTypeCode> + số lượng + 1
-        String partnerTypeCode = partnerType.getTypeCode();
-        return partnerTypeCode + String.format("%02d", count + 1);
+        // Lấy tất cả mã có prefix này, ví dụ: ["NCC01", "NCC02", "NCC03"]
+        List<String> existingCodes = partnerByTypeRepository.findAllCodesByPrefix(prefix);
+
+        // Lấy số lớn nhất trong các mã
+        int max = existingCodes.stream()
+                .map(code -> code.replace(prefix, "")) // "NCC03" → "03"
+                .filter(num -> num.matches("\\d+"))    // chỉ số hợp lệ
+                .mapToInt(Integer::parseInt)
+                .max()
+                .orElse(0); // nếu không có mã nào, bắt đầu từ 1
+
+        return prefix + String.format("%02d", max + 1); // ví dụ: NCC04
     }
 }
 
