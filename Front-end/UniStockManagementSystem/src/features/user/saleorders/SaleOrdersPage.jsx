@@ -48,22 +48,22 @@ const SaleOrdersPage = () => {
   //list status for filter
   const saleOrderStatuses = [
     {
-      value: "PROCESSING_NO_REQUEST",
+      value: "PROCESSING",
       label: "Chưa có yêu cầu",
       className: "bg-gray-100 text-gray-800",
     },
     {
-      value: "PROCESSING_PENDING_REQUEST",
+      value: "PROCESSING",
       label: "Đang chờ yêu cầu được duyệt",
       className: "bg-blue-50 text-blue-800",
     },
     {
-      value: "PROCESSING_REJECTED_REQUEST",
+      value: "PROCESSING",
       label: "Yêu cầu bị từ chối",
       className: "bg-pink-50 text-pink-800",
     },
     {
-      value: "PREPARING_MATERIAL",
+      value: "PREPARING",
       label: "Đang chuẩn bị",
       className: "bg-yellow-100 text-amber-800",
     },

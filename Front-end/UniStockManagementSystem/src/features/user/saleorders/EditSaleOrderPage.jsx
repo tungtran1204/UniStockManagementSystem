@@ -396,14 +396,14 @@ const EditSaleOrderPage = () => {
       prev.map((r) =>
         r.id === rowId
           ? {
-              ...r,
-              productId: opt.productId,
-              productCode: opt.value,
-              productName: opt.label.split(" - ")[1] || "",
-              unitName: opt.unit,
-              exportedQuantity: 0,
-              pendingQuantity: r.quantity,
-            }
+            ...r,
+            productId: opt.productId,
+            productCode: opt.value,
+            productName: opt.label.split(" - ")[1] || "",
+            unitName: opt.unit,
+            exportedQuantity: 0,
+            pendingQuantity: r.quantity,
+          }
           : r
       )
     );
@@ -496,7 +496,8 @@ const EditSaleOrderPage = () => {
             code: supplier.partnerCode || "",
           }));
 
-          const defaultSupplier = mappedSuppliers.length === 1 ? mappedSuppliers[0] : null;
+          // Điền nhà cung cấp mặc định: chọn nhà cung cấp đầu tiên bất kể số lượng nhà cung cấp
+          const defaultSupplier = mappedSuppliers.length > 0 ? mappedSuppliers[0] : null;
 
           return {
             id: `temp-${item.materialId}`,
@@ -508,9 +509,17 @@ const EditSaleOrderPage = () => {
             supplierId: defaultSupplier ? defaultSupplier.value : "",
             supplierName: defaultSupplier ? defaultSupplier.name : "",
             suppliers: mappedSuppliers,
+            supplierCount: mappedSuppliers.length, // Thêm trường để sắp xếp
           };
         })
       );
+
+      // Sắp xếp: vật tư có từ 2 nhà cung cấp trở lên lên đầu
+      const sortedItems = itemsWithSuppliers.sort((a, b) => {
+        if (a.supplierCount >= 2 && b.supplierCount < 2) return -1; // a có ≥2 nhà cung cấp, lên trước
+        if (a.supplierCount < 2 && b.supplierCount >= 2) return 1;  // b có ≥2 nhà cung cấp, lên trước
+        return 0; // Giữ nguyên thứ tự nếu cả hai đều <2 hoặc ≥2
+      });
 
       const usedProductsFromWarehouses = items.flatMap((item) =>
         (item.inStock || []).filter(d => d.usedQuantity > 0).map((d) => ({
@@ -529,7 +538,7 @@ const EditSaleOrderPage = () => {
           fromSaleOrder: true,
           saleOrderId: orderId,
           saleOrderCode: orderCode,
-          initialItems: itemsWithSuppliers,
+          initialItems: sortedItems,
           usedProductsFromWarehouses: usedProductsFromWarehouses,
         },
       });
