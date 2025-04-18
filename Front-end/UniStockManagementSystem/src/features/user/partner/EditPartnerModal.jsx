@@ -17,9 +17,12 @@ import {
     Autocomplete
 } from "@mui/material";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { getPartnerCodeByType } from "./partnerService";
 
 const EditPartnerModal = ({ partner, onClose, onSuccess }) => {
     const [partnerTypes, setPartnerTypes] = useState([]);
+    const [partnerCodes, setPartnerCodes] = useState([]);
+    const [originalPartnerCodes, setOriginalPartnerCodes] = useState([]);
     const [errorPartnerName, setErrorPartnerName] = useState("");
     const [errorPartnerCodes, setErrorPartnerCodes] = useState("");
     const [errorEmail, setErrorEmail] = useState("");
@@ -73,6 +76,18 @@ const EditPartnerModal = ({ partner, onClose, onSuccess }) => {
                     ? partner.partnerCode
                     : [],
             });
+            if (
+                Array.isArray(partner.partnerType) &&
+                Array.isArray(partner.partnerCode) &&
+                partner.partnerType.length === partner.partnerCode.length
+            ) {
+                const mappedCodes = partner.partnerType.map((pt, idx) => ({
+                    id: pt.id,
+                    code: partner.partnerCode[idx],
+                }));
+                setPartnerCodes(mappedCodes);
+                setOriginalPartnerCodes(mappedCodes);
+            }
         }
     }, [partner]);
 
@@ -87,6 +102,46 @@ const EditPartnerModal = ({ partner, onClose, onSuccess }) => {
             isValid = false;
         }
         return isValid;
+    };
+
+    const handlePartnerTypeChange = async (selectedOptions) => {
+        const selectedIds = selectedOptions.map((option) => option.value);
+
+        // ✅ 1. Giữ lại mã từ các nhóm đã từng có trước đó (trong originalPartnerCodes)
+        const retainedCodes = originalPartnerCodes.filter((c) =>
+            selectedIds.includes(c.id)
+        );
+
+        // ✅ 2. Kiểm tra nhóm nào là mới được chọn thêm
+        const newIds = selectedIds.filter(
+            (id) => !retainedCodes.some((c) => c.id === id)
+        );
+
+        // ✅ 3. Tạo mã mới cho nhóm mới
+        let newCodes = [];
+        if (newIds.length > 0) {
+            try {
+                newCodes = await Promise.all(
+                    newIds.map(async (id) => {
+                        const code = await getPartnerCodeByType(id);
+                        return { id, code };
+                    })
+                );
+            } catch (error) {
+                console.error("❌ Lỗi khi lấy mã đối tác mới:", error);
+            }
+        }
+
+        // ✅ 4. Gộp danh sách mã cuối cùng
+        const updatedCodes = [...retainedCodes, ...newCodes];
+        setPartnerCodes(updatedCodes);
+
+        // ✅ 5. Cập nhật form
+        setEditPartner((prev) => ({
+            ...prev,
+            partnerTypeIds: updatedCodes.map((c) => c.id),
+            partnerCodes: updatedCodes.map((c) => c.code),           // để gửi về backend
+        }));
     };
 
     const handleUpdatePartner = async () => {
@@ -167,8 +222,7 @@ const EditPartnerModal = ({ partner, onClose, onSuccess }) => {
                             )
                         }
                         onChange={(event, selectedOptions) => {
-                            console.log("✅ Selected partner types:", selectedOptions);
-                            setEditPartner({ ...editPartner, partnerTypeIds: selectedOptions.value })
+                            handlePartnerTypeChange(selectedOptions);
                         }}
                         renderInput={(params) => (
                             <TextField
@@ -200,7 +254,7 @@ const EditPartnerModal = ({ partner, onClose, onSuccess }) => {
                         placeholder="Mã đối tác"
                         variant="outlined"
                         color="success"
-                        value={editPartner.partnerCodes.join(", ")}
+                        value={partnerCodes.map((c) => c.code).join(", ")}
                         disabled
                     />
                 </div>
