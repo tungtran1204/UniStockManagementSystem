@@ -50,7 +50,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 const MODE_VIEW = "view";
 const MODE_EDIT = "edit";
 const MODE_DINHMUC = "dinhMuc";
-const CUSTOMER_TYPE_ID = 2;
+const CUSTOMER_TYPE_ID = 1;
 
 const EditSaleOrderPage = () => {
   const { orderId } = useParams();

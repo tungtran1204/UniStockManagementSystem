@@ -11,7 +11,7 @@ const useWarehouse = () => {
 
   const fetchPaginatedWarehouses = async (page = 1, size = pageSize, search = "", isActive = null) => {
     try {
-      const apiPage = page - 1;
+      const apiPage = Math.max(page - 1, 0);
       const response = await fetchWarehouses(apiPage, size, search, isActive);
       setWarehouses(response.data || []);
       setTotalPages(response.totalPages);
@@ -68,15 +68,14 @@ const useWarehouse = () => {
     }
   };
 
-  const getUsedCategories = async () => {
+  const getUsedCategories = async (excludeWarehouseId = null) => {
     try {
-      const result = await fetchUsedWarehouseCategories();
-      return result;
+      return await fetchUsedWarehouseCategories(excludeWarehouseId);
     } catch (error) {
       console.error("Error fetching used categories:", error);
       return [];
     }
-  };
+  };  
 
   const isWarehouseCodeTaken = async (code, excludeId = null) => {
     return await checkWarehouseCode(code, excludeId);
