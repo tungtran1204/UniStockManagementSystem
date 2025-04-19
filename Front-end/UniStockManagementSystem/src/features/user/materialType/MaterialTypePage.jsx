@@ -79,7 +79,7 @@ const MaterialTypePage = () => {
             minWidth: 400,
             editable: false,
             filterable: false,
-            renderCell: (params) => params.value || "Chưa có mô tả",
+            renderCell: (params) => params.value || "-",
         },
         {
             field: 'status',

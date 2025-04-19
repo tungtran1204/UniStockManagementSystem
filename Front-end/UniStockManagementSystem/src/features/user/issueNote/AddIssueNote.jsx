@@ -100,17 +100,19 @@ const AddIssueNote = () => {
     try {
       const response = await getSaleOrders();
       if (response && response.content) {
-        const mapped = response.content.map((order) => ({
-          id: order.orderId,
-          orderCode: order.orderCode,
-          orderName: order.partnerName,
-          partnerCode: order.partnerCode,
-          partnerName: order.partnerName,
-          orderDate: order.orderDate,
-          address: order.address,
-          contactName: order.contactName,
-          orderDetails: order.orderDetails,
-        }));
+        const mapped = response.content
+          .filter(order => ["PREPARING_MATERIAL", "PARTIALLY_ISSUED"].includes(order.status))
+          .map((order) => ({
+            id: order.orderId,
+            orderCode: order.orderCode,
+            orderName: order.partnerName,
+            partnerCode: order.partnerCode,
+            partnerName: order.partnerName,
+            orderDate: order.orderDate,
+            address: order.address,
+            contactName: order.contactName,
+            orderDetails: order.orderDetails,
+          }));
         setOrders(mapped);
       } else {
         setOrders([]);
@@ -1038,7 +1040,7 @@ const AddIssueNote = () => {
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
-            title="Phiếu xuất kho"
+            title={"Phiếu xuất kho " + issueNoteCode} 
             showAdd={false}
             showImport={false}
             showExport={false}
@@ -1539,13 +1541,13 @@ const AddIssueNote = () => {
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <Typography variant="medium" className="mb-1 text-black">
-                Lý do xuất
+                Diễn giải xuất kho
               </Typography>
               <TextField
                 fullWidth
                 size="small"
                 hiddenLabel
-                placeholder="Lý do xuất"
+                placeholder="Diễn giải"
                 multiline
                 rows={4}
                 color="success"

@@ -110,7 +110,7 @@ const PartnerTypePage = () => {
         index: (currentPage * pageSize) + index + 1,
         typeCode: type.typeCode,
         typeName: type.typeName,
-        description: type.description,
+        description: type.description || "-",
         status: type.status,
     }));
 

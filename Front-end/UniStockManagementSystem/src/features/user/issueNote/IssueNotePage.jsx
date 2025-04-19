@@ -87,7 +87,7 @@ const IssueNotePage = () => {
     issueDate: note.issueDate,
     createdByUserName: note.createdByUserName ,
     soId: note.soId, 
-    soCode: note.soCode || "Không có"
+    soCode: note.soCode || "-"
   }));
 
   // Cấu hình các cột hiển thị; thay createdBy và soId bằng createdByUsername và soCode

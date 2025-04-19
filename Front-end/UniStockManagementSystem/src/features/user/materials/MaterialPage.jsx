@@ -208,7 +208,7 @@ const MaterialPage = () => {
                         }}
                     />
                 ) : (
-                    <Typography className="text-xs text-gray-600">Không có ảnh</Typography>
+                    <Typography >-</Typography>
                 );
             },
         },
