@@ -376,17 +376,17 @@ const AddReceiptNoteGeneral = () => {
       quantity: "",
     };
     setManualItems(prev => [...prev, newItem]);
-    setQuantityErrors(prev => ({
-      ...prev,
-      product: {
-        ...prev.product,
-        [newItem.id]: "Chưa chọn sản phẩm/vật tư!"
-      },
-      warehouse: {
-        ...prev.warehouse,
-        ...(defaultWarehouseCode ? {} : { [newItem.id]: "Chưa chọn kho nhập!" })
-      }
-    }));
+    // setQuantityErrors(prev => ({
+    //   ...prev,
+    //   product: {
+    //     ...prev.product,
+    //     [newItem.id]: "Chưa chọn sản phẩm/vật tư!"
+    //   },
+    //   warehouse: {
+    //     ...prev.warehouse,
+    //     ...(defaultWarehouseCode ? {} : { [newItem.id]: "Chưa chọn kho nhập!" })
+    //   }
+    // }));
   };
 
   const handleRemoveRow = (id) => {
@@ -592,7 +592,7 @@ const AddReceiptNoteGeneral = () => {
       filterable: false,
       renderCell: (params) => {
         const dropdownList = getDropdownListByCategory();
-        const rowError = quantityErrors.product?.[params.id] || (!params.row.selected ? "Chưa chọn sản phẩm/vật tư!" : "");
+        const rowError = quantityErrors.product?.[params.id] || "";
         return (
           <Autocomplete
             sx={{ width: '100%', paddingY: '0.5rem' }}
