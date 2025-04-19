@@ -249,7 +249,7 @@ const ProductPage = () => {
             className="w-12 h-12 object-cover rounded-lg"
             onError={(e) => {
               e.target.style.display = 'none';
-              e.target.parentElement.innerHTML = 'N/A';
+              e.target.parentElement.innerHTML = '-';
             }}
           />
         ) : (
@@ -310,11 +310,11 @@ const ProductPage = () => {
   const data = products.map((product, index) => ({
     id: product.productId,
     index: currentPage * pageSize + index + 1,
-    productCode: product.productCode || "N/A",
+    productCode: product.productCode || "-",
     productName: product.productName,
-    unitName: product.unitName || "N/A",
-    productTypeName: productTypes.find(type => type.typeId === product.typeId)?.typeName || product.typeName || "N/A",
-    imageUrl: product.imageUrl || "N/A",
+    unitName: product.unitName || "-",
+    productTypeName: productTypes.find(type => type.typeId === product.typeId)?.typeName || product.typeName || "-",
+    imageUrl: product.imageUrl || "-",
     isProductionActive: !!product.isProductionActive,
   }));
 

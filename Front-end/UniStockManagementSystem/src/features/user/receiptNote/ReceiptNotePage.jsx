@@ -204,7 +204,7 @@ const ReceiptNotePage = () => {
     receiptCode: receipt.grnCode,
     category: receipt.category || 'không có dữ liệu',
     createdDate: receipt.receiptDate,
-    createBy: `${receipt.createdByUsername || ''} ${receipt.createdByEmail || ''}`,
+    createBy: `${receipt.createdByUsername }`|| `${receipt.createdByEmail }`,
     poId: receipt.poId,
     ginId: receipt.ginId,
     poCode: receipt.poCode,
