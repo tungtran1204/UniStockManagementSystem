@@ -53,18 +53,23 @@ const SaleOrdersPage = () => {
       className: "bg-gray-100 text-gray-800",
     },
     {
-      value: "PROCESSING",
+      value: "PROCESSING_NO_REQUEST",
+      label: "Chưa có yêu cầu",
+      className: "bg-gray-100 text-gray-800",
+    },
+    {
+      value: "PROCESSING_PENDING_REQUEST",
       label: "Đang chờ yêu cầu được duyệt",
       className: "bg-blue-50 text-blue-800",
     },
     {
-      value: "PROCESSING",
+      value: "PROCESSING_REJECTED_REQUEST",
       label: "Yêu cầu bị từ chối",
       className: "bg-pink-50 text-pink-800",
     },
     {
-      value: "PREPARING",
-      label: "Đang chuẩn bị",
+      value: "PREPARING_MATERIAL",
+      label: "Đang chuẩn bị vật tư",
       className: "bg-yellow-100 text-amber-800",
     },
     {
@@ -164,14 +169,16 @@ const SaleOrdersPage = () => {
       editable: false,
       filterable: false,
       renderCell: (params) => {
-        console.log("params.row", params.row);
-        const statusObj = saleOrderStatuses.find((s) => s.value === params.row.status);
+        // Tìm className dựa trên statusLabel hoặc status gốc
+        const statusObj = saleOrderStatuses.find((s) => s.label === params.row.status) ||
+          saleOrderStatuses.find((s) => s.value === params.row.status) ||
+          { className: "bg-gray-100 text-gray-800", label: params.row.status };
         return (
           <div
             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                      ${statusObj?.className}`}
+                        ${statusObj.className}`}
           >
-            {statusObj?.label}
+            {statusObj.label}
           </div>
         );
       },
@@ -213,7 +220,7 @@ const SaleOrdersPage = () => {
     index: currentPage * pageSize + index + 1,
     orderCode: order.orderCode || "N/A",
     partnerName: order.partnerName || "N/A",
-    status: order.status,
+    status: order.statusLabel || order.status,
     orderDate: order.orderDate,
   }));
 

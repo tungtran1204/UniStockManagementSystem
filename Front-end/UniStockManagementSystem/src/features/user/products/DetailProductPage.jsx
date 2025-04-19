@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
     Card,
     CardHeader,
@@ -14,9 +14,7 @@ import { getProductById, updateProduct, fetchProductTypes, checkProductCodeExist
 import { fetchActiveUnits } from "../unit/unitService";
 import axios from "axios";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
-import {
-    HighlightOffRounded,
-} from '@mui/icons-material';
+import { HighlightOffRounded } from '@mui/icons-material';
 import ReactPaginate from "react-paginate";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
@@ -42,56 +40,14 @@ const DetailProductPage = () => {
     const [initialValues, setInitialValues] = useState(null);
     const [errors, setErrors] = useState({});
     const [validationErrors, setValidationErrors] = useState({});
+    const [productCodeError, setProductCodeError] = useState(""); // State cho lỗi trùng mã
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(5);
     const [previewImage, setPreviewImage] = useState(null);
     const [tableSearchQuery, setTableSearchQuery] = useState("");
     const [currentRow, setCurrentRow] = useState(-1);
-    const [quantityErrors, setQuantityErrors] = useState({}); // Thêm state cho lỗi số lượng
+    const [quantityErrors, setQuantityErrors] = useState({});
     const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-
-    const fetchProductMaterials = async (productId) => {
-        try {
-            const response = await axios.get(
-                `${import.meta.env.VITE_API_URL}/user/products/product-materials/${productId}`,
-                { headers: authHeader(), params: { page: 0, size: 1000 } }
-            );
-
-            console.log("📌 API Product Materials Response:", response.data);
-
-            if (response.data && Array.isArray(response.data.content)) {
-                const updatedMaterials = response.data.content.map(pm => {
-                    const materialData = materials.find(m => m.materialId === pm.materialId);
-                    return {
-                        materialId: pm.materialId,
-                        materialCode: pm.materialCode,
-                        materialName: pm.materialName,
-                        quantity: pm.quantity // Loại bỏ unitName khỏi state
-                    };
-                });
-
-                console.log("📌 Updated Materials:", updatedMaterials);
-
-                setEditedProduct(prev => ({
-                    ...prev,
-                    materials: updatedMaterials
-                }));
-            } else {
-                console.warn("📌 Response data is not an array:", response.data);
-                setEditedProduct(prev => ({
-                    ...prev,
-                    materials: []
-                }));
-            }
-        } catch (error) {
-            console.error("❌ Error fetching product materials:", error.response?.data || error.message);
-            setEditedProduct(prev => ({
-                ...prev,
-                materials: []
-            }));
-            alert("Không thể tải định mức nguyên vật liệu. Vui lòng thử lại!");
-        }
-    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -99,10 +55,7 @@ const DetailProductPage = () => {
                 const productData = await getProductById(id);
                 console.log("📌 Product Data:", productData);
 
-                // Lấy danh sách dòng sản phẩm đang hoạt động
                 const activeProductTypes = await fetchProductTypes();
-
-                // Tìm kiếm trong danh sách đã được lọc
                 const matchingType = activeProductTypes.find(
                     (type) => type.typeName === productData.typeName
                 );
@@ -122,11 +75,11 @@ const DetailProductPage = () => {
                     axios.get(`${import.meta.env.VITE_API_URL}/user/materials`, {
                         headers: authHeader(),
                         withCredentials: true,
-                    }).then(res => res.data.content || [])
+                    }).then(res => res.data.content || []),
                 ]);
 
                 setUnits(unitsData);
-                setProductTypes(activeProductTypes); // Sử dụng danh sách đã lọc
+                setProductTypes(activeProductTypes);
                 setMaterials(materialsData);
             } catch (error) {
                 console.error("❌ Error:", error);
@@ -150,6 +103,74 @@ const DetailProductPage = () => {
         };
     }, [previewImage]);
 
+    const fetchProductMaterials = async (productId) => {
+        try {
+            const response = await axios.get(
+                `${import.meta.env.VITE_API_URL}/user/products/product-materials/${productId}`,
+                { headers: authHeader(), params: { page: 0, size: 1000 } }
+            );
+
+            console.log("📌 API Product Materials Response:", response.data);
+
+            if (response.data && Array.isArray(response.data.content)) {
+                const updatedMaterials = response.data.content.map(pm => {
+                    const materialData = materials.find(m => m.materialId === pm.materialId);
+                    return {
+                        materialId: pm.materialId,
+                        materialCode: pm.materialCode,
+                        materialName: pm.materialName,
+                        quantity: pm.quantity,
+                    };
+                });
+
+                console.log("📌 Updated Materials:", updatedMaterials);
+
+                setEditedProduct(prev => ({
+                    ...prev,
+                    materials: updatedMaterials,
+                }));
+            } else {
+                console.warn("📌 Response data is not an array:", response.data);
+                setEditedProduct(prev => ({
+                    ...prev,
+                    materials: [],
+                }));
+            }
+        } catch (error) {
+            console.error("❌ Error fetching product materials:", error.response?.data || error.message);
+            setEditedProduct(prev => ({
+                ...prev,
+                materials: [],
+            }));
+            alert("Không thể tải định mức nguyên vật liệu. Vui lòng thử lại!");
+        }
+    };
+
+    const handleCheckProductCode = async (newCode) => {
+        setProductCodeError("");
+        setValidationErrors(prev => ({
+            ...prev,
+            productCode: "",
+        }));
+
+        setEditedProduct(prev => ({
+            ...prev,
+            productCode: newCode || "",
+        }));
+
+        if (newCode.trim() && newCode !== product.productCode) {
+            try {
+                const exists = await checkProductCodeExists(newCode, id);
+                if (exists) {
+                    setProductCodeError("Mã sản phẩm này đã tồn tại!");
+                }
+            } catch (error) {
+                console.error("❌ Lỗi kiểm tra mã sản phẩm:", error);
+                setProductCodeError("Lỗi khi kiểm tra mã sản phẩm!");
+            }
+        }
+    };
+
     const handleEdit = () => {
         setIsEditing(true);
     };
@@ -158,6 +179,8 @@ const DetailProductPage = () => {
         setEditedProduct(initialValues);
         setIsEditing(false);
         setValidationErrors({});
+        setProductCodeError("");
+        setQuantityErrors({});
         setPreviewImage(null);
     };
 
@@ -173,48 +196,37 @@ const DetailProductPage = () => {
         if (!editedProduct.typeId) {
             newErrors.typeId = "Dòng sản phẩm không được bỏ trống!";
         }
-
-        const hasIncompleteMaterial = editedProduct.materials.some(
-            (item) =>
-                !item.materialId ||
-                !item.materialCode ||
-                !item.materialName ||
-                !item.quantity ||
-                item.quantity <= 0
-        );
-        if (hasIncompleteMaterial) {
+        if (
+            editedProduct.materials.some(
+                (item) =>
+                    !item.materialId ||
+                    !item.materialCode ||
+                    !item.materialName ||
+                    !item.quantity ||
+                    item.quantity <= 0
+            )
+        ) {
             newErrors.materials = "Vui lòng điền đầy đủ thông tin cho tất cả các dòng nguyên vật liệu!";
-        }
-
-        // Kiểm tra mã sản phẩm trùng lặp
-        if (editedProduct.productCode !== initialValues.productCode) {
-            const codeExists = await checkProductCodeExists(editedProduct.productCode, id);
-            if (codeExists) {
-                newErrors.productCode = "Mã sản phẩm đã tồn tại!";
-            }
         }
 
         setValidationErrors(newErrors);
 
-        if (Object.keys(newErrors).length === 0) {
+        if (Object.keys(newErrors).length === 0 && !productCodeError) {
             try {
                 setLoading(true);
 
-                // Chuẩn bị dữ liệu để gửi
                 const dataToSend = {
                     ...editedProduct,
                     materials: editedProduct.materials.map(material => ({
                         materialId: material.materialId,
                         quantity: material.quantity,
                         materialCode: material.materialCode,
-                        materialName: material.materialName
-                    }))
+                        materialName: material.materialName,
+                    })),
                 };
 
-                // Cập nhật thông tin sản phẩm (bao gồm materials)
                 const updatedProductData = await updateProduct(id, dataToSend);
 
-                // Cập nhật lại state với dữ liệu mới từ backend
                 const matchingType = productTypes.find(
                     (type) => type.typeName === updatedProductData.typeName
                 );
@@ -234,7 +246,6 @@ const DetailProductPage = () => {
                     typeName: updatedProductData.typeName,
                 });
 
-                // Backend đã xử lý materials, nhưng frontend vẫn cần gọi lại API product-materials để cập nhật giao diện
                 await fetchProductMaterials(id);
 
                 setIsEditing(false);
@@ -262,8 +273,13 @@ const DetailProductPage = () => {
     const handleRemoveRow = (index) => {
         setEditedProduct(prev => ({
             ...prev,
-            materials: prev.materials.filter((_, i) => i !== index)
+            materials: prev.materials.filter((_, i) => i !== index),
         }));
+        setQuantityErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors[index];
+            return newErrors;
+        });
     };
 
     const handleRemoveAllRows = () => {
@@ -271,14 +287,17 @@ const DetailProductPage = () => {
             ...editedProduct,
             materials: [],
         });
+        setQuantityErrors({});
     };
 
     const getFilteredMaterials = () => {
         if (!editedProduct?.materials) return [];
         return editedProduct.materials.filter(item => {
             const searchLower = tableSearchQuery.toLowerCase().trim();
-            return item.materialCode?.toLowerCase().includes(searchLower) ||
-                item.materialName?.toLowerCase().includes(searchLower);
+            return (
+                item.materialCode?.toLowerCase().includes(searchLower) ||
+                item.materialName?.toLowerCase().includes(searchLower)
+            );
         });
     };
 
@@ -293,30 +312,26 @@ const DetailProductPage = () => {
         setCurrentPage(selectedItem.selected);
     };
 
-    // Sửa lại hàm getAvailableMaterials 
     const getAvailableMaterials = (currentIndex) => {
         if (!editedProduct?.materials) return materials;
 
-        // Lấy danh sách ID vật tư đã chọn trừ vật tư của dòng hiện tại
         const selectedMaterialIds = editedProduct.materials
             .filter((_, idx) => idx !== currentIndex)
             .map(m => m.materialId);
 
-        // Trả về tất cả vật tư chưa được chọn
         return materials.filter(m => !selectedMaterialIds.includes(m.materialId));
     };
 
-    // Sửa lại hàm handleMaterialChange
     const handleMaterialChange = (index, selected) => {
-        if (!selected) return; // Thêm check này để tránh lỗi khi selected là null
+        if (!selected) return;
 
         const updatedMaterials = [...editedProduct.materials];
         updatedMaterials[index] = {
             ...updatedMaterials[index],
-            materialId: selected.materialId, // Thay đổi từ material.materialId sang selected.value
+            materialId: selected.materialId,
             materialCode: selected.materialCode,
             materialName: selected.materialName,
-            quantity: updatedMaterials[index].quantity || 1
+            quantity: updatedMaterials[index].quantity || 1,
         };
         setEditedProduct(prev => ({
             ...prev,
@@ -324,7 +339,6 @@ const DetailProductPage = () => {
         }));
     };
 
-    // Sửa lại hàm handleQuantityChange
     const handleQuantityChange = (index, value) => {
         const updatedMaterials = [...editedProduct.materials];
         updatedMaterials[index].quantity = Number(value);
@@ -333,16 +347,15 @@ const DetailProductPage = () => {
             materials: updatedMaterials,
         }));
 
-        // Validate số lượng
         if (!value || value <= 0) {
             setQuantityErrors(prev => ({
                 ...prev,
-                [index]: "Số lượng phải lớn hơn 0"
+                [index]: "Số lượng phải lớn hơn 0",
             }));
         } else {
             setQuantityErrors(prev => ({
                 ...prev,
-                [index]: ""
+                [index]: "",
             }));
         }
     };
@@ -352,7 +365,7 @@ const DetailProductPage = () => {
         setEditedProduct(prev => ({
             ...prev,
             image: null,
-            imageUrl: null
+            imageUrl: null,
         }));
     };
 
@@ -384,13 +397,13 @@ const DetailProductPage = () => {
     const getTableData = () => {
         return getPaginatedData().map((item, index) => ({
             ...item,
-            id: `${currentPage * pageSize + index + 1}`, // Ensure unique id
+            id: `${currentPage * pageSize + index + 1}`,
             index: currentPage * pageSize + index + 1,
             materialId: item.materialId,
             materialCode: item.materialCode,
             materialName: item.materialName,
             quantity: item.quantity,
-            unitName: materials.find(m => m.materialId === item.materialId)?.unitName || ""
+            unitName: materials.find(m => m.materialId === item.materialId)?.unitName || "",
         }));
     };
 
@@ -438,7 +451,7 @@ const DetailProductPage = () => {
                 ) : (
                     <div className="px-3">{params.value}</div>
                 )
-            )
+            ),
         },
         { field: 'materialName', headerName: 'Tên NVL', flex: 2, minWidth: 400, editable: false, filterable: false },
         { field: 'unitName', headerName: 'Đơn vị', flex: 1, minWidth: 100, editable: false, filterable: false },
@@ -471,22 +484,13 @@ const DetailProductPage = () => {
                             },
                         }}
                     />
-                    {/* <Input
-                        type="number"
-                        value={params.value || ''}
-                        onChange={(e) => handleQuantityChange(params.row.index - 1, e.target.value)}
-                        disabled={!isEditing}
-                        min="1"
-                        step="1"
-                        className={`w-full ${quantityErrors[params.row.index - 1] ? "border-red-500" : ""}`}
-                    /> */}
                     {isEditing && quantityErrors[params.row.index - 1] && (
                         <div className="text-xs text-red-500 mt-1">
                             {quantityErrors[params.row.index - 1]}
                         </div>
                     )}
                 </div>
-            )
+            ),
         },
         {
             field: 'actions',
@@ -505,8 +509,8 @@ const DetailProductPage = () => {
                         <HighlightOffRounded />
                     </IconButton>
                 )
-            )
-        }
+            ),
+        },
     ];
 
     if (!product) return <div>Loading...</div>;
@@ -536,11 +540,9 @@ const DetailProductPage = () => {
                                     placeholder="Mã sản phẩm"
                                     color="success"
                                     value={editedProduct?.productCode || ""}
-                                    onChange={(e) =>
-                                        setEditedProduct({ ...editedProduct, productCode: e.target.value })
-                                    }
+                                    onChange={(e) => handleCheckProductCode(e.target.value)}
                                     disabled={!isEditing}
-                                    error={Boolean(validationErrors.productCode)}
+                                    error={Boolean(validationErrors.productCode || productCodeError)}
                                     sx={{
                                         '& .MuiInputBase-root.Mui-disabled': {
                                             bgcolor: '#eeeeee',
@@ -550,9 +552,9 @@ const DetailProductPage = () => {
                                         },
                                     }}
                                 />
-                                {validationErrors.productCode && (
+                                {(validationErrors.productCode || productCodeError) && (
                                     <Typography color="red" className="text-xs text-start mt-1">
-                                        {validationErrors.productCode}
+                                        {validationErrors.productCode || productCodeError}
                                     </Typography>
                                 )}
                             </div>
@@ -573,7 +575,7 @@ const DetailProductPage = () => {
                                         setEditedProduct({
                                             ...editedProduct,
                                             unitId: selectedUnit ? selectedUnit.unitId : "",
-                                        })
+                                        });
                                     }}
                                     disabled={!isEditing}
                                     renderInput={(params) => (
@@ -682,7 +684,7 @@ const DetailProductPage = () => {
                                             ...editedProduct,
                                             typeId: selectedType ? selectedType.typeId : "",
                                             typeName: selectedType ? selectedType.typeName : "",
-                                        })
+                                        });
                                     }}
                                     disabled={!isEditing}
                                     renderInput={(params) => (
@@ -711,7 +713,7 @@ const DetailProductPage = () => {
 
                             <div>
                                 <Typography variant="medium" className="mb-1 text-black">
-                                    Hình ảnh sản phẩm
+                                    Hình ảnh sản phẩm
                                 </Typography>
                                 {isEditing && (
                                     <ImageUploadBox
@@ -721,7 +723,7 @@ const DetailProductPage = () => {
                                             setEditedProduct((prev) => ({
                                                 ...prev,
                                                 image: file,
-                                                imageUrl: null
+                                                imageUrl: null,
                                             }));
                                         }}
                                     />
@@ -863,8 +865,8 @@ const DetailProductPage = () => {
                             size="medium"
                             variant="outlined"
                             sx={{
-                                color: '#616161',           // text color
-                                borderColor: '#9e9e9e',     // border
+                                color: '#616161',
+                                borderColor: '#9e9e9e',
                                 '&:hover': {
                                     backgroundColor: '#f5f5f5',
                                     borderColor: '#757575',
@@ -882,7 +884,7 @@ const DetailProductPage = () => {
                                 onClick={handleEdit}
                                 sx={{
                                     boxShadow: 'none',
-                                    '&:hover': { boxShadow: 'none' }
+                                    '&:hover': { boxShadow: 'none' },
                                 }}
                             >
                                 <div className='flex items-center gap-2'>
@@ -907,7 +909,7 @@ const DetailProductPage = () => {
                                     className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
                                     ripple={true}
                                     onClick={handleSave}
-                                    disabled={loading}
+                                    disabled={loading || !!productCodeError}
                                 >
                                     Lưu
                                 </Button>
@@ -925,4 +927,4 @@ const DetailProductPage = () => {
     );
 };
 
-export default DetailProductPage; 
+export default DetailProductPage;
