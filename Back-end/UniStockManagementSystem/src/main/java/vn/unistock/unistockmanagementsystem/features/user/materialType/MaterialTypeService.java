@@ -39,6 +39,12 @@ public class MaterialTypeService {
 
     @Transactional
     public MaterialTypeDTO createMaterialType(MaterialTypeDTO dto, String createdBy) {
+        // Kiểm tra trùng tên danh mục vật tư (case-insensitive)
+        materialTypeRepository.findByNameIgnoreCase(dto.getName())
+                .ifPresent(existingType -> {
+                    throw new ResponseStatusException(NOT_FOUND, "Tên danh mục vật tư '" + dto.getName() + "' đã tồn tại!");
+                });
+
         MaterialType materialType = materialTypeMapper.toEntity(dto);
         materialType.setCreatedBy(createdBy);
         materialType.setCreatedAt(LocalDateTime.now());
@@ -52,6 +58,14 @@ public class MaterialTypeService {
     public MaterialTypeDTO updateMaterialType(Long id, MaterialTypeDTO dto) {
         MaterialType materialType = materialTypeRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Không tìm thấy danh mục vật tư"));
+
+        // Kiểm tra trùng tên danh mục vật tư (case-insensitive), bỏ qua bản ghi hiện tại
+        if (!materialType.getName().equalsIgnoreCase(dto.getName())) {
+            materialTypeRepository.findByNameIgnoreCase(dto.getName())
+                    .ifPresent(existingType -> {
+                        throw new ResponseStatusException(NOT_FOUND, "Tên danh mục vật tư '" + dto.getName() + "' đã tồn tại!");
+                    });
+        }
 
         materialType.setName(dto.getName());
         materialType.setDescription(dto.getDescription());

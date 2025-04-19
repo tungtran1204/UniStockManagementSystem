@@ -41,6 +41,15 @@ public class ProductTypeController {
         return ResponseEntity.ok(createdProductType);
     }
 
+    @PutMapping("/{typeId}")
+    public ResponseEntity<ProductTypeDTO> updateProductType(
+            @PathVariable Long typeId,
+            @RequestBody ProductTypeDTO productTypeDTO
+    ) {
+        ProductTypeDTO updatedProductType = productTypeService.updateProductType(typeId, productTypeDTO);
+        return ResponseEntity.ok(updatedProductType);
+    }
+
     @GetMapping("/active")
     public ResponseEntity<List<ProductTypeDTO>> getActiveProductTypes() {
         return ResponseEntity.ok(productTypeService.getActiveProductTypes());

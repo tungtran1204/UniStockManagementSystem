@@ -31,7 +31,8 @@ public class ProductTypeService {
     }
 
     public ProductTypeDTO createProductType(ProductTypeDTO productTypeDTO) {
-        productTypeRepository.findByTypeName(productTypeDTO.getTypeName())
+        // Kiểm tra trùng tên dòng sản phẩm (case-insensitive)
+        productTypeRepository.findByTypeNameIgnoreCase(productTypeDTO.getTypeName())
                 .ifPresent(existingType -> {
                     throw new RuntimeException("Tên dòng sản phẩm '" + productTypeDTO.getTypeName() + "' đã tồn tại!");
                 });
@@ -40,6 +41,23 @@ public class ProductTypeService {
         productType.setStatus(true);
         ProductType savedProductType = productTypeRepository.save(productType);
         return productTypeMapper.toDTO(savedProductType);
+    }
+
+    public ProductTypeDTO updateProductType(Long typeId, ProductTypeDTO productTypeDTO) {
+        ProductType productType = productTypeRepository.findById(typeId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy dòng sản phẩm với ID: " + typeId));
+
+        // Kiểm tra trùng tên dòng sản phẩm (case-insensitive), bỏ qua bản ghi hiện tại
+        if (!productType.getTypeName().equalsIgnoreCase(productTypeDTO.getTypeName())) {
+            productTypeRepository.findByTypeNameIgnoreCase(productTypeDTO.getTypeName())
+                    .ifPresent(existingType -> {
+                        throw new RuntimeException("Tên dòng sản phẩm '" + productTypeDTO.getTypeName() + "' đã tồn tại!");
+                    });
+        }
+
+        productType.setTypeName(productTypeDTO.getTypeName());
+        ProductType updatedProductType = productTypeRepository.save(productType);
+        return productTypeMapper.toDTO(updatedProductType);
     }
 
     public List<ProductTypeDTO> getActiveProductTypes() {
