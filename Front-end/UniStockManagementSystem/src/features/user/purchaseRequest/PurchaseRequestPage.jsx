@@ -158,6 +158,7 @@ const PurchaseRequestPage = () => {
             }
 
             const payload = {
+                purchaseRequestId: selectedRequest.purchaseRequestId,
                 items: selectedRequest.purchaseRequestDetails.map((item) => ({
                     materialId: item.materialId,
                     materialCode: item.materialCode,
@@ -168,7 +169,6 @@ const PurchaseRequestPage = () => {
                     quantity: item.quantity,
                 })),
             };
-
 
             const response = await createOrdersFromRequest(payload);
             await updatePurchaseRequestStatus(selectedRequestId, "PURCHASED");
