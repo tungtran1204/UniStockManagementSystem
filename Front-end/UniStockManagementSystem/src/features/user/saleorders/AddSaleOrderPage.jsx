@@ -65,7 +65,7 @@ const AddSaleOrderPage = () => {
   // Hàm fetch danh sách khách hàng
   const fetchCustomers = async () => {
     try {
-      const response = await getPartnersByType(CUSTOMER_TYPE_ID);
+      const response = await getPartnersByType(CUSTOMER_TYPE_ID, 0, 1000);
       if (!response || !response.partners) {
         console.error("API không trả về dữ liệu hợp lệ!");
         setCustomers([]);
@@ -82,6 +82,7 @@ const AddSaleOrderPage = () => {
             name: customer.partnerName,
             address: customer.address,
             phone: customer.phone,
+            contactName: customer.contactName || "",
           };
         })
         .filter((c) => c.code !== "");
@@ -108,6 +109,7 @@ const AddSaleOrderPage = () => {
       setCustomerName("");
       setAddress("");
       setPhoneNumber("");
+      setContactName("");
       return;
     }
 
@@ -115,6 +117,7 @@ const AddSaleOrderPage = () => {
     setCustomerName(selectedOption.name);
     setAddress(selectedOption.address);
     setPhoneNumber(selectedOption.phone);
+    setContactName(selectedOption.contactName || "");
     if (selectedOption.code) {
       setCustomerError("");
     }
@@ -165,11 +168,11 @@ const AddSaleOrderPage = () => {
       prev.map((row) =>
         row.id === rowId
           ? {
-            ...row,
-            productCode: selectedOption ? selectedOption.value : "",
-            productName: selectedOption ? selectedOption.label : "",
-            unitName: selectedOption ? selectedOption.unit : "",
-          }
+              ...row,
+              productCode: selectedOption ? selectedOption.value : "",
+              productName: selectedOption ? selectedOption.label : "",
+              unitName: selectedOption ? selectedOption.unit : "",
+            }
           : row
       )
     );
@@ -194,8 +197,6 @@ const AddSaleOrderPage = () => {
       setGlobalError("");
     }
   };
-
-
 
   const aggregateItems = (itemsArray) => {
     const aggregated = itemsArray.reduce((acc, curr) => {
@@ -305,7 +306,6 @@ const AddSaleOrderPage = () => {
   return (
     <div className="mb-8 flex flex-col gap-12">
       <Card className="bg-gray-50 p-7">
-
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
             title={"Đơn hàng " + orderCode}
@@ -314,8 +314,8 @@ const AddSaleOrderPage = () => {
             onImport={() => {/* Xử lý import nếu có */ }}
             onExport={() => {/* Xử lý export file ở đây nếu có */ }}
             showAdd={false}
-            showImport={false} // Ẩn nút import nếu không dùng
-            showExport={false} // Ẩn xuất file nếu không dùng
+            showImport={false}
+            showExport={false}
           />
 
           <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-6">
@@ -498,6 +498,7 @@ const AddSaleOrderPage = () => {
                   Tên khách hàng
                   <span className="text-red-500"> *</span>
                 </Typography>
+               me
                 <TextField
                   fullWidth
                   size="small"
@@ -568,7 +569,6 @@ const AddSaleOrderPage = () => {
           </div>
 
           <div className="py-2 flex items-center justify-between gap-2">
-            {/* Items per page */}
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-normal">
                 Hiển thị
@@ -592,19 +592,16 @@ const AddSaleOrderPage = () => {
               </Typography>
             </div>
 
-            {/* Search input */}
             <TableSearch
               value={tableSearchQuery}
               onChange={setTableSearchQuery}
               onSearch={() => {
-                // Thêm hàm xử lý tìm kiếm vào đây nếu có
                 (e) => setTableSearchQuery(e.target.value)
               }}
               placeholder="Tìm kiếm"
             />
           </div>
 
-          {/* Bảng chi tiết hàng */}
           <div className="border border-gray-200 rounded mb-4 overflow-x-auto border-[rgba(224,224,224,1)]">
             <table className="w-full min-w-max text-left border-collapse border-[rgba(224,224,224,1)]">
               <thead className="bg-[#f5f5f5] border-b border-[rgba(224,224,224,1)]">
@@ -747,7 +744,6 @@ const AddSaleOrderPage = () => {
             </div>
           )}
 
-          {/* Nút thêm / xóa dòng */}
           <div className="flex gap-2 mb-4 h-8">
             <MuiButton
               size="small"
@@ -772,7 +768,6 @@ const AddSaleOrderPage = () => {
             </MuiButton>
           </div>
           <Divider />
-          {/* Thông báo lỗi chung (nếu có) và nút Lưu / Hủy */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-end gap-2 py-4">
               <MuiButton
@@ -801,11 +796,16 @@ const AddSaleOrderPage = () => {
       {isCreatePartnerPopupOpen && (
         <ModalAddCustomer
           onClose={handleCloseCreatePartnerPopup}
-          onSuccess={(newPartner) => {
+          onSuccess={async (newPartner) => {
+            // Làm mới danh sách khách hàng
+            await fetchCustomers();
 
-            // Đóng modal và sau đó refresh danh sách khách hàng
+            // Tự động chọn partner mới
+            const newCustomer = customers.find((c) => c.code === newPartner.code) || newPartner;
+            handleCustomerChange(newCustomer);
+
+            // Đóng modal
             handleCloseCreatePartnerPopup();
-            fetchCustomers();
           }}
         />
       )}

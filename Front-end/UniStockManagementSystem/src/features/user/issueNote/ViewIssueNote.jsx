@@ -17,7 +17,8 @@ import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import Table from "@/components/Table";
 import ReactPaginate from "react-paginate";
-import { ArrowLeftIcon, ArrowRightIcon, ListBulletIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, ArrowRightIcon, ListBulletIcon} from "@heroicons/react/24/outline";
+import { InformationCircleIcon } from "@heroicons/react/24/solid";
 import { FaArrowLeft } from "react-icons/fa";
 
 const formatDate = (dateStr) => dayjs(dateStr).format("DD/MM/YYYY");
@@ -624,7 +625,7 @@ const ViewIssueNote = () => {
                     color="success"
                     variant="outlined"
                     disabled
-                    value={`${data.partnerName} (${data.partnerCode})`}
+                    value={`${data.partnerName}`}
                     sx={{
                       '& .MuiInputBase-root.Mui-disabled': {
                         bgcolor: '#eeeeee',
