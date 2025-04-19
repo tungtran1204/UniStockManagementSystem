@@ -75,19 +75,6 @@ const AddReceiptNote = () => {
   console.log("Received orderId:", orderId);
   console.log("Received nextCode:", nextCode);
 
-  // Xác định kho mặc định dựa trên loại nhập kho
-  const getDefaultWarehouse = (warehouseType) => {
-    const warehouseTypeMap = {
-      // "Thành phẩm sản xuất": "KTP", // Mã cho Kho thành phẩm
-      // "Hàng hóa trả lại": "KPL", // Mã cho Kho phế liệu
-      "Vật tư mua bán": "KVT", // Mã cho Kho vật tư
-      "Hàng hóa gia công": "KVT", // Cũng sử dụng Kho vật tư    
-    };
-    const warehouseCode = warehouseTypeMap[warehouseType] || "";
-    const defaultWarehouse = warehouses.find(w => w.warehouseCode === warehouseCode);
-    return defaultWarehouse ? defaultWarehouse.warehouseCode : "";
-  };
-
   // Xử lý thay đổi dữ liệu từ ProductRow
   const handleRowDataChange = (itemId, data) => {
     setRowsData(prev => ({
@@ -436,27 +423,21 @@ const AddReceiptNote = () => {
                 Phân loại nhập kho <span className="text-red-500">*</span>
               </Typography>
               <TextField
-                select
-                hiddenLabel
-                color="success"
-                value={category}
-                onChange={(e) => {
-                  setCategory(e.target.value);
-                  handleReferenceDocumentChange(e.target.value);
-                }}
                 fullWidth
                 size="small"
-              >
-                <MenuItem value="Thành phầm sản xuất">Thành phầm sản xuất</MenuItem>
-                <MenuItem value="Hàng hóa trả lại">Hàng hóa trả lại</MenuItem>
-                <MenuItem value="Vật tư mua bán">Vật tư mua bán</MenuItem>
-                <MenuItem value="Hàng hóa gia công">Hàng hóa gia công</MenuItem>
-              </TextField>
-              {!category && (
-                <Typography variant="small" className="text-red-500 mt-1">
-                  Vui lòng chọn phân loại nhập kho
-                </Typography>
-              )}
+                color="success"
+                variant="outlined"
+                value="Vật tư mua bán"
+                disabled
+                sx={{
+                  '& .MuiInputBase-root.Mui-disabled': {
+                    bgcolor: '#eeeeee',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      border: 'none',
+                    },
+                  },
+                }}
+              />
             </div>
             <div>
               <Typography variant="medium" className="mb-1 text-black">

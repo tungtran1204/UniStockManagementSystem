@@ -244,7 +244,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
 
         <div>
           <Typography variant="medium" className="text-black">
-            Phân loại kho
+          Phân loại hàng hóa nhập vào kho
             <span className="text-red-500"> *</span>
           </Typography>
           {isAllCategoriesUsed ? (
@@ -272,7 +272,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
                   {...params}
                   fullWidth
                   color="success"
-                  placeholder="Chọn phân loại kho hàng hóa "
+                  placeholder="Chọn phân loại hàng hóa nhập vào kho "
                   error={!!error.warehouseCategories}
                 />
               )}
