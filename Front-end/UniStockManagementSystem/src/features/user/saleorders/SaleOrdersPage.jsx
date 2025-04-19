@@ -48,6 +48,11 @@ const SaleOrdersPage = () => {
   //list status for filter
   const saleOrderStatuses = [
     {
+      value: "PROCESSING",
+      label: "Chưa có yêu cầu",
+      className: "bg-gray-100 text-gray-800",
+    },
+    {
       value: "PROCESSING_NO_REQUEST",
       label: "Chưa có yêu cầu",
       className: "bg-gray-100 text-gray-800",
@@ -64,7 +69,7 @@ const SaleOrdersPage = () => {
     },
     {
       value: "PREPARING_MATERIAL",
-      label: "Đang chuẩn bị",
+      label: "Đang chuẩn bị vật tư",
       className: "bg-yellow-100 text-amber-800",
     },
     {
@@ -164,14 +169,16 @@ const SaleOrdersPage = () => {
       editable: false,
       filterable: false,
       renderCell: (params) => {
-        const statusLabel = params.row.statusLabel || "Không rõ trạng thái";
-        const statusObj = saleOrderStatuses.find((s) => s.label === statusLabel);
+        // Tìm className dựa trên statusLabel hoặc status gốc
+        const statusObj = saleOrderStatuses.find((s) => s.label === params.row.status) ||
+          saleOrderStatuses.find((s) => s.value === params.row.status) ||
+          { className: "bg-gray-100 text-gray-800", label: params.row.status };
         return (
           <div
             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-              ${statusObj?.className || "bg-gray-50 text-gray-800"}`}
+                        ${statusObj.className}`}
           >
-            {statusLabel}
+            {statusObj.label}
           </div>
         );
       },
@@ -213,8 +220,7 @@ const SaleOrdersPage = () => {
     index: currentPage * pageSize + index + 1,
     orderCode: order.orderCode || "N/A",
     partnerName: order.partnerName || "N/A",
-    status: order.status,
-    statusLabel: order.statusLabel,
+    status: order.statusLabel || order.status,
     orderDate: order.orderDate,
   }));
 

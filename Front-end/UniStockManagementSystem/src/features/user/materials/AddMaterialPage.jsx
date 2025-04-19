@@ -32,7 +32,7 @@ const AddMaterialPage = () => {
     const [loading, setLoading] = useState(false);
     const [materialCodeError, setMaterialCodeError] = useState("");
     const [validationErrors, setValidationErrors] = useState({});
-    const [supplierError, setSupplierError] = useState("");
+    const [supplierError, setSupplierError] = useState(""); // Không hiển thị lỗi ban đầu
     const [units, setUnits] = useState([]);
     const [materialCategories, setMaterialCategories] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
@@ -43,12 +43,11 @@ const AddMaterialPage = () => {
         const loadInitialData = async () => {
             try {
                 const [unitsData, categoriesData, suppliersData] = await Promise.all([
-                    fetchActiveUnits(), // Sửa thành fetchActiveUnits
+                    fetchActiveUnits(),
                     fetchMaterialCategories(),
                     getPartnersByType(SUPPLIER_TYPE_ID)
                 ]);
 
-                // Đảm bảo unitsData là mảng
                 setUnits(Array.isArray(unitsData) ? unitsData : []);
                 setMaterialCategories(categoriesData.content || []);
 
@@ -97,32 +96,38 @@ const AddMaterialPage = () => {
             try {
                 const exists = await checkMaterialCodeExists(newCode);
                 if (exists) {
-                    setMaterialCodeError("Mã nguyên vật liệu này đã tồn tại!");
+                    setMaterialCodeError("Mã vật tư này đã tồn tại!");
                 }
             } catch (error) {
-                console.error("❌ Lỗi kiểm tra mã nguyên vật liệu:", error);
-                setMaterialCodeError("Lỗi khi kiểm tra mã nguyên vật liệu!");
+                console.error("❌ Lỗi kiểm tra mã vật tư:", error);
+                setMaterialCodeError("Lỗi khi kiểm tra mã vật tư!");
             }
         }
     };
 
     const handleSupplierChange = (selectedOptions) => {
-        setSupplierError("");
         const selectedIds = selectedOptions.map(option => option.value);
         setNewMaterial(prev => ({
             ...prev,
             supplierIds: selectedIds
         }));
+        // Xóa lỗi validation khi chọn ít nhất một nhà cung cấp
+        if (selectedIds.length > 0) {
+            setValidationErrors(prev => ({
+                ...prev,
+                supplierIds: ""
+            }));
+        }
     };
 
     const handleCreateMaterial = async () => {
         const newErrors = {};
 
         if (isEmptyOrWhitespace(newMaterial.materialCode)) {
-            newErrors.materialCode = "Mã nguyên vật liệu không được để trống hoặc chỉ chứa khoảng trắng!";
+            newErrors.materialCode = "Mã vật tư không được để trống hoặc chỉ chứa khoảng trắng!";
         }
         if (isEmptyOrWhitespace(newMaterial.materialName)) {
-            newErrors.materialName = "Tên nguyên vật liệu không được để trống hoặc chỉ chứa khoảng trắng!";
+            newErrors.materialName = "Tên vật tư không được để trống hoặc chỉ chứa khoảng trắng!";
         }
         if (!newMaterial.unitId) {
             newErrors.unitId = "Vui lòng chọn đơn vị!";
@@ -157,7 +162,7 @@ const AddMaterialPage = () => {
 
                 await createMaterial(formData);
 
-                navigate("/user/materials", { state: { successMessage: "Tạo nguyên vật liệu thành công!" } });
+                navigate("/user/materials", { state: { successMessage: "Tạo vật tư thành công!" } });
             } catch (error) {
                 console.error("Create material error:", error);
                 setErrors({
@@ -178,7 +183,7 @@ const AddMaterialPage = () => {
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
                 <CardBody className="pb-2 bg-white rounded-xl">
                     <PageHeader
-                        title="Tạo nguyên vật liệu mới"
+                        title="Tạo vật tư mới"
                         showAdd={false}
                         showImport={false}
                         showExport={false}
@@ -192,14 +197,14 @@ const AddMaterialPage = () => {
                         <div className="flex flex-col gap-4">
                             <div>
                                 <Typography variant="medium" className="mb-1 text-black">
-                                    Mã nguyên vật liệu
+                                    Mã vật tư
                                     <span className="text-red-500"> *</span>
                                 </Typography>
                                 <TextField
                                     fullWidth
                                     size="small"
                                     hiddenLabel
-                                    placeholder="Mã nguyên vật liệu"
+                                    placeholder="Mã vật tư"
                                     color="success"
                                     value={newMaterial.materialCode}
                                     onChange={(e) => handleCheckMaterialCode(e.target.value)}
@@ -267,14 +272,14 @@ const AddMaterialPage = () => {
                         <div className="flex flex-col gap-4">
                             <div>
                                 <Typography variant="medium" className="mb-1 text-black">
-                                    Tên nguyên vật liệu
+                                    Tên vật tư
                                     <span className="text-red-500"> *</span>
                                 </Typography>
                                 <TextField
                                     fullWidth
                                     size="small"
                                     hiddenLabel
-                                    placeholder="Tên nguyên vật liệu"
+                                    placeholder="Tên vật tư"
                                     color="success"
                                     value={newMaterial.materialName}
                                     onChange={(e) => {
@@ -348,19 +353,20 @@ const AddMaterialPage = () => {
                                             hiddenLabel
                                             {...params}
                                             placeholder="Chọn nhà cung cấp"
+                                            error={Boolean(validationErrors.supplierIds)}
                                         />
                                     )}
                                 />
-                                {(validationErrors.supplierIds || supplierError) && (
+                                {validationErrors.supplierIds && (
                                     <Typography className="text-xs text-red-500 mt-1">
-                                        {validationErrors.supplierIds || supplierError}
+                                        {validationErrors.supplierIds}
                                     </Typography>
                                 )}
                             </div>
 
                             <div>
                                 <Typography variant="medium" className="mb-1 text-black">
-                                    Hình ảnh nguyên vật liệu
+                                    Hình ảnh vật tư
                                 </Typography>
                                 <ImageUploadBox
                                     onFileSelect={(file) => {
