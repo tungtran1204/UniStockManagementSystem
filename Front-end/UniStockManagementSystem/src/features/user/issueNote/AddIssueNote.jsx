@@ -100,17 +100,19 @@ const AddIssueNote = () => {
     try {
       const response = await getSaleOrders();
       if (response && response.content) {
-        const mapped = response.content.map((order) => ({
-          id: order.orderId,
-          orderCode: order.orderCode,
-          orderName: order.partnerName,
-          partnerCode: order.partnerCode,
-          partnerName: order.partnerName,
-          orderDate: order.orderDate,
-          address: order.address,
-          contactName: order.contactName,
-          orderDetails: order.orderDetails,
-        }));
+        const mapped = response.content
+          .filter(order => ["PREPARING_MATERIAL", "PARTIALLY_ISSUED"].includes(order.status))
+          .map((order) => ({
+            id: order.orderId,
+            orderCode: order.orderCode,
+            orderName: order.partnerName,
+            partnerCode: order.partnerCode,
+            partnerName: order.partnerName,
+            orderDate: order.orderDate,
+            address: order.address,
+            contactName: order.contactName,
+            orderDetails: order.orderDetails,
+          }));
         setOrders(mapped);
       } else {
         setOrders([]);
