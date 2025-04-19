@@ -182,7 +182,7 @@ const SaleOrdersPage = () => {
           </div>
         );
       },
-    },
+    },    
     {
       field: 'orderDate',
       headerName: 'Ngày đặt hàng',

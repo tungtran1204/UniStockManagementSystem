@@ -103,7 +103,7 @@ public class IssueNoteService {
                     .category(issueNoteDto.getCategory())
                     .issueDate(issueNoteDto.getIssueDate())
                     .createdBy(currentUser)
-                    .details(new ArrayList<>()) // Khởi tạo details rỗng
+                    .details(new ArrayList<>())
                     .build();
 
             if (issueNoteDto.getPartnerId() != null) {
@@ -116,12 +116,17 @@ public class IssueNoteService {
             }
 
             // Xử lý salesOrder nếu có soId
-            if (issueNoteDto.getSoId() != null) {
+            boolean hasSalesOrder = issueNoteDto.getSoId() != null;
+            if (hasSalesOrder) {
                 SalesOrder salesOrder = salesOrderRepository.findById(issueNoteDto.getSoId())
                         .orElseThrow(() -> new RuntimeException("Sales order not found with ID: " + issueNoteDto.getSoId()));
                 issueNote.setSalesOrder(salesOrder);
+                logger.debug("IssueNote is linked to SalesOrder ID: {}", issueNoteDto.getSoId());
+            } else {
+                logger.debug("IssueNote is not linked to any SalesOrder");
             }
-            issueNote = issueNoteRepository.save(issueNote); // Lưu GoodIssueNote lần đầu
+
+            issueNote = issueNoteRepository.save(issueNote);
 
             // Duyệt từng dòng chi tiết xuất kho
             for (IssueNoteDetailDTO detailDto : issueNoteDto.getDetails()) {
@@ -153,7 +158,7 @@ public class IssueNoteService {
                     if (detail.getUnit() == null) {
                         detail.setUnit(material.getUnit());
                     }
-                    updateInventoryAndTransactionForExport(warehouse, material, null, detailDto.getQuantity(), issueNote);
+                    updateInventoryAndTransactionForExport(warehouse, material, null, detailDto.getQuantity(), issueNote, hasSalesOrder);
                 } else if (detailDto.getProductId() != null) {
                     Product product = productRepository.findById(detailDto.getProductId())
                             .orElseThrow(() -> new RuntimeException("Product not found with ID: " + detailDto.getProductId()));
@@ -161,22 +166,19 @@ public class IssueNoteService {
                     if (detail.getUnit() == null) {
                         detail.setUnit(product.getUnit());
                     }
-                    updateInventoryAndTransactionForExport(warehouse, null, product, detailDto.getQuantity(), issueNote);
+                    updateInventoryAndTransactionForExport(warehouse, null, product, detailDto.getQuantity(), issueNote, hasSalesOrder);
                 } else {
                     throw new RuntimeException("Phải có thông tin về vật tư hoặc sản phẩm để xuất kho");
                 }
 
-                // Thêm detail vào tập hợp details hiện tại của issueNote
                 issueNote.getDetails().add(detail);
             }
 
-            // Lưu các dòng chi tiết
             issueNoteDetailRepository.saveAll(issueNote.getDetails());
 
-            // ***** PHẦN CẬP NHẬT: Cập nhật số lượng nhận và trạng thái của SalesOrder *****
-            if (issueNoteDto.getSoId() != null) {
+            // Cập nhật SalesOrder nếu có
+            if (hasSalesOrder) {
                 SalesOrder salesOrder = issueNote.getSalesOrder();
-                // Gộp số lượng xuất cho cùng một sản phẩm nếu xuất từ nhiều kho khác nhau
                 Map<Long, Integer> exportQuantities = new HashMap<>();
                 for (IssueNoteDetailDTO detailDto : issueNoteDto.getDetails()) {
                     if (detailDto.getProductId() != null) {
@@ -200,13 +202,11 @@ public class IssueNoteService {
                     logger.debug("After update: SalesOrderDetail for product ID {} has receivedQuantity={}", productId, salesOrderDetail.getReceivedQuantity());
                 }
 
-                // Cập nhật trạng thái SalesOrder
                 if (isFirstIssuance) {
                     salesOrder.setStatus(SalesOrder.OrderStatus.PARTIALLY_ISSUED);
                     logger.debug("SalesOrder ID {} updated to PARTIALLY_ISSUED (first issuance)", salesOrder.getOrderId());
                 }
 
-                // Kiểm tra xem tất cả sản phẩm đã được xuất đủ số lượng chưa
                 boolean allProductsFulfilled = salesOrder.getDetails().stream()
                         .allMatch(detail -> detail.getReceivedQuantity() >= detail.getQuantity());
                 if (allProductsFulfilled) {
@@ -216,7 +216,6 @@ public class IssueNoteService {
 
                 salesOrderRepository.save(salesOrder);
             }
-            // ***** KẾT THÚC PHẦN CẬP NHẬT *****
 
             // Xử lý ReceiveOutsource cho category = "Gia công"
             if ("Gia công".equals(issueNoteDto.getCategory())) {
@@ -228,7 +227,6 @@ public class IssueNoteService {
                 outsource.setPartner(Partner.builder().partnerId(issueNoteDto.getPartnerId()).build());
                 outsource.setStatus(ReceiveOutsource.OutsourceStatus.PENDING);
 
-                // Tạo danh sách ReceiveOutsourceMaterial
                 List<ReceiveOutsourceMaterial> outsourceMaterials = issueNote.getDetails().stream()
                         .filter(detail -> detail.getMaterial() != null)
                         .map(detail -> {
@@ -245,10 +243,7 @@ public class IssueNoteService {
                 receiveOutsourceRepository.save(outsource);
             }
 
-            // Lưu lại issueNote để đảm bảo đồng bộ
             issueNote = issueNoteRepository.save(issueNote);
-
-            // Trả về DTO
             return issueNoteMapper.toDTO(issueNote);
         } catch (Exception e) {
             logger.error("❌ Lỗi khi tạo phiếu xuất kho: {}", e.getMessage(), e);
@@ -257,14 +252,33 @@ public class IssueNoteService {
     }
 
     // Cập nhật tồn kho và ghi nhận giao dịch xuất kho (giảm số lượng tồn)
-    private void updateInventoryAndTransactionForExport(Warehouse warehouse, Material material, Product product, Double quantity, GoodIssueNote issueNote) {
+    private void updateInventoryAndTransactionForExport(Warehouse warehouse, Material material, Product product, Double quantity, GoodIssueNote issueNote, boolean hasSalesOrder) {
+        Inventory inventory = null;
+
         if (material != null) {
-            Inventory inventory = inventoryRepository.findByWarehouseAndMaterial(warehouse, material)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy tồn kho cho vật tư có ID: " + material.getMaterialId()));
-            logger.debug("Material [{}] - Warehouse [{}]: Current inventory quantity = {}", material.getMaterialId(), warehouse.getWarehouseId(), inventory.getQuantity());
-            if (inventory.getQuantity() < quantity) {
-                throw new RuntimeException("Không đủ số lượng tồn kho cho vật tư có ID: " + material.getMaterialId());
+            // Xác định status cho material
+            Inventory.InventoryStatus status = hasSalesOrder ? Inventory.InventoryStatus.RESERVED : Inventory.InventoryStatus.AVAILABLE;
+
+            // Nếu liên kết với SalesOrder, thử RESERVED trước
+            if (hasSalesOrder) {
+                inventory = inventoryRepository.findByWarehouseAndMaterialAndStatus(warehouse, material, Inventory.InventoryStatus.RESERVED)
+                        .filter(i -> i.getQuantity() >= quantity)
+                        .orElse(null);
+                logger.debug("Material [{}] - Warehouse [{}]: Tried RESERVED, found inventory = {}", material.getMaterialId(), warehouse.getWarehouseId(), inventory != null ? inventory.getQuantity() : "null");
             }
+
+            // Nếu không tìm thấy RESERVED hoặc không đủ số lượng, thử AVAILABLE
+            if (inventory == null) {
+                inventory = inventoryRepository.findByWarehouseAndMaterialAndStatus(warehouse, material, Inventory.InventoryStatus.AVAILABLE)
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy tồn kho AVAILABLE cho vật tư có ID: " + material.getMaterialId()));
+                status = Inventory.InventoryStatus.AVAILABLE;
+                logger.debug("Material [{}] - Warehouse [{}]: Fell back to AVAILABLE", material.getMaterialId(), warehouse.getWarehouseId());
+            }
+
+            if (inventory.getQuantity() < quantity) {
+                throw new RuntimeException("Không đủ số lượng tồn kho " + status + " cho vật tư có ID: " + material.getMaterialId());
+            }
+
             inventory.setQuantity(inventory.getQuantity() - quantity);
             inventory.setLastUpdated(LocalDateTime.now());
             inventoryRepository.save(inventory);
@@ -283,12 +297,15 @@ public class IssueNoteService {
         }
 
         if (product != null) {
-            Inventory inventory = inventoryRepository.findByWarehouseAndProduct(warehouse, product)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy tồn kho cho sản phẩm có ID: " + product.getProductId()));
+            // Luôn sử dụng status = AVAILABLE cho product
+            inventory = inventoryRepository.findByWarehouseAndProductAndStatus(warehouse, product, Inventory.InventoryStatus.AVAILABLE)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy tồn kho AVAILABLE cho sản phẩm có ID: " + product.getProductId()));
             logger.debug("Product [{}] - Warehouse [{}]: Current inventory quantity = {}", product.getProductId(), warehouse.getWarehouseId(), inventory.getQuantity());
+
             if (inventory.getQuantity() < quantity) {
-                throw new RuntimeException("Không đủ số lượng tồn kho cho sản phẩm có ID: " + product.getProductId());
+                throw new RuntimeException("Không đủ số lượng tồn kho AVAILABLE cho sản phẩm có ID: " + product.getProductId());
             }
+
             inventory.setQuantity(inventory.getQuantity() - quantity);
             inventory.setLastUpdated(LocalDateTime.now());
             inventoryRepository.save(inventory);
