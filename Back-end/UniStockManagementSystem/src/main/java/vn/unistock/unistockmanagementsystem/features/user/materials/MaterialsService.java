@@ -51,6 +51,10 @@ public class MaterialsService {
         material.setMaterialCode(materialDTO.getMaterialCode());
         material.setMaterialName(materialDTO.getMaterialName());
         material.setDescription(materialDTO.getDescription());
+        if (materialDTO.getMaterialCode() == null || materialDTO.getMaterialCode().trim().isEmpty()) {
+            throw new IllegalArgumentException("Mã nguyên vật liệu không được rỗng!");
+        }
+        materialDTO.setMaterialCode(materialDTO.getMaterialCode().trim());
 
         if (materialDTO.getUnitId() != null) {
             material.setUnit(unitRepository.findById(materialDTO.getUnitId())
@@ -70,29 +74,22 @@ public class MaterialsService {
             // Kiểm tra định dạng file
             String contentType = image.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
-                log.warn("File không phải ảnh, contentType: {}", contentType);
                 throw new IllegalArgumentException("File phải là ảnh (JPG, PNG, v.v.)");
             }
             // Kiểm tra kích thước file
             if (image.getSize() == 0) {
-                log.warn("File ảnh rỗng: {}", image.getOriginalFilename());
                 throw new IllegalArgumentException("File ảnh không được rỗng!");
             }
             try {
-                log.info("Uploading image: {}", image.getOriginalFilename());
                 String imageUrl = azureBlobService.uploadFile(image);
-                log.info("Uploaded image URL: {}", imageUrl);
                 material.setImageUrl(imageUrl);
             } catch (Exception e) {
-                log.error("Không thể upload ảnh: {}", e.getMessage(), e);
                 throw new IOException("Không thể upload ảnh: " + e.getMessage(), e);
             }
         } else {
-            log.info("Không có ảnh được gửi hoặc ảnh rỗng");
         }
 
         Material savedMaterial = materialsRepository.save(material);
-        log.info("Lưu vật tư với imageUrl: {}", savedMaterial.getImageUrl());
 
         // Xử lý nhà cung cấp
         if (materialDTO.getSupplierIds() != null && !materialDTO.getSupplierIds().isEmpty()) {
@@ -147,7 +144,7 @@ public class MaterialsService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy nguyên vật liệu"));
 
         if (!material.getMaterialCode().equals(updatedMaterial.getMaterialCode()) &&
-                materialsRepository.existsByMaterialCode(updatedMaterial.getMaterialCode())) {
+                materialsRepository.existsByMaterialCodeAndMaterialIdNot(updatedMaterial.getMaterialCode(),id)) {
             throw new IllegalArgumentException("Mã nguyên vật liệu đã tồn tại!");
         }
 
