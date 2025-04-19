@@ -205,7 +205,7 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, onSuccess }) => {
 
         <div>
           <Typography variant="medium" className="text-black mb-1">
-            Phân loại kho <span className="text-red-500">*</span>
+            Phân loại hàng hóa nhập vào kho <span className="text-red-500">(*)</span>
           </Typography>
           <Autocomplete
             multiple
@@ -233,7 +233,7 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, onSuccess }) => {
                 variant="outlined"
                 size="small"
                 color="success"
-                placeholder="Chọn phân loại kho hàng hóa"
+                placeholder="Chọn phân loại hàng hóa nhập vào kho"
               />
             )}
             slotProps={{
