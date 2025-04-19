@@ -98,10 +98,20 @@ const AddReceiptNoteGeneral = () => {
 
   // ----- Trạng thái gọi API, validate, v.v. -----
   const [isSaving, setIsSaving] = useState(false);
-  const [quantityErrors, setQuantityErrors] = useState({}); // Lưu thông báo lỗi cho từng dòng (nếu cần)
+  const [quantityErrors, setQuantityErrors] = useState({
+    product: {},
+    warehouse: {},
+    quantity: {}
+  });
 
   // Lưu mã phiếu nhập code tạm (nếu có) từ location
   const initialNextCode = location.state?.nextCode;
+
+  // Ẩn kho KPL khỏi dropdown nếu không phải "Hàng hóa trả lại"
+  const isReturnCategory = category === "Hàng hóa trả lại";
+  const filteredWarehouses = warehouses.filter(w =>
+    isReturnCategory || w.warehouseCode !== "KPL"
+  );
 
   // region: useEffect - gọi data, set default values
   useEffect(() => {
@@ -110,7 +120,7 @@ const AddReceiptNoteGeneral = () => {
       const today = dayjs().format("YYYY-MM-DD");
       setCreateDate(today);
     }
-  }, [createdDate]);
+  }, []);
 
   // Gọi API lấy danh sách khách hàng 
   const fetchCustomers = async () => {
@@ -253,22 +263,14 @@ const AddReceiptNoteGeneral = () => {
     }
   };
 
-  // region: Helper function
-  /**
-   * Trả về kho mặc định dựa trên loại nhập kho (category).
-   * Tuỳ chỉnh theo business logic.
-   */
-  const getDefaultWarehouse = (warehouseType) => {
-    const warehouseTypeMap = {
-      "Thành phẩm sản xuất": "KTP",
-      "Hàng hóa trả lại": "KPL",
-      "Vật tư mua bán": "KVT",
-      "Hàng hóa gia công": "KVT",
-      "Nhập kho vật tư thừa": "KVT",
-    };
-    const warehouseCode = warehouseTypeMap[warehouseType] || "";
-    const defaultWarehouse = warehouses.find(w => w.warehouseCode === warehouseCode);
-    return defaultWarehouse ? defaultWarehouse.warehouseCode : "";
+
+  const getDefaultWarehouse = (category) => {
+    const matchedWarehouse = warehouses.find((w) => {
+      if (!w.goodCategory) return false;
+      const categories = w.goodCategory.split(",").map(c => c.trim());
+      return categories.includes(category);
+    });
+    return matchedWarehouse ? matchedWarehouse.warehouseCode : "";
   };
 
   // ------------------ Khi chọn chứng từ từ modal => load chi tiết ------------------
@@ -365,35 +367,32 @@ const AddReceiptNoteGeneral = () => {
   };
 
   // region: Thay đổi dữ liệu bảng thủ công (nếu không có chứng từ tham chiếu)
-  /**
-   * Thêm dòng mới cho danh sách manualItems
-   */
-  // Khi bấm "Thêm dòng"
   const handleAddRow = () => {
     const defaultWarehouseCode = getDefaultWarehouse(category);
-    setManualItems(prev => [
+    const newItem = {
+      id: manualItems.length + 1,
+      selected: null,
+      warehouse: defaultWarehouseCode,
+      quantity: "",
+    };
+    setManualItems(prev => [...prev, newItem]);
+    setQuantityErrors(prev => ({
       ...prev,
-      {
-        id: prev.length + 1,
-        selected: null, // chưa chọn
-        warehouse: defaultWarehouseCode, // Gán kho mặc định
-        quantity: "",
+      product: {
+        ...prev.product,
+        [newItem.id]: "Chưa chọn sản phẩm/vật tư!"
+      },
+      warehouse: {
+        ...prev.warehouse,
+        ...(defaultWarehouseCode ? {} : { [newItem.id]: "Chưa chọn kho nhập!" })
       }
-    ]);
+    }));
   };
 
-
-  /**
-   * Xoá 1 dòng khỏi danh sách manualItems
-   * @param {Number} id - id (hoặc index) của item
-   */
   const handleRemoveRow = (id) => {
     setManualItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  /**
-   * Xoá toàn bộ dòng
-   */
   const handleRemoveAllRows = () => {
     setManualItems([]);
     setCurrentPage(0);
@@ -442,6 +441,7 @@ const AddReceiptNoteGeneral = () => {
   //Hàm xử lí lưu phiếu nhập
 
   const handleSaveReceipt = async () => {
+
     // Nếu chưa chọn category => return
     if (!category) {
       alert("Vui lòng chọn Phân loại nhập kho!");
@@ -456,44 +456,45 @@ const AddReceiptNoteGeneral = () => {
       alert("Vui lòng nhập ít nhất một hàng hóa với số lượng nhập hợp lệ!");
       return;
     }
-    let hasError = false;
-    let localErrors = {};
 
-    // Kiểm tra dữ liệu trước khi gửi
-    console.log("Kiểm tra dữ liệu trước khi gửi", { isReferenceFlow, documentItems, manualItems });
+    let localErrors = {
+      product: {},
+      warehouse: {},
+      quantity: {},
+      duplicate: {}
+    };
+
+    let hasError = false;
+
     if (isReferenceFlow) {
       documentItems.forEach(row => {
         if (!row.warehouseCode) {
           hasError = true;
-          localErrors[row.id] = "Chưa chọn kho nhập!";
+          localErrors.warehouse[row.id] = "Chưa chọn kho nhập!";
         }
         if (row.quantity === undefined || row.quantity === null || row.quantity === "" || row.quantity < 0) {
           hasError = true;
-          localErrors[row.id] = "Số lượng không hợp lệ!";
+          localErrors.quantity[row.id] = "Số lượng không hợp lệ!";
         }
       });
     } else {
       manualItems.forEach(row => {
         if (!row.selected) {
           hasError = true;
-          localErrors[row.id] = "Chưa chọn sản phẩm/vật tư!";
+          localErrors.product[row.id] = "Chưa chọn sản phẩm/vật tư!";
         }
         if (!row.warehouse) {
           hasError = true;
-          localErrors[row.id] = "Chưa chọn kho nhập!";
+          localErrors.warehouse[row.id] = "Chưa chọn kho nhập!";
         }
-        if (!row.quantity ||
-          row.quantity === undefined ||
-          row.quantity === null ||
-          row.quantity === "" || row.quantity <= 0) {
+        if (!row.quantity || row.quantity === undefined || row.quantity === null || row.quantity === "" || row.quantity <= 0) {
           hasError = true;
-          localErrors[row.id] = "Số lượng không hợp lệ!";
+          localErrors.quantity[row.id] = "Số lượng không hợp lệ!";
         }
       });
     }
 
     if (hasError) {
-      console.log("Có lỗi validate", localErrors);
       setQuantityErrors(localErrors);
       return;
     }
@@ -591,6 +592,7 @@ const AddReceiptNoteGeneral = () => {
       filterable: false,
       renderCell: (params) => {
         const dropdownList = getDropdownListByCategory();
+        const rowError = quantityErrors.product?.[params.id] || (!params.row.selected ? "Chưa chọn sản phẩm/vật tư!" : "");
         return (
           <Autocomplete
             sx={{ width: '100%', paddingY: '0.5rem' }}
@@ -606,6 +608,8 @@ const AddReceiptNoteGeneral = () => {
                 variant="outlined"
                 placeholder="Chọn mã hàng"
                 size="small"
+                error={!!rowError}
+                helperText={rowError}
               />
             )}
           />
@@ -642,22 +646,39 @@ const AddReceiptNoteGeneral = () => {
       filterable: false,
       minWidth: 250,
       renderCell: (params) => {
+        const rowError = quantityErrors.warehouse?.[params.id];
         return (
           <Autocomplete
             sx={{ width: '100%' }}
             size="small"
-            options={warehouses || []}
+            options={filteredWarehouses}
             getOptionLabel={(option) => option?.warehouseCode + " - " + option?.warehouseName}
             value={warehouses.find(wh => wh.warehouseCode === params.row.warehouse) || null}
             onChange={(e, newValue) => {
-              // Cập nhật state
+              const newWarehouseCode = newValue?.warehouseCode || "";
               setManualItems(prev =>
                 prev.map(item =>
                   item.id === params.row.id
-                    ? { ...item, warehouse: newValue?.warehouseCode || "" }
+                    ? { ...item, warehouse: newWarehouseCode }
                     : item
                 )
               );
+              // Validate kho nhập
+              if (!newWarehouseCode) {
+                setQuantityErrors(prev => ({
+                  ...prev,
+                  warehouse: {
+                    ...prev.warehouse,
+                    [params.row.id]: "Chưa chọn kho nhập!"
+                  }
+                }));
+              } else {
+                setQuantityErrors(prev => {
+                  const newErrors = { ...prev, warehouse: { ...prev.warehouse } };
+                  delete newErrors.warehouse[params.row.id];
+                  return newErrors;
+                });
+              }
             }}
             renderInput={(params) => (
               <TextField
@@ -666,6 +687,8 @@ const AddReceiptNoteGeneral = () => {
                 variant="outlined"
                 placeholder="Chọn kho"
                 size="small"
+                error={!!rowError}
+                helperText={rowError}
               />
             )}
           />
@@ -679,24 +702,21 @@ const AddReceiptNoteGeneral = () => {
       filterable: false,
       minWidth: 200,
       renderCell: (params) => {
+        const rowError = quantityErrors.quantity?.[params.row.id];
         return (
-          <div>
+          <div style={{ width: "100%" }}>
             <TextField
               type="number"
               size="small"
               color="success"
-              slotProps={{
-                input: {
-                  inputMode: "numeric",
-                }
-              }}
+              error={!!rowError}
+              helperText={rowError}
               value={params.row.quantity}
               placeholder="0"
-              onChange={(e) => handleChangeQuantity(params.row.id, e.target.value)}
+              onChange={(e) => handleChangeQuantity(params.id, e.target.value)}
               style={{ width: '100%' }}
             />
           </div>
-
         );
       }
     },
@@ -745,7 +765,7 @@ const AddReceiptNoteGeneral = () => {
   const getDropdownListByCategory = () => {
     if (category === "Thành phẩm sản xuất" || category === "Hàng hóa trả lại") {
       return productList || [];
-    } else if (category === "Nhập kho vật tư thừa") {
+    } else if (category === "Vật tư thừa sau sản xuất") {
       return materialList || [];
     } else if (category === "Khác") {
       return combinedList || [];
@@ -763,19 +783,45 @@ const AddReceiptNoteGeneral = () => {
           : item
       )
     );
+    
+    // Validate mã hàng
+    if (!newValue) {
+      setQuantityErrors(prev => ({
+        ...prev,
+        product: { ...prev.product, [rowId]: "Chưa chọn sản phẩm/vật tư!" }
+      }));
+    } else {
+      setQuantityErrors(prev => {
+        const newErrors = { ...prev, product: { ...prev.product } };
+        delete newErrors.product[rowId];
+        return newErrors;
+      });
+    }
   };
 
   const handleChangeQuantity = (rowId, newQty) => {
+    const qty = Number(newQty);
     setManualItems(prev =>
       prev.map(item =>
         item.id === rowId
-          ? { ...item, quantity: Number(newQty) }
+          ? { ...item, quantity: qty }
           : item
       )
     );
+    // Validate số lượng
+    if (!qty || qty <= 0 || qty > 100000) {
+      setQuantityErrors(prev => ({
+        ...prev,
+        quantity: { ...prev.quantity, [rowId]: "Số lượng không hợp lệ!" }
+      }));
+    } else {
+      setQuantityErrors(prev => {
+        const newErrors = { ...prev, quantity: { ...prev.quantity } };
+        delete newErrors.quantity[rowId];
+        return newErrors;
+      });
+    }
   };
-
-
 
   return (
     <div className="mb-8 flex flex-col gap-12">
@@ -822,7 +868,7 @@ const AddReceiptNoteGeneral = () => {
                 <MenuItem value="Vật tư mua bán">Vật tư mua bán</MenuItem>
                 <MenuItem value="Hàng hóa gia công">Hàng hóa gia công</MenuItem>
                 <MenuItem value="Hàng hóa trả lại">Hàng hóa trả lại</MenuItem>
-                <MenuItem value="Nhập kho vật tư thừa">Nhập kho vật tư thừa</MenuItem>
+                <MenuItem value="Vật tư thừa sau sản xuất">Vật tư thừa sau sản xuất</MenuItem>
                 <MenuItem value="Khác">Khác</MenuItem>
               </TextField>
             </div>

@@ -32,16 +32,19 @@ public class ReceiptNoteController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllGoodReceipts(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) List<String> categories,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate
     ) {
-        Page<ReceiptNoteDTO> notes = receiptNoteService.getAllReceiptNote(page, size);
+        Page<ReceiptNoteDTO> notes = receiptNoteService.getAllReceiptNote(page, size, search, categories, startDate, endDate);
         Map<String, Object> response = new HashMap<>();
         response.put("content", notes.getContent());
         response.put("totalPages", notes.getTotalPages());
         response.put("totalElements", notes.getTotalElements());
         return ResponseEntity.ok(response);
     }
-
 
     @PostMapping
     public ResponseEntity<ReceiptNoteDTO> createGoodReceipt(@RequestBody ReceiptNoteDTO grnDto) {

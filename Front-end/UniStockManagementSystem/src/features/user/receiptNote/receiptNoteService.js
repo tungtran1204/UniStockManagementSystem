@@ -10,12 +10,21 @@ const authHeader = () => {
 };
 
 // Fetch paginated receipt notes
-export const fetchReceiptNotes = async (page, size, searchTerm = "", prevData = null) => {
+export const fetchReceiptNotes = async (page, size, searchTerm = "", categories = [], startDate = null, endDate = null, prevData = null) => {
   try {
     let url = `${API_URL}?page=${page}&size=${size}`;
-
+    
     if (searchTerm) {
       url += `&search=${encodeURIComponent(searchTerm)}`;
+    }
+    if (categories && categories.length > 0) {
+      url += `&categories=${categories.map(encodeURIComponent).join(',')}`;
+    }
+    if (startDate) {
+      url += `&startDate=${encodeURIComponent(startDate)}`;
+    }
+    if (endDate) {
+      url += `&endDate=${encodeURIComponent(endDate)}`;
     }
 
     const response = await axios.get(url, { headers: authHeader() });

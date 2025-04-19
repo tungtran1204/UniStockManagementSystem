@@ -54,9 +54,18 @@ public class ReceiptNoteService {
     @Autowired private PurchaseOrderDetailRepository purchaseOrderDetailRepository;
     @Autowired private ReceiptNoteDetailRepository detailRepository;
 
-    public Page<ReceiptNoteDTO> getAllReceiptNote(int page, int size) {
+    public Page<ReceiptNoteDTO> getAllReceiptNote(int page, int size, String search, List<String> categories, String startDate, String endDate) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "receiptDate"));
-        Page<GoodReceiptNote> notes = receiptNoteRepository.findAll(pageable);
+
+        // Xử lý khoảng thời gian
+        LocalDateTime start = startDate != null && !startDate.isBlank() ? LocalDateTime.parse(startDate + "T00:00:00") : null;
+        LocalDateTime end = endDate != null && !endDate.isBlank() ? LocalDateTime.parse(endDate + "T23:59:59") : null;
+
+        // Gọi repository với các tiêu chí lọc
+        Page<GoodReceiptNote> notes = receiptNoteRepository.findByFilters(
+                search, categories, start, end, pageable
+        );
+
         return notes.map(receiptNoteMapper::toDTO);
     }
 
