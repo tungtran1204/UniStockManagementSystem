@@ -122,19 +122,46 @@ export const createIssueNote = async (issueNote) => {
     }
   };
 
-  export const getTotalQuantityOfMaterial = async (materialId) => {
+
+  export const getTotalQuantityOfMaterial = async (materialId, salesOrderId = null) => {
     try {
+      const params = new URLSearchParams();
+      if (salesOrderId !== null) {
+        params.append('salesOrderId', salesOrderId);
+      }
+  
       const response = await axios.get(
         `${import.meta.env.VITE_API_URL}/user/inventory/material/${materialId}/warehouses`,
         {
           headers: authHeader(),
+          params: params,
         }
       );
       return response.data;
     } catch (error) {
-      console.error("Lỗi khi lấy tồn kho vật tư:", error);
+      console.error("❌ [getTotalQuantityOfMaterial] Lỗi khi lấy tồn kho vật tư:", error);
       throw error;
     }
   };
   
- 
+  // 🟢 **Lấy tồn kho sản phẩm theo kho**
+  export const getTotalQuantityOfProduct = async (productId, salesOrderId = null) => {
+    try {
+      const params = new URLSearchParams();
+      if (salesOrderId !== null) {
+        params.append('salesOrderId', salesOrderId);
+      }
+  
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/user/inventory/product/${productId}/warehouses`,
+        {
+          headers: authHeader(),
+          params: params,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("❌ [getTotalQuantityOfProduct] Lỗi khi lấy tồn kho sản phẩm:", error);
+      throw error;
+    }
+  };

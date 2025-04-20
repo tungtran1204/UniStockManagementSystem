@@ -41,7 +41,7 @@ import TableSearch from "@/components/TableSearch";
 import { getPartnersByType } from "@/features/user/partner/partnerService";
 import { getSaleOrders, uploadPaperEvidence } from "./issueNoteService";
 import { getTotalQuantityOfMaterial } from "./issueNoteService";
-import { getTotalQuantityOfProduct } from "../saleorders/saleOrdersService";
+import { getTotalQuantityOfProduct } from "./issueNoteService";
 import { getProducts } from "../saleorders/saleOrdersService"; // Giả định có service này để lấy danh sách sản phẩm
 
 import useIssueNote from "./useIssueNote";
@@ -273,7 +273,7 @@ const AddIssueNote = () => {
       let inStockArr = [];
       try {
         if (detail.productId) {
-          inStockArr = await getTotalQuantityOfProduct(detail.productId);
+          inStockArr = await getTotalQuantityOfProduct(detail.productId, selectedOrder.id);
         }
       } catch (err) {
         console.error("Lỗi getTotalQuantityOfProduct:", err);
@@ -1511,7 +1511,9 @@ const AddIssueNote = () => {
                   sx={{
                     "& .MuiInputBase-root.Mui-disabled": {
                       bgcolor: "#eeeeee",
-                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        border: "none",
+                      },
                     },
                   }}
                 />
