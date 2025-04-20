@@ -1,40 +1,39 @@
 import React, { useEffect, useState } from "react";
-import usePartnerType from "./usePartnerType";
-import CreatePartnerTypePopUp from "./CreatePartnerTypePopUp";
-import EditPartnerTypePopUp from "./EditPartnerTypePopUp";
+import useUnit from "./useUnit";
+import CreateUnitModal from "./CreateUnitModal";
+import EditUnitModal from "./EditUnitModal";
 import {
     Card,
     CardBody,
     Typography,
+    Button,
     Tooltip,
     Switch,
 } from "@material-tailwind/react";
 import { IconButton } from "@mui/material";
-import ReactPaginate from "react-paginate";
-import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import ModeEditOutlineOutlinedIcon from '@mui/icons-material/ModeEditOutlineOutlined';
-import PageHeader from '@/components/PageHeader';
+import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import ReactPaginate from "react-paginate";
+import PageHeader from "@/components/PageHeader";
 import Table from "@/components/Table";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import SuccessAlert from "@/components/SuccessAlert";
 
-const PartnerTypePage = () => {
-    const { partnerTypes, fetchPartnerTypes, toggleStatus, totalPages, totalElements } = usePartnerType();
-    const [showCreatePopup, setShowCreatePopup] = useState(false);
-    const [showEditPopup, setShowEditPopup] = useState(false);
+const UnitPage = () => {
+    const { units, fetchUnits, toggleStatus, createUnit, totalPages, totalElements, loading } = useUnit();
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
     const [successAlertOpen, setSuccessAlertOpen] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
     const [pendingToggleRow, setPendingToggleRow] = useState(null);
-    const [editPartnerType, setEditPartnerType] = useState(null);
+    const [editUnit, setEditUnit] = useState(null);
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
 
     useEffect(() => {
-        fetchPartnerTypes(currentPage, pageSize).then((data) => {
-            console.log("📢 API trả về danh sách Partner Types:", data);
-        });
-    }, [currentPage, pageSize, fetchPartnerTypes]);
+        fetchUnits(currentPage, pageSize);
+    }, [currentPage, pageSize, fetchUnits]);
 
     const handlePageChange = (selectedItem) => {
         setCurrentPage(selectedItem.selected);
@@ -42,22 +41,29 @@ const PartnerTypePage = () => {
 
     const handlePageSizeChange = (e) => {
         setPageSize(Number(e.target.value));
-        setCurrentPage(0); // Reset về trang đầu khi thay đổi kích thước trang
+        setCurrentPage(0);
     };
 
-    // Cấu hình cột cho bảng
+    const handleCreateSuccess = async (formData) => {
+        try {
+            await createUnit(formData);
+            setShowCreateModal(false);
+            setSuccessMessage("Thêm đơn vị thành công!"), 
+            setSuccessAlertOpen(true);
+            fetchUnits(currentPage, pageSize);
+        } catch (error) {
+            alert(error.message || "Lỗi khi tạo đơn vị tính");
+        }
+    };
+
     const columnsConfig = [
-        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 80, editable: false, filterable: false },
-        { field: 'typeCode', headerName: 'Mã nhóm đối tác', minWidth: 150, flex: 1, editable: false, filterable: false },
-        { field: 'typeName', headerName: 'Tên nhóm đối tác', minWidth: 250, flex: 2, editable: false, filterable: false },
-        { field: 'description', headerName: 'Mô tả', minWidth: 400, flex: 2, editable: false, filterable: false },
+        { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false },
+        { field: 'unitName', headerName: 'Tên đơn vị tính', flex: 2, minWidth: 300, editable: false },
         {
             field: 'status',
             headerName: 'Trạng thái',
-            minWidth: 200,
             flex: 1,
-            editable: false,
-            filterable: false,
+            minWidth: 200,
             renderCell: (params) => (
                 <div className="flex items-center gap-2">
                     <Switch
@@ -67,11 +73,11 @@ const PartnerTypePage = () => {
                             setPendingToggleRow(params.row);
                             setConfirmDialogOpen(true);
                         }}
+                        disabled={loading}
                     />
                     <div
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                      ${params.value ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
-                            }`}
+                        ${params.value ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}
                     >
                         {params.value ? "Đang hoạt động" : "Ngừng hoạt động"}
                     </div>
@@ -81,18 +87,16 @@ const PartnerTypePage = () => {
         {
             field: 'actions',
             headerName: 'Hành động',
-            minWidth: 100,
             flex: 0.5,
-            editable: false,
-            filterable: false,
+            minWidth: 100,
             renderCell: (params) => (
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
                     <Tooltip content="Chỉnh sửa">
                         <IconButton
                             size="small"
                             onClick={() => {
-                                setEditPartnerType(params.row);
-                                setShowEditPopup(true);
+                                setEditUnit(params.row);
+                                setShowEditModal(true);
                             }}
                             color="primary"
                         >
@@ -101,28 +105,24 @@ const PartnerTypePage = () => {
                     </Tooltip>
                 </div>
             ),
-        }
+        },
     ];
 
-    // Xử lý dữ liệu cho bảng
-    const data = partnerTypes.map((type, index) => ({
-        id: type.typeId, // DataGrid cần `id`
+    const data = units.map((unit, index) => ({
+        id: unit.unitId,
         index: (currentPage * pageSize) + index + 1,
-        typeCode: type.typeCode,
-        typeName: type.typeName,
-        description: type.description || "-",
-        status: type.status,
+        unitName: unit.unitName,
+        status: unit.status,
     }));
 
     return (
         <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
-
-                <CardBody className="pb-4 bg-white rounded-xl">
+                <CardBody className="pb-2 bg-white rounded-xl">
                     <PageHeader
-                        title="Danh sách nhóm đối tác"
-                        addButtonLabel="Thêm nhóm đối tác"
-                        onAdd={() => setShowCreatePopup(true)}
+                        title="Danh sách đơn vị tính"
+                        onAdd={() => setShowCreateModal(true)}
+                        addButtonLabel="Thêm đơn vị tính"
                         showImport={false}
                         showExport={false}
                     />
@@ -145,11 +145,13 @@ const PartnerTypePage = () => {
                             </Typography>
                         </div>
                     </div>
+
                     <Table
                         data={data}
                         columnsConfig={columnsConfig}
                         enableSelection={false}
                     />
+
                     <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
                         <Typography variant="small" color="blue-gray" className="font-normal">
                             Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
@@ -176,26 +178,20 @@ const PartnerTypePage = () => {
                 </CardBody>
             </Card>
 
-            {/* Popup tạo nhóm đối tác mới */}
-            {showCreatePopup && (
-                <CreatePartnerTypePopUp
-                    onClose={() => setShowCreatePopup(false)}
-                    onSuccess={() => {
-                        fetchPartnerTypes();
-                        setSuccessMessage("Tạo nhóm đối tác thành công!");
-                        setSuccessAlertOpen(true);
-                    }}
-                />
-            )}
+            <CreateUnitModal
+                show={showCreateModal}
+                onClose={() => setShowCreateModal(false)}
+                loading={loading}
+                onSuccess={handleCreateSuccess}
+            />
 
-            {/* Popup chỉnh sửa nhóm đối tác */}
-            {showEditPopup && editPartnerType && (
-                <EditPartnerTypePopUp
-                    partnerType={editPartnerType}
-                    onClose={() => setShowEditPopup(false)}
+            {showEditModal && editUnit && (
+                <EditUnitModal
+                    unit={editUnit}
+                    onClose={() => setShowEditModal(false)}
                     onSuccess={() => {
-                        fetchPartnerTypes();
-                        setSuccessMessage("Cập nhật nhóm đối tác thành công!");
+                        fetchUnits(currentPage, pageSize);
+                        setSuccessMessage("Cập nhật đơn vị thành công!");
                         setSuccessAlertOpen(true);
                     }}
                 />
@@ -212,7 +208,7 @@ const PartnerTypePage = () => {
                     }
                     setConfirmDialogOpen(false);
                 }}
-                message={`Bạn có chắc chắn muốn ${pendingToggleRow?.status ? "ngưng hoạt động" : "kích hoạt lại"} nhóm đối tác này không?`}
+                message={`Bạn có chắc chắn muốn ${pendingToggleRow?.status ? "ngưng hoạt động" : "kích hoạt"} đơn vị tính này không?`}
                 confirmText="Có"
                 cancelText="Không"
             />
@@ -226,4 +222,4 @@ const PartnerTypePage = () => {
     );
 };
 
-export default PartnerTypePage;
+export default UnitPage;

@@ -38,55 +38,90 @@ const SaleOrdersPage = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
-  //state for filter and search
+  // State for filter and search
   const [selectedStatuses, setSelectedStatuses] = useState([]);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [statusAnchorEl, setStatusAnchorEl] = useState(null);
   const [allStatuses, setAllStatuses] = useState([]);
 
-  //list status for filter
+  // List status for filter and display
   const saleOrderStatuses = [
     {
-      value: "PROCESSING_NO_REQUEST",
-      label: "Chưa có yêu cầu",
-      className: "bg-gray-100 text-gray-800",
+        value: "PROCESSING",
+        label: "Chưa có yêu cầu",
+        className: "bg-gray-100 text-gray-800",
+    },
+    
+    {
+        value: "PROCESSING_PENDING_REQUEST",
+        label: "Đang chờ yêu cầu được duyệt",
+        className: "bg-blue-50 text-blue-800",
     },
     {
-      value: "PROCESSING_PENDING_REQUEST",
-      label: "Đang chờ yêu cầu được duyệt",
-      className: "bg-blue-50 text-blue-800",
+        value: "PROCESSING_REJECTED_REQUEST",
+        label: "Yêu cầu bị từ chối",
+        className: "bg-pink-50 text-pink-800",
     },
     {
-      value: "PROCESSING_REJECTED_REQUEST",
-      label: "Yêu cầu bị từ chối",
-      className: "bg-pink-50 text-pink-800",
+        value: "PREPARING_MATERIAL",
+        label: "Đang chuẩn bị",
+        className: "bg-yellow-100 text-amber-800",
     },
     {
-      value: "PREPARING_MATERIAL",
-      label: "Đang chuẩn bị",
-      className: "bg-yellow-100 text-amber-800",
+        value: "PARTIALLY_ISSUED",
+        label: "Đã xuất một phần",
+        className: "bg-indigo-50 text-indigo-800",
     },
     {
-      value: "PARTIALLY_ISSUED",
-      label: "Đã xuất một phần",
-      className: "bg-indigo-50 text-indigo-800",
+        value: "COMPLETED",
+        label: "Đã hoàn thành",
+        className: "bg-green-50 text-green-800",
     },
     {
-      value: "COMPLETED",
-      label: "Hoàn thành",
-      className: "bg-green-50 text-green-800",
-    },
-    {
-      value: "CANCELLED",
-      label: "Đã huỷ",
-      className: "bg-red-50 text-red-800",
+        value: "CANCELLED",
+        label: "Đã huỷ",
+        className: "bg-red-50 text-red-800",
     },
   ];
 
+  // Hàm tính toán nhãn hiển thị dựa trên status và purchaseRequestStatus
+  const getDisplayLabel = (status, purchaseRequestStatus) => {
+    switch (status) {
+      case "PROCESSING":
+        switch (purchaseRequestStatus) {
+          case "NONE":
+            return "Chưa có yêu cầu";
+          case "CONFIRMED":
+            return "Yêu cầu đã được duyệt";
+          case "CANCELLED":
+            return "Yêu cầu bị từ chối";
+          case "PENDING":
+            return "Đang chờ yêu cầu được duyệt";
+          default:
+            return "Không rõ trạng thái";
+        }
+      case "PROCESSING_NO_REQUEST":
+        return "Chưa có yêu cầu";
+      case "PROCESSING_PENDING_REQUEST":
+        return "Đang chờ yêu cầu được duyệt";
+      case "PROCESSING_REJECTED_REQUEST":
+        return "Yêu cầu bị từ chối";
+      case "PREPARING_MATERIAL":
+        return "Đang chuẩn bị";
+      case "PARTIALLY_ISSUED":
+        return "Đã xuất một phần";
+      case "COMPLETED":
+        return "Đã hoàn thành";
+      case "CANCELLED":
+        return "Đã huỷ";
+      default:
+        return "Không rõ trạng thái";
+    }
+  };
+
   // Handle search
   const handleSearch = () => {
-    // Reset to first page when searching
     setCurrentPage(0);
     fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
   };
@@ -96,7 +131,6 @@ const SaleOrdersPage = () => {
   }, []);
 
   useEffect(() => {
-    // Gọi API lấy danh sách khi thay đổi trang/pageSize
     fetchPaginatedSaleOrders(currentPage, pageSize);
   }, [currentPage, pageSize]);
 
@@ -110,7 +144,6 @@ const SaleOrdersPage = () => {
       console.log("Component mounted, location.state:", location.state?.successMessage);
       setAlertMessage(location.state.successMessage);
       setShowSuccessAlert(true);
-      // Xóa state để không hiển thị lại nếu người dùng refresh
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -137,15 +170,16 @@ const SaleOrdersPage = () => {
         (order.partnerName &&
           order.partnerName.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      // Nếu không chọn filter trạng thái thì luôn true
+      // Tính nhãn hiển thị để lọc theo trạng thái
+      const displayLabel = getDisplayLabel(order.status, order.purchaseRequestStatus);
+
       const matchesStatus =
         selectedStatuses.length === 0 ||
-        selectedStatuses.includes(order.statusLabel || getStatusLabel(order.status));
+        selectedStatuses.includes(displayLabel);
 
       return matchesSearch && matchesStatus;
     }
   );
-
 
   const getStatusLabel = (status) => {
     const statusObj = saleOrderStatuses.find((s) => s.value === status);
@@ -164,18 +198,18 @@ const SaleOrdersPage = () => {
       editable: false,
       filterable: false,
       renderCell: (params) => {
-        console.log("params.row", params.row);
-        const statusObj = saleOrderStatuses.find((s) => s.value === params.row.status);
+        const statusObj = saleOrderStatuses.find((s) => s.label === params.row.status) || 
+          { className: "bg-gray-100 text-gray-800", label: params.row.status };
         return (
           <div
             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                      ${statusObj?.className}`}
+                        ${statusObj.className}`}
           >
-            {statusObj?.label}
+            {params.row.status}
           </div>
         );
       },
-    },
+    },    
     {
       field: 'orderDate',
       headerName: 'Ngày đặt hàng',
@@ -213,11 +247,9 @@ const SaleOrdersPage = () => {
     index: currentPage * pageSize + index + 1,
     orderCode: order.orderCode || "N/A",
     partnerName: order.partnerName || "N/A",
-    status: order.status,
+    status: getDisplayLabel(order.status, order.purchaseRequestStatus), // Dùng nhãn do FE tính toán
     orderDate: order.orderDate,
   }));
-
-
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -229,12 +261,10 @@ const SaleOrdersPage = () => {
             onAdd={() => handleAddOrder(true)}
             onImport={() => {/* Xử lý import nếu có */ }}
             onExport={() => {/* Xử lý export file ở đây nếu có */ }}
-            showImport={false} // Ẩn nút import nếu không dùng
-            showExport={false} // Ẩn xuất file nếu không dùng
+            showImport={false}
+            showExport={false}
           />
-          {/* Items per page and search */}
           <div className="py-2 flex items-center justify-between gap-2">
-            {/* Items per page */}
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-light">
                 Hiển thị
@@ -257,8 +287,6 @@ const SaleOrdersPage = () => {
             </div>
 
             <div className="mb-3 flex flex-wrap items-center gap-4">
-
-              {/* Filter by date */}
               <DateFilterButton
                 startDate={startDate}
                 endDate={endDate}
@@ -266,8 +294,6 @@ const SaleOrdersPage = () => {
                 setEndDate={setEndDate}
                 setCurrentPage={setCurrentPage}
               />
-
-              {/* Filter by status */}
               <StatusFilterButton
                 anchorEl={statusAnchorEl}
                 setAnchorEl={setStatusAnchorEl}
@@ -276,8 +302,6 @@ const SaleOrdersPage = () => {
                 allStatuses={allStatuses}
                 buttonLabel="Trạng thái"
               />
-
-              {/* Search input */}
               <div className="w-[250px]">
                 <TableSearch
                   value={searchTerm}
@@ -286,18 +310,15 @@ const SaleOrdersPage = () => {
                   placeholder="Tìm kiếm đơn hàng"
                 />
               </div>
-
             </div>
           </div>
 
-          {/* Bảng đơn hàng */}
           <Table
             data={data}
             columnsConfig={columnsConfig}
             enableSelection={false}
           />
 
-          {/* Phân trang */}
           <div className="flex items-center justify-between border-t border-blue-gray-50 py-4">
             <Typography variant="small" color="blue-gray" className="font-normal">
               Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
@@ -324,11 +345,6 @@ const SaleOrdersPage = () => {
         </CardBody>
       </Card>
 
-      {/* <SuccessAlert
-        open={showSuccessAlert}
-        onClose={() => setShowSuccessAlert(false)}
-        message="Huỷ đơn hàng thành công!"
-      /> */}
       <SuccessAlert
         open={showSuccessAlert}
         onClose={() => setShowSuccessAlert(false)}

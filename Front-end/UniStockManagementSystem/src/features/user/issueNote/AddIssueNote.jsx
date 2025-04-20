@@ -16,8 +16,7 @@ import {
 } from '@mui/material';
 import {
   HighlightOffRounded,
-  ClearRounded,
-  Margin
+  ClearRounded
 } from '@mui/icons-material';
 import { useNavigate } from "react-router-dom";
 import ReactPaginate from "react-paginate";
@@ -42,7 +41,8 @@ import TableSearch from "@/components/TableSearch";
 import { getPartnersByType } from "@/features/user/partner/partnerService";
 import { getSaleOrders, uploadPaperEvidence } from "./issueNoteService";
 import { getTotalQuantityOfMaterial } from "./issueNoteService";
-import { getTotalQuantityOfProduct } from "../saleorders/saleOrdersService";
+import { getTotalQuantityOfProduct } from "./issueNoteService";
+import { getProducts } from "../saleorders/saleOrdersService"; // Giả định có service này để lấy danh sách sản phẩm
 
 import useIssueNote from "./useIssueNote";
 
@@ -78,6 +78,7 @@ const AddIssueNote = () => {
 
   // ------------------ STATE: Danh sách sản phẩm / Nguyên vật liệu ------------------
   const [products, setProducts] = useState([]);
+  const [productList, setProductList] = useState([]); // Thêm state để lưu danh sách sản phẩm
 
   // ------------------ Lấy mã phiếu + đặt ngày mặc định ------------------
   useEffect(() => {
@@ -99,17 +100,19 @@ const AddIssueNote = () => {
     try {
       const response = await getSaleOrders();
       if (response && response.content) {
-        const mapped = response.content.map((order) => ({
-          id: order.orderId,
-          orderCode: order.orderCode,
-          orderName: order.partnerName,
-          partnerCode: order.partnerCode,
-          partnerName: order.partnerName,
-          orderDate: order.orderDate,
-          address: order.address,
-          contactName: order.contactName,
-          orderDetails: order.orderDetails,
-        }));
+        const mapped = response.content
+          .filter(order => ["PREPARING_MATERIAL", "PARTIALLY_ISSUED"].includes(order.status))
+          .map((order) => ({
+            id: order.orderId,
+            orderCode: order.orderCode,
+            orderName: order.partnerName,
+            partnerCode: order.partnerCode,
+            partnerName: order.partnerName,
+            orderDate: order.orderDate,
+            address: order.address,
+            contactName: order.contactName,
+            orderDetails: order.orderDetails,
+          }));
         setOrders(mapped);
       } else {
         setOrders([]);
@@ -117,6 +120,29 @@ const AddIssueNote = () => {
     } catch (error) {
       console.error("Lỗi fetchOrders:", error);
       setOrders([]);
+    }
+  };
+
+  // ------------------ Lấy DS sản phẩm ------------------
+  const fetchProducts = async () => {
+    try {
+      const response = await getProducts(); // Giả định có API này
+      if (response && response.content) {
+        const mapped = response.content.map((prod) => ({
+          id: prod.productId,
+          code: prod.productCode,
+          name: prod.productName,
+          unitName: prod.unitName,
+          unitId: prod.unitId,
+          type: 'product'
+        }));
+        setProductList(mapped);
+      } else {
+        setProductList([]);
+      }
+    } catch (error) {
+      console.error("Lỗi fetchProducts:", error);
+      setProductList([]);
     }
   };
 
@@ -194,6 +220,9 @@ const AddIssueNote = () => {
     if (category === "Trả lại hàng mua") {
       fetchSuppliers();
     }
+    if (category === "Sản xuất") {
+      fetchProducts(); // Lấy danh sách sản phẩm khi category là Sản xuất
+    }
     setReferenceDocument("");
     setSoId(null);
     setPartnerCode("");
@@ -244,7 +273,7 @@ const AddIssueNote = () => {
       let inStockArr = [];
       try {
         if (detail.productId) {
-          inStockArr = await getTotalQuantityOfProduct(detail.productId);
+          inStockArr = await getTotalQuantityOfProduct(detail.productId, selectedOrder.id);
         }
       } catch (err) {
         console.error("Lỗi getTotalQuantityOfProduct:", err);
@@ -270,7 +299,7 @@ const AddIssueNote = () => {
             }))
           : [{
               warehouseId: null,
-              warehouseName: "(Chưa có kho)",
+              warehouseName: " ",
               quantity: 0,
               exportQuantity: 0,
               error: ""
@@ -443,7 +472,7 @@ const AddIssueNote = () => {
                                         }))
                                       : [{
                                           warehouseId: null,
-                                          warehouseName: "(Chưa có kho)",
+                                          warehouseName: " ",
                                           quantity: 0,
                                           exportQuantity: 0,
                                           error: ""
@@ -469,7 +498,7 @@ const AddIssueNote = () => {
                                   unitId: null,
                                   inventory: [{
                                     warehouseId: null,
-                                    warehouseName: "(Chưa có kho)",
+                                    warehouseName: " ",
                                     quantity: 0,
                                     exportQuantity: 0,
                                     error: ""
@@ -501,7 +530,7 @@ const AddIssueNote = () => {
                 </>
               )}
               <td className="px-3 py-2 border-r text-sm">
-                {wh.warehouseName || "(Chưa có kho)"}
+                {wh.warehouseName || " "}
               </td>
               <td className="px-3 py-2 border-r text-sm text-right">{wh.quantity}</td>
               <td className="px-3 py-2 border-r text-sm w-24">
@@ -576,17 +605,19 @@ const AddIssueNote = () => {
     } else if (category === "Sản xuất") {
       const combinedItems = [
         ...(materials || []).map((mat) => ({
-          ...mat,
           id: mat.materialId,
           code: mat.materialCode,
           name: mat.materialName,
+          unitName: mat.unitName,
+          unitId: mat.unitId,
           type: 'material'
         })),
-        ...(materials || []).map((prod) => ({
-          ...prod,
-          id: prod.materialId,
-          code: prod.materialCode,
-          name: prod.materialName,
+        ...(productList || []).map((prod) => ({
+          id: prod.id,
+          code: prod.code,
+          name: prod.name,
+          unitName: prod.unitName,
+          unitId: prod.unitId,
           type: 'product'
         }))
       ];
@@ -643,7 +674,7 @@ const AddIssueNote = () => {
                                         }))
                                       : [{
                                           warehouseId: null,
-                                          warehouseName: "(Chưa có kho)",
+                                          warehouseName: " ",
                                           quantity: 0,
                                           exportQuantity: 0,
                                           error: ""
@@ -670,7 +701,7 @@ const AddIssueNote = () => {
                                   unitId: null,
                                   inStock: [{
                                     warehouseId: null,
-                                    warehouseName: "(Chưa có kho)",
+                                    warehouseName: " ",
                                     quantity: 0,
                                     exportQuantity: 0,
                                     error: ""
@@ -702,7 +733,7 @@ const AddIssueNote = () => {
                 </>
               )}
               <td className="px-3 py-2 border-r text-sm">
-                {wh.warehouseName || "(Chưa có kho)"}
+                {wh.warehouseName || " "}
               </td>
               <td className="px-3 py-2 border-r text-sm w-24 text-center">{wh.quantity}</td>
               <td className="px-3 py-2 border-r text-sm w-40">
@@ -813,7 +844,7 @@ const AddIssueNote = () => {
                 </>
               )}
               <td className="px-3 py-2 border-r text-sm">
-                {wh.warehouseName || "(Chưa có kho)"}
+                {wh.warehouseName || " "}
               </td>
               <td className="px-3 py-2 border-r text-sm text-right">{wh.quantity}</td>
               <td className="px-3 py-2 border-r text-sm w-24">
@@ -1009,7 +1040,7 @@ const AddIssueNote = () => {
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
-            title="Phiếu xuất kho"
+            title={"Phiếu xuất kho " + issueNoteCode} 
             showAdd={false}
             showImport={false}
             showExport={false}
@@ -1380,7 +1411,9 @@ const AddIssueNote = () => {
                   sx={{
                     "& .MuiInputBase-root.Mui-disabled": {
                       bgcolor: "#eeeeee",
-                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        border: "none",
+                      },
                     },
                   }}
                 />
@@ -1478,7 +1511,9 @@ const AddIssueNote = () => {
                   sx={{
                     "& .MuiInputBase-root.Mui-disabled": {
                       bgcolor: "#eeeeee",
-                      "& .MuiOutlinedInput-notchedOutline": { border: "none" },
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        border: "none",
+                      },
                     },
                   }}
                 />
@@ -1508,13 +1543,13 @@ const AddIssueNote = () => {
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <Typography variant="medium" className="mb-1 text-black">
-                Lý do xuất
+                Diễn giải xuất kho
               </Typography>
               <TextField
                 fullWidth
                 size="small"
                 hiddenLabel
-                placeholder="Lý do xuất"
+                placeholder="Diễn giải"
                 multiline
                 rows={4}
                 color="success"
@@ -1528,8 +1563,8 @@ const AddIssueNote = () => {
               </Typography>
               <FileUploadBox files={files} setFiles={setFiles} maxFiles={3} />
             </div>
-            </div>
-            <div className="py-2 flex items-center justify-between gap-2">
+          </div>
+          <div className="py-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-light">
                 Hiển thị

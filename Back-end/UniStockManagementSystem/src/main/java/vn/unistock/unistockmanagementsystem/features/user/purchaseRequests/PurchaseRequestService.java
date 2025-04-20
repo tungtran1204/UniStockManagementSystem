@@ -18,15 +18,13 @@ import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerReposit
 import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersRepository;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class PurchaseRequestService {
-
+    private static final Logger logger = LoggerFactory.getLogger(PurchaseRequestService.class);
     private final PurchaseRequestRepository purchaseRequestRepository;
     private final MaterialsRepository materialRepository;
     private final PartnerRepository partnerRepository;
@@ -68,23 +66,23 @@ public class PurchaseRequestService {
         purchaseRequest.setCreatedDate(LocalDateTime.now());
 
         // Liên kết với đơn hàng nếu có
+        SalesOrder salesOrder = null;
         if (dto.getSaleOrderId() != null) {
-            SalesOrder salesOrder = saleOrdersRepository.findById(dto.getSaleOrderId())
+            salesOrder = saleOrdersRepository.findById(dto.getSaleOrderId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng"));
             purchaseRequest.setSalesOrder(salesOrder);
         }
 
-        // ✅ Dùng mapper để convert list DTO → entity
+        // Convert list DTO → entity
         List<PurchaseRequestDetail> details = purchaseRequestDetailMapper.toEntityList(dto.getPurchaseRequestDetails());
 
-        // ✅ Gán lại quan hệ thủ công
+        // Gán lại quan hệ cho từng detail
         for (int i = 0; i < details.size(); i++) {
             PurchaseRequestDetail detail = details.get(i);
             PurchaseRequestDetailDTO detailDTO = dto.getPurchaseRequestDetails().get(i);
 
             Material material = materialRepository.findById(detailDTO.getMaterialId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy vật tư với ID: " + detailDTO.getMaterialId()));
-
             Partner partner = partnerRepository.findById(detailDTO.getPartnerId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy nhà cung cấp với ID: " + detailDTO.getPartnerId()));
 
@@ -95,18 +93,32 @@ public class PurchaseRequestService {
 
         purchaseRequest.setPurchaseRequestDetails(details);
 
-        // ✅ Nếu là từ đơn hàng thì xử lý thêm trừ kho sản phẩm
+        // ✅ Nếu là từ đơn hàng thì trừ kho sản phẩm
         if (dto.getSaleOrderId() != null && !CollectionUtils.isEmpty(dto.getUsedProductsFromWarehouses())) {
-            SalesOrder saleOrder = purchaseRequest.getSalesOrder();
-            reserveProductsForSalesOrder(saleOrder, dto.getUsedProductsFromWarehouses());
+            reserveProductsForSalesOrder(salesOrder, dto.getUsedProductsFromWarehouses());
         }
 
+        // ✅ Trừ kho vật tư nếu có SaleOrder và danh sách vật tư
+        if (dto.getSaleOrderId() != null && !CollectionUtils.isEmpty(dto.getPurchaseRequestDetails())) {
+            reserveMaterialsForPurchaseRequest(dto.getPurchaseRequestDetails(), salesOrder);
+        } else if (!CollectionUtils.isEmpty(dto.getPurchaseRequestDetails())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "SalesOrder is required to reserve materials for PurchaseRequest");
+        }
+
+        // Lưu vào DB
         PurchaseRequest saved = purchaseRequestRepository.save(purchaseRequest);
+
+        // Trả về DTO sau khi lưu
         return purchaseRequestMapper.toDTO(saved);
     }
 
 
-    public void reserveMaterialsForPurchaseRequest(List<PurchaseRequestDetailDTO> detailDTOs) {
+
+    public void reserveMaterialsForPurchaseRequest(List<PurchaseRequestDetailDTO> detailDTOs, SalesOrder salesOrder) {
+        if (salesOrder == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "SalesOrder is required for reserving materials");
+        }
+
         for (PurchaseRequestDetailDTO detailDto : detailDTOs) {
             if (detailDto.getQuantity() <= 0) continue;
 
@@ -131,16 +143,18 @@ public class PurchaseRequestService {
                     inventoryRepository.save(available);
                 }
 
-                Inventory reserved = inventoryRepository.findByMaterial_MaterialIdAndWarehouse_WarehouseIdAndStatus(
+                Inventory reserved = inventoryRepository.findByMaterial_MaterialIdAndWarehouse_WarehouseIdAndStatusAndSalesOrder(
                         material.getMaterialId(),
                         available.getWarehouse().getWarehouseId(),
-                        Inventory.InventoryStatus.RESERVED
+                        Inventory.InventoryStatus.RESERVED,
+                        salesOrder
                 ).orElseGet(() -> {
                     Inventory newReserved = new Inventory();
                     newReserved.setMaterial(material);
                     newReserved.setWarehouse(available.getWarehouse());
                     newReserved.setStatus(Inventory.InventoryStatus.RESERVED);
                     newReserved.setQuantity(0.0);
+                    newReserved.setSalesOrder(salesOrder);
                     return newReserved;
                 });
 
@@ -150,10 +164,16 @@ public class PurchaseRequestService {
 
                 quantityToReserve -= toUse;
             }
+
+
         }
     }
 
     public void reserveProductsForSalesOrder(SalesOrder salesOrder, List<UsedProductWarehouseDTO> usedProducts) {
+        if (salesOrder == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "SalesOrder is required for reserving products");
+        }
+
         if (usedProducts == null || usedProducts.isEmpty()) return;
 
         for (UsedProductWarehouseDTO entry : usedProducts) {
@@ -180,20 +200,20 @@ public class PurchaseRequestService {
                     inventoryRepository.save(inventory);
                 }
 
-                Inventory reserved = inventoryRepository
-                        .findByProduct_ProductIdAndWarehouse_WarehouseIdAndStatus(
-                                productId,
-                                warehouseId,
-                                Inventory.InventoryStatus.RESERVED
-                        )
-                        .orElseGet(() -> {
-                            Inventory newReserved = new Inventory();
-                            newReserved.setProduct(inventory.getProduct());
-                            newReserved.setWarehouse(inventory.getWarehouse());
-                            newReserved.setStatus(Inventory.InventoryStatus.RESERVED);
-                            newReserved.setQuantity(0.0);
-                            return newReserved;
-                        });
+                Inventory reserved = inventoryRepository.findByProduct_ProductIdAndWarehouse_WarehouseIdAndStatusAndSalesOrder(
+                        productId,
+                        warehouseId,
+                        Inventory.InventoryStatus.RESERVED,
+                        salesOrder
+                ).orElseGet(() -> {
+                    Inventory newReserved = new Inventory();
+                    newReserved.setProduct(inventory.getProduct());
+                    newReserved.setWarehouse(inventory.getWarehouse());
+                    newReserved.setStatus(Inventory.InventoryStatus.RESERVED);
+                    newReserved.setQuantity(0.0);
+                    newReserved.setSalesOrder(salesOrder);
+                    return newReserved;
+                });
 
                 reserved.setQuantity(reserved.getQuantity() + toUse);
                 reserved.setLastUpdated(LocalDateTime.now());
@@ -221,29 +241,148 @@ public class PurchaseRequestService {
         if (statusEnum == PurchaseRequest.RequestStatus.CANCELLED) {
             request.setRejectionReason(rejectionReason);
 
-            // Trả lại RESERVED ➝ AVAILABLE (không cần nữa vì đã loại bỏ logic trừ khi tạo)
-            // Không làm gì nếu lúc tạo chưa trừ kho
-        } else if (statusEnum == PurchaseRequest.RequestStatus.CONFIRMED) {
-            request.setRejectionReason(null);
+            // Release RESERVED inventory for materials
+            List<PurchaseRequestDetail> details = request.getPurchaseRequestDetails();
+            for (PurchaseRequestDetail detail : details) {
+                Material material = detail.getMaterial();
+                double quantityToRelease = detail.getQuantity();
 
-            // ✅ Chỉ trừ kho khi xác nhận yêu cầu
-            List<PurchaseRequestDetailDTO> reserveDTOs = request.getPurchaseRequestDetails().stream()
-                    .map(detail -> {
-                        PurchaseRequestDetailDTO dto = new PurchaseRequestDetailDTO();
-                        dto.setMaterialId(detail.getMaterial().getMaterialId());
-                        dto.setQuantity(detail.getQuantity());
-                        return dto;
-                    })
-                    .collect(Collectors.toList());
+                // Fetch all RESERVED inventory for this material
+                List<Inventory> reservedInventories = inventoryRepository.findByMaterialIdAndStatus(
+                        material.getMaterialId(), Inventory.InventoryStatus.RESERVED);
 
-            reserveMaterialsForPurchaseRequest(reserveDTOs);
+                // Group quantities by warehouse
+                Map<Long, Double> warehouseQuantities = new HashMap<>();
+                for (Inventory inventory : reservedInventories) {
+                    if (quantityToRelease <= 0) break;
+
+                    double quantityInInventory = inventory.getQuantity();
+                    double quantityToReleaseFromThis = Math.min(quantityInInventory, quantityToRelease);
+
+                    Long warehouseId = inventory.getWarehouse().getWarehouseId();
+                    warehouseQuantities.merge(warehouseId, quantityToReleaseFromThis, Double::sum);
+
+                    quantityToRelease -= quantityToReleaseFromThis;
+                }
+
+                // Consolidate inventory for each warehouse
+                for (Map.Entry<Long, Double> entry : warehouseQuantities.entrySet()) {
+                    Long warehouseId = entry.getKey();
+                    double releasedQuantity = entry.getValue();
+
+                    Warehouse warehouse = reservedInventories.stream()
+                            .filter(inv -> inv.getWarehouse().getWarehouseId().equals(warehouseId))
+                            .findFirst()
+                            .map(Inventory::getWarehouse)
+                            .orElseThrow(() -> new RuntimeException("Warehouse not found for warehouseId: " + warehouseId));
+
+                    // Find or create AVAILABLE inventory
+                    Inventory availableInventory = inventoryRepository.findByWarehouseAndMaterialAndStatus(
+                                    warehouse, material, Inventory.InventoryStatus.AVAILABLE)
+                            .orElse(null);
+
+                    if (availableInventory == null) {
+                        availableInventory = Inventory.builder()
+                                .warehouse(warehouse)
+                                .material(material)
+                                .status(Inventory.InventoryStatus.AVAILABLE)
+                                .quantity(0.0)
+                                .build();
+                    }
+                    availableInventory.setQuantity(availableInventory.getQuantity() + releasedQuantity);
+                    availableInventory.setLastUpdated(LocalDateTime.now());
+                    availableInventory.setSalesOrder(null);
+                    inventoryRepository.save(availableInventory);
+
+                    // Delete RESERVED records for this warehouse
+                    List<Inventory> reservedToDelete = reservedInventories.stream()
+                            .filter(inv -> inv.getWarehouse().getWarehouseId().equals(warehouseId))
+                            .toList();
+                    inventoryRepository.deleteAll(reservedToDelete);
+                }
+
+                if (quantityToRelease > 0) {
+                    logger.warn("Insufficient RESERVED inventory for materialId {}: {} units remaining",
+                            material.getMaterialId(), quantityToRelease);
+                }
+            }
+
+            // Release RESERVED inventory for products if linked to a SalesOrder
+            if (request.getSalesOrder() != null) {
+                SalesOrder salesOrder = request.getSalesOrder();
+                List<SalesOrderDetail> orderDetails = salesOrder.getDetails();
+                for (SalesOrderDetail detail : orderDetails) {
+                    Product product = detail.getProduct();
+                    double quantityToRelease = detail.getQuantity();
+
+                    // Fetch all RESERVED inventory for this product
+                    List<Inventory> reservedInventories = inventoryRepository.findByProductIdAndStatus(
+                            product.getProductId(), Inventory.InventoryStatus.RESERVED);
+
+                    // Group quantities by warehouse
+                    Map<Long, Double> warehouseQuantities = new HashMap<>();
+                    for (Inventory inventory : reservedInventories) {
+                        if (quantityToRelease <= 0) break;
+
+                        double quantityInInventory = inventory.getQuantity();
+                        double quantityToReleaseFromThis = Math.min(quantityInInventory, quantityToRelease);
+
+                        Long warehouseId = inventory.getWarehouse().getWarehouseId();
+                        warehouseQuantities.merge(warehouseId, quantityToReleaseFromThis, Double::sum);
+
+                        quantityToRelease -= quantityToReleaseFromThis;
+                    }
+
+                    // Consolidate inventory for each warehouse
+                    for (Map.Entry<Long, Double> entry : warehouseQuantities.entrySet()) {
+                        Long warehouseId = entry.getKey();
+                        double releasedQuantity = entry.getValue();
+
+                        Warehouse warehouse = reservedInventories.stream()
+                                .filter(inv -> inv.getWarehouse().getWarehouseId().equals(warehouseId))
+                                .findFirst()
+                                .map(Inventory::getWarehouse)
+                                .orElseThrow(() -> new RuntimeException("Warehouse not found for warehouseId: " + warehouseId));
+
+                        // Find or create AVAILABLE inventory
+                        Inventory availableInventory = inventoryRepository.findByWarehouseAndProductAndStatus(
+                                        warehouse, product, Inventory.InventoryStatus.AVAILABLE)
+                                .orElse(null);
+
+                        if (availableInventory == null) {
+                            availableInventory = Inventory.builder()
+                                    .warehouse(warehouse)
+                                    .product(product)
+                                    .status(Inventory.InventoryStatus.AVAILABLE)
+                                    .quantity(0.0)
+                                    .build();
+                        }
+                        availableInventory.setQuantity(availableInventory.getQuantity() + releasedQuantity);
+                        availableInventory.setLastUpdated(LocalDateTime.now());
+                        availableInventory.setSalesOrder(null);
+                        inventoryRepository.save(availableInventory);
+
+                        // Delete RESERVED records for this warehouse
+                        List<Inventory> reservedToDelete = reservedInventories.stream()
+                                .filter(inv -> inv.getWarehouse().getWarehouseId().equals(warehouseId))
+                                .toList();
+                        inventoryRepository.deleteAll(reservedToDelete);
+                    }
+
+                    if (quantityToRelease > 0) {
+                        logger.warn("Insufficient RESERVED inventory for productId {}: {} units remaining",
+                                product.getProductId(), quantityToRelease);
+                    }
+                }
+            }
         } else {
+            // For non-CANCELLED statuses, clear rejectionReason
             request.setRejectionReason(null);
         }
 
         purchaseRequestRepository.save(request);
 
-        // ✅ Xử lý trạng thái đơn hàng liên quan (nếu có)
+        // Update related SalesOrder status if applicable
         if (request.getSalesOrder() != null) {
             SalesOrder salesOrder = request.getSalesOrder();
             List<PurchaseRequest> allRequests = purchaseRequestRepository.findAllBySalesOrder_OrderId(salesOrder.getOrderId());
@@ -262,9 +401,6 @@ public class PurchaseRequestService {
 
         return purchaseRequestMapper.toDTO(request);
     }
-
-
-
 
     @Transactional
     public String getNextRequestCode() {

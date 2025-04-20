@@ -41,7 +41,6 @@ public class Partner {
     @Size(min = 10, max = 11, message = "Số điện thoại phải từ 10 đến 11 ký tự.")
     private String phone;
 
-    @NotBlank(message = "Email không được để trống.")
     @Email(message = "Email không hợp lệ.")
     private String email;
 

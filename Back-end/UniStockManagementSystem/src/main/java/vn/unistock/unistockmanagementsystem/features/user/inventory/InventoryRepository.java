@@ -7,18 +7,23 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import vn.unistock.unistockmanagementsystem.entities.Inventory;
-import vn.unistock.unistockmanagementsystem.entities.Material;
-import vn.unistock.unistockmanagementsystem.entities.Product;
-import vn.unistock.unistockmanagementsystem.entities.Warehouse;
+import vn.unistock.unistockmanagementsystem.entities.*;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, Long> {
-    Optional<Inventory> findByWarehouseAndMaterial(Warehouse warehouse, Material material);
-    Optional<Inventory> findByWarehouseAndProduct(Warehouse warehouse, Product product);
+
+
+    Optional<Inventory> findByWarehouseAndMaterialAndStatusAndSalesOrder(Warehouse warehouse, Material material, Inventory.InventoryStatus status, SalesOrder salesOrder);
+    Optional<Inventory> findByWarehouseAndProductAndStatusAndSalesOrder(Warehouse warehouse, Product product, Inventory.InventoryStatus status, SalesOrder salesOrder);
+
+    Optional<Inventory> findByWarehouseAndMaterialAndStatus(Warehouse warehouse, Material material, Inventory.InventoryStatus status);
+    Optional<Inventory> findByWarehouseAndProductAndStatus(Warehouse warehouse, Product product, Inventory.InventoryStatus status);
+
+    Optional<Inventory> findByMaterial_MaterialIdAndWarehouse_WarehouseIdAndStatusAndSalesOrder(Long materialId, Long warehouseId, Inventory.InventoryStatus status, SalesOrder salesOrder);
+    Optional<Inventory> findByProduct_ProductIdAndWarehouse_WarehouseIdAndStatusAndSalesOrder(Long productId, Long warehouseId, Inventory.InventoryStatus status, SalesOrder salesOrder);
 
     @Query("""
     SELECT i 
@@ -73,6 +78,42 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     GROUP BY i.warehouse.warehouseId, i.warehouse.warehouseName
     """)
     List<InventoryByWarehouseDTO> findInventoryByMaterialId(@Param("materialId") Long materialId);
+
+
+    @Query("""
+    SELECT new vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryByWarehouseDTO(
+        i.warehouse.warehouseId,
+        i.warehouse.warehouseName,
+        SUM(i.quantity)
+    )
+    FROM Inventory i
+    WHERE i.product.productId = :productId
+      AND i.quantity > 0
+      AND (i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.AVAILABLE
+           OR (i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.RESERVED
+               AND i.salesOrder.orderId = :salesOrderId))
+      AND i.warehouse.warehouseId <> 3
+    GROUP BY i.warehouse.warehouseId, i.warehouse.warehouseName
+    """)
+    List<InventoryByWarehouseDTO> findInventoryByProductIdWithSalesOrder(@Param("productId") Long productId, @Param("salesOrderId") Long salesOrderId);
+
+    @Query("""
+    SELECT new vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryByWarehouseDTO(
+        i.warehouse.warehouseId,
+        i.warehouse.warehouseName,
+        SUM(i.quantity)
+    )
+    FROM Inventory i
+    WHERE i.material.materialId = :materialId
+      AND i.quantity > 0
+      AND (i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.AVAILABLE
+           OR (i.status = vn.unistock.unistockmanagementsystem.entities.Inventory.InventoryStatus.RESERVED
+               AND i.salesOrder.orderId = :salesOrderId))
+      AND i.warehouse.warehouseId <> 3
+    GROUP BY i.warehouse.warehouseId, i.warehouse.warehouseName
+    """)
+    List<InventoryByWarehouseDTO> findInventoryByMaterialIdWithSalesOrder(@Param("materialId") Long materialId, @Param("salesOrderId") Long salesOrderId);
+
 
     @Query("""
     SELECT COALESCE(SUM(i.quantity), 0)

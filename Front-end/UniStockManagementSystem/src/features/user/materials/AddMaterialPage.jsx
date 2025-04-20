@@ -7,12 +7,13 @@ import {
     Typography,
 } from "@material-tailwind/react";
 import { TextField, Button as MuiButton, Autocomplete, IconButton, Divider } from '@mui/material';
-import { checkMaterialCodeExists, fetchUnits, fetchMaterialCategories, createMaterial } from "./materialService";
+import { checkMaterialCodeExists, fetchMaterialCategories, createMaterial } from "./materialService";
+import { fetchActiveUnits } from "../unit/unitService";
 import PageHeader from '@/components/PageHeader';
 import ImageUploadBox from '@/components/ImageUploadBox';
 import { getPartnersByType } from "../partner/partnerService";
 
-const SUPPLIER_TYPE_ID = 2; // Thêm constant này ở đầu file
+const SUPPLIER_TYPE_ID = 2;
 
 const AddMaterialPage = () => {
     const navigate = useNavigate();
@@ -31,7 +32,7 @@ const AddMaterialPage = () => {
     const [loading, setLoading] = useState(false);
     const [materialCodeError, setMaterialCodeError] = useState("");
     const [validationErrors, setValidationErrors] = useState({});
-    const [supplierError, setSupplierError] = useState("");
+    const [supplierError, setSupplierError] = useState(""); // Không hiển thị lỗi ban đầu
     const [units, setUnits] = useState([]);
     const [materialCategories, setMaterialCategories] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
@@ -42,23 +43,19 @@ const AddMaterialPage = () => {
         const loadInitialData = async () => {
             try {
                 const [unitsData, categoriesData, suppliersData] = await Promise.all([
-                    fetchUnits(),
+                    fetchActiveUnits(),
                     fetchMaterialCategories(),
                     getPartnersByType(SUPPLIER_TYPE_ID)
                 ]);
 
-                setUnits(unitsData);
+                setUnits(Array.isArray(unitsData) ? unitsData : []);
                 setMaterialCategories(categoriesData.content || []);
 
-
-                // Map lại dữ liệu suppliers theo định dạng mới
-                // ✅ Map suppliers đúng định dạng (lọc theo partnerType và partnerCode)
                 const mappedSuppliers = (suppliersData?.partners || [])
                     .map((s) => {
                         const t = s.partnerTypes.find(
                             (pt) => pt.partnerType.typeId === SUPPLIER_TYPE_ID
                         );
-                        console.log("supplier: ", s);
                         return {
                             value: s.partnerId,
                             label: s.partnerName,
@@ -68,13 +65,13 @@ const AddMaterialPage = () => {
                             contactName: s.contactName,
                         };
                     })
-                    .filter((s) => s.code !== "");
+                    .filter((s) => s.partnerCode !== "");
 
                 setSuppliers(mappedSuppliers);
-
             } catch (error) {
                 console.error("❌ Lỗi khi tải dữ liệu ban đầu:", error);
                 setErrors({ message: "Lỗi khi tải dữ liệu ban đầu" });
+                setUnits([]);
             }
         };
 
@@ -99,32 +96,38 @@ const AddMaterialPage = () => {
             try {
                 const exists = await checkMaterialCodeExists(newCode);
                 if (exists) {
-                    setMaterialCodeError("Mã nguyên vật liệu này đã tồn tại!");
+                    setMaterialCodeError("Mã vật tư này đã tồn tại!");
                 }
             } catch (error) {
-                console.error("❌ Lỗi kiểm tra mã nguyên vật liệu:", error);
-                setMaterialCodeError("Lỗi khi kiểm tra mã nguyên vật liệu!");
+                console.error("❌ Lỗi kiểm tra mã vật tư:", error);
+                setMaterialCodeError("Lỗi khi kiểm tra mã vật tư!");
             }
         }
     };
 
     const handleSupplierChange = (selectedOptions) => {
-        setSupplierError("");
         const selectedIds = selectedOptions.map(option => option.value);
         setNewMaterial(prev => ({
             ...prev,
             supplierIds: selectedIds
         }));
+        // Xóa lỗi validation khi chọn ít nhất một nhà cung cấp
+        if (selectedIds.length > 0) {
+            setValidationErrors(prev => ({
+                ...prev,
+                supplierIds: ""
+            }));
+        }
     };
 
     const handleCreateMaterial = async () => {
         const newErrors = {};
 
         if (isEmptyOrWhitespace(newMaterial.materialCode)) {
-            newErrors.materialCode = "Mã nguyên vật liệu không được để trống hoặc chỉ chứa khoảng trắng!";
+            newErrors.materialCode = "Mã vật tư không được để trống hoặc chỉ chứa khoảng trắng!";
         }
         if (isEmptyOrWhitespace(newMaterial.materialName)) {
-            newErrors.materialName = "Tên nguyên vật liệu không được để trống hoặc chỉ chứa khoảng trắng!";
+            newErrors.materialName = "Tên vật tư không được để trống hoặc chỉ chứa khoảng trắng!";
         }
         if (!newMaterial.unitId) {
             newErrors.unitId = "Vui lòng chọn đơn vị!";
@@ -141,7 +144,6 @@ const AddMaterialPage = () => {
         if (Object.keys(newErrors).length === 0 && !materialCodeError) {
             try {
                 setLoading(true);
-                // Gọi API createMaterial
                 const formData = new FormData();
                 formData.append("materialCode", newMaterial.materialCode.trim());
                 formData.append("materialName", newMaterial.materialName.trim());
@@ -150,20 +152,17 @@ const AddMaterialPage = () => {
                 formData.append("typeId", parseInt(newMaterial.typeId));
                 formData.append("isActive", true);
 
-                // Thay đổi cách gửi supplierIds
                 newMaterial.supplierIds.forEach(id => {
                     formData.append("supplierIds", id);
                 });
-
 
                 if (newMaterial.image) {
                     formData.append("image", newMaterial.image);
                 }
 
-                // Gọi API tạo material
                 await createMaterial(formData);
 
-                navigate("/user/materials", { state: { successMessage: "Tạo nguyên vật liệu thành công!" } });
+                navigate("/user/materials", { state: { successMessage: "Tạo vật tư thành công!" } });
             } catch (error) {
                 console.error("Create material error:", error);
                 setErrors({
@@ -184,7 +183,7 @@ const AddMaterialPage = () => {
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
                 <CardBody className="pb-2 bg-white rounded-xl">
                     <PageHeader
-                        title="Tạo nguyên vật liệu mới"
+                        title="Tạo vật tư mới"
                         showAdd={false}
                         showImport={false}
                         showExport={false}
@@ -198,14 +197,14 @@ const AddMaterialPage = () => {
                         <div className="flex flex-col gap-4">
                             <div>
                                 <Typography variant="medium" className="mb-1 text-black">
-                                    Mã nguyên vật liệu
+                                    Mã vật tư
                                     <span className="text-red-500"> *</span>
                                 </Typography>
                                 <TextField
                                     fullWidth
                                     size="small"
                                     hiddenLabel
-                                    placeholder="Mã nguyên vật liệu"
+                                    placeholder="Mã vật tư"
                                     color="success"
                                     value={newMaterial.materialCode}
                                     onChange={(e) => handleCheckMaterialCode(e.target.value)}
@@ -224,11 +223,13 @@ const AddMaterialPage = () => {
                                     <span className="text-red-500"> *</span>
                                 </Typography>
                                 <Autocomplete
-                                    options={units}
+                                    options={Array.isArray(units) ? units : []}
                                     size="small"
                                     getOptionLabel={(option) => option.unitName || ""}
                                     value={
-                                        units.find((unit) => unit.unitId === newMaterial.unitId) || null
+                                        Array.isArray(units) && newMaterial.unitId
+                                            ? units.find((unit) => unit.unitId === newMaterial.unitId) || null
+                                            : null
                                     }
                                     onChange={(event, selectedUnit) => {
                                         setNewMaterial(prev => ({ ...prev, unitId: selectedUnit ? selectedUnit.unitId : "" }));
@@ -271,14 +272,14 @@ const AddMaterialPage = () => {
                         <div className="flex flex-col gap-4">
                             <div>
                                 <Typography variant="medium" className="mb-1 text-black">
-                                    Tên nguyên vật liệu
+                                    Tên vật tư
                                     <span className="text-red-500"> *</span>
                                 </Typography>
                                 <TextField
                                     fullWidth
                                     size="small"
                                     hiddenLabel
-                                    placeholder="Tên nguyên vật liệu"
+                                    placeholder="Tên vật tư"
                                     color="success"
                                     value={newMaterial.materialName}
                                     onChange={(e) => {
@@ -352,19 +353,20 @@ const AddMaterialPage = () => {
                                             hiddenLabel
                                             {...params}
                                             placeholder="Chọn nhà cung cấp"
+                                            error={Boolean(validationErrors.supplierIds)}
                                         />
                                     )}
                                 />
-                                {(validationErrors.supplierIds || supplierError) && (
+                                {validationErrors.supplierIds && (
                                     <Typography className="text-xs text-red-500 mt-1">
-                                        {validationErrors.supplierIds || supplierError}
+                                        {validationErrors.supplierIds}
                                     </Typography>
                                 )}
                             </div>
 
                             <div>
                                 <Typography variant="medium" className="mb-1 text-black">
-                                    Hình ảnh nguyên vật liệu
+                                    Hình ảnh vật tư
                                 </Typography>
                                 <ImageUploadBox
                                     onFileSelect={(file) => {

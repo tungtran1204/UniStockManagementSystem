@@ -7,9 +7,11 @@ import {
   Typography,
   Button,
 } from "@material-tailwind/react";
-import { TextField, Divider, Button as MuiButton, IconButton } from "@mui/material";
+import { TextField, Divider, Button as MuiButton, IconButton, Autocomplete } from "@mui/material";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import useWarehouse from "./useWarehouse";
+import { InputBase } from "@mui/material";
+import { fetchWarehouses } from "./warehouseService";
 
 const ModalEditWarehouse = ({ open, onClose, warehouse, onSuccess }) => {
   const [warehouseCode, setWarehouseCode] = useState("");
@@ -18,30 +20,83 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, onSuccess }) => {
   const [isActive, setIsActive] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState({});
+  const [openDropdown, setOpenDropdown] = useState(false);
 
-  const { editWarehouse } = useWarehouse();
+  const allCategoryOptions = [
+    "Thành phẩm sản xuất",
+    "Vật tư mua bán",
+    "Hàng hóa trả lại",
+    "Hàng hóa gia công",
+    "Vật tư thừa sau sản xuất"
+  ];
+
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [warehouseCategories, setWarehouseCategories] = useState([]);
+  const [availableCategories, setAvailableCategories] = useState([]);
+  const { editWarehouse, getUsedCategories } = useWarehouse();
+
+  const fetchAvailableCategories = async (warehouse, currentSelectedLabels = []) => {
+    if (!warehouse) return;
+
+    const usedLabels = await getUsedCategories(warehouse.warehouseId);
+    console.log("usedLabels from API:", usedLabels);
+    console.log("current selected labels:", currentSelectedLabels);
+
+    const dropdown = allCategoryOptions.filter(label =>
+      !usedLabels.includes(label) || currentSelectedLabels.includes(label)
+    );
+
+    console.log("Dropdown filtered categories:", dropdown);
+
+    setAvailableCategories(dropdown);
+  };
+
+
 
   useEffect(() => {
-    if (warehouse) {
-      setWarehouseCode(warehouse.warehouseCode || "");
-      setWarehouseName(warehouse.warehouseName || "");
-      setDescription(warehouse.warehouseDescription || "");
-      setIsActive(warehouse.isActive || "");
-    }
+    if (!warehouse) return;
+
+    setWarehouseCode(warehouse.warehouseCode || "");
+    setWarehouseName(warehouse.warehouseName || "");
+    setDescription(warehouse.warehouseDescription || "");
+
+    const currentCategories = warehouse.goodCategory
+      ? warehouse.goodCategory.split(", ").map(cat => cat.trim())
+      : [];
+
+    setSelectedCategories(currentCategories);
+    fetchAvailableCategories(warehouse, currentCategories);
   }, [warehouse]);
+
+
+  // // Lấy danh sách phân loại khả dụng cho việc chỉnh sửa
+  const fetchAvailableCategoriesForEdit = async () => {
+    if (!warehouse) return;
+
+    try {
+      // Lấy danh sách phân loại đã được sử dụng bởi các kho khác
+      const usedCategories = await getUsedCategories(warehouse.warehouseId);
+
+      // Lấy danh sách phân loại hiện tại của kho này
+      const currentCategories = warehouse.goodCategory
+        ? warehouse.goodCategory.split(", ").map(cat => cat.trim())
+        : [];
+
+      // Lọc ra các phân loại có thể chọn:
+      // - Tất cả các phân loại chưa được sử dụng
+      // - Cộng với các phân loại hiện tại của kho này
+      const available = allCategoryOptions.filter(category =>
+        !usedCategories.includes(category) || currentCategories.includes(category)
+      );
+
+      setAvailableCategories(available);
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách phân loại kho:", error);
+    }
+  };
 
   const validateFields = (field, value) => {
     let errors = { ...error };
-
-    if (field === "warehouseCode") {
-      if (!value.trim()) {
-        errors.warehouseCode = "Mã kho không được để trống.";
-      } else if (!/^[A-Za-z0-9_-]{1,10}$/.test(value)) {
-        errors.warehouseCode = "Mã kho chỉ được chứa chữ, số, dấu '-' hoặc '_', từ 1 đến 10 ký tự.";
-      } else {
-        delete errors.warehouseCode;
-      }
-    }
 
     if (field === "warehouseName") {
       if (!value.trim()) {
@@ -67,23 +122,21 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, onSuccess }) => {
   const handleUpdate = async () => {
     setLoading(true);
     try {
-      await editWarehouse(warehouse.warehouseId, { warehouseCode, warehouseName, warehouseDescription, isActive });
-      onSuccess();
+      const goodCategory = selectedCategories.length > 0 ? selectedCategories.join(", ") : null;
+
+      await editWarehouse(warehouse.warehouseId, {
+        warehouseName,
+        warehouseDescription,
+        goodCategory,
+        isActive: warehouse.isActive
+      });
+
+      alert("Chỉnh sửa thông tin kho thành công!");
+      fetchWarehouses();
       onClose();
     } catch (error) {
-      if (error.response?.status === 409) {
-        const errorCode = error.response.data;
-        let errors = { ...error };
-        if (errorCode === "DUPLICATE_CODE_AND_NAME") {
-          errors.warehouseCode = "Mã kho đã tồn tại.";
-          errors.warehouseName = "Tên kho đã tồn tại.";
-        } else if (errorCode === "DUPLICATE_CODE") {
-          errors.warehouseCode = "Mã kho đã tồn tại.";
-        } else if (errorCode === "DUPLICATE_NAME") {
-          errors.warehouseName = "Tên kho đã tồn tại.";
-        }
-        setError(errors);
-      }
+      console.error("Lỗi khi sửa thông tin kho:", error);
+      alert(error?.response?.data?.message || "Lỗi khi sửa kho!");
     } finally {
       setLoading(false);
     }
@@ -122,12 +175,9 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, onSuccess }) => {
               hiddenLabel
               placeholder="Mã kho"
               color="success"
+              disabled
               value={warehouseCode}
-              onChange={(e) => {
-                setWarehouseCode(e.target.value);
-                validateFields("warehouseCode", e.target.value);
-              }}
-              error={!!error.warehouseCode}
+              error={!!error.warehouseName}
             />
             {error.warehouseCode && <Typography variant="small" color="red">{error.warehouseCode}</Typography>}
           </div>
@@ -151,6 +201,54 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, onSuccess }) => {
             />
             {error.warehouseName && <Typography variant="small" color="red">{error.warehouseName}</Typography>}
           </div>
+        </div>
+
+        <div>
+          <Typography variant="medium" className="text-black mb-1">
+            Phân loại hàng hóa nhập vào kho <span className="text-red-500">(*)</span>
+          </Typography>
+          <Autocomplete
+            multiple
+            open={openDropdown}
+            onOpen={() => {
+              console.log("Dropdown opened");
+              setOpenDropdown(true);
+            }}
+            onClose={() => {
+              console.log("Dropdown closed");
+              setOpenDropdown(false);
+            }}
+            options={availableCategories}
+            value={selectedCategories}
+            getOptionLabel={(option) => option || ""}
+            disableCloseOnSelect
+            onChange={(event, newValues) => {
+              const validValues = newValues.filter((value) => availableCategories.includes(value));
+              setSelectedCategories(validValues);
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                fullWidth
+                variant="outlined"
+                size="small"
+                color="success"
+                placeholder="Chọn phân loại hàng hóa nhập vào kho"
+              />
+            )}
+            slotProps={{
+              popper: {
+                  sx: { zIndex: 9999 }, // Cố định z-index trong Popper
+              },
+          }}
+            noOptionsText="Tất cả phân loại đã được sử dụng"
+          />
+
+          {availableCategories.length === 0 && selectedCategories.length === 0 && (
+            <Typography variant="small" color="red" className="mt-1">
+              Không có phân loại kho nào khả dụng
+            </Typography>
+          )}
         </div>
 
         {/* Mô tả */}

@@ -309,7 +309,7 @@ const PurchaseOrderPage = () => {
           </Tooltip>
 
           {/* Nút Nhập kho */}
-          {params.row.status !== "COMPLETED" && (
+          {/* {params.row.status !== "COMPLETED" && (
             <Tooltip content="Nhập kho">
               <IconButton
                 size="small"
@@ -319,7 +319,7 @@ const PurchaseOrderPage = () => {
                 <InboxArrowDownIcon className="h-6 w-6" />
               </IconButton>
             </Tooltip>
-          )}
+          )} */}
         </div>
       ),
     },

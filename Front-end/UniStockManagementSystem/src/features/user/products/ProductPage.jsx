@@ -22,9 +22,9 @@ import {
   exportExcel,
   createProduct,
   previewImport,
-  fetchUnits,
   fetchProductTypes,
 } from "./productService";
+import { fetchActiveUnits } from "../unit/unitService";
 import {
   Card,
   CardBody,
@@ -122,7 +122,7 @@ const ProductPage = () => {
     const fetchData = async () => {
       try {
         const [unitsData, typesData] = await Promise.all([
-          fetchUnits(),
+          fetchActiveUnits(),
           fetchProductTypes()
         ]);
 
@@ -215,14 +215,14 @@ const ProductPage = () => {
   };
 
   const columnsConfig = [
-    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
-    { field: 'productCode', headerName: 'Mã sản phẩm', flex: 1, minWidth: 200, editable: false, filterable: false },
-    { field: 'productName', headerName: 'Tên sản phẩm', flex: 2, minWidth: 300, editable: false, filterable: false },
+    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 40, editable: false, filterable: false },
+    { field: 'productCode', headerName: 'Mã sản phẩm', flex: 1, minWidth: 150, editable: false, filterable: false },
+    { field: 'productName', headerName: 'Tên sản phẩm', flex: 2, minWidth: 200, editable: false, filterable: false },
     {
       field: 'unitName',
       headerName: 'Đơn vị',
       flex: 1,
-      minWidth: 80,
+      minWidth: 40,
       editable: false,
       filterable: false,
     },
@@ -238,7 +238,7 @@ const ProductPage = () => {
       field: 'imageUrl',
       headerName: 'Hình ảnh',
       flex: 1,
-      minWidth: 150,
+      minWidth: 120,
       editable: false,
       filterable: false,
       renderCell: (params) => {
@@ -249,7 +249,7 @@ const ProductPage = () => {
             className="w-12 h-12 object-cover rounded-lg"
             onError={(e) => {
               e.target.style.display = 'none';
-              e.target.parentElement.innerHTML = 'N/A';
+              e.target.parentElement.innerHTML = '-';
             }}
           />
         ) : (
@@ -290,7 +290,7 @@ const ProductPage = () => {
       field: 'actions',
       headerName: 'Hành động',
       flex: 0.5,
-      minWidth: 100,
+      minWidth: 60,
       renderCell: (params) => (
         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
           <Tooltip content="Xem chi tiết">
@@ -310,11 +310,11 @@ const ProductPage = () => {
   const data = products.map((product, index) => ({
     id: product.productId,
     index: currentPage * pageSize + index + 1,
-    productCode: product.productCode || "N/A",
+    productCode: product.productCode || "-",
     productName: product.productName,
-    unitName: product.unitName || "N/A",
-    productTypeName: productTypes.find(type => type.typeId === product.typeId)?.typeName || product.typeName || "N/A",
-    imageUrl: product.imageUrl || "N/A",
+    unitName: product.unitName || "-",
+    productTypeName: productTypes.find(type => type.typeId === product.typeId)?.typeName || product.typeName || "-",
+    imageUrl: product.imageUrl || "-",
     isProductionActive: !!product.isProductionActive,
   }));
 

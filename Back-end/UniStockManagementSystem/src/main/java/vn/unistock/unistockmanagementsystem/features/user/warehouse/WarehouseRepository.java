@@ -29,4 +29,6 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
                                      @Param("isActive") Boolean isActive,
                                      Pageable pageable);
 
+    List<Warehouse> findAllByWarehouseIdNot(Long warehouseId);
+
 }

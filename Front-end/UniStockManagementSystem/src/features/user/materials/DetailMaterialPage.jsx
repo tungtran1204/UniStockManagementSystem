@@ -9,16 +9,12 @@ import {
 } from "@material-tailwind/react";
 import { TextField, Button as MuiButton, Autocomplete, IconButton, Divider } from '@mui/material';
 import { FaEdit, FaArrowLeft, FaSave, FaTimes, FaTimesCircle } from "react-icons/fa";
-import Select from "react-select";
-import { fetchUnits, fetchMaterialCategories, getMaterialById, updateMaterial } from "./materialService";
+import { fetchMaterialCategories, getMaterialById, updateMaterial, checkMaterialCodeExists } from "./materialService";
+import { fetchActiveUnits } from "../unit/unitService";
 import { getPartnersByType } from "../partner/partnerService";
 import PageHeader from '@/components/PageHeader';
 import SuccessAlert from "@/components/SuccessAlert";
 import ImageUploadBox from '@/components/ImageUploadBox';
-
-const customStyles = {
-  // ...existing code...
-};
 
 const SUPPLIER_TYPE_ID = 2;
 
@@ -34,6 +30,7 @@ const DetailMaterialPage = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [errors, setErrors] = useState({});
   const [validationErrors, setValidationErrors] = useState({});
+  const [materialCodeError, setMaterialCodeError] = useState(""); // Thêm state cho lỗi trùng mã
   const [previewImage, setPreviewImage] = useState(null);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
 
@@ -42,18 +39,16 @@ const DetailMaterialPage = () => {
       try {
         const [materialData, unitsData, categoriesData, suppliersData] = await Promise.all([
           getMaterialById(id),
-          fetchUnits(),
+          fetchActiveUnits(),
           fetchMaterialCategories(),
           getPartnersByType(SUPPLIER_TYPE_ID)
         ]);
 
-        // Map suppliers data
         const mappedSuppliers = (suppliersData?.partners || [])
           .map((s) => {
             const t = s.partnerTypes.find(
               (pt) => pt.partnerType.typeId === SUPPLIER_TYPE_ID
             );
-            console.log("supplier: ", s);
             return {
               value: s.partnerId,
               label: s.partnerName,
@@ -63,16 +58,14 @@ const DetailMaterialPage = () => {
               contactName: s.contactName,
             };
           })
-          .filter((s) => s.code !== "");
+          .filter((s) => s.partnerCode !== "");
 
         setSuppliers(mappedSuppliers);
 
-        // Sử dụng supplierIds trực tiếp từ materialData
         const mappedMaterial = {
           ...materialData,
           supplierIds: materialData.supplierIds || []
         };
-        console.log("Mapped material:", mappedMaterial);
 
         setMaterial(mappedMaterial);
         setEditedMaterial(mappedMaterial);
@@ -87,6 +80,32 @@ const DetailMaterialPage = () => {
     loadData();
   }, [id]);
 
+  // Hàm kiểm tra trùng mã vật tư
+  const handleCheckMaterialCode = async (newCode) => {
+    setMaterialCodeError("");
+    setValidationErrors(prev => ({
+      ...prev,
+      materialCode: ""
+    }));
+
+    setEditedMaterial(prev => ({
+      ...prev,
+      materialCode: newCode || ''
+    }));
+
+    if (newCode.trim() && newCode !== material.materialCode) {
+      try {
+        const exists = await checkMaterialCodeExists(newCode, id);
+        if (exists) {
+          setMaterialCodeError("Mã nguyên vật liệu này đã tồn tại!");
+        }
+      } catch (error) {
+        console.error("❌ Lỗi kiểm tra mã nguyên vật liệu:", error);
+        setMaterialCodeError("Lỗi khi kiểm tra mã nguyên vật liệu!");
+      }
+    }
+  };
+
   const handleEdit = () => {
     setIsEditing(true);
   };
@@ -95,15 +114,17 @@ const DetailMaterialPage = () => {
     setEditedMaterial(material);
     setIsEditing(false);
     setValidationErrors({});
+    setMaterialCodeError(""); // Reset lỗi trùng mã
     setPreviewImage(null);
   };
 
   const handleSave = async () => {
     const newErrors = {};
-    if (!editedMaterial.materialCode) {
+
+    if (!editedMaterial.materialCode || editedMaterial.materialCode.trim() === "") {
       newErrors.materialCode = "Mã nguyên vật liệu không được để trống!";
     }
-    if (!editedMaterial.materialName) {
+    if (!editedMaterial.materialName || editedMaterial.materialName.trim() === "") {
       newErrors.materialName = "Tên nguyên vật liệu không được để trống!";
     }
     if (!editedMaterial.unitId) {
@@ -112,18 +133,30 @@ const DetailMaterialPage = () => {
     if (!editedMaterial.typeId) {
       newErrors.typeId = "Vui lòng chọn danh mục!";
     }
+    if (!editedMaterial.supplierIds || editedMaterial.supplierIds.length === 0) {
+      newErrors.supplierIds = "Vui lòng chọn ít nhất một nhà cung cấp!";
+    }
 
     setValidationErrors(newErrors);
 
-    if (Object.keys(newErrors).length === 0) {
+    // Kiểm tra lỗi trùng mã
+    if (editedMaterial.materialCode !== material.materialCode) {
+      const codeExists = await checkMaterialCodeExists(editedMaterial.materialCode, id);
+      if (codeExists) {
+        setMaterialCodeError("Mã nguyên vật liệu đã tồn tại!");
+        newErrors.materialCode = "Mã nguyên vật liệu đã tồn tại!";
+      }
+    }
+
+    if (Object.keys(newErrors).length === 0 && !materialCodeError) {
       try {
         setLoading(true);
         const formData = new FormData();
-        formData.append("materialCode", editedMaterial.materialCode);
-        formData.append("materialName", editedMaterial.materialName);
-        formData.append("description", editedMaterial.description || "");
-        formData.append("unitId", editedMaterial.unitId || "");
-        formData.append("typeId", editedMaterial.typeId || "");
+        formData.append("materialCode", editedMaterial.materialCode.trim());
+        formData.append("materialName", editedMaterial.materialName.trim());
+        formData.append("description", editedMaterial.description?.trim() || "");
+        formData.append("unitId", parseInt(editedMaterial.unitId));
+        formData.append("typeId", parseInt(editedMaterial.typeId));
         if (editedMaterial.supplierIds && editedMaterial.supplierIds.length > 0) {
           editedMaterial.supplierIds.forEach(id => formData.append("supplierIds", id));
         }
@@ -144,6 +177,7 @@ const DetailMaterialPage = () => {
           ...updatedMaterial,
           supplierIds: updatedMaterial.supplierIds || []
         });
+        setPreviewImage(null);
       } catch (error) {
         setErrors({
           message: `Có lỗi xảy ra: ${error.response?.data?.message || error.message}`,
@@ -194,16 +228,9 @@ const DetailMaterialPage = () => {
                   placeholder="Mã nguyên vật liệu"
                   color="success"
                   value={editedMaterial?.materialCode || ""}
-                  onChange={(e) => {
-                    if (isEditing) {
-                      setEditedMaterial(prev => ({
-                        ...prev,
-                        materialCode: e.target.value
-                      }));
-                    }
-                  }}
+                  onChange={(e) => handleCheckMaterialCode(e.target.value)}
                   disabled={!isEditing}
-                  error={Boolean(validationErrors.materialCode)}
+                  error={Boolean(validationErrors.materialCode || materialCodeError)}
                   sx={{
                     '& .MuiInputBase-root.Mui-disabled': {
                       bgcolor: '#eeeeee',
@@ -213,8 +240,10 @@ const DetailMaterialPage = () => {
                     },
                   }}
                 />
-                {validationErrors.materialCode && (
-                  <Typography color="red" className="text-xs text-start mt-1">{validationErrors.materialCode}</Typography>
+                {(validationErrors.materialCode || materialCodeError) && (
+                  <Typography color="red" className="text-xs text-start mt-1">
+                    {validationErrors.materialCode || materialCodeError}
+                  </Typography>
                 )}
               </div>
 
@@ -233,6 +262,7 @@ const DetailMaterialPage = () => {
                   }
                   onChange={(event, selectedUnit) => {
                     setEditedMaterial(prev => ({ ...prev, unitId: selectedUnit ? selectedUnit.unitId : "" }));
+                    setValidationErrors(prev => ({ ...prev, unitId: "" }));
                   }}
                   renderInput={(params) => (
                     <TextField
@@ -309,6 +339,7 @@ const DetailMaterialPage = () => {
                         ...prev,
                         materialName: e.target.value
                       }));
+                      setValidationErrors(prev => ({ ...prev, materialName: "" }));
                     }
                   }}
                   disabled={!isEditing}
@@ -344,6 +375,7 @@ const DetailMaterialPage = () => {
                   }
                   onChange={(event, selectedType) => {
                     setEditedMaterial(prev => ({ ...prev, typeId: selectedType ? selectedType.materialTypeId : "" }));
+                    setValidationErrors(prev => ({ ...prev, typeId: "" }));
                   }}
                   renderInput={(params) => (
                     <TextField
@@ -390,6 +422,7 @@ const DetailMaterialPage = () => {
                         ...prev,
                         supplierIds: selectedIds
                       }));
+                      setValidationErrors(prev => ({ ...prev, supplierIds: "" }));
                     }
                   }}
                   renderInput={(params) => (
@@ -409,6 +442,9 @@ const DetailMaterialPage = () => {
                     },
                   }}
                 />
+                {validationErrors.supplierIds && (
+                  <Typography className="text-xs text-red-500 mt-1">{validationErrors.supplierIds}</Typography>
+                )}
               </div>
               <div>
                 <Typography variant="medium" className="mb-1 text-black">
@@ -422,6 +458,7 @@ const DetailMaterialPage = () => {
                       setEditedMaterial((prev) => ({
                         ...prev,
                         image: file,
+                        imageUrl: null
                       }));
                     }}
                   />
@@ -460,8 +497,8 @@ const DetailMaterialPage = () => {
               size="medium"
               variant="outlined"
               sx={{
-                color: '#616161',           // text color
-                borderColor: '#9e9e9e',     // border
+                color: '#616161',
+                borderColor: '#9e9e9e',
                 '&:hover': {
                   backgroundColor: '#f5f5f5',
                   borderColor: '#757575',
@@ -504,7 +541,7 @@ const DetailMaterialPage = () => {
                   className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
                   ripple={true}
                   onClick={handleSave}
-                  disabled={loading}
+                  disabled={loading || !!materialCodeError}
                 >
                   Lưu
                 </Button>
@@ -517,7 +554,7 @@ const DetailMaterialPage = () => {
       <SuccessAlert
         open={showSuccessAlert}
         onClose={() => setShowSuccessAlert(false)}
-        message="Cập nhật sản phẩm thành công!"
+        message="Cập nhật nguyên vật liệu thành công!" // Sửa message cho phù hợp
       />
     </div>
   );

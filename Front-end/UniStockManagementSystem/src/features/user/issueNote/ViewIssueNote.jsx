@@ -4,7 +4,7 @@ import { Card, CardBody, Typography, Button } from "@material-tailwind/react";
 import { TextField, Button as MuiButton, Divider } from "@mui/material";
 import PageHeader from "@/components/PageHeader";
 import FilePreviewDialog from "@/components/FilePreviewDialog";
-import useIssueNote from "./useIssueNote"; // Sử dụng hook chứa fetchIssueNoteDetail
+import useIssueNote from "./useIssueNote";
 import robotoFont from '@/assets/fonts/Roboto-Regular-normal.js';
 import robotoBoldFont from '@/assets/fonts/Roboto-Regular-bold.js';
 import jsPDF from "jspdf";
@@ -14,54 +14,38 @@ import { saveAs } from "file-saver";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
-import "dayjs/locale/vi"; // Import Tiếng Việt
+import "dayjs/locale/vi";
 import Table from "@/components/Table";
 import ReactPaginate from "react-paginate";
-import { ArrowLeftIcon, ArrowRightIcon, ListBulletIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, ArrowRightIcon, ListBulletIcon} from "@heroicons/react/24/outline";
+import { InformationCircleIcon } from "@heroicons/react/24/solid";
 import { FaArrowLeft } from "react-icons/fa";
 
-// Hàm định dạng ngày sử dụng dayjs
 const formatDate = (dateStr) => dayjs(dateStr).format("DD/MM/YYYY");
 
 const ViewIssueNote = () => {
-  const { id } = useParams(); // id của Issue Note
+  const { id } = useParams();
   const navigate = useNavigate();
-  // Lấy hàm fetchIssueNoteDetail từ hook useIssueNote
   const { fetchIssueNoteDetail } = useIssueNote();
 
   const [data, setData] = useState(null);
   const [creator, setCreator] = useState("Đang tải...");
   const [loading, setLoading] = useState(true);
-
-  // Nếu Issue Note có tham chiếu đến đơn hàng (Sales Order) thì hiển thị link
   const [soReference, setSoReference] = useState("");
-
-  // State phân trang cho bảng chi tiết hàng hóa
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-
-  // State preview file đính kèm
   const [previewFile, setPreviewFile] = useState(null);
 
-  const handlePreview = (file) => {
-    setPreviewFile(file);
-  };
-
-  const handleClosePreview = () => {
-    setPreviewFile(null);
-  };
+  const handlePreview = (file) => setPreviewFile(file);
+  const handleClosePreview = () => setPreviewFile(null);
 
   useEffect(() => {
     const fetchDetail = async () => {
       try {
-        // Sử dụng fetchIssueNoteDetail từ hook để lấy chi tiết phiếu xuất theo id
         const issueNote = await fetchIssueNoteDetail(id);
         setData(issueNote);
-        if (issueNote.createdBy) {
-          setCreator(issueNote.createdByUserName);
-        }
-        // Nếu có tham chiếu (soId), cập nhật giá trị tham chiếu
-        if (issueNote.soId) {
+        setCreator(issueNote.createdByUserName || "Không xác định");
+        if (issueNote.soId && issueNote.category === "Bán hàng") {
           setSoReference(`SO${issueNote.soCode}`);
         }
       } catch (err) {
@@ -76,7 +60,6 @@ const ViewIssueNote = () => {
   if (loading) return <Typography>Đang tải dữ liệu...</Typography>;
   if (!data) return <Typography className="text-red-500">Không tìm thấy phiếu xuất</Typography>;
 
-  // Phân trang cho bảng chi tiết hàng hóa
   const totalItems = data.details ? data.details.length : 0;
   const totalPagesDetails = Math.ceil(totalItems / pageSize);
   const displayedItems = data.details ? data.details.slice(currentPage * pageSize, (currentPage + 1) * pageSize) : [];
@@ -86,93 +69,134 @@ const ViewIssueNote = () => {
     id: item.ginDetailsId ? item.ginDetailsId : currentPage * pageSize + idx,
   }));
 
-  // Cấu hình các cột cho bảng chi tiết hàng hóa
-  const viewColumnsConfig = [
-    {
-      field: "index",
-      headerName: "STT",
-      minWidth: 50,
-      flex: 0.5,
-      filterable: false,
-      editable: false,
-      renderCell: (params) => <div className="text-center">{params.row.index + 1}</div>,
-    },
-    {
-      field: "code",
-      headerName: "Mã hàng",
-      minWidth: 100,
-      flex: 1,
-      filterable: false,
-      editable: false,
-      renderCell: (params) => (
-        <div className="text-center">
-          {params.row.materialCode || params.row.productCode || ""}
-        </div>
-      ),
-    },
-    {
-      field: "name",
-      headerName: "Tên hàng",
-      minWidth: 150,
-      flex: 2,
-      filterable: false,
-      editable: false,
-      renderCell: (params) => (
-        <div className="text-center">
-          {params.row.materialName || params.row.productName || ""}
-        </div>
-      ),
-    },
-    {
-      field: "unitName",
-      headerName: "Đơn vị",
-      minWidth: 80,
-      flex: 1,
-      filterable: false,
-      editable: false,
-      renderCell: (params) => (
-        <div className="text-center">{params.row.unitName || "-"}</div>
-      ),
-    },
-    {
-      field: "quantity",
-      headerName: "Số lượng",
-      minWidth: 80,
-      flex: 1,
-      filterable: false,
-      editable: false,
-      renderCell: (params) => (
-        <div className="text-center">
-          {!isNaN(params.row.quantity) ? params.row.quantity : ""}
-        </div>
-      ),
-    },
-    {
-      field: "warehouse",
-      headerName: "Xuất kho",
-      minWidth: 150,
-      flex: 2,
-      filterable: false,
-      editable: false,
-      renderCell: (params) => {
-        const row = params.row;
-        return (
+  const getColumnsConfig = (category) => {
+    const baseColumns = [
+      {
+        field: "index",
+        headerName: "STT",
+        minWidth: 50,
+        flex: 0.5,
+        filterable: false,
+        editable: false,
+        renderCell: (params) => <div className="text-center">{params.row.index + 1}</div>,
+      },
+      {
+        field: "code",
+        headerName: category === "Sản xuất" ? "Mã SP/NVL" : category === "Bán hàng" ? "Mã hàng" : "Mã NVL",
+        minWidth: 100,
+        flex: 1,
+        filterable: false,
+        editable: false,
+        renderCell: (params) => (
           <div className="text-center">
-            {row.warehouseCode && row.warehouseName
-              ? `${row.warehouseCode} - ${row.warehouseName}`
+            {params.row.materialCode || params.row.productCode || ""}
+          </div>
+        ),
+      },
+      {
+        field: "name",
+        headerName: category === "Sản xuất" ? "Tên SP/NVL" : category === "Bán hàng" ? "Tên hàng" : "Tên NVL",
+        minWidth: 150,
+        flex: 2,
+        filterable: false,
+        editable: false,
+        renderCell: (params) => (
+          <div className="text-center">
+            {params.row.materialName || params.row.productName || ""}
+          </div>
+        ),
+      },
+      {
+        field: "unitName",
+        headerName: "Đơn vị",
+        minWidth: 80,
+        flex: 1,
+        filterable: false,
+        editable: false,
+        renderCell: (params) => (
+          <div className="text-center">{params.row.unitName || "-"}</div>
+        ),
+      },
+      {
+        field: "quantity",
+        headerName: "Số lượng",
+        minWidth: 80,
+        flex: 1,
+        filterable: false,
+        editable: false,
+        renderCell: (params) => (
+          <div className="text-center">
+            {!isNaN(params.row.quantity) ? params.row.quantity : ""}
+          </div>
+        ),
+      },
+      {
+        field: "warehouse",
+        headerName: "Xuất kho",
+        minWidth: 150,
+        flex: 2,
+        filterable: false,
+        editable: false,
+        renderCell: (params) => (
+          <div className="text-center">
+            {params.row.warehouseCode && params.row.warehouseName
+              ? `${params.row.warehouseCode} - ${params.row.warehouseName}`
               : ""}
           </div>
-        );
+        ),
       },
-    },
-  ];
+    ];
 
-  // Export PDF: tương tự ReceiptNote nhưng cập nhật tiêu đề và trường Issue Note
+    if (category === "Bán hàng") {
+      return [
+        ...baseColumns.slice(0, 4),
+        {
+          field: "orderQuantity",
+          headerName: "SL Đặt",
+          minWidth: 80,
+          flex: 1,
+          filterable: false,
+          editable: false,
+          renderCell: (params) => (
+            <div className="text-center">{params.row.orderQuantity || "-"}</div>
+          ),
+        },
+        {
+          field: "exportedQuantity",
+          headerName: "SL đã xuất",
+          minWidth: 80,
+          flex: 1,
+          filterable: false,
+          editable: false,
+          renderCell: (params) => (
+            <div className="text-center">{params.row.exportedQuantity || "-"}</div>
+          ),
+        },
+        {
+          field: "pendingQuantity",
+          headerName: "SL còn phải xuất",
+          minWidth: 80,
+          flex: 1,
+          filterable: false,
+          editable: false,
+          renderCell: (params) => (
+            <div className="text-center">{params.row.pendingQuantity || "-"}</div>
+          ),
+        },
+        ...baseColumns.slice(5),
+      ];
+    }
+
+    return baseColumns;
+  };
+
+  const columnsConfig = getColumnsConfig(data.category);
+
   const handleExportPDF = () => {
     const formatVietnameseDate = (dateString) => {
       const date = new Date(dateString);
       const day = date.getDate();
-      const month = String(date.getMonth() + 1).padStart(2, '0'); // ✅ thêm 0 nếu cần
+      const month = String(date.getMonth() + 1).padStart(2, '0');
       const year = date.getFullYear();
       return `Ngày ${day} tháng ${month} năm ${year}`;
     };
@@ -203,47 +227,94 @@ const ViewIssueNote = () => {
 
     doc.setFont("Roboto", "normal");
     doc.setFontSize(10);
-    doc.text(`Người lập phiếu: ${creator}`, 14, 54);
-    if (data.soCode) {
-      doc.text(`Căn cứ theo đơn hàng: ${data.soCode}`, 140, 54);
+    let currentY = 54;
+    doc.text(`Người lập phiếu: ${creator}`, 14, currentY);
+    if (data.category === "Bán hàng" && data.soCode) {
+      doc.text(`Căn cứ theo đơn hàng: ${data.soCode}`, 140, currentY);
+      currentY += 6;
     }
-    doc.text(`Phân loại xuất kho: ${data.category}`, 14, 60);
+    doc.text(`Phân loại xuất kho: ${data.category}`, 14, currentY);
+    currentY += 6;
+    if (data.category === "Sản xuất" && data.receiver) {
+      doc.text(`Người nhận: ${data.receiver}`, 14, currentY);
+      currentY += 6;
+    }
+    if (["Gia công", "Trả lại hàng mua"].includes(data.category) && data.partnerName) {
+      doc.text(`Đối tác: ${data.partnerName} (${data.partnerCode})`, 14, currentY);
+      currentY += 6;
+      if (data.contactName) {
+        doc.text(`Người liên hệ: ${data.contactName}`, 14, currentY);
+        currentY += 6;
+      }
+      if (data.address) {
+        doc.text(`Địa chỉ: ${data.address}`, 14, currentY);
+        currentY += 6;
+      }
+    }
     const descriptionText = `Diễn giải: ${data.description || "Không có"}`;
-    const splitDescription = doc.splitTextToSize(descriptionText, 180); // 180mm là chiều rộng tối đa mong muốn
-    doc.text(splitDescription, 14, 66);
-
-    const descriptionLineCount = splitDescription.length;
-    const descriptionHeight = descriptionLineCount * 5; // khoảng cách dòng
-
-    const baseY = 66 + descriptionHeight;
+    const splitDescription = doc.splitTextToSize(descriptionText, 180);
+    doc.text(splitDescription, 14, currentY);
+    const descriptionHeight = splitDescription.length * 5;
+    currentY += descriptionHeight;
 
     const totalQuantity = data.details.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
-    autoTable(doc, {
-      startY: baseY,
-      head: [[
-        { content: "STT", styles: { halign: 'center', cellWidth: 12 } },
-        { content: "Mã hàng", styles: { halign: 'center', cellWidth: 35 } },
-        { content: "Tên hàng hóa", styles: { halign: 'center', cellWidth: 60 } },
-        { content: "Đơn vị", styles: { halign: 'center' }, cellWidth: 20 },
-        { content: "Số lượng xuất", styles: { halign: 'center' }, cellWidth: 20 },
-        { content: "Kho xuất", styles: { halign: 'center' }, cellWidth: 40 }
-      ]],
-      body: [
-        ...data.details.map((item, index) => [
-          { content: index + 1, styles: { halign: 'center' } },
-          { content: item.materialCode || item.productCode, styles: { halign: 'left' } },
-          { content: item.materialName || item.productName, styles: { halign: 'left' } },
-          { content: item.unitName || "-", styles: { halign: 'center' } },
-          { content: item.quantity, styles: { halign: 'center' } },
-          { content: item.warehouseName, styles: { halign: 'center' } }
-        ]),
-        [
-          { content: "TỔNG CỘNG :", colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
-          { content: totalQuantity, styles: { halign: 'center', fontStyle: 'bold' } },
-          { content: "", styles: { halign: 'center' } },
-        ]
+    const tableHeaders = data.category === "Bán hàng" ? [
+      { content: "STT", styles: { halign: 'center', cellWidth: 12 } },
+      { content: "Mã hàng", styles: { halign: 'center', cellWidth: 30 } },
+      { content: "Tên hàng hóa", styles: { halign: 'center', cellWidth: 50 } },
+      { content: "Đơn vị", styles: { halign: 'center', cellWidth: 20 } },
+      { content: "SL Đặt", styles: { halign: 'center', cellWidth: 20 } },
+      { content: "SL đã xuất", styles: { halign: 'center', cellWidth: 20 } },
+      { content: "SL còn phải xuất", styles: { halign: 'center', cellWidth: 20 } },
+      { content: "Số lượng xuất", styles: { halign: 'center', cellWidth: 20 } },
+      { content: "Kho xuất", styles: { halign: 'center', cellWidth: 30 } },
+    ] : [
+      { content: "STT", styles: { halign: 'center', cellWidth: 12 } },
+      { content: data.category === "Sản xuất" ? "Mã SP/NVL" : "Mã NVL", styles: { halign: 'center', cellWidth: 35 } },
+      { content: data.category === "Sản xuất" ? "Tên SP/NVL" : "Tên NVL", styles: { halign: 'center', cellWidth: 60 } },
+      { content: "Đơn vị", styles: { halign: 'center', cellWidth: 20 } },
+      { content: "Số lượng xuất", styles: { halign: 'center', cellWidth: 20 } },
+      { content: "Kho xuất", styles: { halign: 'center', cellWidth: 40 } },
+    ];
+
+    const tableBody = data.category === "Bán hàng" ? [
+      ...data.details.map((item, index) => [
+        { content: index + 1, styles: { halign: 'center' } },
+        { content: item.productCode || "", styles: { halign: 'left' } },
+        { content: item.productName || "", styles: { halign: 'left' } },
+        { content: item.unitName || "-", styles: { halign: 'center' } },
+        { content: item.orderQuantity || "-", styles: { halign: 'center' } },
+        { content: item.exportedQuantity || "-", styles: { halign: 'center' } },
+        { content: item.pendingQuantity || "-", styles: { halign: 'center' } },
+        { content: item.quantity, styles: { halign: 'center' } },
+        { content: item.warehouseName, styles: { halign: 'center' } },
+      ]),
+      [
+        { content: "TỔNG CỘNG :", colSpan: 7, styles: { halign: 'right', fontStyle: 'bold' } },
+        { content: totalQuantity, styles: { halign: 'center', fontStyle: 'bold' } },
+        { content: "", styles: { halign: 'center' } },
       ],
+    ] : [
+      ...data.details.map((item, index) => [
+        { content: index + 1, styles: { halign: 'center' } },
+        { content: item.materialCode || item.productCode, styles: { halign: 'left' } },
+        { content: item.materialName || item.productName, styles: { halign: 'left' } },
+        { content: item.unitName || "-", styles: { halign: 'center' } },
+        { content: item.quantity, styles: { halign: 'center' } },
+        { content: item.warehouseName, styles: { halign: 'center' } },
+      ]),
+      [
+        { content: "TỔNG CỘNG :", colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
+        { content: totalQuantity, styles: { halign: 'center', fontStyle: 'bold' } },
+        { content: "", styles: { halign: 'center' } },
+      ],
+    ];
+
+    autoTable(doc, {
+      startY: currentY,
+      head: [tableHeaders],
+      body: tableBody,
       styles: {
         font: "Roboto",
         fontSize: 10,
@@ -269,7 +340,6 @@ const ViewIssueNote = () => {
     });
 
     const finalY = doc.lastAutoTable.finalY + 12;
-    // Căn đều 3 cột trên cùng 1 hàng
     doc.setFont("Roboto", "bold");
     doc.setFontSize(10);
     doc.text("Người giao hàng", 20, finalY);
@@ -290,18 +360,45 @@ const ViewIssueNote = () => {
       ["Ngày tạo", formatDate(data.issueDate)],
       ["Người tạo", creator],
       ["Loại hàng hóa", data.category],
+      ...(data.category === "Bán hàng" && data.soCode ? [["Tham chiếu chứng từ", data.soCode]] : []),
+      ...(data.category === "Sản xuất" && data.receiver ? [["Người nhận", data.receiver]] : []),
+      ...(data.partnerName ? [
+        ["Đối tác", `${data.partnerName} (${data.partnerCode})`],
+        ...(data.contactName ? [["Người liên hệ", data.contactName]] : []),
+        ...(data.address ? [["Địa chỉ", data.address]] : []),
+      ] : []),
       ["Diễn giải", data.description || "Không có"],
       [],
-      ["STT", "Mã hàng", "Tên hàng", "Đơn vị", "Số lượng", "Xuất kho"],
-      ...data.details.map((item, index) => [
+    ];
+
+    const headers = data.category === "Bán hàng" ?
+      ["STT", "Mã hàng", "Tên hàng", "Đơn vị", "SL Đặt", "SL đã xuất", "SL còn phải xuất", "Số lượng xuất", "Xuất kho"] :
+      ["STT", data.category === "Sản xuất" ? "Mã SP/NVL" : "Mã NVL", data.category === "Sản xuất" ? "Tên SP/NVL" : "Tên NVL", "Đơn vị", "Số lượng xuất", "Xuất kho"];
+    
+    sheetData.push(headers);
+
+    const body = data.category === "Bán hàng" ?
+      data.details.map((item, index) => [
+        index + 1,
+        item.productCode || "",
+        item.productName || "",
+        item.unitName || "-",
+        item.orderQuantity || "-",
+        item.exportedQuantity || "-",
+        item.pendingQuantity || "-",
+        item.quantity,
+        item.warehouseName,
+      ]) :
+      data.details.map((item, index) => [
         index + 1,
         item.materialCode || item.productCode,
         item.materialName || item.productName,
         item.unitName || "-",
         item.quantity,
         item.warehouseName,
-      ]),
-    ];
+      ]);
+
+    sheetData.push(...body);
 
     const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
     const workbook = XLSX.utils.book_new();
@@ -309,11 +406,6 @@ const ViewIssueNote = () => {
 
     const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
     saveAs(new Blob([excelBuffer]), `PhieuXuat_${data.ginCode}.xlsx`);
-  };
-
-  // Phân trang cho bảng chi tiết hàng hóa
-  const handleDetailPageChange = ({ selected }) => {
-    setCurrentPage(selected);
   };
 
   return (
@@ -357,9 +449,7 @@ const ViewIssueNote = () => {
                 sx={{
                   "& .MuiInputBase-root.Mui-disabled": {
                     bgcolor: "#eeeeee",
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      border: "none",
-                    },
+                    "& .MuiOutlinedInput-notchedOutline": { border: "none" },
                   },
                 }}
               />
@@ -378,9 +468,7 @@ const ViewIssueNote = () => {
                 sx={{
                   "& .MuiInputBase-root.Mui-disabled": {
                     bgcolor: "#eeeeee",
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      border: "none",
-                    },
+                    "& .MuiOutlinedInput-notchedOutline": { border: "none" },
                   },
                 }}
               />
@@ -408,9 +496,7 @@ const ViewIssueNote = () => {
                   sx={{
                     '& .MuiInputBase-root.Mui-disabled': {
                       bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
-                      },
+                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
                     },
                   }}
                 />
@@ -430,43 +516,41 @@ const ViewIssueNote = () => {
                 sx={{
                   '& .MuiInputBase-root.Mui-disabled': {
                     bgcolor: '#eeeeee',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      border: 'none',
-                    },
+                    '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
                   },
                 }}
               />
             </div>
-            <div>
-              <Typography variant="medium" className="mb-1 text-black">
-                Tham chiếu chứng từ
-              </Typography>
-              {data.soId ? (
-                <Link
-                  to={`/user/sale-orders/${data.soId}`}
-                  className="text-blue-600 hover:underline text-sm block mt-1"
-                >
-                  {`${data.soCode}`}
-                </Link>
-              ) : (
-                <TextField
-                  fullWidth
-                  size="small"
-                  color="success"
-                  variant="outlined"
-                  disabled
-                  value="Không có"
-                  sx={{
-                    '& .MuiInputBase-root.Mui-disabled': {
-                      bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': {
-                        border: 'none',
+            {data.category === "Bán hàng" && (
+              <div>
+                <Typography variant="medium" className="mb-1 text-black">
+                  Tham chiếu chứng từ
+                </Typography>
+                {data.soId ? (
+                  <Link
+                    to={`/user/sale-orders/${data.soId}`}
+                    className="text-blue-600 hover:underline text-sm block mt-1"
+                  >
+                    {`${data.soCode}`}
+                  </Link>
+                ) : (
+                  <TextField
+                    fullWidth
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    disabled
+                    value="Không có"
+                    sx={{
+                      '& .MuiInputBase-root.Mui-disabled': {
+                        bgcolor: '#eeeeee',
+                        '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
                       },
-                    },
-                  }}
-                />
-              )}
-            </div>
+                    }}
+                  />
+                )}
+              </div>
+            )}
             <div>
               <Typography variant="medium" className="mb-1 text-black">
                 File đính kèm
@@ -508,9 +592,94 @@ const ViewIssueNote = () => {
                 showDownload={true}
               />
             </div>
+            {data.category === "Sản xuất" && data.receiver && (
+              <div>
+                <Typography variant="medium" className="mb-1 text-black">
+                  Người nhận
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  color="success"
+                  variant="outlined"
+                  disabled
+                  value={data.receiver}
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                    },
+                  }}
+                />
+              </div>
+            )}
+            {["Gia công", "Trả lại hàng mua"].includes(data.category) && data.partnerName && (
+              <>
+                <div>
+                  <Typography variant="medium" className="mb-1 text-black">
+                    {data.category === "Gia công" ? "Đối tác gia công" : "Nhà cung cấp"}
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    disabled
+                    value={`${data.partnerName}`}
+                    sx={{
+                      '& .MuiInputBase-root.Mui-disabled': {
+                        bgcolor: '#eeeeee',
+                        '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                      },
+                    }}
+                  />
+                </div>
+                {data.contactName && (
+                  <div>
+                    <Typography variant="medium" className="mb-1 text-black">
+                      Người liên hệ
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      color="success"
+                      variant="outlined"
+                      disabled
+                      value={data.contactName}
+                      sx={{
+                        '& .MuiInputBase-root.Mui-disabled': {
+                          bgcolor: '#eeeeee',
+                          '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                        },
+                      }}
+                    />
+                  </div>
+                )}
+                {data.address && (
+                  <div className="col-span-2">
+                    <Typography variant="medium" className="mb-1 text-black">
+                      Địa chỉ
+                    </Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      color="success"
+                      variant="outlined"
+                      disabled
+                      value={data.address}
+                      sx={{
+                        '& .MuiInputBase-root.Mui-disabled': {
+                          bgcolor: '#eeeeee',
+                          '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                        },
+                      }}
+                    />
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
-          {/* Diễn giải */}
           <div className="grid grid-cols-1 gap-4 mb-6">
             <div>
               <Typography variant="medium" className="mb-1 text-black">
@@ -528,9 +697,7 @@ const ViewIssueNote = () => {
                 sx={{
                   '& .MuiInputBase-root.Mui-disabled': {
                     bgcolor: '#eeeeee',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      border: 'none',
-                    },
+                    '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
                   },
                 }}
               />
@@ -544,12 +711,11 @@ const ViewIssueNote = () => {
           <div className="overflow-auto border rounded">
             <Table
               data={displayedItemsWithIndex}
-              columnsConfig={viewColumnsConfig}
+              columnsConfig={columnsConfig}
               enableSelection={false}
             />
           </div>
 
-          {/* Phân trang cho bảng hàng hóa */}
           {totalItems > 0 && (
             <div className="flex items-center justify-between py-4">
               <div className="flex items-center gap-2">

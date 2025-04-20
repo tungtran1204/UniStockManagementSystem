@@ -78,11 +78,21 @@ const ModalAddCustomer = ({ onClose, onSuccess }) => {
       };
 
       console.log("Payload gửi lên createPartner:", partnerData);
-      // Nếu createPartner trả về đối tượng đã tạo, ta có thể dùng nó để cập nhật thông tin khách hàng
       const createdPartner = await createPartner(partnerData);
-      // Gọi onSuccess với đối tượng partner vừa tạo để tự động điền vào phiếu order
-      onSuccess(createdPartner);
-      onClose(); // Đóng popup
+
+      // Định dạng dữ liệu phù hợp với danh sách customers
+      const newCustomer = {
+        code: code,
+        label: `${code} - ${createdPartner.partnerName}`,
+        name: createdPartner.partnerName,
+        address: createdPartner.address,
+        phone: createdPartner.phone,
+        contactName: createdPartner.contactName || "",
+      };
+
+      // Gọi onSuccess với dữ liệu đã định dạng
+      onSuccess(newCustomer);
+      onClose();
     } catch (error) {
       console.error("Lỗi khi tạo đối tác:", error);
       if (error.response) {
@@ -94,15 +104,20 @@ const ModalAddCustomer = ({ onClose, onSuccess }) => {
         if (errorCode === "DUPLICATE_NAME") {
           setErrorPartnerName("Tên đối tác đã tồn tại.");
         }
+      } else if (error.response?.status === 400 && error.response?.data.fieldErrorMessages) {
+        setErrorPartnerName(error.response.data.fieldErrorMessages.partnerName || "");
+        setErrorEmail(error.response.data.fieldErrorMessages.email || "");
+        setErrorPhone(error.response.data.fieldErrorMessages.phone || "");
+        setErrorContactName(error.response.data.fieldErrorMessages.contactName || "");
+        setErrorAddress(error.response.data.fieldErrorMessages.address || "");
       } else {
-        alert("Lỗi khi tạo đối tác! Vui lòng thử lại.");
+        setErrorMessage("Lỗi khi tạo đối tác! Vui lòng thử lại.");
       }
     }
   };
 
   return (
     <Dialog open={true} handler={onClose} size="md" className="px-4 py-2">
-      {/* Header của Dialog */}
       <DialogHeader className="flex justify-between items-center pb-2">
         <Typography variant="h4" color="blue-gray">
           Thêm đối tác khách hàng
@@ -115,11 +130,9 @@ const ModalAddCustomer = ({ onClose, onSuccess }) => {
         </IconButton>
       </DialogHeader>
       <Divider variant="middle" />
-      {/* Body của Dialog */}
       <DialogBody className="space-y-4 pb-6 pt-6">
         {errorMessage && <Typography variant="small" color="red" className="mb-4">{errorMessage}</Typography>}
 
-        {/* Tên đối tác */}
         <div>
           <Typography variant="medium" className="text-black">
             Tên khách hàng
@@ -163,7 +176,6 @@ const ModalAddCustomer = ({ onClose, onSuccess }) => {
           {errorContactName && <Typography variant="small" color="red">{errorContactName}</Typography>}
         </div>
 
-        {/* Email & Số điện thoại */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Typography variant="medium" className="text-black">Email</Typography>
@@ -206,7 +218,6 @@ const ModalAddCustomer = ({ onClose, onSuccess }) => {
           </div>
         </div>
 
-        {/* Địa chỉ */}
         <div>
           <Typography variant="medium" className="text-black">
             Địa chỉ
@@ -232,7 +243,6 @@ const ModalAddCustomer = ({ onClose, onSuccess }) => {
         </div>
       </DialogBody>
 
-      {/* Footer của Dialog */}
       <DialogFooter className="pt-0">
         <MuiButton
           size="medium"

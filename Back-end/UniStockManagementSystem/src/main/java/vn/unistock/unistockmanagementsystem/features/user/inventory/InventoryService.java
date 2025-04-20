@@ -28,13 +28,20 @@ public class InventoryService {
         return inventoryRepository.getTotalQuantityByMaterialId(materialId);
     }
 
-    public List<InventoryByWarehouseDTO> getInventoryDetailsByProduct(Long productId) {
+    public List<InventoryByWarehouseDTO> getInventoryDetailsByProduct(Long productId, Long salesOrderId) {
+        if (salesOrderId != null) {
+            return inventoryRepository.findInventoryByProductIdWithSalesOrder(productId, salesOrderId);
+        }
         return inventoryRepository.findInventoryByProductId(productId);
     }
 
-    public List<InventoryByWarehouseDTO> getInventoryDetailsByMaterial(Long materialId) {
+    public List<InventoryByWarehouseDTO> getInventoryDetailsByMaterial(Long materialId, Long salesOrderId) {
+        if (salesOrderId != null) {
+            return inventoryRepository.findInventoryByMaterialIdWithSalesOrder(materialId, salesOrderId);
+        }
         return inventoryRepository.findInventoryByMaterialId(materialId);
     }
+
 
     public Page<InventoryReportDTO> getInventoryReport(
             int page,

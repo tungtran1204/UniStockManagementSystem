@@ -17,11 +17,11 @@ const useReceiptNote = () => {
   const [error, setError] = useState(null);
 
   // Fetch paginated receipt notes
-  const fetchPaginatedReceiptNotes = async (page, size, searchTerm = "") => {
+  const fetchPaginatedReceiptNotes = async (page, size, searchTerm = "", categories = [], startDate = null, endDate = null) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetchReceiptNotes(page, size, searchTerm);
+      const response = await fetchReceiptNotes(page, size, searchTerm, categories, startDate, endDate);
       setReceiptNotes(response.content || []);
       setTotalPages(response.totalPages || 0);
       setTotalElements(response.totalElements || 0);
@@ -34,7 +34,7 @@ const useReceiptNote = () => {
       setLoading(false);
     }
   };
-
+  
   // Get a single receipt note by ID
   const getReceiptNote = async (id) => {
     setLoading(true);

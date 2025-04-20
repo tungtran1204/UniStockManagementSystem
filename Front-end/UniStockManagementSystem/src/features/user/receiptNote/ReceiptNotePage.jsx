@@ -4,7 +4,6 @@ import ReactPaginate from "react-paginate";
 import { Card, CardHeader, CardBody, Typography, Tooltip } from "@material-tailwind/react";
 import { FaPlus, FaEye, FaAngleDown } from "react-icons/fa";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
-import dayjs from 'dayjs';
 
 import {
   IconButton,
@@ -26,9 +25,13 @@ import useUser from "../../admin/users/useUser";
 import usePurchaseOrder from "../purchaseOrder/usePurchaseOrder";
 import useReceiptNote from "./useReceiptNote";
 import { getNextCode } from "./receiptNoteService";
-import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Import Tiếng Việt
 import DateFilterButton from "@/components/DateFilterButton";
+import dayjs from "dayjs";
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
 
 const ReceiptNotePage = () => {
   const [currentPage, setCurrentPage] = useState(0);
@@ -71,15 +74,15 @@ const ReceiptNotePage = () => {
     "Hàng hoá gia công",
     "Hàng hóa trả lại",
     "Vật tư mua bán",
-    "Nhập kho vật tư thừa",
+    "Vật tư thừa sau sản xuất",
     "Khác",
   ];
 
   // Fetch data on component mount and when page or size changes
   useEffect(() => {
-    fetchPaginatedReceiptNotes(currentPage, pageSize);
-  }, [currentPage, pageSize]);
-
+    fetchPaginatedReceiptNotes(currentPage, pageSize, searchTerm, selectedCategories, startDate, endDate);
+  }, [currentPage, pageSize, searchTerm, selectedCategories, startDate, endDate]);
+  
   // Fetch thông tin user và đơn hàng
 
   // Handle page change
@@ -100,11 +103,9 @@ const ReceiptNotePage = () => {
 
   // Handle search
   const handleSearch = () => {
-    // Reset to first page when searching
     setCurrentPage(0);
-    fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
-  };
-
+    fetchPaginatedReceiptNotes(0, pageSize, searchTerm, selectedCategories, startDate, endDate);
+  };  
 
   const columnsConfig = [
     { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
@@ -127,8 +128,9 @@ const ReceiptNotePage = () => {
       editable: false,
       filterable: false,
       renderCell: (params) => {
-        const user = usernames[params.value];
-        return user || "Không có dữ liệu";
+        return params.value && params.value !== " "
+          ? params.value
+          : "Không có dữ liệu";
       },
     },
     {
@@ -187,29 +189,27 @@ const ReceiptNotePage = () => {
 
   const filteredNotes = receiptNotes.filter((receipt) => {
     const matchesSearch = receipt.grnCode?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const receiptDate = dayjs(receipt.receiptDate);
-    const matchesStart = startDate ? receiptDate.isSameOrAfter(dayjs(startDate), 'day') : true;
-    const matchesEnd = endDate ? receiptDate.isSameOrBefore(dayjs(endDate), 'day') : true;
-
-    const matchesCategory =
-      selectedCategories.length === 0 || selectedCategories.includes(receipt.category);
-
+  
+    const receiptDate = receipt.receiptDate ? dayjs(receipt.receiptDate) : null;
+    const matchesStart = startDate ? receiptDate?.isSameOrAfter(dayjs(startDate), 'day') : true;
+    const matchesEnd = endDate ? receiptDate?.isSameOrBefore(dayjs(endDate), 'day') : true;
+  
+    const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(receipt.category);
     return matchesSearch && matchesStart && matchesEnd && matchesCategory;
   });
-
-  const data = filteredNotes.map((receipt, index) => ({
+  
+  const data = receiptNotes.map((receipt, index) => ({
     grnId: receipt.grnId,
     index: currentPage * pageSize + index + 1,
     receiptCode: receipt.grnCode,
     category: receipt.category || 'không có dữ liệu',
     createdDate: receipt.receiptDate,
-    createBy: receipt.createdBy,
+    createBy: `${receipt.createdByUsername }`|| `${receipt.createdByEmail }`,
     poId: receipt.poId,
     ginId: receipt.ginId,
     poCode: receipt.poCode,
     ginCode: receipt.ginCode,
-  }));
+  }));  
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -393,7 +393,8 @@ const ReceiptNotePage = () => {
                         onClick={() => {
                           setSelectedCategories([]);
                           setCurrentPage(0);
-                        }}
+                          fetchPaginatedReceiptNotes(0, pageSize, searchTerm, [], startDate, endDate);
+                        }}                        
                         sx={{
                           color: "#000000DE",
                           "&:hover": {
