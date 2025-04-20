@@ -18,7 +18,7 @@ public interface ReceiveOutsourceMapper {
     @Mapping(source = "material.materialName", target = "materialName")
     @Mapping(source = "unit.unitId", target = "unitId")
     @Mapping(source = "unit.unitName", target = "unitName")
-    @Mapping(source = "warehouse.warehouseId", target = "warehouseId")
-    @Mapping(source = "warehouse.warehouseName", target = "warehouseName")
+    @Mapping(target = "warehouseId", ignore = true) // Bỏ qua vì warehouse không được set
+    @Mapping(target = "warehouseName", ignore = true) // Bỏ qua vì warehouse không được set
     ReceiveOutsourceMaterialDTO toDTO(ReceiveOutsourceMaterial entity);
 }

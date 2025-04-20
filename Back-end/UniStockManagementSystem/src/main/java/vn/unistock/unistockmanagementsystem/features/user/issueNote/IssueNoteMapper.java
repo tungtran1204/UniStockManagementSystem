@@ -28,5 +28,6 @@ public interface IssueNoteMapper {
     @Mapping(source = "category", target = "category")
     @Mapping(source = "partnerId", target = "partner.partnerId")
     @Mapping(source = "receiver", target = "receiver")
+    @Mapping(target = "receiveOutsource", ignore = true)
     GoodIssueNote toEntity(IssueNoteDTO dto);
 }

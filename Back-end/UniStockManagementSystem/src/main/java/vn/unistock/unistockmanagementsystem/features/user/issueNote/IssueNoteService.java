@@ -227,17 +227,29 @@ public class IssueNoteService {
                 outsource.setPartner(Partner.builder().partnerId(issueNoteDto.getPartnerId()).build());
                 outsource.setStatus(ReceiveOutsource.OutsourceStatus.PENDING);
 
-                List<ReceiveOutsourceMaterial> outsourceMaterials = issueNote.getDetails().stream()
-                        .filter(detail -> detail.getMaterial() != null)
-                        .map(detail -> {
-                            ReceiveOutsourceMaterial rom = new ReceiveOutsourceMaterial();
-                            rom.setReceiveOutsource(outsource);
-                            rom.setMaterial(detail.getMaterial());
-                            rom.setQuantity(detail.getQuantity());
-                            rom.setUnit(detail.getUnit());
-                            rom.setWarehouse(detail.getWarehouse());
-                            return rom;
-                        }).collect(Collectors.toList());
+                // Lưu danh sách NVL dự kiến nhận lại từ expectedReturns
+                List<ReceiveOutsourceMaterial> outsourceMaterials = new ArrayList<>();
+                if (issueNoteDto.getExpectedReturns() != null) {
+                    for (IssueNoteDetailDTO expectedReturn : issueNoteDto.getExpectedReturns()) {
+                        if (expectedReturn.getMaterialId() == null) {
+                            throw new RuntimeException("MaterialId is required for expected return");
+                        }
+
+                        Material material = materialRepository.findById(expectedReturn.getMaterialId())
+                                .orElseThrow(() -> new RuntimeException("Material not found with ID: " + expectedReturn.getMaterialId()));
+
+                        ReceiveOutsourceMaterial rom = new ReceiveOutsourceMaterial();
+                        rom.setReceiveOutsource(outsource);
+                        rom.setMaterial(material);
+                        rom.setQuantity(expectedReturn.getQuantity());
+                        rom.setUnit(expectedReturn.getUnitId() != null
+                                ? unitRepository.findById(expectedReturn.getUnitId())
+                                .orElseThrow(() -> new RuntimeException("Unit not found with ID: " + expectedReturn.getUnitId()))
+                                : material.getUnit());
+                        // Không set warehouse vì danh sách NVL nhận lại không yêu cầu kho tại thời điểm này
+                        outsourceMaterials.add(rom);
+                    }
+                }
 
                 outsource.setMaterials(outsourceMaterials);
                 receiveOutsourceRepository.save(outsource);
@@ -410,6 +422,7 @@ public class IssueNoteService {
 
         return dto;
     }
+
     //issue report
     public Page<IssueNoteReportDTO> getFilteredExportReport(
             int page, int size,
@@ -427,5 +440,4 @@ public class IssueNoteService {
                 search, startDate, endDate, itemType, minQuantity, maxQuantity, categories, warehouseIds, pageable
         );
     }
-
 }

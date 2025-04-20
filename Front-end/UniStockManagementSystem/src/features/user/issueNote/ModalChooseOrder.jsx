@@ -12,7 +12,6 @@ const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [selectedOrder, setSelectedOrder] = useState(null);
 
   useEffect(() => {
     fetchSaleOrders(currentPage, pageSize);
@@ -20,6 +19,12 @@ const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
 
   const handlePageChange = ({ selected }) => {
     setCurrentPage(selected);
+  };
+
+  const handleSelectOrder = (order) => {
+    console.log("Selected order from modal:", order); // Log để kiểm tra dữ liệu
+    onOrderSelected(order);
+    onClose();
   };
 
   // Map dữ liệu từ API: API trả về đối tượng với các trường: orderId, orderCode, partnerCode, partnerName, orderDate, note, address, phoneNumber, contactName, orderDetails,...
@@ -56,13 +61,6 @@ const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
         params.value ? dayjs(params.value).format("DD/MM/YYYY") : "N/A",
     },
     {
-      field: "note",
-      headerName: "Diễn giải",
-      flex: 2,
-      minWidth: 200,
-      renderCell: (params) => params.value || "N/A",
-    },
-    {
       field: "actions",
       headerName: "Hành động",
       flex: 0.5,
@@ -71,7 +69,7 @@ const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
         <Button
           size="small"
           variant="outlined"
-          onClick={() => setSelectedOrder(params.row.fullOrder)}
+          onClick={() => handleSelectOrder(params.row.fullOrder)}
         >
           Chọn
         </Button>
@@ -166,26 +164,6 @@ const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
             disabledClassName="opacity-50 cursor-not-allowed"
           />
         </div>
-
-        {/* Actions */}
-        <Box mt={2} display="flex" justifyContent="flex-end" gap={2}>
-          <Button variant="outlined" onClick={onClose}>
-            Hủy
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => {
-              if (selectedOrder) {
-                onOrderSelected(selectedOrder); // Pass the full order, including orderDetails
-              }
-              onClose();
-            }}
-            disabled={!selectedOrder}
-          >
-            Xác nhận
-          </Button>
-        </Box>
       </Box>
     </Modal>
   );

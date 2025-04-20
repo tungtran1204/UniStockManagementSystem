@@ -54,6 +54,9 @@ public class GoodIssueNote {
     @OneToMany(mappedBy = "goodIssueNote", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<GoodIssueDetail> details;
 
+    @OneToOne(mappedBy = "goodIssueNote", cascade = CascadeType.ALL, orphanRemoval = true)
+    private ReceiveOutsource receiveOutsource;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = true)
     private GinStatus status = GinStatus.PENDING;
