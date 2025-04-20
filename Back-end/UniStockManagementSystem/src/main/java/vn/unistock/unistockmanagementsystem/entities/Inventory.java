@@ -36,6 +36,10 @@ public class Inventory {
     @Enumerated(EnumType.STRING)
     private InventoryStatus status;
 
+    @ManyToOne
+    @JoinColumn(name = "order_id")
+    private SalesOrder salesOrder;
+
     @Column(name = "last_updated", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
     private LocalDateTime lastUpdated;
     public enum InventoryStatus {

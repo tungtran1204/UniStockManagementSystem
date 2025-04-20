@@ -1,6 +1,6 @@
 // useIssueNote.js
 import { useState, useEffect, useCallback } from "react";
-import { createIssueNote, getIssueNote, getIssueNotes, getNextCode, getSaleOrders, getMaterials } from "./issueNoteService";
+import { createIssueNote, getIssueNote, getIssueNotes, getNextCode, getSaleOrders, getMaterials, getProducts } from "./issueNoteService";
 
 const useIssueNote = (page = 0, size = 10) => {
   const [saleOrders, setSaleOrders] = useState([]);
@@ -41,7 +41,7 @@ const useIssueNote = (page = 0, size = 10) => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const data = await getMaterials(page, 100000);
+      const data = await getProducts(page, 100000);
       console.log("Dữ liệu sản phẩm:", data);
       setMaterials(data.content || []);
     } catch (err) {
