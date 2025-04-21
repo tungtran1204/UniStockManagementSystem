@@ -30,6 +30,6 @@ public class ReceiveOutsourceMaterial {
     private Unit unit;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "warehouse_id", nullable = false)
+    @JoinColumn(name = "warehouse_id")
     private Warehouse warehouse;
 }
