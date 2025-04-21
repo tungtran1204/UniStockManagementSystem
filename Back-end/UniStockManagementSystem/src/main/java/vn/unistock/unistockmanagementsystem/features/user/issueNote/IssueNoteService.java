@@ -227,17 +227,29 @@ public class IssueNoteService {
                 outsource.setPartner(Partner.builder().partnerId(issueNoteDto.getPartnerId()).build());
                 outsource.setStatus(ReceiveOutsource.OutsourceStatus.PENDING);
 
-                List<ReceiveOutsourceMaterial> outsourceMaterials = issueNote.getDetails().stream()
-                        .filter(detail -> detail.getMaterial() != null)
-                        .map(detail -> {
-                            ReceiveOutsourceMaterial rom = new ReceiveOutsourceMaterial();
-                            rom.setReceiveOutsource(outsource);
-                            rom.setMaterial(detail.getMaterial());
-                            rom.setQuantity(detail.getQuantity());
-                            rom.setUnit(detail.getUnit());
-                            rom.setWarehouse(detail.getWarehouse());
-                            return rom;
-                        }).collect(Collectors.toList());
+                // Lưu danh sách NVL dự kiến nhận lại từ expectedReturns
+                List<ReceiveOutsourceMaterial> outsourceMaterials = new ArrayList<>();
+                if (issueNoteDto.getExpectedReturns() != null) {
+                    for (IssueNoteDetailDTO expectedReturn : issueNoteDto.getExpectedReturns()) {
+                        if (expectedReturn.getMaterialId() == null) {
+                            throw new RuntimeException("MaterialId is required for expected return");
+                        }
+
+                        Material material = materialRepository.findById(expectedReturn.getMaterialId())
+                                .orElseThrow(() -> new RuntimeException("Material not found with ID: " + expectedReturn.getMaterialId()));
+
+                        ReceiveOutsourceMaterial rom = new ReceiveOutsourceMaterial();
+                        rom.setReceiveOutsource(outsource);
+                        rom.setMaterial(material);
+                        rom.setQuantity(expectedReturn.getQuantity());
+                        rom.setUnit(expectedReturn.getUnitId() != null
+                                ? unitRepository.findById(expectedReturn.getUnitId())
+                                .orElseThrow(() -> new RuntimeException("Unit not found with ID: " + expectedReturn.getUnitId()))
+                                : material.getUnit());
+                        // Không set warehouse vì danh sách NVL nhận lại không yêu cầu kho tại thời điểm này
+                        outsourceMaterials.add(rom);
+                    }
+                }
 
                 outsource.setMaterials(outsourceMaterials);
                 receiveOutsourceRepository.save(outsource);
@@ -254,6 +266,7 @@ public class IssueNoteService {
     // Cập nhật tồn kho và ghi nhận giao dịch xuất kho (giảm số lượng tồn)
     private void updateInventoryAndTransactionForExport(Warehouse warehouse, Material material, Product product, Double quantity, GoodIssueNote issueNote, boolean hasSalesOrder) {
         Inventory inventory = null;
+        SalesOrder salesOrder = hasSalesOrder ? issueNote.getSalesOrder() : null;
 
         if (material != null) {
             // Xác định status cho material
@@ -261,10 +274,12 @@ public class IssueNoteService {
 
             // Nếu liên kết với SalesOrder, thử RESERVED trước
             if (hasSalesOrder) {
-                inventory = inventoryRepository.findByWarehouseAndMaterialAndStatus(warehouse, material, Inventory.InventoryStatus.RESERVED)
+                inventory = inventoryRepository.findByWarehouseAndMaterialAndStatusAndSalesOrder(warehouse, material, Inventory.InventoryStatus.RESERVED, salesOrder)
                         .filter(i -> i.getQuantity() >= quantity)
                         .orElse(null);
-                logger.debug("Material [{}] - Warehouse [{}]: Tried RESERVED, found inventory = {}", material.getMaterialId(), warehouse.getWarehouseId(), inventory != null ? inventory.getQuantity() : "null");
+                logger.debug("Material [{}] - Warehouse [{}]: Tried RESERVED with SalesOrder [{}], found inventory = {}",
+                        material.getMaterialId(), warehouse.getWarehouseId(), salesOrder != null ? salesOrder.getOrderId() : "null",
+                        inventory != null ? inventory.getQuantity() : "null");
             }
 
             // Nếu không tìm thấy RESERVED hoặc không đủ số lượng, thử AVAILABLE
@@ -281,6 +296,9 @@ public class IssueNoteService {
 
             inventory.setQuantity(inventory.getQuantity() - quantity);
             inventory.setLastUpdated(LocalDateTime.now());
+            if (status == Inventory.InventoryStatus.RESERVED && hasSalesOrder) {
+                inventory.setSalesOrder(salesOrder); // Ensure salesOrder is set for RESERVED status
+            }
             inventoryRepository.save(inventory);
             logger.debug("Material [{}] - Warehouse [{}]: New inventory quantity = {}", material.getMaterialId(), warehouse.getWarehouseId(), inventory.getQuantity());
 
@@ -297,17 +315,36 @@ public class IssueNoteService {
         }
 
         if (product != null) {
-            // Luôn sử dụng status = AVAILABLE cho product
-            inventory = inventoryRepository.findByWarehouseAndProductAndStatus(warehouse, product, Inventory.InventoryStatus.AVAILABLE)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy tồn kho AVAILABLE cho sản phẩm có ID: " + product.getProductId()));
-            logger.debug("Product [{}] - Warehouse [{}]: Current inventory quantity = {}", product.getProductId(), warehouse.getWarehouseId(), inventory.getQuantity());
+            // Xác định status cho product
+            Inventory.InventoryStatus status = hasSalesOrder ? Inventory.InventoryStatus.RESERVED : Inventory.InventoryStatus.AVAILABLE;
+
+            // Nếu liên kết với SalesOrder, thử RESERVED trước
+            if (hasSalesOrder) {
+                inventory = inventoryRepository.findByWarehouseAndProductAndStatusAndSalesOrder(warehouse, product, Inventory.InventoryStatus.RESERVED, salesOrder)
+                        .filter(i -> i.getQuantity() >= quantity)
+                        .orElse(null);
+                logger.debug("Product [{}] - Warehouse [{}]: Tried RESERVED with SalesOrder [{}], found inventory = {}",
+                        product.getProductId(), warehouse.getWarehouseId(), salesOrder != null ? salesOrder.getOrderId() : "null",
+                        inventory != null ? inventory.getQuantity() : "null");
+            }
+
+            // Nếu không tìm thấy RESERVED hoặc không đủ số lượng, thử AVAILABLE
+            if (inventory == null) {
+                inventory = inventoryRepository.findByWarehouseAndProductAndStatus(warehouse, product, Inventory.InventoryStatus.AVAILABLE)
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy tồn kho AVAILABLE cho sản phẩm có ID: " + product.getProductId()));
+                status = Inventory.InventoryStatus.AVAILABLE;
+                logger.debug("Product [{}] - Warehouse [{}]: Fell back to AVAILABLE", product.getProductId(), warehouse.getWarehouseId());
+            }
 
             if (inventory.getQuantity() < quantity) {
-                throw new RuntimeException("Không đủ số lượng tồn kho AVAILABLE cho sản phẩm có ID: " + product.getProductId());
+                throw new RuntimeException("Không đủ số lượng tồn kho " + status + " cho sản phẩm có ID: " + product.getProductId());
             }
 
             inventory.setQuantity(inventory.getQuantity() - quantity);
             inventory.setLastUpdated(LocalDateTime.now());
+            if (status == Inventory.InventoryStatus.RESERVED && hasSalesOrder) {
+                inventory.setSalesOrder(salesOrder); // Ensure salesOrder is set for RESERVED status
+            }
             inventoryRepository.save(inventory);
             logger.debug("Product [{}] - Warehouse [{}]: New inventory quantity = {}", product.getProductId(), warehouse.getWarehouseId(), inventory.getQuantity());
 
@@ -385,6 +422,7 @@ public class IssueNoteService {
 
         return dto;
     }
+
     //issue report
     public Page<IssueNoteReportDTO> getFilteredExportReport(
             int page, int size,
@@ -402,5 +440,4 @@ public class IssueNoteService {
                 search, startDate, endDate, itemType, minQuantity, maxQuantity, categories, warehouseIds, pageable
         );
     }
-
 }

@@ -20,8 +20,10 @@ public class InventoryController {
         return ResponseEntity.ok(totalQty);
     }
     @GetMapping("/product/{productId}/warehouses")
-    public ResponseEntity<List<InventoryByWarehouseDTO>> getInventoryDetailsByWarehouse(@PathVariable Long productId) {
-        List<InventoryByWarehouseDTO> details = inventoryService.getInventoryDetailsByProduct(productId);
+    public ResponseEntity<List<InventoryByWarehouseDTO>> getInventoryDetailsByWarehouse(
+            @PathVariable Long productId,
+            @RequestParam(required = false) Long salesOrderId) {
+        List<InventoryByWarehouseDTO> details = inventoryService.getInventoryDetailsByProduct(productId, salesOrderId);
         return ResponseEntity.ok(details);
     }
 
@@ -32,8 +34,10 @@ public class InventoryController {
     }
 
     @GetMapping("/material/{materialId}/warehouses")
-    public ResponseEntity<List<InventoryByWarehouseDTO>> getInventoryDetailsByWarehouseM(@PathVariable Long materialId) {
-        List<InventoryByWarehouseDTO> details = inventoryService.getInventoryDetailsByMaterial(materialId);
+    public ResponseEntity<List<InventoryByWarehouseDTO>> getInventoryDetailsByWarehouseM(
+            @PathVariable Long materialId,
+            @RequestParam(required = false) Long salesOrderId) {
+        List<InventoryByWarehouseDTO> details = inventoryService.getInventoryDetailsByMaterial(materialId, salesOrderId);
         return ResponseEntity.ok(details);
     }
 

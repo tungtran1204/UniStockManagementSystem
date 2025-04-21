@@ -19,7 +19,7 @@ public class ReceiveOutsource {
     @Column(name = "outsource_id")
     private Long outsourceId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gin_id", nullable = false)
     private GoodIssueNote goodIssueNote;
 
