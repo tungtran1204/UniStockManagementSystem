@@ -1531,6 +1531,7 @@ const EditSaleOrderPage = () => {
                       variant="text"
                       className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
                       ripple={true}
+                      disabled={Object.keys(materialErrors).length > 0} // Vô hiệu hóa nếu có lỗi định mức
                       onClick={async () => {
                         try {
                           const usedProductsFromWarehouses = items.flatMap((item) =>
@@ -1563,7 +1564,7 @@ const EditSaleOrderPage = () => {
                           console.log("🔍 Gửi setPreparingStatus với payload:", payload);
 
                           await setPreparingStatus(payload);
-                          alert("Đơn hàng đã được chuyển sang trạng thái 'Đang chuẩn bị vật tư'.");
+                          alert("Đơn hàng đã được chuyển sang trạng thái 'Đang chuẩn bị'.");
                           navigate("/user/sale-orders");
                         } catch (err) {
                           console.error("Lỗi khi chuyển trạng thái đơn hàng:", err);
@@ -1573,7 +1574,7 @@ const EditSaleOrderPage = () => {
                     >
                       <div className="flex items-center gap-2">
                         <FaCheck />
-                        <span>Chuẩn bị vật tư</span>
+                        <span>Hoàn thành chuẩn bị vật tư</span>
                       </div>
                     </Button>
                   ) : (

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogHeader,
@@ -9,72 +9,103 @@ import {
 } from "@material-tailwind/react";
 import { TextField, Divider, Button as MuiButton, IconButton } from "@mui/material";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { checkTypeNameExists } from "./productTypeService";
 
 const CreateProductTypeModal = ({ show, onClose, loading, onSuccess }) => {
   const [formData, setFormData] = useState({
     typeName: "",
     description: "",
   });
+  const [typeNameError, setTypeNameError] = useState("");
   const [validationErrors, setValidationErrors] = useState({});
+
+  useEffect(() => {
+    if (show) {
+      // Reset form khi modal mở
+      setFormData({
+        typeName: "",
+        description: "",
+      });
+      setTypeNameError("");
+      setValidationErrors({});
+    }
+  }, [show]);
 
   if (!show) return null;
 
-  // Hàm kiểm tra chuỗi có chứa toàn khoảng trắng hoặc trống không
   const isEmptyOrWhitespace = (str) => !str || /^\s*$/.test(str);
 
-  // Hàm xử lý khi thay đổi tên dòng sản phẩm
-  const handleTypeNameChange = (newName) => {
-    setFormData({ ...formData, typeName: newName });
-    if (!isEmptyOrWhitespace(newName)) {
-      setValidationErrors((prev) => ({ ...prev, typeName: "" }));
-    }
-  };
+  // Kiểm tra typeName khi nhập
+  const handleCheckTypeName = async (newName) => {
+    setTypeNameError("");
+    setValidationErrors((prev) => ({ ...prev, typeName: "" }));
+    setFormData((prev) => ({ ...prev, typeName: newName }));
 
-  // Hàm xử lý khi nhấn nút "Tạo dòng sản phẩm"
-  const handleCreateProductType = async () => {
-    const newErrors = {};
-
-    if (isEmptyOrWhitespace(formData.typeName)) {
-      newErrors.typeName = "Tên dòng sản phẩm không được để trống hoặc chỉ chứa khoảng trắng!";
-    }
-
-    setValidationErrors(newErrors);
-
-    if (Object.keys(newErrors).length === 0) {
+    const normalizedName = newName.trim();
+    if (normalizedName) {
       try {
-        await onSuccess(formData);
-        onClose({
-          typeName: "",
-          description: "",
-        });
+        const exists = await checkTypeNameExists(normalizedName);
+        if (exists) {
+          setTypeNameError("Tên dòng sản phẩm này đã tồn tại!");
+        }
       } catch (error) {
-        console.error("Error creating product type:", error);
+        setTypeNameError("Lỗi khi kiểm tra tên dòng sản phẩm!");
       }
     }
   };
 
+  // Xử lý submit
+  const handleCreateProductType = async () => {
+    const newErrors = {};
+    const normalizedName = formData.typeName.trim();
+
+    if (isEmptyOrWhitespace(normalizedName)) {
+      newErrors.typeName = "Tên dòng sản phẩm không được để trống hoặc chỉ chứa khoảng trắng!";
+    } else {
+      // Kiểm tra trùng tên một lần nữa ngay khi submit để đảm bảo
+      try {
+        const exists = await checkTypeNameExists(normalizedName);
+        if (exists) {
+          newErrors.typeName = "Tên dòng sản phẩm này đã tồn tại!";
+        }
+      } catch (error) {
+        newErrors.typeName = "Lỗi khi kiểm tra tên dòng sản phẩm!";
+      }
+    }
+
+    setValidationErrors(newErrors);
+
+    // Chỉ gọi onSuccess nếu không có lỗi
+    if (Object.keys(newErrors).length === 0) {
+      try {
+        await onSuccess({ ...formData, typeName: normalizedName });
+        onClose();
+      } catch (error) {
+        setTypeNameError(error.message || "Lỗi khi tạo dòng sản phẩm!");
+      }
+    }
+  };
+
+  // Kiểm tra nút "Lưu" có bị vô hiệu không
+  const isCreateDisabled = () => {
+    return loading || !!typeNameError || isEmptyOrWhitespace(formData.typeName);
+  };
+
   return (
     <Dialog open={true} handler={onClose} size="md" className="px-4 py-2">
-      {/* Header của Dialog */}
       <DialogHeader className="flex justify-between items-center pb-2">
         <Typography variant="h4" color="blue-gray">
           Thêm dòng sản phẩm
         </Typography>
-        <IconButton
-          size="small"
-          onClick={onClose}
-        >
+        <IconButton size="small" onClick={onClose}>
           <XMarkIcon className="h-5 w-5 stroke-2" />
         </IconButton>
       </DialogHeader>
       <Divider variant="middle" />
-      {/* Body của Dialog */}
       <DialogBody className="space-y-4 pb-6 pt-6">
-        {/* Tên dòng sản phẩm */}
         <div>
           <Typography variant="medium" className="text-black">
-            Tên dòng sản phẩm
-            <span className="text-red-500"> *</span>
+            Tên dòng sản phẩm <span className="text-red-500">*</span>
           </Typography>
           <TextField
             fullWidth
@@ -83,16 +114,11 @@ const CreateProductTypeModal = ({ show, onClose, loading, onSuccess }) => {
             placeholder="Tên dòng sản phẩm"
             color="success"
             value={formData.typeName}
-            onChange={(e) => handleTypeNameChange(e.target.value)}
+            onChange={(e) => handleCheckTypeName(e.target.value)}
+            error={!!typeNameError || !!validationErrors.typeName}
+            helperText={typeNameError || validationErrors.typeName}
           />
-          {validationErrors.typeName && (
-            <Typography variant="small" color="red">
-              {validationErrors.typeName}
-            </Typography>
-          )}
         </div>
-
-        {/* Mô tả */}
         <div>
           <Typography variant="medium" className="text-black">
             Mô tả
@@ -111,8 +137,6 @@ const CreateProductTypeModal = ({ show, onClose, loading, onSuccess }) => {
           />
         </div>
       </DialogBody>
-
-      {/* Footer của Dialog */}
       <DialogFooter className="pt-0">
         <MuiButton
           size="medium"
@@ -129,6 +153,7 @@ const CreateProductTypeModal = ({ show, onClose, loading, onSuccess }) => {
           className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-3 rounded-[4px] transition-all duration-200 ease-in-out"
           ripple={true}
           onClick={handleCreateProductType}
+          disabled={isCreateDisabled()}
         >
           Lưu
         </Button>

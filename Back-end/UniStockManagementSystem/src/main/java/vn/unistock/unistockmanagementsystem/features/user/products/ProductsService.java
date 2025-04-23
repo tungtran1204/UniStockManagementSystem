@@ -198,4 +198,12 @@ public class ProductsService {
         Page<ProductMaterial> productMaterialsPage = productMaterialsRepository.findByProduct_ProductId(productId, pageable);
         return productMaterialsPage.map(productMaterialsMapper::toDTO);
     }
+
+    public Page<ProductsDTO> getActiveProducts(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Product> productPage = productsRepository.findByIsProductionActiveTrue(pageable);
+        return productPage.map(productsMapper::toDTO);
+    }
+
+
 }
