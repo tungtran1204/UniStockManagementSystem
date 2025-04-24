@@ -82,7 +82,7 @@ const ReceiptNotePage = () => {
   useEffect(() => {
     fetchPaginatedReceiptNotes(currentPage, pageSize, searchTerm, selectedCategories, startDate, endDate);
   }, [currentPage, pageSize, searchTerm, selectedCategories, startDate, endDate]);
-  
+
   // Fetch thông tin user và đơn hàng
 
   // Handle page change
@@ -105,7 +105,7 @@ const ReceiptNotePage = () => {
   const handleSearch = () => {
     setCurrentPage(0);
     fetchPaginatedReceiptNotes(0, pageSize, searchTerm, selectedCategories, startDate, endDate);
-  };  
+  };
 
   const columnsConfig = [
     { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
@@ -189,27 +189,27 @@ const ReceiptNotePage = () => {
 
   const filteredNotes = receiptNotes.filter((receipt) => {
     const matchesSearch = receipt.grnCode?.toLowerCase().includes(searchTerm.toLowerCase());
-  
+
     const receiptDate = receipt.receiptDate ? dayjs(receipt.receiptDate) : null;
     const matchesStart = startDate ? receiptDate?.isSameOrAfter(dayjs(startDate), 'day') : true;
     const matchesEnd = endDate ? receiptDate?.isSameOrBefore(dayjs(endDate), 'day') : true;
-  
+
     const matchesCategory = selectedCategories.length === 0 || selectedCategories.includes(receipt.category);
     return matchesSearch && matchesStart && matchesEnd && matchesCategory;
   });
-  
+
   const data = receiptNotes.map((receipt, index) => ({
     grnId: receipt.grnId,
     index: currentPage * pageSize + index + 1,
     receiptCode: receipt.grnCode,
     category: receipt.category || 'không có dữ liệu',
     createdDate: receipt.receiptDate,
-    createBy: `${receipt.createdByUsername }`|| `${receipt.createdByEmail }`,
+    createBy: `${receipt.createdByUsername}` || `${receipt.createdByEmail}`,
     poId: receipt.poId,
     ginId: receipt.ginId,
     poCode: receipt.poCode,
     ginCode: receipt.ginCode,
-  }));  
+  }));
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
@@ -394,7 +394,7 @@ const ReceiptNotePage = () => {
                           setSelectedCategories([]);
                           setCurrentPage(0);
                           fetchPaginatedReceiptNotes(0, pageSize, searchTerm, [], startDate, endDate);
-                        }}                        
+                        }}
                         sx={{
                           color: "#000000DE",
                           "&:hover": {
