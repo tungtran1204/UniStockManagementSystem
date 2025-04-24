@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -22,6 +24,6 @@ public class SalesOrderDetailDTO {
     private Integer receivedQuantity;
     private Integer remainingQuantity;
     private String unitName; // Đơn vị tính
-
+    private List<SalesOrderMaterialDTO> materials = new ArrayList<>();
 
 }

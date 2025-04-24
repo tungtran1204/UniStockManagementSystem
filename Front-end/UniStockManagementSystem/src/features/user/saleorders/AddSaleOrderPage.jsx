@@ -498,7 +498,6 @@ const AddSaleOrderPage = () => {
                   Tên khách hàng
                   <span className="text-red-500"> *</span>
                 </Typography>
-               me
                 <TextField
                   fullWidth
                   size="small"

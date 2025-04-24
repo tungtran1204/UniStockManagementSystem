@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import vn.unistock.unistockmanagementsystem.entities.*;
 import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryRepository;
+import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerRepository;
 import vn.unistock.unistockmanagementsystem.features.user.products.ProductsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.purchaseRequests.PurchaseRequestDetailDTO;
@@ -33,6 +34,7 @@ public class SaleOrdersService {
     private final PurchaseRequestRepository purchaseRequestRepository;
     private final InventoryRepository inventoryRepository;
     private final PurchaseRequestService purchaseRequestService;
+    private final MaterialsRepository  materialsRepository;
 
     public SaleOrdersService(SaleOrdersRepository saleOrdersRepository,
                              SaleOrdersMapper saleOrdersMapper,
@@ -40,7 +42,8 @@ public class SaleOrdersService {
                              ProductsRepository productsRepository,
                              PurchaseRequestRepository purchaseRequestRepository,
                              InventoryRepository inventoryRepository,
-                             PurchaseRequestService purchaseRequestService) {
+                             PurchaseRequestService purchaseRequestService,
+                             MaterialsRepository materialsRepository   ) {
         this.saleOrdersRepository = saleOrdersRepository;
         this.saleOrdersMapper = saleOrdersMapper;
         this.partnerRepository = partnerRepository;
@@ -48,6 +51,7 @@ public class SaleOrdersService {
         this.purchaseRequestRepository = purchaseRequestRepository;
         this.inventoryRepository = inventoryRepository;
         this.purchaseRequestService = purchaseRequestService;
+        this.materialsRepository   = materialsRepository;
     }
 
     public Page<SaleOrdersDTO> getAllOrders(int page, int size) {
@@ -266,7 +270,9 @@ public class SaleOrdersService {
     }
 
     @Transactional
-    public SaleOrdersDTO createSaleOrder(SaleOrdersDTO saleOrdersDTO) {
+    public SaleOrdersDTO createSaleOrder(SaleOrdersDTO dto) {
+
+        /* Xác thực user login */
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
@@ -274,20 +280,28 @@ public class SaleOrdersService {
         CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
         User currentUser = userDetails.getUser();
 
-        Partner partner = partnerRepository.findByPartnerCode(saleOrdersDTO.getPartnerCode())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Partner not found with code: " + saleOrdersDTO.getPartnerCode()));
+        /* Tìm kiếm Partner */
+        Partner partner = partnerRepository.findByPartnerCode(dto.getPartnerCode())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Partner not found with code: " + dto.getPartnerCode()
+                ));
 
-        if (saleOrdersDTO.getOrderDetails() != null) {
-            saleOrdersDTO.getOrderDetails().forEach(detailDTO -> {
-                Product product = productsRepository.findByProductCode(detailDTO.getProductCode())
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                                "Product not found with code: " + detailDTO.getProductCode()));
-                detailDTO.setProductId(product.getProductId());
+        /* Bổ sung productId cho từng chi tiết nếu FE chỉ gửi productCode */
+        if (dto.getOrderDetails() != null) {
+            dto.getOrderDetails().forEach(detailDTO -> {
+                Product prod = productsRepository.findByProductCode(detailDTO.getProductCode())
+                        .orElseThrow(() -> new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST,
+                                "Product not found with code: " + detailDTO.getProductCode()
+                        ));
+                detailDTO.setProductId(prod.getProductId());
             });
         }
 
-        SalesOrder order = saleOrdersMapper.toEntity(saleOrdersDTO);
+        /* ⭐ Mapper cần truyền materialsRepository */
+        SalesOrder order = saleOrdersMapper.toEntity(dto, materialsRepository);
+
         order.setPartner(partner);
         order.setCreatedByUser(currentUser);
 
@@ -295,52 +309,73 @@ public class SaleOrdersService {
             order.setStatus(SalesOrder.OrderStatus.PROCESSING);
         }
 
+        /* Bảo đảm mỗi detail trỏ về order + product persistent */
         if (order.getDetails() != null) {
             order.getDetails().forEach(detail -> {
                 detail.setSalesOrder(order);
-                Long prodId = detail.getProduct().getProductId();
-                Product persistentProduct = productsRepository.getReferenceById(prodId);
+                Product persistentProduct =
+                        productsRepository.getReferenceById(detail.getProduct().getProductId());
                 detail.setProduct(persistentProduct);
+
+                /* Set lại quan hệ ngược cho materials */
+                if (detail.getMaterials() != null) {
+                    detail.getMaterials().forEach(mat -> mat.setSalesOrderDetail(detail));
+                }
             });
         }
 
-        SalesOrder savedOrder = saleOrdersRepository.save(order);
-        return saleOrdersMapper.toDTO(savedOrder);
+        SalesOrder saved = saleOrdersRepository.save(order);
+        return saleOrdersMapper.toDTO(saved);
     }
 
-    public SaleOrdersDTO updateSaleOrder(Long orderId, SaleOrdersDTO saleOrdersDTO) {
-        SalesOrder existingOrder = saleOrdersRepository.findById(orderId)
+    @Transactional
+    public SaleOrdersDTO updateSaleOrder(Long orderId, SaleOrdersDTO dto) {
+
+        SalesOrder existing = saleOrdersRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found with ID: " + orderId));
 
-        Partner partner = partnerRepository.findByPartnerCode(saleOrdersDTO.getPartnerCode())
-                .orElseThrow(() -> new RuntimeException(
-                        "Không tìm thấy Partner với code: " + saleOrdersDTO.getPartnerCode()
-                ));
+        Partner partner = partnerRepository.findByPartnerCode(dto.getPartnerCode())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Partner với code: " + dto.getPartnerCode()));
 
-        partner.setPartnerName(saleOrdersDTO.getPartnerName());
-        partner.setAddress(saleOrdersDTO.getAddress());
-        partner.setPhone(saleOrdersDTO.getPhoneNumber());
-        partner.setContactName(saleOrdersDTO.getContactName());
+        partner.setPartnerName(dto.getPartnerName());
+        partner.setAddress(dto.getAddress());
+        partner.setPhone(dto.getPhoneNumber());
+        partner.setContactName(dto.getContactName());
 
-        SalesOrder newOrderData = saleOrdersMapper.toEntity(saleOrdersDTO);
-        newOrderData.setPartner(partner);
-        newOrderData.setOrderId(existingOrder.getOrderId());
+        /* ⭐ Mapper với repo */
+        SalesOrder mapped = saleOrdersMapper.toEntity(dto, materialsRepository);
+        mapped.setPartner(partner);
+        mapped.setOrderId(existing.getOrderId());
 
-        if (newOrderData.getStatus() == null) {
-            newOrderData.setStatus(existingOrder.getStatus());
+        if (mapped.getStatus() == null) mapped.setStatus(existing.getStatus());
+
+        /* --- Xoá detail cũ --- */
+        for (SalesOrderDetail d : existing.getDetails()) {
+            d.getMaterials().clear();
         }
+        existing.getDetails().clear();
 
-        if (newOrderData.getDetails() != null) {
-            for (SalesOrderDetail detail : newOrderData.getDetails()) {
-                detail.setSalesOrder(newOrderData);
+        /* --- Thêm detail mới --- */
+        if (mapped.getDetails() != null) {
+            for (SalesOrderDetail detail : mapped.getDetails()) {
+                detail.setSalesOrder(existing);
+                Product persistProd =
+                        productsRepository.getReferenceById(detail.getProduct().getProductId());
+                detail.setProduct(persistProd);
+                if (detail.getMaterials() != null) {
+                    detail.getMaterials().forEach(m -> m.setSalesOrderDetail(detail));
+                }
+                existing.getDetails().add(detail);
             }
         }
-        newOrderData.setCreatedByUser(existingOrder.getCreatedByUser());
-        newOrderData.setCreatedAt(existingOrder.getCreatedAt());
 
-        SalesOrder savedOrder = saleOrdersRepository.save(newOrderData);
-        return saleOrdersMapper.toDTO(savedOrder);
+        mapped.setCreatedByUser(existing.getCreatedByUser());
+        mapped.setCreatedAt(existing.getCreatedAt());
+
+        SalesOrder saved = saleOrdersRepository.save(existing);
+        return saleOrdersMapper.toDTO(saved);
     }
+
 
     @Transactional
     public void setPreparingMaterialStatus(PrepareMaterialForSaleOrderDTO request) {
