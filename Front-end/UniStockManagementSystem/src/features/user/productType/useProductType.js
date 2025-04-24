@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { fetchProductTypes as fetchProductTypesService, toggleStatus as toggleStatusService, createProductType as createProductTypeService } from "./productTypeService";
+import { fetchProductTypes as fetchProductTypesService, toggleStatus as toggleStatusService, createProductType as createProductTypeService, updateProductType as updateProductTypeService } from "./productTypeService";
 
 const useProductType = () => {
     const [productTypes, setProductTypes] = useState([]);
@@ -62,12 +62,26 @@ const useProductType = () => {
         }
     };
 
+    const updateProductType = async (typeId, productTypeData) => {
+        try {
+            setLoading(true);
+            await updateProductTypeService(typeId, productTypeData);
+            await fetchProductTypes();
+        } catch (error) {
+            console.error("❌ Lỗi khi cập nhật dòng sản phẩm:", error.message);
+            throw error;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return {
         productTypes,
         fetchProductTypes,
         toggleStatus,
         createProductType,
         totalPages,
+        updateProductType,
         totalElements,
         loading,
     };

@@ -81,11 +81,18 @@ export const toggleSaleOrderStatus = async (orderId, newStatus) => {
 export const getProducts = async () => {
   try {
     const response = await axios.get(
-      `${import.meta.env.VITE_API_URL}/user/products`, { headers: authHeader(), }
+      `${import.meta.env.VITE_API_URL}/user/products/active`,
+      {
+        headers: authHeader(),
+        params: {
+          page: 0,
+          size: 1000, // Lấy đủ sản phẩm, điều chỉnh nếu cần
+        },
+      }
     );
     return response.data;
   } catch (error) {
-    console.error("Lỗi khi lấy danh sách sản phẩm:", error);
+    console.error("Lỗi khi lấy danh sách sản phẩm active:", error);
     throw error;
   }
 };

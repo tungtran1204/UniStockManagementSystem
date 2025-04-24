@@ -54,10 +54,16 @@ export const createUnit = async (unitData) => {
 
 export const updateUnit = async (unitId, unitData) => {
     try {
+        console.log("Sending PUT request to URL:", `${API_URL}/${unitId}`);
+        console.log("With data:", JSON.stringify(unitData));
+
         const response = await axios.put(`${API_URL}/${unitId}`, unitData, {
             headers: authHeader(),
         });
-        console.log("✅ [updateUnit] API Response:", response.data);
+
+        console.log("✅ [updateUnit] API Response full:", response);
+        console.log("✅ [updateUnit] API Response data:", response.data);
+
         return response.data;
     } catch (error) {
         console.error("❌ Lỗi khi cập nhật đơn vị tính:", error.response?.data?.message || error.message);
@@ -74,5 +80,18 @@ export const fetchActiveUnits = async () => {
     } catch (error) {
         console.error("❌ Lỗi khi lấy danh sách đơn vị tính đang hoạt động:", error);
         return [];
+    }
+};
+
+export const checkUnitNameExists = async (unitName, excludeId = null) => {
+    try {
+        const response = await axios.get(`${API_URL}/check-unit-name/${unitName}`, {
+            headers: authHeader(),
+            params: { excludeId },
+        });
+        return response.data.exists;
+    } catch (error) {
+        console.error("❌ Lỗi khi kiểm tra tên đơn vị tính:", error.response?.data || error.message);
+        return false;
     }
 };

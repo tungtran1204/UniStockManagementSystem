@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,5 +54,16 @@ public class UnitController {
     ) {
         UnitDTO updatedUnit = unitService.updateUnit(unitId, unitDTO);
         return ResponseEntity.ok(updatedUnit);
+    }
+
+    @GetMapping("/check-unit-name/{unitName}")
+    public ResponseEntity<Map<String, Boolean>> checkUnitName(
+            @PathVariable String unitName,
+            @RequestParam(required = false) Long excludeId
+    ) {
+        boolean exists = unitService.isUnitNameExists(unitName, excludeId);
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("exists", exists);
+        return ResponseEntity.ok(response);
     }
 }
