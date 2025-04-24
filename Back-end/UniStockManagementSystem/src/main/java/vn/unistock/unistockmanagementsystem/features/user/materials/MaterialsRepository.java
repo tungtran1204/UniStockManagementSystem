@@ -26,4 +26,7 @@ public interface MaterialsRepository extends JpaRepository<Material, Long> {
     @Query("SELECT m FROM Material m WHERE m.isUsing = true")
     List<Material> findAllByIsUsingTrue();
 
+    @Query("SELECT m FROM Material m WHERE :search IS NULL OR m.materialCode LIKE %:search% OR m.materialName LIKE %:search%")
+    List<Material> findByCodeOrName(@Param("search") String search);
+
 }
