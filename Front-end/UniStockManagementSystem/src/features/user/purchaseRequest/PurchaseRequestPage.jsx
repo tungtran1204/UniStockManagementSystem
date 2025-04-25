@@ -25,7 +25,7 @@ import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
 import SuccessAlert from "@/components/SuccessAlert";
 import ConfirmDialog from "@/components/ConfirmDialog";
-import { getPurchaseRequestById } from "./PurchaseRequestService";
+import { getPurchaseRequestById, updatePurchaseRequestStatus } from "./PurchaseRequestService";
 import DateFilterButton from "@/components/DateFilterButton";
 import StatusFilterButton from "@/components/StatusFilterButton";
 
@@ -158,6 +158,7 @@ const PurchaseRequestPage = () => {
             }
 
             const payload = {
+                purchaseRequestId: selectedRequest.purchaseRequestId,
                 items: selectedRequest.purchaseRequestDetails.map((item) => ({
                     materialId: item.materialId,
                     materialCode: item.materialCode,
@@ -169,8 +170,8 @@ const PurchaseRequestPage = () => {
                 })),
             };
 
-
             const response = await createOrdersFromRequest(payload);
+            await updatePurchaseRequestStatus(selectedRequestId, "PURCHASED");
             navigate("/user/purchaseOrder", { state: { successMessage: `Tạo ${response.orders.length} đơn hàng mua vật tư thành công!` } });
         } catch (error) {
             console.error("Lỗi tạo đơn hàng:", error);
