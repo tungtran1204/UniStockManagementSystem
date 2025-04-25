@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,8 +42,28 @@ public class ProductTypeController {
         return ResponseEntity.ok(createdProductType);
     }
 
+    @PutMapping("/{typeId}")
+    public ResponseEntity<ProductTypeDTO> updateProductType(
+            @PathVariable Long typeId,
+            @RequestBody ProductTypeDTO productTypeDTO
+    ) {
+        ProductTypeDTO updatedProductType = productTypeService.updateProductType(typeId, productTypeDTO);
+        return ResponseEntity.ok(updatedProductType);
+    }
+
     @GetMapping("/active")
     public ResponseEntity<List<ProductTypeDTO>> getActiveProductTypes() {
         return ResponseEntity.ok(productTypeService.getActiveProductTypes());
+    }
+
+    @GetMapping("/check-type-name/{typeName}")
+    public ResponseEntity<Map<String, Boolean>> checkTypeName(
+            @PathVariable String typeName,
+            @RequestParam(required = false) Long excludeId
+    ) {
+        boolean exists = productTypeService.isTypeNameExists(typeName, excludeId);
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("exists", exists);
+        return ResponseEntity.ok(response);
     }
 }

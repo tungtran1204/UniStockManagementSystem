@@ -9,4 +9,5 @@ public interface UnitRepository extends JpaRepository<Unit, Long> {
     boolean existsByUnitNameIgnoreCase(String unitName);
     Optional<Unit> findByUnitName(String unitName);
     Optional<Unit> findByUnitNameIgnoreCase(String unitName);
+    boolean existsByUnitNameIgnoreCaseAndUnitIdNot(String unitName, Long unitId);
 }

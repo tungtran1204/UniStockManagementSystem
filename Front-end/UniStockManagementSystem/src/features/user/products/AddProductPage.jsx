@@ -287,7 +287,7 @@ const AddProductPage = () => {
         );
 
         if (hasEmptyRows) {
-            setBillOfMaterialsError("Vui lòng điền đầy đủ thông tin cho tất cả các dòng nguyên vật liệu!");
+            setBillOfMaterialsError("Vui lòng điền đầy đủ thông tin cho tất cả các dòng vật tư!");
             return;
         }
 
@@ -499,7 +499,7 @@ const AddProductPage = () => {
         { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 30, editable: false, filterable: false },
         {
             field: 'materialCode',
-            headerName: 'Mã NVL',
+            headerName: 'Mã vật tư',
             flex: 1.5,
             minWidth: 250,
             editable: false,
@@ -531,7 +531,7 @@ const AddProductPage = () => {
                             color="success"
                             hiddenLabel
                             {...params}
-                            placeholder="Mã nguyên vật liệu"
+                            placeholder="Mã vật tư"
                         />
                     )}
                 />
@@ -539,7 +539,7 @@ const AddProductPage = () => {
         },
         {
             field: 'materialName',
-            headerName: 'Tên NVL',
+            headerName: 'Tên vật tư',
             flex: 2,
             minWidth: 400,
             editable: false,
@@ -801,7 +801,7 @@ const AddProductPage = () => {
 
                     <div className="mt-8">
                         <Typography variant="h6" color="blue-gray" className="mb-4">
-                            Định mức nguyên vật liệu
+                            Định mức vật tư
                         </Typography>
 
                         <div className="flex items-center justify-between gap-4 mb-4">

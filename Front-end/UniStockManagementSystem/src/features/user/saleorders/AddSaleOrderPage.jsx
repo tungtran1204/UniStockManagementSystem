@@ -1,3 +1,4 @@
+
 import { FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa";
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -61,6 +62,12 @@ const AddSaleOrderPage = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(5);
   const [tableSearchQuery, setTableSearchQuery] = useState("");
+
+  // Lọc các sản phẩm chưa được chọn
+  const getAvailableProducts = () => {
+    const selectedProductCodes = items.map((item) => item.productCode).filter(Boolean);
+    return products.filter((product) => !selectedProductCodes.includes(product.value));
+  };
 
   // Hàm fetch danh sách khách hàng
   const fetchCustomers = async () => {
@@ -168,11 +175,11 @@ const AddSaleOrderPage = () => {
       prev.map((row) =>
         row.id === rowId
           ? {
-              ...row,
-              productCode: selectedOption ? selectedOption.value : "",
-              productName: selectedOption ? selectedOption.label : "",
-              unitName: selectedOption ? selectedOption.unit : "",
-            }
+            ...row,
+            productCode: selectedOption ? selectedOption.value : "",
+            productName: selectedOption ? selectedOption.label : "",
+            unitName: selectedOption ? selectedOption.unit : "",
+          }
           : row
       )
     );
@@ -498,7 +505,6 @@ const AddSaleOrderPage = () => {
                   Tên khách hàng
                   <span className="text-red-500"> *</span>
                 </Typography>
-               me
                 <TextField
                   fullWidth
                   size="small"
@@ -595,9 +601,7 @@ const AddSaleOrderPage = () => {
             <TableSearch
               value={tableSearchQuery}
               onChange={setTableSearchQuery}
-              onSearch={() => {
-                (e) => setTableSearchQuery(e.target.value)
-              }}
+              onSearch={() => { }}
               placeholder="Tìm kiếm"
             />
           </div>
@@ -623,7 +627,7 @@ const AddSaleOrderPage = () => {
                       <td className="px-2 py-2 text-sm text-[#000000DE] text-center w-10 border-r border-[rgba(224,224,224,1)]">{currentPage * pageSize + index + 1}</td>
                       <td className="px-2 py-2 text-sm w-72 border-r border-[rgba(224,224,224,1)]">
                         <Autocomplete
-                          options={products}
+                          options={getAvailableProducts()}
                           size="small"
                           getOptionLabel={(option) => option.label}
                           value={products.find((p) => p.value === item.productCode) || null}

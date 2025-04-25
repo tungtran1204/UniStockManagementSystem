@@ -26,5 +26,6 @@ public class IssueNoteDTO {
     private String createdByUserName;
     private String receiver;
     private List<IssueNoteDetailDTO> details;
+    private List<IssueNoteDetailDTO> expectedReturns;
     private List<String> paperEvidence;
 }

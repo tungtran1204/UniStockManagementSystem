@@ -11,7 +11,7 @@ import {
   Autocomplete,
   IconButton,
   Button as MuiButton,
-  Tooltip, 
+  Tooltip,
   Divider
 } from '@mui/material';
 import {
@@ -23,7 +23,8 @@ import ReactPaginate from "react-paginate";
 import { FaPlus, FaTrash, FaArrowLeft, FaSearch } from "react-icons/fa";
 import {
   ArrowLeftIcon,
-  ArrowRightIcon
+  ArrowRightIcon,
+  ListBulletIcon
 } from "@heroicons/react/24/outline";
 import { InformationCircleIcon } from "@heroicons/react/24/solid";
 
@@ -49,6 +50,67 @@ import useIssueNote from "./useIssueNote";
 const OUTSOURCE_TYPE_ID = 3;
 const SUPPLIER_TYPE_ID = 2;
 
+// 🔄 BEGIN PATCH: buildMaterialRows
+/** Gom vật tư từ danh sách orderDetails.
+ *  Trả về mảng [{ materialId, materialCode?, materialName?, unitName, orderQty, exportedQty, pendingQty, inStock:[...] }]
+ */
+const buildMaterialRows = async (orderDetails, orderId) => {
+  const rowsMap = new Map();
+
+  for (const detail of orderDetails) {
+    if (!Array.isArray(detail.materials)) continue;
+
+    for (const m of detail.materials) {
+      const key = m.materialId;
+      const exists = rowsMap.get(key) || {
+        id: `m-${key}`,
+        materialId: key,
+        materialCode: m.materialCode || "",
+        materialName: m.materialName || "",
+        unitName: m.unitName || "",
+        orderQuantity: 0,
+        exportedQuantity: 0,
+        pendingQuantity: 0,
+        inStock: []
+      };
+
+      exists.orderQuantity      += m.requiredQuantity || 0;
+      exists.exportedQuantity   += m.receivedQuantity || 0;
+      exists.pendingQuantity     = exists.orderQuantity - exists.exportedQuantity;
+
+      rowsMap.set(key, exists);
+    }
+  }
+
+  // 👉 nạp tồn kho từng vật tư
+  const promises = Array.from(rowsMap.values()).map(async (row) => {
+    try {
+      const stock = await getTotalQuantityOfMaterial(row.materialId, orderId);
+      row.inStock = stock && stock.length > 0
+        ? stock.map(s => ({
+            warehouseId: s.warehouseId,
+            warehouseName: s.warehouseName || "",
+            quantity: s.quantity || 0,
+            exportQuantity: 0,
+            error: ""
+          }))
+        : [{
+            warehouseId: null,
+            warehouseName: " ",
+            quantity: 0,
+            exportQuantity: 0,
+            error: ""
+          }];
+    } catch (e) {
+      console.error("Lỗi lấy tồn kho vật tư:", e);
+    }
+    return row;
+  });
+
+  return Promise.all(promises);
+};
+// 🔄 END PATCH
+
 const AddIssueNote = () => {
   const navigate = useNavigate();
   const { fetchNextCode, addIssueNote, materials } = useIssueNote();
@@ -66,6 +128,7 @@ const AddIssueNote = () => {
   const [partnerName, setPartnerName] = useState("");
   const [partnerId, setPartnerId] = useState(null);
   const [soId, setSoId] = useState(null);
+  const [isSaving, setIsSaving] = useState(false); // Thêm state cho loading
 
   // ------------------ STATE: Modal Đơn hàng ------------------
   const [orders, setOrders] = useState([]);
@@ -78,7 +141,11 @@ const AddIssueNote = () => {
 
   // ------------------ STATE: Danh sách sản phẩm / Nguyên vật liệu ------------------
   const [products, setProducts] = useState([]);
-  const [productList, setProductList] = useState([]); // Thêm state để lưu danh sách sản phẩm
+  const [productList, setProductList] = useState([]); // Danh sách sản phẩm
+
+  // ------------------ STATE: Danh sách NVL dự kiến nhận lại (cho Gia công) ------------------
+  const [expectedReturns, setExpectedReturns] = useState([]);
+  const [warehouses, setWarehouses] = useState([]); // Thêm state cho danh sách kho
 
   // ------------------ Lấy mã phiếu + đặt ngày mặc định ------------------
   useEffect(() => {
@@ -95,7 +162,26 @@ const AddIssueNote = () => {
     }
   }, []);
 
-  // ------------------ Lấy DS đơn hàng, nếu category = "Bán hàng" ------------------
+  // ------------------ Lấy danh sách kho ------------------
+  const fetchWarehouses = async () => {
+    try {
+      const response = await getWarehouses(); // Giả định API trả về danh sách kho
+      if (response && response.content) {
+        const mapped = response.content.map((wh) => ({
+          id: wh.warehouseId,
+          name: wh.warehouseName,
+        }));
+        setWarehouses(mapped);
+      } else {
+        setWarehouses([]);
+      }
+    } catch (error) {
+      console.error("Lỗi fetchWarehouses:", error);
+      setWarehouses([]);
+    }
+  };
+
+  // ------------------ Lấy DS đơn hàng, nếu category = "Bán hàng" hoặc "Sản xuất" ------------------
   const fetchOrders = async () => {
     try {
       const response = await getSaleOrders();
@@ -126,7 +212,7 @@ const AddIssueNote = () => {
   // ------------------ Lấy DS sản phẩm ------------------
   const fetchProducts = async () => {
     try {
-      const response = await getProducts(); // Giả định có API này
+      const response = await getProducts();
       if (response && response.content) {
         const mapped = response.content.map((prod) => ({
           id: prod.productId,
@@ -211,17 +297,19 @@ const AddIssueNote = () => {
 
   // ------------------ Khi đổi category => fetch DS tương ứng ------------------
   useEffect(() => {
-    if (category === "Bán hàng") {
+    if (category === "Bán hàng" || category === "Sản xuất") {
       fetchOrders();
     }
     if (category === "Gia công") {
       fetchOutsources();
+      fetchWarehouses(); // Lấy danh sách kho cho expectedReturns
+      setExpectedReturns([]); // Reset expectedReturns khi đổi category
     }
     if (category === "Trả lại hàng mua") {
       fetchSuppliers();
     }
     if (category === "Sản xuất") {
-      fetchProducts(); // Lấy danh sách sản phẩm khi category là Sản xuất
+      fetchProducts();
     }
     setReferenceDocument("");
     setSoId(null);
@@ -259,14 +347,20 @@ const AddIssueNote = () => {
     setPartnerCode(selectedOrder.partnerCode);
     setPartnerName(selectedOrder.partnerName);
     setCreateDate(
-      selectedOrder.orderDate
-        ? dayjs(selectedOrder.orderDate).format("YYYY-MM-DD")
-        : ""
+      selectedOrder.orderDate ? dayjs(selectedOrder.orderDate).format("YYYY-MM-DD") : ""
     );
     setDescription(selectedOrder.orderName || "");
     setAddress(selectedOrder.address || "");
     setContactName(selectedOrder.contactName || "");
 
+    if (category === "Sản xuất") {
+      // 👉 Lấy danh sách vật tư theo đơn hàng
+      const materialRows = await buildMaterialRows(selectedOrder.orderDetails, selectedOrder.id);
+      console.log("Material rows for production:", materialRows);
+      setProducts(materialRows);
+      handleCloseChooseOrderModal();
+      return;
+    }
     // Tạo mảng products cho sản phẩm từ đơn hàng
     const newProducts = [];
     for (const detail of selectedOrder.orderDetails) {
@@ -319,7 +413,7 @@ const AddIssueNote = () => {
   const handleOpenCreatePartnerPopup = () => setIsCreatePartnerPopupOpen(true);
   const handleCloseCreatePartnerPopup = () => setIsCreatePartnerPopupOpen(false);
 
-  // ------------------ Thêm/Xoá dòng ------------------
+  // ------------------ Thêm/Xoá dòng (cho products) ------------------
   const handleAddRow = () => {
     if (category === "Trả lại hàng mua" || category === "Gia công") {
       setProducts((prev) => [
@@ -340,27 +434,7 @@ const AddIssueNote = () => {
           }],
         },
       ]);
-    } else if (category === "Sản xuất") {
-      setProducts((prev) => [
-        ...prev,
-        {
-          id: `new-${prev.length + 1}`,
-          itemId: null,
-          itemType: null,
-          productCode: "",
-          productName: "",
-          unitName: "",
-          unitId: null,
-          inStock: [{
-            warehouseId: null,
-            warehouseName: "",
-            quantity: 0,
-            exportQuantity: 0,
-            error: ""
-          }],
-        },
-      ]);
-    } else {
+    } else if (category === "Sản xuất" || category === "Bán hàng") {
       setProducts((prev) => [
         ...prev,
         {
@@ -386,8 +460,32 @@ const AddIssueNote = () => {
   };
 
   const handleRemoveAllRows = () => setProducts([]);
+
   const handleDeleteRow = (rowId) => {
     setProducts((prev) => prev.filter((p) => p.id !== rowId));
+  };
+
+  // ------------------ Thêm/Xoá dòng (cho expectedReturns) ------------------
+  const handleAddExpectedReturnRow = () => {
+    setExpectedReturns((prev) => [
+      ...prev,
+      {
+        id: `new-${prev.length + 1}`,
+        materialId: null,
+        materialCode: "",
+        materialName: "",
+        unitId: null,
+        unitName: "",
+        expectedQuantity: 0,
+        error: "" // Thêm trường error để hiển thị lỗi
+      },
+    ]);
+  };
+
+  const handleRemoveAllExpectedReturnRows = () => setExpectedReturns([]);
+
+  const handleDeleteExpectedReturnRow = (rowId) => {
+    setExpectedReturns((prev) => prev.filter((p) => p.id !== rowId));
   };
 
   // ------------------ Pagination cho sản phẩm/NVL ------------------
@@ -406,7 +504,7 @@ const AddIssueNote = () => {
     setCurrentPage(selected);
   };
 
-  // ------------------ Hàm render bảng thống nhất ------------------
+  // ------------------ Hàm render bảng thống nhất (products) ------------------
   const renderUnifiedTableBody = () => {
     const displayed = products.slice(
       currentPage * pageSize,
@@ -416,10 +514,8 @@ const AddIssueNote = () => {
     if (displayed.length === 0) {
       return (
         <tr>
-          <td colSpan={category === "Bán hàng" ? 11 : 8} className="text-center py-3 text-gray-500">
-            {category === "Gia công" ? "Chưa có nguyên vật liệu nào" : 
-             category === "Sản xuất" ? "Chưa có sản phẩm/nguyên vật liệu nào" : 
-             "Chưa có sản phẩm nào"}
+          <td colSpan={category === "Bán hàng" || category === "Sản xuất" ? 11 : 8} className="text-center py-3 text-gray-500">
+            {category === "Gia công" ? "Chưa có nguyên vật liệu nào" : category === "Sản xuất" ? "Chưa có vật tư nào" : category === "Trả lại hàng mua" ? "Chưa có nguyên vật liệu nào" : "Chưa có sản phẩm nào"}
           </td>
         </tr>
       );
@@ -603,199 +699,52 @@ const AddIssueNote = () => {
         });
       });
     } else if (category === "Sản xuất") {
-      const combinedItems = [
-        ...(materials || []).map((mat) => ({
-          id: mat.materialId,
-          code: mat.materialCode,
-          name: mat.materialName,
-          unitName: mat.unitName,
-          unitId: mat.unitId,
-          type: 'material'
-        })),
-        ...(productList || []).map((prod) => ({
-          id: prod.id,
-          code: prod.code,
-          name: prod.name,
-          unitName: prod.unitName,
-          unitId: prod.unitId,
-          type: 'product'
-        }))
-      ];
-
-      return displayed.flatMap((item, itemIndex) => {
-        const inv = item.inStock && item.inStock.length > 0 
-          ? item.inStock 
-          : [{ warehouseId: null, warehouseName: "", quantity: 0, exportQuantity: 0, error: "" }];
-        
-        return inv.map((wh, whIndex) => {
+      return displayed.flatMap((mat, matIndex) => {
+        return (mat.inStock || []).map((wh, whIndex) => {
           const isFirstRow = whIndex === 0;
-          const rowSpan = inv.length;
+          const rowSpan = mat.inStock ? mat.inStock.length : 1;
+          const maxExport = Math.min(wh.quantity, mat.pendingQuantity);
+
           return (
-            <tr key={`${item.id}-wh-${whIndex}`} className="border-b hover:bg-gray-50">
+            <tr key={`${mat.id}-wh-${whIndex}`} className="border-b hover:bg-gray-50">
               {isFirstRow && (
                 <>
                   <td rowSpan={rowSpan} className="px-3 py-2 border-r text-center text-sm">
-                    {currentPage * pageSize + itemIndex + 1}
+                    {currentPage * pageSize + (matIndex + 1)}
                   </td>
-                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
-                    <Autocomplete
-                      options={combinedItems}
-                      getOptionLabel={(option) =>
-                        `${option.code} - ${option.name} (${option.type === 'product' ? 'SP' : 'NVL'})`
-                      }
-                      value={combinedItems.find(opt => opt.id === item.itemId && opt.type === item.itemType) || null}
-                      onChange={async (event, newValue) => {
-                        if (newValue) {
-                          try {
-                            let inventoryData = [];
-                            if (newValue.type === 'product') {
-                              inventoryData = await getTotalQuantityOfProduct(newValue.id);
-                            } else {
-                              inventoryData = await getTotalQuantityOfMaterial(newValue.id);
-                            }
-                            setProducts((prev) =>
-                              prev.map((p) => {
-                                if (p.id === item.id) {
-                                  return {
-                                    ...p,
-                                    itemId: newValue.id,
-                                    itemType: newValue.type,
-                                    productCode: newValue.code,
-                                    productName: newValue.name,
-                                    unitName: newValue.unitName || "",
-                                    unitId: newValue.unitId,
-                                    inStock: inventoryData && inventoryData.length > 0
-                                      ? inventoryData.map((i) => ({
-                                          warehouseId: i.warehouseId,
-                                          warehouseName: i.warehouseName || "",
-                                          quantity: i.quantity || 0,
-                                          exportQuantity: 0,
-                                          error: ""
-                                        }))
-                                      : [{
-                                          warehouseId: null,
-                                          warehouseName: " ",
-                                          quantity: 0,
-                                          exportQuantity: 0,
-                                          error: ""
-                                        }]
-                                  };
-                                }
-                                return p;
-                              })
-                            );
-                          } catch (error) {
-                            console.error(`Lỗi khi lấy tồn kho ${newValue.type}:`, error);
-                          }
-                        } else {
-                          setProducts((prev) =>
-                            prev.map((p) => {
-                              if (p.id === item.id) {
-                                return {
-                                  ...p,
-                                  itemId: null,
-                                  itemType: null,
-                                  productCode: "",
-                                  productName: "",
-                                  unitName: "",
-                                  unitId: null,
-                                  inStock: [{
-                                    warehouseId: null,
-                                    warehouseName: " ",
-                                    quantity: 0,
-                                    exportQuantity: 0,
-                                    error: ""
-                                  }]
-                                };
-                              }
-                              return p;
-                            })
-                          );
-                        }
-                      }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          placeholder="Chọn SP/NVL"
-                          variant="outlined"
-                          size="small"
-                          color="success"
-                        />
-                      )}
-                    />
-                  </td>
-                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
-                    {item.productName}
-                  </td>
-                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
-                    {item.unitName}
-                  </td>
+                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">{mat.materialCode}</td>
+                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">{mat.materialName}</td>
+                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">{mat.unitName}</td>
+                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-center text-sm">{mat.orderQuantity}</td>
+                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-center text-sm">{mat.exportedQuantity}</td>
+                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-center text-sm">{mat.pendingQuantity}</td>
                 </>
               )}
-              <td className="px-3 py-2 border-r text-sm">
-                {wh.warehouseName || " "}
-              </td>
-              <td className="px-3 py-2 border-r text-sm w-24 text-center">{wh.quantity}</td>
-              <td className="px-3 py-2 border-r text-sm w-40">
+              <td className="px-3 py-2 border-r text-sm">{wh.warehouseName || " "}</td>
+              <td className="px-3 py-2 border-r text-sm text-right">{wh.quantity}</td>
+              <td className="px-3 py-2 border-r text-sm w-24">
                 <input
                   type="number"
                   className="border p-1 text-right w-[60px]"
                   value={wh.exportQuantity || 0}
+                  max={maxExport}
                   onChange={(e) => {
                     const val = Number(e.target.value);
-                    const maxAllowed = wh.quantity;
-                    if (val > maxAllowed) {
-                      setProducts((prev) =>
-                        prev.map((p) => {
-                          if (p.id === item.id) {
-                            const newInStock = p.inStock.map((ins, i) => {
-                              if (i === whIndex) {
-                                return {
-                                  ...ins,
-                                  error: `SL xuất không được vượt quá tồn kho (${maxAllowed}).`
-                                };
-                              }
-                              return ins;
-                            });
-                            return { ...p, inStock: newInStock };
-                          }
-                          return p;
-                        })
-                      );
-                      return;
-                    }
-                    setProducts((prev) =>
-                      prev.map((p) => {
-                        if (p.id === item.id) {
-                          const newInStock = p.inStock.map((ins, i) => {
-                            if (i === whIndex) {
-                              return {
-                                ...ins,
-                                exportQuantity: val,
-                                error: ""
-                              };
-                            }
-                            return ins;
-                          });
-                          return { ...p, inStock: newInStock };
-                        }
-                        return p;
-                      })
-                    );
+                    if (val > maxExport) return;
+                    setProducts(prev => prev.map(p => {
+                      if (p.id === mat.id) {
+                        const inStock = p.inStock.map((ins,i) => i === whIndex ? { ...ins, exportQuantity: val } : ins);
+                        return { ...p, inStock };
+                      }
+                      return p;
+                    }));
                   }}
                 />
-                {wh.error && (
-                  <div className="text-red-500 text-xs mt-1">{wh.error}</div>
-                )}
               </td>
               {isFirstRow && (
-                <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm w-24">
+                <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm">
                   <Tooltip title="Xóa">
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => handleDeleteRow(item.id)}
-                    >
+                    <IconButton size="small" color="error" onClick={() => handleDeleteRow(mat.id)}>
                       <HighlightOffRounded />
                     </IconButton>
                   </Tooltip>
@@ -805,7 +754,7 @@ const AddIssueNote = () => {
           );
         });
       });
-    } else { // Bán hàng
+    } else { // Bán hàng hoặc Sản xuất
       return displayed.flatMap((prod, prodIndex) => {
         return (prod.inStock || []).map((wh, whIndex) => {
           const isFirstRow = whIndex === 0;
@@ -921,8 +870,105 @@ const AddIssueNote = () => {
     }
   };
 
+  // ------------------ Render bảng NVL dự kiến nhận lại ------------------
+  const renderExpectedReturnsTable = () => {
+    if (expectedReturns.length === 0) {
+      return (
+        <tr>
+          <td colSpan={7} className="text-center py-3 text-gray-500">
+            Chưa có nguyên vật liệu nào
+          </td>
+        </tr>
+      );
+    }
+
+    return expectedReturns.map((item, index) => (
+      <tr key={item.id} className="border-b hover:bg-gray-50">
+        <td className="px-3 py-2 border-r text-center text-sm">{index + 1}</td>
+        <td className="px-3 py-2 border-r text-sm">
+          <Autocomplete
+            options={materials || []}
+            getOptionLabel={(option) =>
+              `${option.materialCode} - ${option.materialName}`
+            }
+            value={materials.find((mat) => mat.materialId === item.materialId) || null}
+            onChange={(event, newValue) => {
+              setExpectedReturns((prev) =>
+                prev.map((p) => {
+                  if (p.id === item.id) {
+                    return {
+                      ...p,
+                      materialId: newValue ? newValue.materialId : null,
+                      materialCode: newValue ? newValue.materialCode : "",
+                      materialName: newValue ? newValue.materialName : "",
+                      unitId: newValue ? newValue.unitId : null,
+                      unitName: newValue ? newValue.unitName : "",
+                      error: newValue ? "" : "Vui lòng chọn NVL"
+                    };
+                  }
+                  return p;
+                })
+              );
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                placeholder="Chọn NVL"
+                variant="outlined"
+                size="small"
+                color="success"
+                error={!!item.error && !item.materialId}
+                helperText={item.error && !item.materialId ? item.error : ""}
+              />
+            )}
+          />
+        </td>
+        <td className="px-3 py-2 border-r text-sm">{item.materialName}</td>
+        <td className="px-3 py-2 border-r text-sm">{item.unitName}</td>
+        <td className="px-3 py-2 border-r text-sm w-24">
+          <Tooltip title="Nhập số lượng dự kiến nhận lại">
+            <input
+              type="number"
+              className={`border p-1 text-right w-[60px] ${item.error && item.expectedQuantity <= 0 ? "border-red-500" : ""}`}
+              value={item.expectedQuantity || 0}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                const error = val <= 0 ? "Số lượng phải lớn hơn 0" : "";
+                setExpectedReturns((prev) =>
+                  prev.map((p) => {
+                    if (p.id === item.id) {
+                      return { ...p, expectedQuantity: val, error };
+                    }
+                    return p;
+                  })
+                );
+              }}
+            />
+          </Tooltip>
+          {item.error && item.expectedQuantity <= 0 && (
+            <div className="text-red-500 text-xs mt-1">{item.error}</div>
+          )}
+        </td>
+        <td className="px-3 py-2 text-center text-sm">
+          <Tooltip title="Xóa">
+            <IconButton
+              size="small"
+              color="error"
+              onClick={() => handleDeleteExpectedReturnRow(item.id)}
+            >
+              <HighlightOffRounded />
+            </IconButton>
+          </Tooltip>
+        </td>
+      </tr>
+    ));
+  };
+
   // ------------------ Xử lý khi ấn Lưu với validate bổ sung ------------------
   const handleSave = async () => {
+    if (isSaving) return; // Ngăn gọi API khi đang xử lý
+    setIsSaving(true);
+
     try {
       if (!category) {
         alert("Vui lòng chọn phân loại xuất kho.");
@@ -939,6 +985,16 @@ const AddIssueNote = () => {
         return;
       }
 
+      if (category === "Gia công") {
+        const invalidReturns = expectedReturns.some(
+          (item) => !item.materialId || item.expectedQuantity <= 0
+        );
+        if (expectedReturns.length === 0 || invalidReturns) {
+          alert("Vui lòng nhập ít nhất một dòng NVL dự kiến nhận lại với mã NVL và số lượng hợp lệ!");
+          return;
+        }
+      }
+
       const isExportExceed = products.some((prod) => {
         const items = prod.inventory || prod.inStock;
         return items.some((item) => item.exportQuantity > item.quantity);
@@ -949,6 +1005,7 @@ const AddIssueNote = () => {
       }
 
       let details = [];
+      let expectedReturnDetails = [];
 
       if (category === "Gia công" || category === "Trả lại hàng mua") {
         details = products
@@ -963,28 +1020,24 @@ const AddIssueNote = () => {
                 unitId: row.unitId || 1,
               }))
           );
-      } else if (category === "Sản xuất") {
+        if (category === "Gia công") {
+          expectedReturnDetails = expectedReturns
+            .filter((row) => row.materialId && row.expectedQuantity > 0)
+            .map((row) => ({
+              materialId: row.materialId,
+              quantity: row.expectedQuantity,
+              unitId: row.unitId || 1,
+            }));
+        }
+      } else { // Bán hàng hoặc Sản xuất
         details = products
-          .filter((row) => row.itemId && row.inStock?.length > 0)
+          .filter((row) => (category === "Sản xuất" ? row.materialId : row.productId) && row.inStock?.length > 0)
           .flatMap((row) =>
             row.inStock
               .filter((wh) => wh.warehouseId && wh.exportQuantity > 0)
               .map((wh) => ({
                 warehouseId: wh.warehouseId,
-                [row.itemType === 'product' ? 'productId' : 'materialId']: row.itemId,
-                quantity: wh.exportQuantity,
-                unitId: row.unitId || 1,
-              }))
-          );
-      } else { // Bán hàng
-        details = products
-          .filter((row) => row.productId && row.inStock?.length > 0)
-          .flatMap((row) =>
-            row.inStock
-              .filter((wh) => wh.warehouseId && wh.exportQuantity > 0)
-              .map((wh) => ({
-                warehouseId: wh.warehouseId,
-                productId: row.productId,
+                [category === "Sản xuất" ? "materialId" : "productId"]: category === "Sản xuất" ? row.materialId : row.productId,
                 quantity: wh.exportQuantity,
                 unitId: row.unitId || 1,
               }))
@@ -1006,6 +1059,7 @@ const AddIssueNote = () => {
         soId,
         createdBy: 1,
         receiver: category === "Sản xuất" ? contactName : null,
+        expectedReturns: category === "Gia công" ? expectedReturnDetails : undefined,
       };
 
       console.log("Sending payload:", payload);
@@ -1022,13 +1076,27 @@ const AddIssueNote = () => {
             console.log("Upload result:", uploadResult);
           } catch (uploadError) {
             console.error("Error uploading paper evidence:", uploadError);
+            alert("Lưu phiếu xuất thành công, nhưng lỗi khi tải file đính kèm!");
           }
         }
         navigate("/user/issueNote", { state: { successMessage: "Tạo phiếu xuất kho thành công!" } });
       }
     } catch (error) {
       console.error("Lỗi khi thêm phiếu xuất:", error);
-      alert(`Đã xảy ra lỗi khi lưu phiếu xuất kho: ${error.message}`);
+      let errorMessage = "Đã xảy ra lỗi khi lưu phiếu xuất kho.";
+      if (error.response) {
+        // Xử lý lỗi từ ResponseStatusException
+        if (error.response.status === 400) {
+          errorMessage = error.response.data.message || "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.";
+        } else if (error.response.status === 404) {
+          errorMessage = error.response.data.message || "Không tìm thấy dữ liệu (NVL, kho, đơn vị, ...).";
+        } else {
+          errorMessage = error.response.data.message || "Lỗi server. Vui lòng thử lại sau.";
+        }
+      }
+      alert(errorMessage);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -1040,7 +1108,7 @@ const AddIssueNote = () => {
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
-            title={"Phiếu xuất kho " + issueNoteCode} 
+            title={"Phiếu xuất kho " + issueNoteCode}
             showAdd={false}
             showImport={false}
             showExport={false}
@@ -1054,7 +1122,7 @@ const AddIssueNote = () => {
             Thông tin chung
           </Typography>
 
-          <div className="grid gap-x-12 gap-y-4 mb-4 grid-cols-3">
+          <div className="grid gap-x-12 gap-y-4 mb-4 grid-cols-2">
             <div>
               <Typography variant="medium" className="mb-1 text-black">
                 Phân loại xuất kho <span className="text-red-500">*</span>
@@ -1074,27 +1142,7 @@ const AddIssueNote = () => {
                 <MenuItem value="Trả lại hàng mua">Trả lại hàng mua</MenuItem>
               </TextField>
             </div>
-            <div>
-              <Typography variant="medium" className="mb-1 text-black">
-                Mã phiếu
-              </Typography>
-              <TextField
-                fullWidth
-                size="small"
-                color="success"
-                variant="outlined"
-                value={issueNoteCode}
-                disabled
-                sx={{
-                  "& .MuiInputBase-root.Mui-disabled": {
-                    bgcolor: "#eeeeee",
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      border: "none",
-                    },
-                  },
-                }}
-              />
-            </div>
+            
             <div>
               <Typography variant="medium" className="mb-1 text-black">
                 Ngày lập phiếu
@@ -1139,7 +1187,7 @@ const AddIssueNote = () => {
             </div>
           </div>
 
-          {category === "Bán hàng" && (
+          {(category === "Bán hàng" || category === "Sản xuất") && (
             <div className="grid grid-cols-3 gap-x-12 gap-y-4 mb-4">
               <div>
                 <Typography variant="medium" className="mb-1 text-black">
@@ -1282,25 +1330,6 @@ const AddIssueNote = () => {
                       "& .MuiOutlinedInput-notchedOutline": { border: "none" },
                     },
                   }}
-                />
-              </div>
-            </div>
-          )}
-
-          {category === "Sản xuất" && (
-            <div className="grid grid-cols-3 gap-x-12 gap-y-4 mb-4">
-              <div>
-                <Typography variant="medium" className="mb-1 text-black">
-                  Người nhận
-                </Typography>
-                <TextField
-                  fullWidth
-                  size="small"
-                  color="success"
-                  variant="outlined"
-                  type="text"
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
                 />
               </div>
             </div>
@@ -1564,6 +1593,14 @@ const AddIssueNote = () => {
               <FileUploadBox files={files} setFiles={setFiles} maxFiles={3} />
             </div>
           </div>
+
+          <Typography
+            variant="h6"
+            className="flex items-center mb-4 mt-8 text-black"
+          >
+            <ListBulletIcon className="h-5 w-5 mr-2" />
+            Danh sách sản phẩm
+          </Typography>
           <div className="py-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Typography variant="small" color="blue-gray" className="font-light">
@@ -1607,24 +1644,6 @@ const AddIssueNote = () => {
                 <tbody>{renderUnifiedTableBody()}</tbody>
               </table>
             </div>
-          ) : category === "Sản xuất" ? (
-            <div className="border rounded mb-4 overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="px-3 py-2 border-r">STT</th>
-                    <th className="px-3 py-2 border-r">Mã SP/NVL</th>
-                    <th className="px-3 py-2 border-r">Tên SP/NVL</th>
-                    <th className="px-3 py-2 border-r">Đơn vị</th>
-                    <th className="px-3 py-2 border-r">Kho</th>
-                    <th className="px-3 py-2 border-r">Tồn kho</th>
-                    <th className="px-3 py-2 border-r">SL xuất</th>
-                    <th className="px-3 py-2">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>{renderUnifiedTableBody()}</tbody>
-              </table>
-            </div>
           ) : (
             <div className="border rounded mb-4 overflow-x-auto">
               <table className="w-full border-collapse text-sm">
@@ -1648,7 +1667,7 @@ const AddIssueNote = () => {
             </div>
           )}
 
-          {category !== "Bán hàng" && (
+          {category !== "Bán hàng" && category !== "Sản xuất" && (
             <div className="flex gap-2 mb-4">
               <MuiButton size="small" variant="outlined" onClick={handleAddRow}>
                 <div className="flex items-center gap-2">
@@ -1668,6 +1687,52 @@ const AddIssueNote = () => {
                 </div>
               </MuiButton>
             </div>
+          )}
+
+          {category === "Gia công" && (
+            <>
+              <Typography
+                variant="h6"
+                className="flex items-center mb-4 mt-8 text-black"
+              >
+                <ListBulletIcon className="h-5 w-5 mr-2" />
+                Danh sách NVL dự kiến nhận lại
+              </Typography>
+              <div className="border rounded mb-4 overflow-x-auto">
+                <table className="w-full border-collapse text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-3 py-2 border-r">STT</th>
+                      <th className="px-3 py-2 border-r">Mã NVL</th>
+                      <th className="px-3 py-2 border-r">Tên NVL</th>
+                      <th className="px-3 py-2 border-r">Đơn vị</th>
+                      <th className="px-3 py-2 border-r">SL nhận</th>
+                      <th className="px-3 py-2">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>{renderExpectedReturnsTable()}</tbody>
+                </table>
+              </div>
+              <div className="flex gap-2 mb-4">
+                <MuiButton size="small" variant="outlined" onClick={handleAddExpectedReturnRow}>
+                  <div className="flex items-center gap-2">
+                    <FaPlus className="h-4 w-4" />
+                    <span>Thêm dòng</span>
+                  </div>
+                </MuiButton>
+                <MuiButton
+                  size="small"
+                  variant="outlined"
+                  color="error"
+                  onClick={handleRemoveAllExpectedReturnRows}
+                >
+                  <div className="flex items-center gap-2">
+                    <FaTrash className="h-4 w-4" />
+                    <span>Xoá hết dòng</span>
+                  </div>
+                </MuiButton>
+              </div>
+            </>
           )}
 
           {totalElements > 0 && (
@@ -1719,18 +1784,24 @@ const AddIssueNote = () => {
               <FaArrowLeft className="h-3 w-3" /> Quay lại
             </MuiButton>
             <div className="flex items-center justify-end gap-2">
-              <MuiButton size="medium" color="error" variant="outlined">
+              <MuiButton
+                size="medium"
+                color="error"
+                variant="outlined"
+                onClick={() => navigate("/user/issueNote")}
+              >
                 Hủy
               </MuiButton>
               <Button
                 size="lg"
                 color="white"
                 variant="text"
-                className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                className={`bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out ${isSaving ? "opacity-50 cursor-not-allowed" : ""}`}
                 ripple={true}
                 onClick={handleSave}
+                disabled={isSaving}
               >
-                Lưu
+                {isSaving ? "Đang lưu..." : "Lưu"}
               </Button>
             </div>
           </div>
