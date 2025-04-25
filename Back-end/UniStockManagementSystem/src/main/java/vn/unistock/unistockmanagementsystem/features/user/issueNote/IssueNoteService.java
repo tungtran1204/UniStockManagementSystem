@@ -77,6 +77,8 @@ public class IssueNoteService {
     private SaleOrdersRepository salesOrderRepository;
     @Autowired
     private ReceiveOutsourceRepository receiveOutsourceRepository;
+    @Autowired
+    private ReceiveOutsourceMapper receiveOutsourceMapper;
 
     // Lấy danh sách phiếu xuất kho (sắp xếp giảm dần theo issueDate)
     public Page<IssueNoteDTO> getAllIssueNotes(int page, int size) {
@@ -494,4 +496,15 @@ public class IssueNoteService {
                 search, startDate, endDate, itemType, minQuantity, maxQuantity, categories, warehouseIds, pageable
         );
     }
+
+    @Transactional(readOnly = true)
+    public List<ReceiveOutsourceDTO> getPendingOrInProgressReceiveOutsource() {
+        List<ReceiveOutsource> outsources = receiveOutsourceRepository.findByStatusIn(
+                List.of(ReceiveOutsource.OutsourceStatus.PENDING, ReceiveOutsource.OutsourceStatus.IN_PROGRESS)
+        );
+        return outsources.stream()
+                .map(receiveOutsourceMapper::toDTO)
+                .toList();
+    }
+
 }
