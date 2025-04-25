@@ -506,7 +506,7 @@ const AddReceiptNoteGeneral = () => {
         grnCode: receiptCode,
         description: description || "",
         category: category,
-        receiptDate: dayjs(createdDate).startOf('day').toDate(),
+        receiptDate: dayjs(createdDate).startOf('day').format('YYYY-MM-DDTHH:mm:ss'),
         poId: isReferenceFlow ? Number(referenceDocument) : null,
         partnerId: partnerId || null,
         details: []
