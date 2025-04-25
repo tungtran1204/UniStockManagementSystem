@@ -263,4 +263,13 @@ public class PurchaseOrderService {
         Page<PurchaseOrder> orders = purchaseOrderRepository.searchFilteredOrders(search, orderStatus, pageable);
         return orders.map(purchaseOrderMapper::toDTO);
     }
+
+    public SalesOrder getSaleOrderEntityFromPurchaseOrder(Long poId) {
+        return purchaseOrderRepository.findSalesOrderByPurchaseOrderId(poId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Không tìm thấy đơn hàng bán liên kết với PurchaseOrder ID: " + poId
+                ));
+    }
+
 }

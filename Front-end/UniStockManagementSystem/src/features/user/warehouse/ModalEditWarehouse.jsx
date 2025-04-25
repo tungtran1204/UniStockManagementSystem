@@ -259,7 +259,7 @@ const ModalEditWarehouse = ({ open, onClose, warehouse, onSuccess }) => {
           />
 
           {availableCategories.length === 0 && selectedCategories.length === 0 && (
-            <Typography variant="small" color="red" className="mt-1">
+            <Typography className="text-gray-500 mt-1" fontStyle="italic">
               Không có phân loại kho nào khả dụng
             </Typography>
           )}
