@@ -16,6 +16,7 @@ const CreateProductTypeModal = ({ show, onClose, loading, onSuccess }) => {
     description: "",
   });
   const [validationErrors, setValidationErrors] = useState({});
+  const [errorMessage, setErrorMessage] = useState("");
 
   if (!show) return null;
 
@@ -35,7 +36,7 @@ const CreateProductTypeModal = ({ show, onClose, loading, onSuccess }) => {
     const newErrors = {};
 
     if (isEmptyOrWhitespace(formData.typeName)) {
-      newErrors.typeName = "Tên dòng sản phẩm không được để trống hoặc chỉ chứa khoảng trắng!";
+      newErrors.typeName = "Tên dòng sản phẩm không được để trống!";
     }
 
     setValidationErrors(newErrors);
@@ -43,18 +44,21 @@ const CreateProductTypeModal = ({ show, onClose, loading, onSuccess }) => {
     if (Object.keys(newErrors).length === 0) {
       try {
         await onSuccess(formData);
-        onClose({
-          typeName: "",
-          description: "",
-        });
+        handleClose();
       } catch (error) {
-        console.error("Error creating product type:", error);
+        setErrorMessage(error.message);
       }
     }
   };
 
+  const handleClose = () => {
+    setFormData({ typeName: "", description: "" });
+    setValidationErrors({});
+    onClose();
+  }
+
   return (
-    <Dialog open={true} handler={onClose} size="md" className="px-4 py-2">
+    <Dialog open={true} handler={handleClose} size="md" className="px-4 py-2">
       {/* Header của Dialog */}
       <DialogHeader className="flex justify-between items-center pb-2">
         <Typography variant="h4" color="blue-gray">
@@ -62,7 +66,7 @@ const CreateProductTypeModal = ({ show, onClose, loading, onSuccess }) => {
         </Typography>
         <IconButton
           size="small"
-          onClick={onClose}
+          onClick={handleClose}
         >
           <XMarkIcon className="h-5 w-5 stroke-2" />
         </IconButton>
@@ -85,9 +89,9 @@ const CreateProductTypeModal = ({ show, onClose, loading, onSuccess }) => {
             value={formData.typeName}
             onChange={(e) => handleTypeNameChange(e.target.value)}
           />
-          {validationErrors.typeName && (
+          {(validationErrors.typeName || errorMessage) && (
             <Typography variant="small" color="red">
-              {validationErrors.typeName}
+              {validationErrors.typeName || errorMessage}
             </Typography>
           )}
         </div>
@@ -118,7 +122,7 @@ const CreateProductTypeModal = ({ show, onClose, loading, onSuccess }) => {
           size="medium"
           color="error"
           variant="outlined"
-          onClick={onClose}
+          onClick={handleClose}
         >
           Hủy
         </MuiButton>

@@ -261,37 +261,30 @@ const ViewIssueNote = () => {
 
     const tableHeaders = data.category === "Bán hàng" ? [
       { content: "STT", styles: { halign: 'center', cellWidth: 12 } },
-      { content: "Mã hàng", styles: { halign: 'center', cellWidth: 30 } },
-      { content: "Tên hàng hóa", styles: { halign: 'center', cellWidth: 50 } },
+      { content: "Mã hàng", styles: { halign: 'center', cellWidth: 40 } },
+      { content: "Tên hàng hóa", styles: { halign: 'center', cellWidth: 60 } },
       { content: "Đơn vị", styles: { halign: 'center', cellWidth: 20 } },
-      { content: "SL Đặt", styles: { halign: 'center', cellWidth: 20 } },
-      { content: "SL đã xuất", styles: { halign: 'center', cellWidth: 20 } },
-      { content: "SL còn phải xuất", styles: { halign: 'center', cellWidth: 20 } },
       { content: "Số lượng xuất", styles: { halign: 'center', cellWidth: 20 } },
       { content: "Kho xuất", styles: { halign: 'center', cellWidth: 30 } },
     ] : [
       { content: "STT", styles: { halign: 'center', cellWidth: 12 } },
-      { content: data.category === "Sản xuất" ? "Mã SP/NVL" : "Mã NVL", styles: { halign: 'center', cellWidth: 35 } },
+      { content: data.category === "Sản xuất" ? "Mã SP/NVL" : "Mã NVL", styles: { halign: 'center', cellWidth: 40 } },
       { content: data.category === "Sản xuất" ? "Tên SP/NVL" : "Tên NVL", styles: { halign: 'center', cellWidth: 60 } },
       { content: "Đơn vị", styles: { halign: 'center', cellWidth: 20 } },
       { content: "Số lượng xuất", styles: { halign: 'center', cellWidth: 20 } },
       { content: "Kho xuất", styles: { halign: 'center', cellWidth: 40 } },
     ];
-
     const tableBody = data.category === "Bán hàng" ? [
       ...data.details.map((item, index) => [
         { content: index + 1, styles: { halign: 'center' } },
         { content: item.productCode || "", styles: { halign: 'left' } },
         { content: item.productName || "", styles: { halign: 'left' } },
         { content: item.unitName || "-", styles: { halign: 'center' } },
-        { content: item.orderQuantity || "-", styles: { halign: 'center' } },
-        { content: item.exportedQuantity || "-", styles: { halign: 'center' } },
-        { content: item.pendingQuantity || "-", styles: { halign: 'center' } },
         { content: item.quantity, styles: { halign: 'center' } },
         { content: item.warehouseName, styles: { halign: 'center' } },
       ]),
       [
-        { content: "TỔNG CỘNG :", colSpan: 7, styles: { halign: 'right', fontStyle: 'bold' } },
+        { content: "TỔNG CỘNG", colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
         { content: totalQuantity, styles: { halign: 'center', fontStyle: 'bold' } },
         { content: "", styles: { halign: 'center' } },
       ],
@@ -305,7 +298,7 @@ const ViewIssueNote = () => {
         { content: item.warehouseName, styles: { halign: 'center' } },
       ]),
       [
-        { content: "TỔNG CỘNG :", colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
+        { content: "TỔNG CỘNG", colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
         { content: totalQuantity, styles: { halign: 'center', fontStyle: 'bold' } },
         { content: "", styles: { halign: 'center' } },
       ],
@@ -354,60 +347,6 @@ const ViewIssueNote = () => {
     doc.save(`PhieuXuat_${data.ginCode}.pdf`);
   };
 
-  const handleExportExcel = () => {
-    const sheetData = [
-      ["Mã phiếu xuất", data.ginCode],
-      ["Ngày tạo", formatDate(data.issueDate)],
-      ["Người tạo", creator],
-      ["Loại hàng hóa", data.category],
-      ...(data.category === "Bán hàng" && data.soCode ? [["Tham chiếu chứng từ", data.soCode]] : []),
-      ...(data.category === "Sản xuất" && data.receiver ? [["Người nhận", data.receiver]] : []),
-      ...(data.partnerName ? [
-        ["Đối tác", `${data.partnerName} (${data.partnerCode})`],
-        ...(data.contactName ? [["Người liên hệ", data.contactName]] : []),
-        ...(data.address ? [["Địa chỉ", data.address]] : []),
-      ] : []),
-      ["Diễn giải", data.description || "Không có"],
-      [],
-    ];
-
-    const headers = data.category === "Bán hàng" ?
-      ["STT", "Mã hàng", "Tên hàng", "Đơn vị", "SL Đặt", "SL đã xuất", "SL còn phải xuất", "Số lượng xuất", "Xuất kho"] :
-      ["STT", data.category === "Sản xuất" ? "Mã SP/NVL" : "Mã NVL", data.category === "Sản xuất" ? "Tên SP/NVL" : "Tên NVL", "Đơn vị", "Số lượng xuất", "Xuất kho"];
-    
-    sheetData.push(headers);
-
-    const body = data.category === "Bán hàng" ?
-      data.details.map((item, index) => [
-        index + 1,
-        item.productCode || "",
-        item.productName || "",
-        item.unitName || "-",
-        item.orderQuantity || "-",
-        item.exportedQuantity || "-",
-        item.pendingQuantity || "-",
-        item.quantity,
-        item.warehouseName,
-      ]) :
-      data.details.map((item, index) => [
-        index + 1,
-        item.materialCode || item.productCode,
-        item.materialName || item.productName,
-        item.unitName || "-",
-        item.quantity,
-        item.warehouseName,
-      ]);
-
-    sheetData.push(...body);
-
-    const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "PhieuXuat");
-
-    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-    saveAs(new Blob([excelBuffer]), `PhieuXuat_${data.ginCode}.xlsx`);
-  };
-
   return (
     <div className="mb-8 flex flex-col gap-12">
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
@@ -418,16 +357,6 @@ const ViewIssueNote = () => {
             showImport={false}
             showExport={true}
             onExport={handleExportPDF}
-            extraActions={
-              <Button
-                size="sm"
-                color="blue"
-                variant="outlined"
-                onClick={handleExportExcel}
-              >
-                Xuất Excel
-              </Button>
-            }
           />
           <Typography variant="h6" className="flex items-center mb-4 text-black">
             <InformationCircleIcon className="h-5 w-5 mr-2" />

@@ -318,19 +318,19 @@ const AddIssueNote = () => {
         pendingQuantity: (detail.quantity || 0) - (detail.receivedQuantity || 0),
         inStock: inStockArr && inStockArr.length > 0
           ? inStockArr.map((wh) => ({
-              warehouseId: wh.warehouseId,
-              warehouseName: wh.warehouseName || "",
-              quantity: wh.quantity || 0,
-              exportQuantity: 0,
-              error: ""
-            }))
+            warehouseId: wh.warehouseId,
+            warehouseName: wh.warehouseName || "",
+            quantity: wh.quantity || 0,
+            exportQuantity: 0,
+            error: ""
+          }))
           : [{
-              warehouseId: null,
-              warehouseName: " ",
-              quantity: 0,
-              exportQuantity: 0,
-              error: ""
-            }]
+            warehouseId: null,
+            warehouseName: " ",
+            quantity: 0,
+            exportQuantity: 0,
+            error: ""
+          }]
       });
 
       if (!inStockArr || inStockArr.length === 0) {
@@ -468,9 +468,9 @@ const AddIssueNote = () => {
       return (
         <tr>
           <td colSpan={category === "Bán hàng" ? 11 : 8} className="text-center py-3 text-gray-500">
-            {category === "Gia công" ? "Chưa có nguyên vật liệu nào" : 
-             category === "Sản xuất" ? "Chưa có sản phẩm/nguyên vật liệu nào" : 
-             "Chưa có sản phẩm nào"}
+            {category === "Gia công" ? "Chưa có nguyên vật liệu nào" :
+              category === "Sản xuất" ? "Chưa có sản phẩm/nguyên vật liệu nào" :
+                "Chưa có sản phẩm nào"}
           </td>
         </tr>
       );
@@ -478,10 +478,10 @@ const AddIssueNote = () => {
 
     if (category === "Gia công" || category === "Trả lại hàng mua") {
       return displayed.flatMap((nvl, nvlIndex) => {
-        const inv = nvl.inventory && nvl.inventory.length > 0 
-          ? nvl.inventory 
+        const inv = nvl.inventory && nvl.inventory.length > 0
+          ? nvl.inventory
           : [{ warehouseId: null, warehouseName: "", quantity: 0, exportQuantity: 0, error: "" }];
-        
+
         return inv.map((wh, whIndex) => {
           const isFirstRow = whIndex === 0;
           const rowSpan = inv.length;
@@ -515,19 +515,19 @@ const AddIssueNote = () => {
                                     unitId: newValue.unitId,
                                     inventory: inventoryData && inventoryData.length > 0
                                       ? inventoryData.map((i) => ({
-                                          warehouseId: i.warehouseId,
-                                          warehouseName: i.warehouseName || "",
-                                          quantity: i.quantity || 0,
-                                          exportQuantity: 0,
-                                          error: ""
-                                        }))
+                                        warehouseId: i.warehouseId,
+                                        warehouseName: i.warehouseName || "",
+                                        quantity: i.quantity || 0,
+                                        exportQuantity: 0,
+                                        error: ""
+                                      }))
                                       : [{
-                                          warehouseId: null,
-                                          warehouseName: " ",
-                                          quantity: 0,
-                                          exportQuantity: 0,
-                                          error: ""
-                                        }]
+                                        warehouseId: null,
+                                        warehouseName: " ",
+                                        quantity: 0,
+                                        exportQuantity: 0,
+                                        error: ""
+                                      }]
                                   };
                                 }
                                 return p;
@@ -674,10 +674,10 @@ const AddIssueNote = () => {
       ];
 
       return displayed.flatMap((item, itemIndex) => {
-        const inv = item.inStock && item.inStock.length > 0 
-          ? item.inStock 
+        const inv = item.inStock && item.inStock.length > 0
+          ? item.inStock
           : [{ warehouseId: null, warehouseName: "", quantity: 0, exportQuantity: 0, error: "" }];
-        
+
         return inv.map((wh, whIndex) => {
           const isFirstRow = whIndex === 0;
           const rowSpan = inv.length;
@@ -717,19 +717,19 @@ const AddIssueNote = () => {
                                     unitId: newValue.unitId,
                                     inStock: inventoryData && inventoryData.length > 0
                                       ? inventoryData.map((i) => ({
-                                          warehouseId: i.warehouseId,
-                                          warehouseName: i.warehouseName || "",
-                                          quantity: i.quantity || 0,
-                                          exportQuantity: 0,
-                                          error: ""
-                                        }))
+                                        warehouseId: i.warehouseId,
+                                        warehouseName: i.warehouseName || "",
+                                        quantity: i.quantity || 0,
+                                        exportQuantity: 0,
+                                        error: ""
+                                      }))
                                       : [{
-                                          warehouseId: null,
-                                          warehouseName: " ",
-                                          quantity: 0,
-                                          exportQuantity: 0,
-                                          error: ""
-                                        }]
+                                        warehouseId: null,
+                                        warehouseName: " ",
+                                        quantity: 0,
+                                        exportQuantity: 0,
+                                        error: ""
+                                      }]
                                   };
                                 }
                                 return p;
@@ -788,7 +788,65 @@ const AddIssueNote = () => {
               </td>
               <td className="px-3 py-2 border-r text-sm w-24 text-center">{wh.quantity}</td>
               <td className="px-3 py-2 border-r text-sm w-40">
-                <input
+                <div style={{ width: '100%' }}>
+                  <TextField
+                    type="number"
+                    size="small"
+                    color="success"
+                    error={!!wh.error}
+                    value={wh.exportQuantity}
+                    placeholder="0"
+                    slotProps={{
+                      input: {
+                        inputMode: 'numeric',
+                      }
+                    }}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      const maxAllowed = wh.quantity;
+                      if (val > maxAllowed) {
+                        setProducts((prev) =>
+                          prev.map((p) => {
+                            if (p.id === item.id) {
+                              const newInStock = p.inStock.map((ins, i) => {
+                                if (i === whIndex) {
+                                  return {
+                                    ...ins,
+                                    error: `SL xuất không được vượt quá tồn kho (${maxAllowed}).`
+                                  };
+                                }
+                                return ins;
+                              });
+                              return { ...p, inStock: newInStock };
+                            }
+                            return p;
+                          })
+                        );
+                        return;
+                      }
+                      setProducts((prev) =>
+                        prev.map((p) => {
+                          if (p.id === item.id) {
+                            const newInStock = p.inStock.map((ins, i) => {
+                              if (i === whIndex) {
+                                return {
+                                  ...ins,
+                                  exportQuantity: val,
+                                  error: ""
+                                };
+                              }
+                              return ins;
+                            });
+                            return { ...p, inStock: newInStock };
+                          }
+                          return p;
+                        })
+                      );
+                    }}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                {/* <input
                   type="number"
                   className="border p-1 text-right w-[60px]"
                   value={wh.exportQuantity || 0}
@@ -834,7 +892,7 @@ const AddIssueNote = () => {
                       })
                     );
                   }}
-                />
+                /> */}
                 {wh.error && (
                   <div className="text-red-500 text-xs mt-1">{wh.error}</div>
                 )}
@@ -863,7 +921,7 @@ const AddIssueNote = () => {
           const rowSpan = prod.inStock ? prod.inStock.length : 1;
           const maxExport =
             typeof wh.quantity === "number" &&
-            typeof prod.pendingQuantity === "number"
+              typeof prod.pendingQuantity === "number"
               ? Math.min(wh.quantity, prod.pendingQuantity)
               : undefined;
 
@@ -1287,7 +1345,7 @@ const AddIssueNote = () => {
                 <MenuItem value="Trả lại hàng mua">Trả lại hàng mua</MenuItem>
               </TextField>
             </div>
-            
+
             <div>
               <Typography variant="medium" className="mb-1 text-black">
                 Ngày lập phiếu
