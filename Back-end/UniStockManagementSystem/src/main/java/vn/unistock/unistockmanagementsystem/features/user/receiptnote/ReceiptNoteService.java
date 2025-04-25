@@ -252,7 +252,7 @@ public class ReceiptNoteService {
             }
 
             inventory.setQuantity(inventory.getQuantity() + quantity);
-            inventory.setLastUpdated(LocalDateTime.now());
+            inventory.setLastUpdated(grn.getReceiptDate());
             inventoryRepository.save(inventory);
 
             inventoryTransactionRepository.save(InventoryTransaction.builder()
@@ -261,6 +261,7 @@ public class ReceiptNoteService {
                     .transactionType(InventoryTransaction.TransactionType.IMPORT)
                     .quantity(quantity)
                     .goodReceiptNote(grn)
+                    .transactionDate(grn.getReceiptDate())
                     .referenceType(InventoryTransaction.NoteType.GOOD_RECEIPT_NOTE)
                     .build());
         }
@@ -289,6 +290,7 @@ public class ReceiptNoteService {
                     .transactionType(InventoryTransaction.TransactionType.IMPORT)
                     .quantity(quantity)
                     .goodReceiptNote(grn)
+                    .transactionDate(grn.getReceiptDate())
                     .referenceType(InventoryTransaction.NoteType.GOOD_RECEIPT_NOTE)
                     .build());
         }

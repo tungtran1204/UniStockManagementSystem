@@ -562,7 +562,8 @@ const AddReceiptNoteGeneral = () => {
       }
 
       console.log("Lưu thành công");
-      navigate("/user/receiptNote", { state: { successMessage: "Tạo phiếu nhập kho thành công!" } });
+      navigate("/user/receiptNote", { state: { successMessage: "Tạo phiếu nhập thành công", refresh: true } });
+
     } catch (err) {
       console.error("❌ Lỗi khi lưu phiếu nhập:", err);
       let msg = err?.response?.data?.message || err.message || "Lỗi không xác định!";

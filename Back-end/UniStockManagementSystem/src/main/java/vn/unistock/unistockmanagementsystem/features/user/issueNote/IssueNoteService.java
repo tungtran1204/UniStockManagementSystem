@@ -347,7 +347,7 @@ public class IssueNoteService {
             }
 
             inventory.setQuantity(inventory.getQuantity() - quantity);
-            inventory.setLastUpdated(LocalDateTime.now());
+            inventory.setLastUpdated(issueNote.getIssueDate());
             if (status == Inventory.InventoryStatus.RESERVED && hasSalesOrder) {
                 inventory.setSalesOrder(salesOrder); // Ensure salesOrder is set for RESERVED status
             }
@@ -360,6 +360,7 @@ public class IssueNoteService {
                     .transactionType(InventoryTransaction.TransactionType.EXPORT)
                     .quantity(quantity)
                     .goodIssueNote(issueNote)
+                    .transactionDate(issueNote.getIssueDate())
                     .referenceType(InventoryTransaction.NoteType.GOOD_ISSUE_NOTE)
                     .build();
             inventoryTransactionRepository.save(transaction);
@@ -406,6 +407,7 @@ public class IssueNoteService {
                     .transactionType(InventoryTransaction.TransactionType.EXPORT)
                     .quantity(quantity)
                     .goodIssueNote(issueNote)
+                    .transactionDate(issueNote.getIssueDate())
                     .referenceType(InventoryTransaction.NoteType.GOOD_ISSUE_NOTE)
                     .build();
             inventoryTransactionRepository.save(transaction);
