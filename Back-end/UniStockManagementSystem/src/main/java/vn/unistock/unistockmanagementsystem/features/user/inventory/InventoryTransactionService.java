@@ -78,7 +78,9 @@ public class InventoryTransactionService {
 
             if (pid != null) {
                 productBegin.put(pid, productBegin.getOrDefault(pid, 0.0) + (type == InventoryTransaction.TransactionType.IMPORT ? total : -total));
-            } else if (mid != null) {
+            }
+
+            if (mid != null) {
                 materialBegin.put(mid, materialBegin.getOrDefault(mid, 0.0) + (type == InventoryTransaction.TransactionType.IMPORT ? total : -total));
             }
         }
@@ -95,15 +97,20 @@ public class InventoryTransactionService {
             Double total = ((Number) row.get("total")).doubleValue();
 
             if (pid != null) {
-                if (type == InventoryTransaction.TransactionType.IMPORT) productIn.put(pid, total);
-                else productOut.put(pid, total);
+                if (type == InventoryTransaction.TransactionType.IMPORT) {
+                    productIn.put(pid, productIn.getOrDefault(pid, 0.0) + total);
+                } else {
+                    productOut.put(pid, productOut.getOrDefault(pid, 0.0) + total);
+                }
             } else if (mid != null) {
-                if (type == InventoryTransaction.TransactionType.IMPORT) materialIn.put(mid, total);
-                else materialOut.put(mid, total);
+                if (type == InventoryTransaction.TransactionType.IMPORT) {
+                    materialIn.put(mid, materialIn.getOrDefault(mid, 0.0) + total);
+                } else {
+                    materialOut.put(mid, materialOut.getOrDefault(mid, 0.0) + total);
+                }
             }
         }
     }
-
     private boolean matchesQuantityFilters(StockMovementReportDTO dto,
                                            Double minBegin, Double maxBegin,
                                            Double minIn, Double maxIn,

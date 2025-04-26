@@ -148,7 +148,15 @@ export const getStockMovementReportPaginated = async ({
   endDate = null,
   itemType = "",
   hasMovementOnly = null,
-  quantityFilters = {},
+  // Thay đổi params
+  minBegin = null,
+  maxBegin = null,
+  minIn = null,
+  maxIn = null,
+  minOut = null,
+  maxOut = null,
+  minEnd = null,
+  maxEnd = null,
 }) => {
   const token = localStorage.getItem("token");
   const params = new URLSearchParams();
@@ -161,20 +169,15 @@ export const getStockMovementReportPaginated = async ({
   if (itemType) params.append("itemType", itemType);
   if (hasMovementOnly !== null) params.append("hasMovementOnly", hasMovementOnly);
 
-  const quantityMap = {
-    beginQuantity: ["minBegin", "maxBegin"],
-    inQuantity: ["minIn", "maxIn"],
-    outQuantity: ["minOut", "maxOut"],
-    endQuantity: ["minEnd", "maxEnd"],
-  };
-
-  for (const [key, [minKey, maxKey]] of Object.entries(quantityMap)) {
-    const filter = quantityFilters[key];
-    if (filter) {
-      if (filter.min != null) params.append(minKey, filter.min);
-      if (filter.max != null) params.append(maxKey, filter.max);
-    }
-  }
+  // Thêm các params cho quantity filters
+  if (minBegin !== null) params.append("minBegin", minBegin);
+  if (maxBegin !== null) params.append("maxBegin", maxBegin);
+  if (minIn !== null) params.append("minIn", minIn);
+  if (maxIn !== null) params.append("maxIn", maxIn);
+  if (minOut !== null) params.append("minOut", minOut);
+  if (maxOut !== null) params.append("maxOut", maxOut);
+  if (minEnd !== null) params.append("minEnd", minEnd);
+  if (maxEnd !== null) params.append("maxEnd", maxEnd);
 
   try {
     const response = await axios.get(`${API_URL_SM_RP}/report?${params.toString()}`, {
@@ -182,7 +185,6 @@ export const getStockMovementReportPaginated = async ({
     });
     return response;
   } catch (error) {
-    // Xử lý lỗi từ backend
     const errorMessage = error.response?.data?.message || "Không thể tải báo cáo xuất nhập tồn. Vui lòng thử lại.";
     throw new Error(errorMessage);
   }
