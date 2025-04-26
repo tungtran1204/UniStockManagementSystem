@@ -253,7 +253,7 @@ const ModalAddWarehouse = ({ show, onClose, onAdd }) => {
         <div>
           <Typography variant="medium" className="text-black">
           Phân loại hàng hóa mặc định 
-            <span className="text-red-500"> *</span>
+            <span className="text-red-500"> (*)</span>
           </Typography>
           {isAllCategoriesUsed ? (
             <Typography className="text-gray-500 mt-1" fontStyle="italic">
