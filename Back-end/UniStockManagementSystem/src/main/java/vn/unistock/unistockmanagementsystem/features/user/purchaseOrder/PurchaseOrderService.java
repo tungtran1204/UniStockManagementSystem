@@ -44,7 +44,7 @@ public class PurchaseOrderService {
 
 
     public Page<PurchaseOrderDTO> getAllOrders(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "orderDate"));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "poId"));
         Page<PurchaseOrder> orders = purchaseOrderRepository.findAll(pageable);
 
         orders.map(order -> PurchaseOrderDTO.builder()

@@ -55,7 +55,7 @@ public class SaleOrdersService {
     }
 
     public Page<SaleOrdersDTO> getAllOrders(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "orderId"));
         Page<SalesOrder> salesOrderPage = saleOrdersRepository.findAll(pageable);
         return salesOrderPage.map(saleOrder -> {
             SaleOrdersDTO dto = saleOrdersMapper.toDTO(saleOrder);

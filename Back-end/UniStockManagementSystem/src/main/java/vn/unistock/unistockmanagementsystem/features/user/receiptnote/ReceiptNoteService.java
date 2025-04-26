@@ -61,7 +61,7 @@ public class ReceiptNoteService {
     private SaleOrdersService saleOrdersService;
 
     public Page<ReceiptNoteDTO> getAllReceiptNote(int page, int size, String search, List<String> categories, String startDate, String endDate) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "receiptDate"));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "grnId"));
 
         // Xử lý khoảng thời gian
         LocalDateTime start = startDate != null && !startDate.isBlank() ? LocalDateTime.parse(startDate + "T00:00:00") : null;
