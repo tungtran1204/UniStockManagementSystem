@@ -79,6 +79,8 @@ public class IssueNoteService {
     private ReceiveOutsourceRepository receiveOutsourceRepository;
     @Autowired
     private ReceiveOutsourceMapper receiveOutsourceMapper;
+    @Autowired
+    private ReceiveOutsourceMaterialMapper receiveOutsourceMaterialMapper;
 
     // Lấy danh sách phiếu xuất kho (sắp xếp giảm dần theo issueDate)
     public Page<IssueNoteDTO> getAllIssueNotes(int page, int size) {
@@ -503,7 +505,15 @@ public class IssueNoteService {
                 List.of(ReceiveOutsource.OutsourceStatus.PENDING, ReceiveOutsource.OutsourceStatus.IN_PROGRESS)
         );
         return outsources.stream()
-                .map(receiveOutsourceMapper::toDTO)
+                .map(outsource -> {
+                    ReceiveOutsourceDTO dto = receiveOutsourceMapper.toDTO(outsource);
+                    dto.setMaterials(
+                            outsource.getMaterials().stream()
+                                    .map(receiveOutsourceMaterialMapper::toDTO)
+                                    .toList()
+                    );
+                    return dto;
+                })
                 .toList();
     }
 

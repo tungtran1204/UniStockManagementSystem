@@ -43,28 +43,40 @@ const ModalChooseOrder = ({ onClose, onOrderSelected, category }) => {
 
   const handleSelectOrder = async (orderId) => {
     try {
-      const fullOrder = await getPurchaseOrderById(orderId);
-      onOrderSelected(fullOrder);
+      const order = purchaseOrders.find(po => po.ginId === orderId || po.poId === orderId);
+      if (!order) throw new Error("Không tìm thấy chứng từ");
+  
+      const selectedDoc = {
+        value: order.poId || order.ginId,
+        poId: order.poId,
+        ginId: order.ginId,
+        poCode: order.poCode || order.ginCode,
+        partnerId: order.partnerId || order.supplierId,
+        partnerName: order.partnerName || order.supplierName,
+        partnerAddress: order.partnerAddress || order.supplierAddress,
+        partnerPhone: order.partnerPhone,
+        partnerContactName: order.partnerContactName,
+        orderDate: order.createdAt || order.orderDate,
+        materials: order.materials,
+        details: order.details || order.orderDetails,
+      };
+  
+      onOrderSelected(selectedDoc); // Truyền selectedDoc mới chuẩn
       onClose();
     } catch (error) {
       console.error("Không thể lấy chi tiết đơn hàng:", error);
     }
-  };
+  };  
 
-  const mappedOrders = purchaseOrders.map((order) => {
-    const isOutsource = !!order.outsourceId;
-    const code = isOutsource
-      ? (order.ginId ? `XK${String(order.ginId).padStart(5, '0')}` : "Không có mã XK")
-      : (order.poCode || "Không có mã PO");
+  const mappedOrders = purchaseOrders.map((order) => ({
+    id: order.ginId || order.poId,
+    code: order.ginCode || order.poCode || "Không có mã",
+    customer: order.partnerName || order.supplierName || "Không xác định",
+    date: order.createdAt || order.orderDate || null,
+    status: order.status || "Không xác định",
+    materialCount: order.materials ? order.materials.length : 0, // đếm số dòng vật tư
+  }));
   
-    return {
-      id: order.poId || order.outsourceId || `row_${Math.random()}`,
-      code,
-      customer: order.supplierName || order.partnerName || "N/A",
-      date: order.orderDate || order.createdAt || null,
-    };
-  });  
-
   const filteredOrders = mappedOrders.filter(
     (order) =>
       order.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
