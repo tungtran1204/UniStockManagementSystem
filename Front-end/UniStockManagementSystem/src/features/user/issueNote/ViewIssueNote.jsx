@@ -17,7 +17,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/vi";
 import Table from "@/components/Table";
 import ReactPaginate from "react-paginate";
-import { ArrowLeftIcon, ArrowRightIcon, ListBulletIcon} from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, ArrowRightIcon, ListBulletIcon } from "@heroicons/react/24/outline";
 import { InformationCircleIcon } from "@heroicons/react/24/solid";
 import { FaArrowLeft } from "react-icons/fa";
 
@@ -70,7 +70,8 @@ const ViewIssueNote = () => {
   }));
 
   const getColumnsConfig = (category) => {
-    const baseColumns = [
+    const isSales = category === "Bán hàng";
+    return [
       {
         field: "index",
         headerName: "STT",
@@ -82,7 +83,7 @@ const ViewIssueNote = () => {
       },
       {
         field: "code",
-        headerName: category === "Sản xuất" ? "Mã SP/NVL" : category === "Bán hàng" ? "Mã hàng" : "Mã NVL",
+        headerName: isSales ? "Mã hàng" : "Mã SP/NVL",
         minWidth: 100,
         flex: 1,
         filterable: false,
@@ -95,7 +96,7 @@ const ViewIssueNote = () => {
       },
       {
         field: "name",
-        headerName: category === "Sản xuất" ? "Tên SP/NVL" : category === "Bán hàng" ? "Tên hàng" : "Tên NVL",
+        headerName: isSales ? "Tên hàng" : "Tên SP/NVL",
         minWidth: 150,
         flex: 2,
         filterable: false,
@@ -104,17 +105,6 @@ const ViewIssueNote = () => {
           <div className="text-center">
             {params.row.materialName || params.row.productName || ""}
           </div>
-        ),
-      },
-      {
-        field: "unitName",
-        headerName: "Đơn vị",
-        minWidth: 80,
-        flex: 1,
-        filterable: false,
-        editable: false,
-        renderCell: (params) => (
-          <div className="text-center">{params.row.unitName || "-"}</div>
         ),
       },
       {
@@ -146,48 +136,6 @@ const ViewIssueNote = () => {
         ),
       },
     ];
-
-    if (category === "Bán hàng") {
-      return [
-        ...baseColumns.slice(0, 4),
-        {
-          field: "orderQuantity",
-          headerName: "SL Đặt",
-          minWidth: 80,
-          flex: 1,
-          filterable: false,
-          editable: false,
-          renderCell: (params) => (
-            <div className="text-center">{params.row.orderQuantity || "-"}</div>
-          ),
-        },
-        {
-          field: "exportedQuantity",
-          headerName: "SL đã xuất",
-          minWidth: 80,
-          flex: 1,
-          filterable: false,
-          editable: false,
-          renderCell: (params) => (
-            <div className="text-center">{params.row.exportedQuantity || "-"}</div>
-          ),
-        },
-        {
-          field: "pendingQuantity",
-          headerName: "SL còn phải xuất",
-          minWidth: 80,
-          flex: 1,
-          filterable: false,
-          editable: false,
-          renderCell: (params) => (
-            <div className="text-center">{params.row.pendingQuantity || "-"}</div>
-          ),
-        },
-        ...baseColumns.slice(5),
-      ];
-    }
-
-    return baseColumns;
   };
 
   const columnsConfig = getColumnsConfig(data.category);
@@ -259,46 +207,24 @@ const ViewIssueNote = () => {
 
     const totalQuantity = data.details.reduce((sum, item) => sum + (item.quantity || 0), 0);
 
-    const tableHeaders = data.category === "Bán hàng" ? [
+    const tableHeaders = [
       { content: "STT", styles: { halign: 'center', cellWidth: 12 } },
-      { content: "Mã hàng", styles: { halign: 'center', cellWidth: 40 } },
-      { content: "Tên hàng hóa", styles: { halign: 'center', cellWidth: 60 } },
-      { content: "Đơn vị", styles: { halign: 'center', cellWidth: 20 } },
-      { content: "Số lượng xuất", styles: { halign: 'center', cellWidth: 20 } },
-      { content: "Kho xuất", styles: { halign: 'center', cellWidth: 30 } },
-    ] : [
-      { content: "STT", styles: { halign: 'center', cellWidth: 12 } },
-      { content: data.category === "Sản xuất" ? "Mã SP/NVL" : "Mã NVL", styles: { halign: 'center', cellWidth: 40 } },
-      { content: data.category === "Sản xuất" ? "Tên SP/NVL" : "Tên NVL", styles: { halign: 'center', cellWidth: 60 } },
-      { content: "Đơn vị", styles: { halign: 'center', cellWidth: 20 } },
-      { content: "Số lượng xuất", styles: { halign: 'center', cellWidth: 20 } },
-      { content: "Kho xuất", styles: { halign: 'center', cellWidth: 40 } },
+      { content: data.category === "Bán hàng" ? "Mã hàng" : "Mã SP/NVL", styles: { halign: 'center', cellWidth: 35 } },
+      { content: data.category === "Bán hàng" ? "Tên hàng" : "Tên SP/NVL", styles: { halign: 'center', cellWidth: 70 } },
+      { content: "Số lượng", styles: { halign: 'center', cellWidth: 20 } },
+      { content: "Kho xuất", styles: { halign: 'center', cellWidth: 45 } },
     ];
-    const tableBody = data.category === "Bán hàng" ? [
+
+    const tableBody = [
       ...data.details.map((item, index) => [
         { content: index + 1, styles: { halign: 'center' } },
-        { content: item.productCode || "", styles: { halign: 'left' } },
-        { content: item.productName || "", styles: { halign: 'left' } },
-        { content: item.unitName || "-", styles: { halign: 'center' } },
+        { content: item.materialCode || item.productCode || "", styles: { halign: 'left' } },
+        { content: item.materialName || item.productName || "", styles: { halign: 'left' } },
         { content: item.quantity, styles: { halign: 'center' } },
-        { content: item.warehouseName, styles: { halign: 'center' } },
+        { content: item.warehouseName || "", styles: { halign: 'center' } },
       ]),
       [
-        { content: "TỔNG CỘNG", colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
-        { content: totalQuantity, styles: { halign: 'center', fontStyle: 'bold' } },
-        { content: "", styles: { halign: 'center' } },
-      ],
-    ] : [
-      ...data.details.map((item, index) => [
-        { content: index + 1, styles: { halign: 'center' } },
-        { content: item.materialCode || item.productCode, styles: { halign: 'left' } },
-        { content: item.materialName || item.productName, styles: { halign: 'left' } },
-        { content: item.unitName || "-", styles: { halign: 'center' } },
-        { content: item.quantity, styles: { halign: 'center' } },
-        { content: item.warehouseName, styles: { halign: 'center' } },
-      ]),
-      [
-        { content: "TỔNG CỘNG", colSpan: 4, styles: { halign: 'right', fontStyle: 'bold' } },
+        { content: "TỔNG CỘNG :", colSpan: 3, styles: { halign: 'right', fontStyle: 'bold' } },
         { content: totalQuantity, styles: { halign: 'center', fontStyle: 'bold' } },
         { content: "", styles: { halign: 'center' } },
       ],

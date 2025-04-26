@@ -32,7 +32,7 @@ public class MailController {
         if (user == null) {
             return ResponseEntity.badRequest().body("Địa chỉ email này chưa được đăng kí");
         }
-        // Sinh OTP 6 chữ số, hiệu lực 10 phút
+        // Sinh OTP 6 chữ số, hiệu lực 5 phút
         String otp = otpService.generateAndSaveOtp(email, 5);
 
         // Soạn nội dung email

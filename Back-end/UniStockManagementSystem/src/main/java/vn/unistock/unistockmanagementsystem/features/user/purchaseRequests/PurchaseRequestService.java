@@ -16,6 +16,7 @@ import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryRep
 import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerRepository;
 import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersRepository;
+import vn.unistock.unistockmanagementsystem.features.user.saleOrders.UsedMaterialWarehouseDTO;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -65,7 +66,7 @@ public class PurchaseRequestService {
         purchaseRequest.setRejectionReason(null);
         purchaseRequest.setCreatedDate(LocalDateTime.now());
 
-        // Liên kết với đơn hàng nếu có
+        // Liên kết SalesOrder nếu có
         SalesOrder salesOrder = null;
         if (dto.getSaleOrderId() != null) {
             salesOrder = saleOrdersRepository.findById(dto.getSaleOrderId())
@@ -73,46 +74,88 @@ public class PurchaseRequestService {
             purchaseRequest.setSalesOrder(salesOrder);
         }
 
-        // Convert list DTO → entity
+        // Convert detail DTO → entity + gán quan hệ (giữ nguyên code cũ)
         List<PurchaseRequestDetail> details = purchaseRequestDetailMapper.toEntityList(dto.getPurchaseRequestDetails());
-
-        // Gán lại quan hệ cho từng detail
         for (int i = 0; i < details.size(); i++) {
             PurchaseRequestDetail detail = details.get(i);
             PurchaseRequestDetailDTO detailDTO = dto.getPurchaseRequestDetails().get(i);
-
             Material material = materialRepository.findById(detailDTO.getMaterialId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy vật tư với ID: " + detailDTO.getMaterialId()));
             Partner partner = partnerRepository.findById(detailDTO.getPartnerId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy nhà cung cấp với ID: " + detailDTO.getPartnerId()));
-
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy NCC với ID: " + detailDTO.getPartnerId()));
             detail.setMaterial(material);
             detail.setPartner(partner);
             detail.setPurchaseRequest(purchaseRequest);
         }
-
         purchaseRequest.setPurchaseRequestDetails(details);
 
-        // ✅ Nếu là từ đơn hàng thì trừ kho sản phẩm
+        // ===== 1. Trừ kho sản phẩm (cũ, giữ nguyên) =====
         if (dto.getSaleOrderId() != null && !CollectionUtils.isEmpty(dto.getUsedProductsFromWarehouses())) {
             reserveProductsForSalesOrder(salesOrder, dto.getUsedProductsFromWarehouses());
         }
 
-        // ✅ Trừ kho vật tư nếu có SaleOrder và danh sách vật tư
-        if (dto.getSaleOrderId() != null && !CollectionUtils.isEmpty(dto.getPurchaseRequestDetails())) {
-            reserveMaterialsForPurchaseRequest(dto.getPurchaseRequestDetails(), salesOrder);
-        } else if (!CollectionUtils.isEmpty(dto.getPurchaseRequestDetails())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "SalesOrder is required to reserve materials for PurchaseRequest");
+        // ===== 2. Trừ kho NVL (MỚI) =====
+        if (dto.getSaleOrderId() != null && !CollectionUtils.isEmpty(dto.getUsedMaterialsFromWarehouses())) {
+            reserveMaterialsFromWarehouses(dto.getUsedMaterialsFromWarehouses(), salesOrder);
+        } else if (!CollectionUtils.isEmpty(dto.getUsedMaterialsFromWarehouses())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "SalesOrder is required to reserve materials");
         }
 
-        // Lưu vào DB
+        // Lưu DB & trả DTO
         PurchaseRequest saved = purchaseRequestRepository.save(purchaseRequest);
-
-        // Trả về DTO sau khi lưu
         return purchaseRequestMapper.toDTO(saved);
     }
 
 
+
+    private void reserveMaterialsFromWarehouses(List<UsedMaterialWarehouseDTO> usedMaterials,
+                                                SalesOrder salesOrder) {
+
+        if (CollectionUtils.isEmpty(usedMaterials)) return;
+
+        for (UsedMaterialWarehouseDTO entry : usedMaterials) {
+            double quantityToReserve = entry.getQuantity();
+            List<Inventory> availableInventories = inventoryRepository
+                    .findByMaterialIdAndStatus(entry.getMaterialId(), Inventory.InventoryStatus.AVAILABLE)
+                    .stream()
+                    .filter(inv -> inv.getWarehouse().getWarehouseId().equals(entry.getWarehouseId()))
+                    .sorted(Comparator.comparing(Inventory::getInventoryId))
+                    .toList();
+
+            for (Inventory available : availableInventories) {
+                if (quantityToReserve <= 0) break;
+
+                double toUse = Math.min(available.getQuantity(), quantityToReserve);
+                available.setQuantity(available.getQuantity() - toUse);
+                if (available.getQuantity() == 0) inventoryRepository.delete(available);
+                else inventoryRepository.save(available);
+
+                Inventory reserved = inventoryRepository
+                        .findByMaterial_MaterialIdAndWarehouse_WarehouseIdAndStatusAndSalesOrder(
+                                entry.getMaterialId(),
+                                entry.getWarehouseId(),
+                                Inventory.InventoryStatus.RESERVED,
+                                salesOrder)
+                        .orElseGet(() -> {
+                            Inventory inv = new Inventory();
+                            inv.setMaterial(available.getMaterial());
+                            inv.setWarehouse(available.getWarehouse());
+                            inv.setStatus(Inventory.InventoryStatus.RESERVED);
+                            inv.setQuantity(0.0);
+                            inv.setSalesOrder(salesOrder);
+                            return inv;
+                        });
+
+                reserved.setQuantity(reserved.getQuantity() + toUse);
+                reserved.setLastUpdated(LocalDateTime.now());
+                inventoryRepository.save(reserved);
+
+                quantityToReserve -= toUse;
+            }
+
+
+        }
+    }
 
     public void reserveMaterialsForPurchaseRequest(List<PurchaseRequestDetailDTO> detailDTOs, SalesOrder salesOrder) {
         if (salesOrder == null) {

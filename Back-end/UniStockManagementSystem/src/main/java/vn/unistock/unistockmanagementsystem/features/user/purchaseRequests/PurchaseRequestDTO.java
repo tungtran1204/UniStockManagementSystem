@@ -1,6 +1,7 @@
 package vn.unistock.unistockmanagementsystem.features.user.purchaseRequests;
 
 import lombok.Data;
+import vn.unistock.unistockmanagementsystem.features.user.saleOrders.UsedMaterialWarehouseDTO;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,5 +20,7 @@ public class PurchaseRequestDTO {
 
     private List<PurchaseRequestDetailDTO> purchaseRequestDetails;
     private List<UsedProductWarehouseDTO> usedProductsFromWarehouses;
+    // PurchaseRequestDTO.java
+    private List<UsedMaterialWarehouseDTO> usedMaterialsFromWarehouses;
 
 }

@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import vn.unistock.unistockmanagementsystem.entities.Unit;
-import vn.unistock.unistockmanagementsystem.features.user.units.UnitRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,11 +47,13 @@ public class UnitService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public UnitDTO updateUnit(Long unitId, UnitDTO unitDTO) {
+        System.out.println("Received unitDTO: unitId=" + unitDTO.getUnitId() + ", unitName=" + unitDTO.getUnitName() + ", status=" + unitDTO.getStatus());
+
         Unit existingUnit = unitRepository.findById(unitId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn vị tính với ID: " + unitId));
 
-        // Kiểm tra trùng tên nếu tên mới khác tên hiện tại
         if (!existingUnit.getUnitName().equalsIgnoreCase(unitDTO.getUnitName())) {
             unitRepository.findByUnitNameIgnoreCase(unitDTO.getUnitName())
                     .ifPresent(unit -> {
@@ -59,9 +61,21 @@ public class UnitService {
                     });
         }
 
+        System.out.println("Before update: unitName=" + existingUnit.getUnitName() + ", status=" + existingUnit.getStatus());
         existingUnit.setUnitName(unitDTO.getUnitName());
         existingUnit.setStatus(unitDTO.getStatus());
+        System.out.println("After set: unitName=" + existingUnit.getUnitName() + ", status=" + existingUnit.getStatus());
+
         Unit updatedUnit = unitRepository.save(existingUnit);
+        System.out.println("After save: unitName=" + updatedUnit.getUnitName() + ", status=" + updatedUnit.getStatus());
+
         return unitMapper.toDTO(updatedUnit);
+    }
+
+    public boolean isUnitNameExists(String unitName, Long excludeId) {
+        if (excludeId != null) {
+            return unitRepository.existsByUnitNameIgnoreCaseAndUnitIdNot(unitName, excludeId);
+        }
+        return unitRepository.existsByUnitNameIgnoreCase(unitName);
     }
 }

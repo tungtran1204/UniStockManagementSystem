@@ -31,15 +31,43 @@ public class ProductTypeService {
     }
 
     public ProductTypeDTO createProductType(ProductTypeDTO productTypeDTO) {
-        productTypeRepository.findByTypeName(productTypeDTO.getTypeName())
+        // Chuẩn hóa typeName
+        String normalizedTypeName = productTypeDTO.getTypeName().trim();
+
+        // Kiểm tra trùng tên dòng sản phẩm (case-insensitive)
+        productTypeRepository.findByTypeNameIgnoreCase(normalizedTypeName)
                 .ifPresent(existingType -> {
-                    throw new RuntimeException("Tên dòng sản phẩm '" + productTypeDTO.getTypeName() + "' đã tồn tại!");
+                    throw new RuntimeException("Tên dòng sản phẩm '" + normalizedTypeName + "' đã tồn tại!");
                 });
 
+        // Cập nhật typeName đã chuẩn hóa vào DTO
+        productTypeDTO.setTypeName(normalizedTypeName);
         ProductType productType = productTypeMapper.toEntity(productTypeDTO);
         productType.setStatus(true);
         ProductType savedProductType = productTypeRepository.save(productType);
         return productTypeMapper.toDTO(savedProductType);
+    }
+
+    public ProductTypeDTO updateProductType(Long typeId, ProductTypeDTO productTypeDTO) {
+        ProductType productType = productTypeRepository.findById(typeId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy dòng sản phẩm với ID: " + typeId));
+
+        // Chuẩn hóa typeName
+        String normalizedTypeName = productTypeDTO.getTypeName().trim();
+
+        // Kiểm tra trùng tên dòng sản phẩm (case-insensitive), bỏ qua bản ghi hiện tại
+        if (!productType.getTypeName().equalsIgnoreCase(normalizedTypeName)) {
+            productTypeRepository.findByTypeNameIgnoreCase(normalizedTypeName)
+                    .ifPresent(existingType -> {
+                        throw new RuntimeException("Tên dòng sản phẩm '" + normalizedTypeName + "' đã tồn tại!");
+                    });
+        }
+
+        productType.setTypeName(normalizedTypeName);
+        productType.setDescription(productTypeDTO.getDescription());
+
+        ProductType updatedProductType = productTypeRepository.save(productType);
+        return productTypeMapper.toDTO(updatedProductType);
     }
 
     public List<ProductTypeDTO> getActiveProductTypes() {
@@ -47,5 +75,15 @@ public class ProductTypeService {
                 .stream()
                 .map(productTypeMapper::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    public boolean isTypeNameExists(String typeName, Long excludeId) {
+        // Chuẩn hóa typeName
+        String normalizedTypeName = typeName.trim();
+
+        if (excludeId != null) {
+            return productTypeRepository.existsByTypeNameIgnoreCaseAndTypeIdNot(normalizedTypeName, excludeId);
+        }
+        return productTypeRepository.existsByTypeNameIgnoreCase(normalizedTypeName);
     }
 }

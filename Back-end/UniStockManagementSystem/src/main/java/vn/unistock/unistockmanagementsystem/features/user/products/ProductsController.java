@@ -212,4 +212,12 @@ public class ProductsController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Trả về null nếu không tìm thấy
         }
     }
+
+    @GetMapping("/active")
+    public ResponseEntity<Page<ProductsDTO>> getActiveProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return ResponseEntity.ok(productsService.getActiveProducts(page, size));
+    }
 }

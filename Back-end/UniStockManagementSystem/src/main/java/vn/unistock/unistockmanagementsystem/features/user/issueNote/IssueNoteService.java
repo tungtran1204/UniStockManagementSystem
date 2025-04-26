@@ -179,42 +179,95 @@ public class IssueNoteService {
             // Cập nhật SalesOrder nếu có
             if (hasSalesOrder) {
                 SalesOrder salesOrder = issueNote.getSalesOrder();
-                Map<Long, Integer> exportQuantities = new HashMap<>();
-                for (IssueNoteDetailDTO detailDto : issueNoteDto.getDetails()) {
-                    if (detailDto.getProductId() != null) {
-                        exportQuantities.merge(detailDto.getProductId(), detailDto.getQuantity().intValue(), Integer::sum);
-                    }
-                }
-                logger.debug("Export quantities grouped by productId: {}", exportQuantities);
-
                 boolean isFirstIssuance = salesOrder.getStatus() != SalesOrder.OrderStatus.PARTIALLY_ISSUED &&
                         salesOrder.getStatus() != SalesOrder.OrderStatus.COMPLETED;
 
-                for (Map.Entry<Long, Integer> entry : exportQuantities.entrySet()) {
-                    Long productId = entry.getKey();
-                    int totalExport = entry.getValue();
-                    SalesOrderDetail salesOrderDetail = salesOrder.getDetails().stream()
-                            .filter(d -> d.getProduct().getProductId().equals(productId))
-                            .findFirst()
-                            .orElseThrow(() -> new RuntimeException("Sales order detail not found for product ID: " + productId));
-                    logger.debug("Before update: SalesOrderDetail for product ID {} has receivedQuantity={}", productId, salesOrderDetail.getReceivedQuantity());
-                    salesOrderDetail.setReceivedQuantity(salesOrderDetail.getReceivedQuantity() + totalExport);
-                    logger.debug("After update: SalesOrderDetail for product ID {} has receivedQuantity={}", productId, salesOrderDetail.getReceivedQuantity());
-                }
+                // Xử lý cho category "Sản xuất" (cập nhật receivedQuantity cho SalesOrderMaterial)
+                if ("Sản xuất".equals(issueNoteDto.getCategory())) {
+                    Map<Long, Double> materialExportQuantities = new HashMap<>();
+                    // Nhóm số lượng xuất theo materialId
+                    for (IssueNoteDetailDTO detailDto : issueNoteDto.getDetails()) {
+                        if (detailDto.getMaterialId() != null) {
+                            materialExportQuantities.merge(
+                                    detailDto.getMaterialId(),
+                                    detailDto.getQuantity(),
+                                    Double::sum
+                            );
+                        }
+                    }
+                    logger.debug("Material export quantities grouped by materialId: {}", materialExportQuantities);
 
-                if (isFirstIssuance) {
-                    salesOrder.setStatus(SalesOrder.OrderStatus.PARTIALLY_ISSUED);
-                    logger.debug("SalesOrder ID {} updated to PARTIALLY_ISSUED (first issuance)", salesOrder.getOrderId());
-                }
+                    // Lấy tất cả SalesOrderDetail của SalesOrder
+                    List<SalesOrderDetail> orderDetails = salesOrder.getDetails();
+                    for (Map.Entry<Long, Double> entry : materialExportQuantities.entrySet()) {
+                        Long materialId = entry.getKey();
+                        double totalExport = entry.getValue();
 
-                boolean allProductsFulfilled = salesOrder.getDetails().stream()
-                        .allMatch(detail -> detail.getReceivedQuantity() >= detail.getQuantity());
-                if (allProductsFulfilled) {
-                    salesOrder.setStatus(SalesOrder.OrderStatus.COMPLETED);
-                    logger.debug("SalesOrder ID {} updated to COMPLETED (all products fulfilled)", salesOrder.getOrderId());
-                }
+                        // Tìm SalesOrderMaterial tương ứng
+                        SalesOrderMaterial salesOrderMaterial = orderDetails.stream()
+                                .flatMap(detail -> detail.getMaterials().stream())
+                                .filter(mat -> mat.getMaterial().getMaterialId().equals(materialId))
+                                .findFirst()
+                                .orElseThrow(() -> new RuntimeException("Sales order material not found for material ID: " + materialId));
 
-                salesOrderRepository.save(salesOrder);
+                        // Kiểm tra số lượng xuất không vượt quá số lượng cần (requiredQuantity - receivedQuantity)
+                        int remainingQuantity = salesOrderMaterial.getRequiredQuantity() - salesOrderMaterial.getReceivedQuantity();
+                        if (totalExport > remainingQuantity) {
+                            throw new RuntimeException("Số lượng xuất vật tư ID " + materialId + " vượt quá số lượng cần: " + remainingQuantity);
+                        }
+
+                        // Cập nhật receivedQuantity
+                        salesOrderMaterial.setReceivedQuantity(salesOrderMaterial.getReceivedQuantity() + (int) totalExport);
+                        logger.debug("Material ID {}: Updated receivedQuantity to {}", materialId, salesOrderMaterial.getReceivedQuantity());
+                    }
+
+                    // Kiểm tra trạng thái SalesOrder dựa trên vật tư
+                    boolean allMaterialsFulfilled = orderDetails.stream()
+                            .flatMap(detail -> detail.getMaterials().stream())
+                            .allMatch(mat -> mat.getReceivedQuantity() >= mat.getRequiredQuantity());
+                    if (allMaterialsFulfilled) {
+                        salesOrder.setStatus(SalesOrder.OrderStatus.COMPLETED);
+                        logger.debug("SalesOrder ID {} updated to COMPLETED (all materials fulfilled)", salesOrder.getOrderId());
+                    } else if (isFirstIssuance) {
+                        salesOrder.setStatus(SalesOrder.OrderStatus.PARTIALLY_ISSUED);
+                        logger.debug("SalesOrder ID {} updated to PARTIALLY_ISSUED (first material issuance)", salesOrder.getOrderId());
+                    }
+
+                    salesOrderRepository.save(salesOrder);
+                } else {
+                    // Xử lý cho category "Bán hàng" (cập nhật receivedQuantity cho SalesOrderDetail)
+                    Map<Long, Integer> exportQuantities = new HashMap<>();
+                    for (IssueNoteDetailDTO detailDto : issueNoteDto.getDetails()) {
+                        if (detailDto.getProductId() != null) {
+                            exportQuantities.merge(detailDto.getProductId(), detailDto.getQuantity().intValue(), Integer::sum);
+                        }
+                    }
+                    logger.debug("Export quantities grouped by productId: {}", exportQuantities);
+
+                    for (Map.Entry<Long, Integer> entry : exportQuantities.entrySet()) {
+                        Long productId = entry.getKey();
+                        int totalExport = entry.getValue();
+                        SalesOrderDetail salesOrderDetail = salesOrder.getDetails().stream()
+                                .filter(d -> d.getProduct().getProductId().equals(productId))
+                                .findFirst()
+                                .orElseThrow(() -> new RuntimeException("Sales order detail not found for product ID: " + productId));
+                        logger.debug("Before update: SalesOrderDetail for product ID {} has receivedQuantity={}", productId, salesOrderDetail.getReceivedQuantity());
+                        salesOrderDetail.setReceivedQuantity(salesOrderDetail.getReceivedQuantity() + totalExport);
+                        logger.debug("After update: SalesOrderDetail for product ID {} has receivedQuantity={}", productId, salesOrderDetail.getReceivedQuantity());
+                    }
+
+                    boolean allProductsFulfilled = salesOrder.getDetails().stream()
+                            .allMatch(detail -> detail.getReceivedQuantity() >= detail.getQuantity());
+                    if (allProductsFulfilled) {
+                        salesOrder.setStatus(SalesOrder.OrderStatus.COMPLETED);
+                        logger.debug("SalesOrder ID {} updated to COMPLETED (all products fulfilled)", salesOrder.getOrderId());
+                    } else if (isFirstIssuance) {
+                        salesOrder.setStatus(SalesOrder.OrderStatus.PARTIALLY_ISSUED);
+                        logger.debug("SalesOrder ID {} updated to PARTIALLY_ISSUED (first issuance)", salesOrder.getOrderId());
+                    }
+
+                    salesOrderRepository.save(salesOrder);
+                }
             }
 
             // Xử lý ReceiveOutsource cho category = "Gia công"
@@ -246,7 +299,6 @@ public class IssueNoteService {
                                 ? unitRepository.findById(expectedReturn.getUnitId())
                                 .orElseThrow(() -> new RuntimeException("Unit not found with ID: " + expectedReturn.getUnitId()))
                                 : material.getUnit());
-                        // Không set warehouse vì danh sách NVL nhận lại không yêu cầu kho tại thời điểm này
                         outsourceMaterials.add(rom);
                     }
                 }

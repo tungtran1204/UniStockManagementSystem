@@ -9,6 +9,7 @@ import {
 } from "@material-tailwind/react";
 import { TextField, Divider, Button as MuiButton, IconButton } from "@mui/material";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { checkUnitNameExists } from "./unitService";
 
 const EditUnitModal = ({ unit, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
@@ -16,9 +17,11 @@ const EditUnitModal = ({ unit, onClose, onSuccess }) => {
         status: true,
     });
     const [validationErrors, setValidationErrors] = useState({});
+    const [unitNameError, setUnitNameError] = useState("");
 
     useEffect(() => {
         if (unit) {
+            console.log("Unit in modal:", unit); // Kiểm tra unit có cả id và unitId không
             setFormData({
                 unitName: unit.unitName,
                 status: unit.status,
@@ -28,30 +31,60 @@ const EditUnitModal = ({ unit, onClose, onSuccess }) => {
 
     const isEmptyOrWhitespace = (str) => !str || /^\s*$/.test(str);
 
-    const handleUnitNameChange = (newName) => {
-        setFormData({ ...formData, unitName: newName });
-        if (!isEmptyOrWhitespace(newName)) {
-            setValidationErrors((prev) => ({ ...prev, unitName: "" }));
+    const handleUnitNameChange = async (newName) => {
+        // Reset cả 2 loại lỗi khi người dùng nhập
+        setUnitNameError("");
+        setValidationErrors((prev) => ({ ...prev, unitName: "" }));
+
+        // Cập nhật giá trị
+        setFormData({ ...formData, unitName: newName || "" });
+
+        if (newName.trim() && newName !== unit.unitName) {
+            try {
+                const exists = await checkUnitNameExists(newName, unit.id);
+                if (exists) {
+                    setUnitNameError("Tên đơn vị tính đã tồn tại!");
+                }
+            } catch (error) {
+                console.error("❌ Lỗi khi kiểm tra tên đơn vị tính:", error);
+                setUnitNameError("Lỗi khi kiểm tra tên đơn vị tính!");
+            }
         }
     };
 
     const handleSubmit = async () => {
         const newErrors = {};
-
         if (isEmptyOrWhitespace(formData.unitName)) {
             newErrors.unitName = "Tên đơn vị tính không được để trống hoặc chỉ chứa khoảng trắng!";
         }
-
         setValidationErrors(newErrors);
-
-        if (Object.keys(newErrors).length === 0) {
+        if (Object.keys(newErrors).length === 0 && !unitNameError) {
             try {
-                await onSuccess(unit.id, formData);
+                // Đảm bảo sử dụng id đúng
+                const actualId = unit.unitId || unit.id; // Ưu tiên unitId nếu có
+
+                // Cấu trúc dữ liệu phải đảm bảo tương thích với UnitDTO.java
+                const dataToSend = {
+                    unitId: actualId, // Có thể backend sẽ bỏ qua trường này, nhưng vẫn nên gửi
+                    unitName: formData.unitName.trim(),
+                    status: formData.status
+                };
+
+                console.log("Data to send:", JSON.stringify(dataToSend));
+                console.log("URL path ID:", actualId);
+
+                // Sử dụng cùng một ID
+                await onSuccess(actualId, dataToSend);
                 onClose();
             } catch (error) {
                 console.error("Error updating unit:", error);
+                // Hiển thị lỗi cho người dùng nếu cần
             }
         }
+    };
+
+    const isSubmitDisabled = () => {
+        return !!unitNameError;
     };
 
     return (
@@ -82,10 +115,11 @@ const EditUnitModal = ({ unit, onClose, onSuccess }) => {
                         color="success"
                         value={formData.unitName}
                         onChange={(e) => handleUnitNameChange(e.target.value)}
+                        error={Boolean(unitNameError || validationErrors.unitName)}
                     />
-                    {validationErrors.unitName && (
-                        <Typography variant="small" color="red">
-                            {validationErrors.unitName}
+                    {(unitNameError || validationErrors.unitName) && (
+                        <Typography color="red" className="text-xs text-start mt-1">
+                            {unitNameError || validationErrors.unitName}
                         </Typography>
                     )}
                 </div>
@@ -106,6 +140,7 @@ const EditUnitModal = ({ unit, onClose, onSuccess }) => {
                     className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-3 rounded-[4px] transition-all duration-200 ease-in-out"
                     ripple={true}
                     onClick={handleSubmit}
+                    disabled={isSubmitDisabled()}
                 >
                     Lưu
                 </Button>
