@@ -5,7 +5,7 @@ spring:
     password: 12345
 #    url: jdbc:mysql://unistock.mysql.database.azure.com/unistock?sslMode=REQUIRED
 #    username: uniadmin
-#    password: Tst120403
+#    password: tst120403@
     driver-class-name: com.mysql.cj.jdbc.Driver
   mail:
     host: smtp.gmail.com

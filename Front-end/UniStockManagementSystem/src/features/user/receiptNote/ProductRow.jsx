@@ -15,14 +15,36 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
   const [quantity, setQuantity] = useState('');
   const [quantityError, setQuantityError] = useState('');
   const [remainingQuantity, setRemainingQuantity] = useState(0);
+  const [warehouseError, setWarehouseError] = useState('');
+  const [enteredQuantity, setEnteredQuantity] = useState('');
 
+  useEffect(() => {
+    const ordered = item.orderedQuantity ?? item.quantity ?? 0;
+    const received = item.receivedQuantity ?? 0;
+    const defaultEntered = Math.max(ordered - received, 0);
+  
+    if (item.enteredQuantity !== undefined && item.enteredQuantity !== null) {
+      setEnteredQuantity(item.enteredQuantity.toString());
+    } else {
+      setEnteredQuantity(defaultEntered.toString());
+    }
+  }, [item.enteredQuantity, item.orderedQuantity, item.quantity, item.receivedQuantity]);
+  
+  
   useEffect(() => {
     if (item.quantity !== undefined && item.quantity !== null) {
       setQuantity(item.quantity.toString());
     }
   }, [item.quantity]);
 
-
+  useEffect(() => {
+    const ordered = item.quantity ?? item.orderedQuantity ?? 0;
+    const received = item.receivedQuantity ?? 0;
+    const entered = parseInt(enteredQuantity, 10) || 0;  
+    const remaining = ordered - received - entered;
+    setRemainingQuantity(remaining > 0 ? remaining : 0);
+  }, [item.quantity, item.orderedQuantity, item.receivedQuantity, enteredQuantity]);
+  
   useEffect(() => {
     setWarehouse(defaultWarehouseCode);
   }, [defaultWarehouseCode]);
@@ -36,10 +58,14 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
 
   const handleWarehouseChange = (value) => {
     setWarehouse(value);
+
     const warehouseObj = warehouses.find(w => w.warehouseCode === value);
     const warehouseId = warehouseObj ? warehouseObj.warehouseId : null;
-
     const itemKey = item.materialId || item.productId;
+
+    const warehouseErrorMessage = !value ? "Chưa chọn kho nhập!" : "";
+    setWarehouseError(warehouseErrorMessage);
+
     onDataChange(itemKey, {
       warehouse: value,
       warehouseId,
@@ -47,48 +73,44 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
       orderedQuantity: item.orderedQuantity,
       receivedQuantity: item.receivedQuantity,
       remainingQuantity,
+      warehouseError: warehouseErrorMessage,
       error: quantityError
     });
   };
 
+
   const handleQuantityChange = (e) => {
     const value = e.target.value;
-
     if (value === '' || /^\d+$/.test(value)) {
-      setQuantity(value);
-      const ordered = item.orderedQuantity || 0;
-      const received = item.receivedQuantity || 0;
-      const remaining = ordered - received;
-
+      const entered = value === '' ? '0' : value;
+      setEnteredQuantity(entered);
+      const ordered = item.orderedQuantity ?? item.quantity ?? 0;
+      const received = item.receivedQuantity ?? 0;
+      const enteredNum = parseInt(entered, 10) || 0;
       let error = '';
-      if (remaining <= 0) {
-        error = 'Đã nhập đủ số lượng';
-      } else if (value === '') {
-        error = 'Số lượng nhập không được để trống';
-      } else if (!isValidQuantity(value, ordered, received)) {
-        const max = Math.floor((ordered - received) * 1.01);
-        error = `Số lượng phải từ 1 đến tối đa ${max}`;
+      if (enteredNum < 0) {
+        error = 'Số lượng không được âm!';
+      } else if (enteredNum <= 0 || enteredNum > (ordered - received)) {
+        error = `Số lượng phải từ 1 đến ${ordered - received}`;
       }
-
       setQuantityError(error);
-      const remainingQty = updateRemainingQuantity(value);
-
       const itemKey = item.materialId || item.productId;
       const warehouseObj = warehouses.find(w => w.warehouseCode === warehouse);
       const warehouseId = warehouseObj ? warehouseObj.warehouseId : null;
-
       onDataChange(itemKey, {
         warehouse,
         warehouseId,
-        quantity: value,
+        enteredQuantity: enteredNum,
         orderedQuantity: ordered,
         receivedQuantity: received,
-        remainingQuantity: remainingQty,
+        remainingQuantity: Math.max(ordered - received - enteredNum, 0),
+        warehouseError: !warehouse ? "Chưa chọn kho nhập!" : "",
         error
       });
+    } else {
+      setQuantityError('Vui lòng nhập số nguyên dương!');
     }
   };
-
   const isFullyReceived = (item.orderedQuantity - item.receivedQuantity) <= 0;
 
   return (
@@ -96,7 +118,7 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
       <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-20 border-r border-[rgba(224,224,224,1)]">{currentPage * pageSize + index + 1}</td>
       <td className="px-2 py-2 text-sm w-36 border-r text-[#000000DE] border-[rgba(224,224,224,1)]">{item.materialCode || item.productCode}</td>
       <td className="px-2 py-2 text-sm w-72 border-r text-[#000000DE] border-[rgba(224,224,224,1)]">{item.materialName || item.productName}</td>
-      <td className="px-2 py-2 text-sm w-36 border-r text-[#000000DE] border-[rgba(224,224,224,1)]">{item.unit}</td>
+      <td className="px-2 py-2 text-sm w-36 border-r text-[#000000DE] border-[rgba(224,224,224,1)]">{item.unitName || item.unit}</td>
 
       {isFullyReceived ? (
         <>
@@ -143,11 +165,13 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
                   color="success"
                   hiddenLabel
                   placeholder="Chọn kho nhập"
+                  error={!!warehouseError}
+                  helperText={warehouseError}
                 />
               )}
             />
           </td>
-          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{item.orderedQuantity}</td>
+          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{item.quantity ?? item.orderedQuantity ?? 0}</td>
           <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{item.receivedQuantity}</td>
           <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{remainingQuantity}</td>
           <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-40 border-r border-[rgba(224,224,224,1)]">
@@ -156,7 +180,7 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
                 type="number"
                 size="small"
                 fullWidth
-                value={quantity}
+                value={enteredQuantity}
                 onChange={handleQuantityChange}
                 slotProps={{
                   input: {
