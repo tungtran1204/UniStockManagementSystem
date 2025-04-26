@@ -552,7 +552,7 @@ const AddReceiptNoteGeneral = () => {
               warehouseId: warehouse.warehouseId,
               materialId: row.materialId ? Number(row.materialId) : null,
               productId: row.productId ? Number(row.productId) : null,
-              quantity: Number(row.quantity),
+              quantity: Number(row.enteredQuantity),
               unitId: row.unitId ? Number(row.unitId) : null
             };
           });
@@ -1314,40 +1314,39 @@ const AddReceiptNoteGeneral = () => {
                           if ((row.materialId && row.materialId === itemKey) || (row.productId && row.productId === itemKey)) {
                             return {
                               ...row,
-                              quantity: data.quantity,
-                              warehouseCode: data.warehouse,
+                              enteredQuantity: data.enteredQuantity,  // <-- Lưu số lượng nhập riêng!
+                              warehouseCode: data.warehouse,          // <-- Chỉ update warehouse
                             };
                           }
                           return row;
                         }));
-
-                        // Validate số lượng nhập
+                        
+                        // Validate nhập kho
                         const targetRow = documentItems.find(row => (row.materialId && row.materialId === itemKey) || (row.productId && row.productId === itemKey));
                         const maxRemain = targetRow?.remainingQuantity || 0;
-                        const isQuantityValid = Number(data.quantity) > 0 && Number(data.quantity) <= maxRemain;
-
-                        // Validate kho
+                        const isQuantityValid = Number(data.enteredQuantity) > 0 && Number(data.enteredQuantity) <= maxRemain;
+                      
                         const isWarehouseValid = data.warehouse && data.warehouse.trim() !== "";
-
+                      
                         setQuantityErrors(prev => {
                           const copy = { ...prev };
-
+                      
                           if (!isQuantityValid) {
                             copy[targetRow.id] = `Số lượng phải từ 1 đến ${maxRemain}!`;
                           } else {
                             delete copy[targetRow.id];
                           }
-
+                      
                           if (!isWarehouseValid) {
                             copy[`warehouse_${targetRow.id}`] = "Chưa chọn kho nhập!";
                           } else {
                             delete copy[`warehouse_${targetRow.id}`];
                           }
-
+                      
                           return copy;
                         });
                       }}
-
+                      
                       errorMessage={quantityErrors[item.id]}
                     />
                   ))}

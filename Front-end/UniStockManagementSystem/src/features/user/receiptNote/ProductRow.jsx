@@ -16,7 +16,21 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
   const [quantityError, setQuantityError] = useState('');
   const [remainingQuantity, setRemainingQuantity] = useState(0);
   const [warehouseError, setWarehouseError] = useState('');
+  const [enteredQuantity, setEnteredQuantity] = useState('');
 
+  useEffect(() => {
+    const ordered = item.orderedQuantity ?? item.quantity ?? 0;
+    const received = item.receivedQuantity ?? 0;
+    const defaultEntered = Math.max(ordered - received, 0);
+  
+    if (item.enteredQuantity !== undefined && item.enteredQuantity !== null) {
+      setEnteredQuantity(item.enteredQuantity.toString());
+    } else {
+      setEnteredQuantity(defaultEntered.toString());
+    }
+  }, [item.enteredQuantity, item.orderedQuantity, item.quantity, item.receivedQuantity]);
+  
+  
   useEffect(() => {
     if (item.quantity !== undefined && item.quantity !== null) {
       setQuantity(item.quantity.toString());
@@ -26,9 +40,10 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
   useEffect(() => {
     const ordered = item.quantity ?? item.orderedQuantity ?? 0;
     const received = item.receivedQuantity ?? 0;
-    const remaining = ordered - received;
+    const entered = parseInt(enteredQuantity, 10) || 0;  
+    const remaining = ordered - received - entered;
     setRemainingQuantity(remaining > 0 ? remaining : 0);
-  }, [item.quantity, item.orderedQuantity, item.receivedQuantity]);
+  }, [item.quantity, item.orderedQuantity, item.receivedQuantity, enteredQuantity]);
   
   useEffect(() => {
     setWarehouse(defaultWarehouseCode);
@@ -66,44 +81,37 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
 
   const handleQuantityChange = (e) => {
     const value = e.target.value;
-
+  
     if (value === '' || /^\d+$/.test(value)) {
-      setQuantity(value);
-      const ordered = item.quantity || item.orderedQuantity || 0;
-      const received = item.receivedQuantity || 0;
-      const remaining = ordered - received;
-
-      let error = '';
-      if (remaining <= 0) {
-        error = 'Đã nhập đủ số lượng';
-      } else if (value === '') {
-        error = 'Số lượng nhập không được để trống';
-      } else if (!isValidQuantity(value, ordered, received)) {
-        const max = Math.floor((ordered - received) * 1.01);
-        error = `Số lượng phải từ 1 đến tối đa ${max}`;
-      }
-
+      setEnteredQuantity(value);
+  
+      const ordered = item.orderedQuantity ?? item.quantity ?? 0;
+      const received = item.receivedQuantity ?? 0;
+      const entered = parseInt(value, 10) || 0;
+      const remainingQty = Math.max(ordered - received - entered, 0);
+  
+      const error = entered <= 0 || entered > (ordered - received)
+        ? `Số lượng phải từ 1 đến ${ordered - received}`
+        : '';
+  
       setQuantityError(error);
-      const remainingQty = updateRemainingQuantity(value);
-
+  
       const itemKey = item.materialId || item.productId;
       const warehouseObj = warehouses.find(w => w.warehouseCode === warehouse);
       const warehouseId = warehouseObj ? warehouseObj.warehouseId : null;
-      const warehouseErrorMessage = !warehouse ? "Chưa chọn kho nhập!" : "";
-
+  
       onDataChange(itemKey, {
         warehouse,
         warehouseId,
-        quantity: value,
+        enteredQuantity: entered,
         orderedQuantity: ordered,
         receivedQuantity: received,
         remainingQuantity: remainingQty,
-        warehouseError: warehouseErrorMessage,
+        warehouseError: !warehouse ? "Chưa chọn kho nhập!" : "",
         error
       });
     }
   };
-
   const isFullyReceived = (item.orderedQuantity - item.receivedQuantity) <= 0;
 
   return (
@@ -173,7 +181,7 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
                 type="number"
                 size="small"
                 fullWidth
-                value={quantity}
+                value={enteredQuantity}
                 onChange={handleQuantityChange}
                 slotProps={{
                   input: {
