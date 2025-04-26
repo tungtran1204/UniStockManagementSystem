@@ -23,6 +23,7 @@ import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.Purchase
 import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderDetailRepository;
 import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderRepository;
 import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderService;
+import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersService;
 import vn.unistock.unistockmanagementsystem.features.user.units.UnitRepository;
 import vn.unistock.unistockmanagementsystem.features.user.warehouse.WarehouseRepository;
 import vn.unistock.unistockmanagementsystem.security.filter.CustomUserDetails;
@@ -56,6 +57,8 @@ public class ReceiptNoteService {
     @Autowired private ReceiptNoteDetailRepository detailRepository;
     @Autowired
     private ReceiveOutsourceRepository receiveOutsourceRepository;
+    @Autowired
+    private SaleOrdersService saleOrdersService;
 
     public Page<ReceiptNoteDTO> getAllReceiptNote(int page, int size, String search, List<String> categories, String startDate, String endDate) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "receiptDate"));
@@ -144,7 +147,7 @@ public class ReceiptNoteService {
                         linkedSaleOrder = purchaseOrderService.getSaleOrderEntityFromPurchaseOrder(linkedPurchaseOrder.getPoId());
                         hasSaleOrder = true;
                         saleOrderCompleted = linkedSaleOrder.getStatus() == SalesOrder.OrderStatus.COMPLETED
-                                || linkedSaleOrder.getStatus() == SalesOrder.OrderStatus.COMPLETE_ISSUED_MATERIAL;
+                                || saleOrdersService.isSaleOrderFullyIssuedMaterial(linkedSaleOrder.getOrderId());
                         logger.debug("PurchaseOrder ID {} linked to SalesOrder ID {}, saleOrderCompleted={}",
                                 linkedPurchaseOrder.getPoId(), linkedSaleOrder.getOrderId(), saleOrderCompleted);
                     } catch (Exception ignored) {
