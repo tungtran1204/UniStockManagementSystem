@@ -334,7 +334,6 @@ const AddIssueNote = () => {
       setPartnerCode("");
       setPartnerName("");
       setPartnerId(null);
-      setCreateDate("");
       setDescription("");
       setAddress("");
       setContactName("");
@@ -346,9 +345,6 @@ const AddIssueNote = () => {
     setSoId(selectedOrder.id);
     setPartnerCode(selectedOrder.partnerCode);
     setPartnerName(selectedOrder.partnerName);
-    setCreateDate(
-      selectedOrder.orderDate ? dayjs(selectedOrder.orderDate).format("YYYY-MM-DD") : ""
-    );
     setDescription(selectedOrder.orderName || "");
     setAddress(selectedOrder.address || "");
     setContactName(selectedOrder.contactName || "");

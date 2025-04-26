@@ -52,6 +52,80 @@ const MODE_EDIT = "edit";
 const MODE_DINHMUC = "dinhMuc";
 const CUSTOMER_TYPE_ID = 1;
 
+// List status for filter and display
+const saleOrderStatuses = [
+  {
+    value: "PROCESSING",
+    label: "Chưa có yêu cầu",
+    className: "bg-gray-100 text-gray-800",
+  },
+  {
+    value: "PROCESSING_PENDING_REQUEST",
+    label: "Đang chờ yêu cầu được duyệt",
+    className: "bg-blue-50 text-blue-800",
+  },
+  {
+    value: "PROCESSING_REJECTED_REQUEST",
+    label: "Yêu cầu bị từ chối",
+    className: "bg-pink-50 text-pink-800",
+  },
+  {
+    value: "PREPARING_MATERIAL",
+    label: "Đang chuẩn bị",
+    className: "bg-yellow-100 text-amber-800",
+  },
+  {
+    value: "PARTIALLY_ISSUED",
+    label: "Đã xuất một phần",
+    className: "bg-indigo-50 text-indigo-800",
+  },
+  {
+    value: "COMPLETED",
+    label: "Đã hoàn thành",
+    className: "bg-green-50 text-green-800",
+  },
+  {
+    value: "CANCELLED",
+    label: "Đã huỷ",
+    className: "bg-red-50 text-red-800",
+  },
+];
+
+// Hàm tính toán nhãn hiển thị dựa trên status và purchaseRequestStatus
+const getDisplayLabel = (status, purchaseRequestStatus) => {
+  switch (status) {
+    case "PROCESSING":
+      switch (purchaseRequestStatus) {
+        case "NONE":
+          return "Chưa có yêu cầu";
+        case "CONFIRMED":
+          return "Yêu cầu đã được duyệt";
+        case "CANCELLED":
+          return "Yêu cầu bị từ chối";
+        case "PENDING":
+          return "Đang chờ yêu cầu được duyệt";
+        default:
+          return "Không rõ trạng thái";
+      }
+    case "PROCESSING_NO_REQUEST":
+      return "Chưa có yêu cầu";
+    case "PROCESSING_PENDING_REQUEST":
+      return "Đang chờ yêu cầu được duyệt";
+    case "PROCESSING_REJECTED_REQUEST":
+      return "Yêu cầu bị từ chối";
+    case "PREPARING_MATERIAL":
+      return "Đang chuẩn bị";
+    case "PARTIALLY_ISSUED":
+      return "Đã xuất một phần";
+    case "COMPLETED":
+      return "Đã hoàn thành";
+    case "CANCELLED":
+      return "Đã huỷ";
+    default:
+      return "Không rõ trạng thái";
+  }
+};
+
 const EditSaleOrderPage = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
@@ -162,8 +236,9 @@ const EditSaleOrderPage = () => {
           phoneNumber: orderData.phoneNumber || "",
           items: JSON.parse(JSON.stringify(loadedItems)),
           rejectionReason: orderData.rejectionReason || "",
-          statusLabel: orderData.statusLabel || "Không rõ",
+          statusLabel: getDisplayLabel(orderData.status, orderData.purchaseRequestStatus),
           status: orderData.status || "",
+          purchaseRequestStatus: orderData.purchaseRequestStatus || "",
         });
       } catch (error) {
         console.error("Lỗi khi lấy đơn hàng:", error);
@@ -533,7 +608,7 @@ const EditSaleOrderPage = () => {
                   materialCode: req.materialCode,
                   materialName: req.materialName,
                   unitName: req.unitName,
-                  quantity: w.quantity, 
+                  quantity: w.quantity,
                   warehouseId: w.warehouseId,
                   warehouseName: w.warehouseName,
                 }));
@@ -844,7 +919,7 @@ const EditSaleOrderPage = () => {
                     hiddenLabel
                     placeholder="Số lượng"
                     sx={{
-                      '& .MuiInputBase-root.Mui-disabled': {
+                      '& .muiInputBase-root.Mui-disabled': {
                         bgcolor: '#eeeeee',
                         '& .MuiOutlinedInput-notchedOutline': {
                           border: 'none',
@@ -1224,7 +1299,7 @@ const EditSaleOrderPage = () => {
                     color="success"
                     variant="outlined"
                     disabled
-                    value={originalData?.statusLabel || "Không rõ"}
+                    value={originalData ? getDisplayLabel(originalData.status, originalData.purchaseRequestStatus) : "Không rõ"}
                     sx={{
                       '& .MuiInputBase-root.Mui-disabled': {
                         bgcolor: '#eeeeee',
@@ -1550,7 +1625,7 @@ const EditSaleOrderPage = () => {
                               <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.requiredQuantity}</td>
                               <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.unitName}</td>
                               <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.totalInStock}</td>
-                              <td className="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.quantityToBuy}</td>
+                              <td Ithium="px-4 py-2 text-sm text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{mat.quantityToBuy}</td>
                             </tr>
                           ))
                         ) : (
@@ -1586,11 +1661,11 @@ const EditSaleOrderPage = () => {
                 onClick={handleCancel}
                 className="flex items-center gap-2"
               >
-                <FaArrowLeft className="h-3 w-3" /> Quay lại
+                <FaArrowLeft className早餐="h-3 w-3" /> Quay lại
               </MuiButton>
 
               <div className="flex items-center gap-2">
-                {mode === MODE_VIEW && originalData?.statusLabel !== "Đã huỷ" && activeTab === "info" && (
+                {mode === MODE_VIEW && originalData?.status !== "CANCELLED" && originalData?.status !== "COMPLETED" && activeTab === "info" && (
                   <MuiButton
                     size="medium"
                     color="error"
