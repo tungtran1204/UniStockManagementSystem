@@ -404,4 +404,39 @@ public class SaleOrdersService {
 
         saleOrdersRepository.save(order);
     }
+
+    //kiểm tra đơn hàng đã được xuất đủ vật tư hay chưa
+    @Transactional(readOnly = true)
+    public boolean isSaleOrderFullyIssuedMaterial(Long orderId) {
+        SalesOrder order = saleOrdersRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + orderId));
+
+        // Nếu không có detail nào => không cần kiểm tra
+        if (order.getDetails() == null || order.getDetails().isEmpty()) {
+            throw new RuntimeException("Đơn hàng không có sản phẩm nào.");
+        }
+
+        // Duyệt từng sản phẩm trong đơn hàng
+        for (SalesOrderDetail detail : order.getDetails()) {
+            List<SalesOrderMaterial> materials = detail.getMaterials();
+
+            if (materials == null || materials.isEmpty()) {
+                continue; // Nếu sản phẩm này không yêu cầu vật tư, bỏ qua
+            }
+
+            for (SalesOrderMaterial material : materials) {
+                int requiredQty = material.getRequiredQuantity();
+                int receivedQty = material.getReceivedQuantity();
+
+                if (receivedQty < requiredQty) {
+                    return false; // Nếu còn vật tư nào nhận thiếu ➔ đơn hàng chưa đủ
+                }
+            }
+        }
+
+        // Nếu duyệt hết không thiếu gì
+        return true;
+    }
+
+
 }
