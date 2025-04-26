@@ -140,7 +140,7 @@ export const getGoodIssueReportPaginated = ({
 //báo cáo xuất nhập tồn
 const API_URL_SM_RP = "http://localhost:8080/api/unistock/user/stockmovement";
 //const API_URL_SM_RP = `${import.meta.env.VITE_API_URL}/user/stockmovement`;
-export const getStockMovementReportPaginated = ({
+export const getStockMovementReportPaginated = async ({
   page = 0,
   size = 20,
   search = "",
@@ -161,7 +161,6 @@ export const getStockMovementReportPaginated = ({
   if (itemType) params.append("itemType", itemType);
   if (hasMovementOnly !== null) params.append("hasMovementOnly", hasMovementOnly);
 
-  // Gửi các filter số lượng
   const quantityMap = {
     beginQuantity: ["minBegin", "maxBegin"],
     inQuantity: ["minIn", "maxIn"],
@@ -177,8 +176,14 @@ export const getStockMovementReportPaginated = ({
     }
   }
 
-  return axios.get(`${API_URL_SM_RP}/report?${params.toString()}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  try {
+    const response = await axios.get(`${API_URL_SM_RP}/report?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response;
+  } catch (error) {
+    // Xử lý lỗi từ backend
+    const errorMessage = error.response?.data?.message || "Không thể tải báo cáo xuất nhập tồn. Vui lòng thử lại.";
+    throw new Error(errorMessage);
+  }
 };
-

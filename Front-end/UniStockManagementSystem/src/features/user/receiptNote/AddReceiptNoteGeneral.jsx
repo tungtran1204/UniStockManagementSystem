@@ -376,17 +376,17 @@ const AddReceiptNoteGeneral = () => {
       quantity: "",
     };
     setManualItems(prev => [...prev, newItem]);
-    setQuantityErrors(prev => ({
-      ...prev,
-      product: {
-        ...prev.product,
-        [newItem.id]: "Chưa chọn sản phẩm/vật tư!"
-      },
-      warehouse: {
-        ...prev.warehouse,
-        ...(defaultWarehouseCode ? {} : { [newItem.id]: "Chưa chọn kho nhập!" })
-      }
-    }));
+    // setQuantityErrors(prev => ({
+    //   ...prev,
+    //   product: {
+    //     ...prev.product,
+    //     [newItem.id]: "Chưa chọn sản phẩm/vật tư!"
+    //   },
+    //   warehouse: {
+    //     ...prev.warehouse,
+    //     ...(defaultWarehouseCode ? {} : { [newItem.id]: "Chưa chọn kho nhập!" })
+    //   }
+    // }));
   };
 
   const handleRemoveRow = (id) => {
@@ -506,7 +506,7 @@ const AddReceiptNoteGeneral = () => {
         grnCode: receiptCode,
         description: description || "",
         category: category,
-        receiptDate: dayjs(createdDate).startOf('day').toDate(),
+        receiptDate: dayjs(createdDate).startOf('day').format('YYYY-MM-DDTHH:mm:ss'),
         poId: isReferenceFlow ? Number(referenceDocument) : null,
         partnerId: partnerId || null,
         details: []
@@ -562,7 +562,8 @@ const AddReceiptNoteGeneral = () => {
       }
 
       console.log("Lưu thành công");
-      navigate("/user/receiptNote", { state: { successMessage: "Tạo phiếu nhập kho thành công!" } });
+      navigate("/user/receiptNote", { state: { successMessage: "Tạo phiếu nhập thành công", refresh: true } });
+
     } catch (err) {
       console.error("❌ Lỗi khi lưu phiếu nhập:", err);
       let msg = err?.response?.data?.message || err.message || "Lỗi không xác định!";
@@ -592,7 +593,7 @@ const AddReceiptNoteGeneral = () => {
       filterable: false,
       renderCell: (params) => {
         const dropdownList = getDropdownListByCategory();
-        const rowError = quantityErrors.product?.[params.id] || (!params.row.selected ? "Chưa chọn sản phẩm/vật tư!" : "");
+        const rowError = quantityErrors.product?.[params.id] || "";
         return (
           <Autocomplete
             sx={{ width: '100%', paddingY: '0.5rem' }}
