@@ -33,9 +33,9 @@ public class ReceiveOutsourceMaterial {
     @JoinColumn(name = "warehouse_id")
     private Warehouse warehouse;
 
-    @Column(name = "received_quantity", nullable = false)
+    @Column(name = "received_quantity")
     private Double receivedQuantity;
 
-    @Column(name = "remaining_quantity", nullable = false)
+    @Column(name = "remaining_quantity")
     private Double remainingQuantity;
 }

@@ -1023,6 +1023,7 @@ const AddIssueNote = () => {
               materialId: row.materialId,
               quantity: row.expectedQuantity,
               unitId: row.unitId || 1,
+              received_quantity: 0, // Set default to 0 to satisfy NOT NULL constraint
             }));
         }
       } else { // Bán hàng hoặc Sản xuất
@@ -1058,7 +1059,7 @@ const AddIssueNote = () => {
         expectedReturns: category === "Gia công" ? expectedReturnDetails : undefined,
       };
 
-      console.log("Sending payload:", payload);
+      console.log("Sending payload:", JSON.stringify(payload, null, 2));
 
       const result = await addIssueNote(payload);
       if (result) {
