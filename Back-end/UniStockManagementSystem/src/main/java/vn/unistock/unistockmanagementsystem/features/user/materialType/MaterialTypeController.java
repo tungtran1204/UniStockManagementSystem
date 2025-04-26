@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -57,5 +58,16 @@ public class MaterialTypeController {
     @GetMapping("/active")
     public ResponseEntity<List<MaterialTypeDTO>> getActiveMaterialTypes() {
         return ResponseEntity.ok(materialTypeService.getActiveMaterialTypes());
+    }
+
+    @GetMapping("/check-name/{name}")
+    public ResponseEntity<Map<String, Boolean>> checkName(
+            @PathVariable String name,
+            @RequestParam(required = false) Long excludeId
+    ) {
+        boolean exists = materialTypeService.isNameExists(name, excludeId);
+        Map<String, Boolean> response = new HashMap<>();
+        response.put("exists", exists);
+        return ResponseEntity.ok(response);
     }
 }
