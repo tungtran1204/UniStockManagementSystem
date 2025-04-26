@@ -7,54 +7,38 @@ const isValidQuantity = (inputQty, orderedQty, receivedQty) => {
   if (remaining <= 0) return false; // Đã nhập đủ hoặc dư
   const maxAllowed = Math.floor(remaining * 1.01);
   const qty = parseInt(inputQty, 10) || 0;
-  return qty >= 1 && qty <= maxAllowed;
+  return qty >= 0 && qty <= maxAllowed; // Cho phép nhập 0
 };
 
 const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage, pageSize, onDataChange }) => {
   const [warehouse, setWarehouse] = useState(defaultWarehouseCode || '');
-  const [quantity, setQuantity] = useState('');
+  const [enteredQuantity, setEnteredQuantity] = useState('');
   const [quantityError, setQuantityError] = useState('');
   const [remainingQuantity, setRemainingQuantity] = useState(0);
   const [warehouseError, setWarehouseError] = useState('');
-  const [enteredQuantity, setEnteredQuantity] = useState('');
 
   useEffect(() => {
     const ordered = item.orderedQuantity ?? item.quantity ?? 0;
     const received = item.receivedQuantity ?? 0;
     const defaultEntered = Math.max(ordered - received, 0);
-  
+
     if (item.enteredQuantity !== undefined && item.enteredQuantity !== null) {
       setEnteredQuantity(item.enteredQuantity.toString());
     } else {
       setEnteredQuantity(defaultEntered.toString());
     }
   }, [item.enteredQuantity, item.orderedQuantity, item.quantity, item.receivedQuantity]);
-  
-  
-  useEffect(() => {
-    if (item.quantity !== undefined && item.quantity !== null) {
-      setQuantity(item.quantity.toString());
-    }
-  }, [item.quantity]);
 
   useEffect(() => {
-    const ordered = item.quantity ?? item.orderedQuantity ?? 0;
+    const ordered = item.orderedQuantity ?? item.quantity ?? 0;
     const received = item.receivedQuantity ?? 0;
-    const entered = parseInt(enteredQuantity, 10) || 0;  
-    const remaining = ordered - received - entered;
+    const remaining = ordered - received;
     setRemainingQuantity(remaining > 0 ? remaining : 0);
-  }, [item.quantity, item.orderedQuantity, item.receivedQuantity, enteredQuantity]);
-  
-  useEffect(() => {
-    setWarehouse(defaultWarehouseCode);
-  }, [defaultWarehouseCode]);
+  }, [item.orderedQuantity, item.quantity, item.receivedQuantity]);
 
-  const updateRemainingQuantity = (inputQty) => {
-    const numInputQty = parseInt(inputQty, 10) || 0;
-    const remaining = Math.max(0, item.orderedQuantity - item.receivedQuantity - numInputQty);
-    setRemainingQuantity(remaining);
-    return remaining;
-  };
+  useEffect(() => {
+    setWarehouse(defaultWarehouseCode || '');
+  }, [defaultWarehouseCode]);
 
   const handleWarehouseChange = (value) => {
     setWarehouse(value);
@@ -69,7 +53,7 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
     onDataChange(itemKey, {
       warehouse: value,
       warehouseId,
-      quantity,
+      enteredQuantity: parseInt(enteredQuantity, 10) || 0,
       orderedQuantity: item.orderedQuantity,
       receivedQuantity: item.receivedQuantity,
       remainingQuantity,
@@ -77,7 +61,6 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
       error: quantityError
     });
   };
-
 
   const handleQuantityChange = (e) => {
     const value = e.target.value;
@@ -88,22 +71,25 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
       const received = item.receivedQuantity ?? 0;
       const enteredNum = parseInt(entered, 10) || 0;
       let error = '';
+
       if (enteredNum < 0) {
         error = 'Số lượng không được âm!';
-      } else if (enteredNum <= 0 || enteredNum > (ordered - received)) {
-        error = `Số lượng phải từ 1 đến ${ordered - received}`;
+      } else if (enteredNum > (ordered - received)) {
+        error = `Số lượng phải từ 0 đến ${ordered - received}`;
       }
       setQuantityError(error);
+
       const itemKey = item.materialId || item.productId;
       const warehouseObj = warehouses.find(w => w.warehouseCode === warehouse);
       const warehouseId = warehouseObj ? warehouseObj.warehouseId : null;
+
       onDataChange(itemKey, {
         warehouse,
         warehouseId,
         enteredQuantity: enteredNum,
         orderedQuantity: ordered,
         receivedQuantity: received,
-        remainingQuantity: Math.max(ordered - received - enteredNum, 0),
+        remainingQuantity: ordered - received,
         warehouseError: !warehouse ? "Chưa chọn kho nhập!" : "",
         error
       });
@@ -111,6 +97,7 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
       setQuantityError('Vui lòng nhập số nguyên dương!');
     }
   };
+
   const isFullyReceived = (item.orderedQuantity - item.receivedQuantity) <= 0;
 
   return (
@@ -136,12 +123,8 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
               noOptionsText="Không có dữ liệu"
               size="small"
               getOptionLabel={(option) => `${option.warehouseCode} - ${option.warehouseName}`}
-              value={
-                warehouses.find(w => w.warehouseCode === warehouse) || null
-              }
-              onChange={(event, selected) =>
-                handleWarehouseChange(selected?.warehouseCode || '')
-              }
+              value={warehouses.find(w => w.warehouseCode === warehouse) || null}
+              onChange={(event, selected) => handleWarehouseChange(selected?.warehouseCode || '')}
               fullWidth
               slotProps={{
                 paper: {
@@ -171,8 +154,8 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
               )}
             />
           </td>
-          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{item.quantity ?? item.orderedQuantity ?? 0}</td>
-          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{item.receivedQuantity}</td>
+          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{item.orderedQuantity ?? 0}</td>
+          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{item.receivedQuantity ?? 0}</td>
           <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{remainingQuantity}</td>
           <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-40 border-r border-[rgba(224,224,224,1)]">
             <div>
