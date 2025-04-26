@@ -81,35 +81,34 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
 
   const handleQuantityChange = (e) => {
     const value = e.target.value;
-  
     if (value === '' || /^\d+$/.test(value)) {
-      setEnteredQuantity(value);
-  
+      const entered = value === '' ? '0' : value;
+      setEnteredQuantity(entered);
       const ordered = item.orderedQuantity ?? item.quantity ?? 0;
       const received = item.receivedQuantity ?? 0;
-      const entered = parseInt(value, 10) || 0;
-      const remainingQty = Math.max(ordered - received - entered, 0);
-  
-      const error = entered <= 0 || entered > (ordered - received)
-        ? `Số lượng phải từ 1 đến ${ordered - received}`
-        : '';
-  
+      const enteredNum = parseInt(entered, 10) || 0;
+      let error = '';
+      if (enteredNum < 0) {
+        error = 'Số lượng không được âm!';
+      } else if (enteredNum <= 0 || enteredNum > (ordered - received)) {
+        error = `Số lượng phải từ 1 đến ${ordered - received}`;
+      }
       setQuantityError(error);
-  
       const itemKey = item.materialId || item.productId;
       const warehouseObj = warehouses.find(w => w.warehouseCode === warehouse);
       const warehouseId = warehouseObj ? warehouseObj.warehouseId : null;
-  
       onDataChange(itemKey, {
         warehouse,
         warehouseId,
-        enteredQuantity: entered,
+        enteredQuantity: enteredNum,
         orderedQuantity: ordered,
         receivedQuantity: received,
-        remainingQuantity: remainingQty,
+        remainingQuantity: Math.max(ordered - received - enteredNum, 0),
         warehouseError: !warehouse ? "Chưa chọn kho nhập!" : "",
         error
       });
+    } else {
+      setQuantityError('Vui lòng nhập số nguyên dương!');
     }
   };
   const isFullyReceived = (item.orderedQuantity - item.receivedQuantity) <= 0;
