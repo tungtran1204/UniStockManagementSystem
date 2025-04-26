@@ -47,7 +47,7 @@ import {
   getNextCode
 } from "./receiptNoteService";
 import { getPartnersByCodePrefix } from "../partner/partnerService";
-
+import useIssueNote from "../issueNote/useIssueNote";
 
 const AddReceiptNoteGeneral = () => {
   // region: Khai báo state và biến
@@ -112,6 +112,8 @@ const AddReceiptNoteGeneral = () => {
   const filteredWarehouses = warehouses.filter(w =>
     isReturnCategory || w.warehouseCode !== "KPL"
   );
+
+  const { fetchPendingReceiveOutsources } = useIssueNote();
 
   // region: useEffect - gọi data, set default values
   useEffect(() => {
@@ -233,14 +235,13 @@ const AddReceiptNoteGeneral = () => {
    */
   const fetchOutsourceDocuments = async () => {
     try {
-      // Ở đây demo tạm dùng chung API fetchPendingOrInProgressOrders
-      const response = await fetchPendingOrInProgressOrders();
+      const response = await fetchPendingReceiveOutsources();
       const formatted = response.map((doc) => ({
-        value: doc.id,
-        poCode: doc.code,
-        orderDate: dayjs(doc.createdDate).format("DD/MM/YYYY"),
-        supplierName: doc.partnerName,
-        details: doc.details || []
+        ...doc, // Lấy toàn bộ fields từ backend
+        label: doc.ginCode || "Không có mã XK",
+        value: doc.ginId,
+        poCode: doc.ginCode || "Không có mã XK",
+        orderDate: dayjs(doc.createdAt).format("DD/MM/YYYY"),
       }));
       setAvailableOutsourceDocs(formatted);
     } catch (err) {
@@ -274,40 +275,63 @@ const AddReceiptNoteGeneral = () => {
   };
 
   // ------------------ Khi chọn chứng từ từ modal => load chi tiết ------------------
-  const handleChooseDoc = async (selectedOrder) => {
+  const handleChooseDoc = async (selectedDoc) => {
     setIsChooseDocModalOpen(false);
-    if (!selectedOrder) return;
-    console.log("Chọn chứng từ:", selectedOrder);
-    const { poId } = selectedOrder;
-    setReferenceDocument(poId);
+    if (!selectedDoc) return;
+    console.log("Chọn chứng từ:", selectedDoc);
 
-    try {
-      const po = await getPurchaseOrderById(poId);
-      setPartnerId(po.supplierId || null);
-      setPartnerName(po.supplierName || "");
-      setAddress(po.supplierAddress || "");
-      setContactName(po.supplierContactName || "");
-      setPartnerPhone(po.supplierPhone || "");
+    setReferenceDocument(selectedDoc.value);
 
-      const defaultWarehouseCode = getDefaultWarehouse(category);//lấy kho mặc định theo category
-      const newItems = (po.details || []).map((detail, idx) => {
-        const remaining = detail.orderedQuantity - (detail.receivedQuantity || 0);
+    if (category === "Vật tư mua bán") {
+      const { poId } = selectedDoc;
+      try {
+        const po = await getPurchaseOrderById(poId);
+        setPartnerId(po.supplierId || null);
+        setPartnerName(po.supplierName || "");
+        setAddress(po.supplierAddress || "");
+        setContactName(po.supplierContactName || "");
+        setPartnerPhone(po.supplierPhone || "");
 
-        return {
-          id: idx + 1,
-          ...detail, // 👈 giữ nguyên các field như materialCode, productCode, unitName,...
-          warehouseCode: defaultWarehouseCode, // Gán kho mặc định
-          quantity: remaining > 0 ? remaining : 0,
-          remainingQuantity: remaining,
-        };
-      });
+        const defaultWarehouseCode = getDefaultWarehouse(category);
+        const newItems = (po.details || []).map((detail, idx) => {
+          const remaining = detail.orderedQuantity - (detail.receivedQuantity || 0);
 
-      setDocumentItems(newItems);
-    } catch (err) {
-      console.error("Không lấy được chi tiết PO:", err);
+          return {
+            id: idx + 1,
+            ...detail,
+            warehouseCode: defaultWarehouseCode,
+            quantity: remaining > 0 ? remaining : 0,
+            remainingQuantity: remaining,
+          };
+        });
+
+        setDocumentItems(newItems);
+      } catch (err) {
+        console.error("Không lấy được chi tiết PO:", err);
+      }
+    } else if (category === "Hàng hóa gia công") {
+      const defaultWarehouseCode = getDefaultWarehouse(category);
+
+      setPartnerId(selectedDoc.partnerId || null);
+      setPartnerName(selectedDoc.partnerName || "");
+      setAddress(selectedDoc.partnerAddress || "");
+      setContactName(selectedDoc.partnerContactName || "");
+      setPartnerPhone(selectedDoc.partnerPhone || "");
+
+      setDocumentItems((selectedDoc.materials || []).map((detail, idx) => ({
+        id: idx + 1,
+        materialCode: detail.materialCode,
+        materialName: detail.materialName,
+        unitName: detail.unitName,
+        quantity: detail.quantity || 0, // số lượng đặt
+        receivedQuantity: detail.receivedQuantity || 0,
+        remainingQuantity: detail.remainingQuantity != null ? detail.remainingQuantity : (detail.quantity || 0),
+        warehouseCode: defaultWarehouseCode,
+        materialId: detail.materialId,
+        unitId: detail.unitId,
+      })));
     }
   };
-
 
   // ------------------- Xử lý thay đổi cột quantity / warehouse / etc. -------------------
   const isQuantityValid = (value, maxRemain) => {
@@ -517,20 +541,22 @@ const AddReceiptNoteGeneral = () => {
       // Map dữ liệu chi tiết (details)
       if (isReferenceFlow) {
         payload.details = documentItems
-          .filter(row => row.remainingQuantity > 0 && Number(row.quantity) > 0)
+          .filter(row =>
+            Number(row.quantity) > 0 &&
+            row.warehouseCode &&
+            warehouses.find(w => w.warehouseCode === row.warehouseCode)
+          )
           .map(row => {
             const warehouse = warehouses.find(w => w.warehouseCode === row.warehouseCode);
-            if (!warehouse) {
-              throw new Error(`Không tìm thấy kho với code: ${row.warehouseCode}`);
-            }
             return {
               warehouseId: warehouse.warehouseId,
               materialId: row.materialId ? Number(row.materialId) : null,
               productId: row.productId ? Number(row.productId) : null,
-              quantity: Number(row.quantity),
+              quantity: Number(row.enteredQuantity),
               unitId: row.unitId ? Number(row.unitId) : null
             };
           });
+
       } else {
         payload.details = manualItems.map(row => {
           const warehouse = warehouses.find(w => w.warehouseCode === row.warehouse);
@@ -784,7 +810,7 @@ const AddReceiptNoteGeneral = () => {
           : item
       )
     );
-    
+
     // Validate mã hàng
     if (!newValue) {
       setQuantityErrors(prev => ({
@@ -1285,35 +1311,42 @@ const AddReceiptNoteGeneral = () => {
                       pageSize={pageSize}
                       onDataChange={(itemKey, data) => {
                         setDocumentItems(prevItems => prevItems.map(row => {
-                          // Kiểm tra đúng theo productId/materialId để cập nhật
                           if ((row.materialId && row.materialId === itemKey) || (row.productId && row.productId === itemKey)) {
                             return {
                               ...row,
-                              quantity: data.quantity,
-                              warehouseCode: data.warehouse,
+                              enteredQuantity: data.enteredQuantity,  // <-- Lưu số lượng nhập riêng!
+                              warehouseCode: data.warehouse,          // <-- Chỉ update warehouse
                             };
                           }
                           return row;
                         }));
-
-                        // Thực hiện validate quantity ở đây
+                        
+                        // Validate nhập kho
                         const targetRow = documentItems.find(row => (row.materialId && row.materialId === itemKey) || (row.productId && row.productId === itemKey));
                         const maxRemain = targetRow?.remainingQuantity || 0;
-                        const isValid = Number(data.quantity) > 0 && Number(data.quantity) <= maxRemain;
-
-                        if (!isValid) {
-                          setQuantityErrors(prev => ({
-                            ...prev,
-                            [targetRow.id]: `Số lượng phải từ 1 đến ${maxRemain}!`,
-                          }));
-                        } else {
-                          setQuantityErrors(prev => {
-                            const copy = { ...prev };
+                        const isQuantityValid = Number(data.enteredQuantity) > 0 && Number(data.enteredQuantity) <= maxRemain;
+                      
+                        const isWarehouseValid = data.warehouse && data.warehouse.trim() !== "";
+                      
+                        setQuantityErrors(prev => {
+                          const copy = { ...prev };
+                      
+                          if (!isQuantityValid) {
+                            copy[targetRow.id] = `Số lượng phải từ 1 đến ${maxRemain}!`;
+                          } else {
                             delete copy[targetRow.id];
-                            return copy;
-                          });
-                        }
+                          }
+                      
+                          if (!isWarehouseValid) {
+                            copy[`warehouse_${targetRow.id}`] = "Chưa chọn kho nhập!";
+                          } else {
+                            delete copy[`warehouse_${targetRow.id}`];
+                          }
+                      
+                          return copy;
+                        });
                       }}
+                      
                       errorMessage={quantityErrors[item.id]}
                     />
                   ))}
@@ -1436,6 +1469,7 @@ const AddReceiptNoteGeneral = () => {
         <ModalChooseOrder
           onClose={() => setIsChooseDocModalOpen(false)}
           onOrderSelected={handleChooseDoc}
+          category={category}
         />
       )}
     </div>

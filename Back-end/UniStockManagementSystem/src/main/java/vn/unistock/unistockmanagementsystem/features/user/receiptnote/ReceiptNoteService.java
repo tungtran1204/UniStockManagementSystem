@@ -16,6 +16,7 @@ import vn.unistock.unistockmanagementsystem.entities.*;
 import vn.unistock.unistockmanagementsystem.features.admin.user.UserRepository;
 import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryRepository;
 import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryTransactionRepository;
+import vn.unistock.unistockmanagementsystem.features.user.issueNote.ReceiveOutsourceRepository;
 import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.products.ProductsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderDTO;
@@ -53,6 +54,8 @@ public class ReceiptNoteService {
     @Autowired private ReceiptNoteDetailViewMapper detailViewMapper;
     @Autowired private PurchaseOrderDetailRepository purchaseOrderDetailRepository;
     @Autowired private ReceiptNoteDetailRepository detailRepository;
+    @Autowired
+    private ReceiveOutsourceRepository receiveOutsourceRepository;
 
     public Page<ReceiptNoteDTO> getAllReceiptNote(int page, int size, String search, List<String> categories, String startDate, String endDate) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "receiptDate"));
@@ -173,7 +176,8 @@ public class ReceiptNoteService {
                     updateInventoryAndTransaction(warehouse, material, null, detailDto.getQuantity(), hasSaleOrder, saleOrderCompleted, linkedSaleOrder, grn);
 
                     // Cập nhật PurchaseOrderDetail nếu có poId
-                    if (grnDto.getPoId() != null) {
+                    // Nếu là Vật tư mua bán => cập nhật đơn mua
+                    if ("Vật tư mua bán".equals(grnDto.getCategory()) && grnDto.getPoId() != null) {
                         PurchaseOrderDetail pod = purchaseOrderDetailRepository.findByPurchaseOrderPoId(grnDto.getPoId()).stream()
                                 .filter(d -> d.getMaterial().getMaterialId().equals(detailDto.getMaterialId()))
                                 .findFirst()
@@ -181,6 +185,31 @@ public class ReceiptNoteService {
                         pod.setReceivedQuantity(pod.getReceivedQuantity() + detailDto.getQuantity().intValue());
                         purchaseOrderDetailRepository.save(pod);
                     }
+
+                    // Nếu nhập hàng hóa gia công
+                    if ("Hàng hóa gia công".equals(grnDto.getCategory()) && grnDto.getPoId() != null) {
+                        ReceiveOutsource outsource = receiveOutsourceRepository.findById(grnDto.getPoId())
+                                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn gia công với ID: " + grnDto.getPoId()));
+
+                        if (detailDto.getMaterialId() != null) {
+                            ReceiveOutsourceMaterial materialDetail = outsource.getMaterials().stream()
+                                    .filter(m -> m.getMaterial().getMaterialId().equals(detailDto.getMaterialId()))
+                                    .findFirst()
+                                    .orElseThrow(() -> new RuntimeException("Không tìm thấy vật tư trong đơn gia công"));
+
+                            double newReceived = (materialDetail.getReceivedQuantity() != null ? materialDetail.getReceivedQuantity() : 0) + detailDto.getQuantity();
+                            materialDetail.setReceivedQuantity(newReceived);
+                            materialDetail.setRemainingQuantity(materialDetail.getQuantity() - newReceived);
+
+                            boolean allReceived = outsource.getMaterials().stream()
+                                    .allMatch(m -> (m.getRemainingQuantity() == null || m.getRemainingQuantity() <= 0));
+                            outsource.setStatus(allReceived ? ReceiveOutsource.OutsourceStatus.COMPLETED : ReceiveOutsource.OutsourceStatus.IN_PROGRESS);
+
+                            receiveOutsourceRepository.save(outsource);
+                        }
+                    }
+
+
                 } else if (detailDto.getProductId() != null) {
                     Product product = productRepository.findById(detailDto.getProductId())
                             .orElseThrow(() -> new RuntimeException("Product not found with ID: " + detailDto.getProductId()));

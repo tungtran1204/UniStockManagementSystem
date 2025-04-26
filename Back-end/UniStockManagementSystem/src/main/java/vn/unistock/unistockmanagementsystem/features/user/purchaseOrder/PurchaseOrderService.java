@@ -81,6 +81,7 @@ public class PurchaseOrderService {
             orderDTO.setSupplierName(order.getPartner().getPartnerName());
             orderDTO.setSupplierAddress(order.getPartner().getAddress());
             orderDTO.setSupplierPhone(order.getPartner().getPhone());
+            orderDTO.setSupplierContactName(order.getPartner().getContactName());
         }
 
         // Tải chi tiết đơn hàng từ repository riêng biệt với join fetch
