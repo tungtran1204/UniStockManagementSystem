@@ -8,7 +8,7 @@ import dayjs from "dayjs";
 import { fetchPendingOrInProgressOrders, getPurchaseOrderById } from "../purchaseOrder/purchaseOrderService";
 import ProductRow from "../receiptNote/ProductRow";
 
-const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
+const ModalChooseOrder = ({ onClose, onOrderSelected, category }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -19,17 +19,24 @@ const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const data = await fetchPendingOrInProgressOrders();
+        let data = [];
+        if (category === "Hàng hóa gia công") {
+          const { getPendingOrInProgressReceiveOutsources } = await import("../issueNote/issueNoteService");
+          data = await getPendingOrInProgressReceiveOutsources();
+        } else {
+          const { fetchPendingOrInProgressOrders } = await import("../purchaseOrder/purchaseOrderService");
+          data = await fetchPendingOrInProgressOrders();
+        }
         setPurchaseOrders(data);
       } catch (error) {
-        console.error("Lỗi khi tải đơn mua hàng:", error);
+        console.error("Lỗi khi tải chứng từ:", error);
       }
       setLoading(false);
     };
-
+  
     fetchData();
-  }, []);
-
+  }, [category]);
+  
   const handlePageChange = ({ selected }) => {
     setCurrentPage(selected);
   };
@@ -44,12 +51,19 @@ const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
     }
   };
 
-  const mappedOrders = purchaseOrders.map((order) => ({
-    id: order.poId,
-    code: order.poCode || "N/A",
-    customer: order.supplierName || "N/A",
-    date: order.orderDate || null,
-  }));
+  const mappedOrders = purchaseOrders.map((order) => {
+    const isOutsource = !!order.outsourceId;
+    const code = isOutsource
+      ? (order.ginId ? `XK${String(order.ginId).padStart(5, '0')}` : "Không có mã XK")
+      : (order.poCode || "Không có mã PO");
+  
+    return {
+      id: order.poId || order.outsourceId || `row_${Math.random()}`,
+      code,
+      customer: order.supplierName || order.partnerName || "N/A",
+      date: order.orderDate || order.createdAt || null,
+    };
+  });  
 
   const filteredOrders = mappedOrders.filter(
     (order) =>
@@ -63,8 +77,8 @@ const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
   );
 
   const columnsConfig = [
-    { field: "code", headerName: "Mã đơn hàng", flex: 0.8, minWidth: 80 },
-    { field: "customer", headerName: "Khách hàng", flex: 3, minWidth: 200 },
+    { field: "code", headerName: "Mã đơn", flex: 0.8, minWidth: 80 },
+    { field: "customer", headerName: "Đối tác", flex: 3, minWidth: 200 },
     {
       field: "date",
       headerName: "Ngày tạo",
@@ -106,7 +120,7 @@ const ModalChooseOrder = ({ onClose, onOrderSelected }) => {
         }}
       >
         <Typography variant="h6" mb={2}>
-          Chọn đơn mua hàng
+          Chọn chứng từ 
         </Typography>
 
         <div className="py-2 flex items-center justify-between gap-2">

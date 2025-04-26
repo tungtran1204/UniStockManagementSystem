@@ -47,7 +47,7 @@ import {
   getNextCode
 } from "./receiptNoteService";
 import { getPartnersByCodePrefix } from "../partner/partnerService";
-
+import { fetchPendingReceiveOutsources } from "../issueNote/issueNoteService"; 
 
 const AddReceiptNoteGeneral = () => {
   // region: Khai báo state và biến
@@ -233,20 +233,20 @@ const AddReceiptNoteGeneral = () => {
    */
   const fetchOutsourceDocuments = async () => {
     try {
-      // Ở đây demo tạm dùng chung API fetchPendingOrInProgressOrders
-      const response = await fetchPendingOrInProgressOrders();
+      const response = await fetchPendingReceiveOutsources();  // 💥 Đổi từ fetchPendingOrInProgressOrders thành fetchPendingReceiveOutsources
       const formatted = response.map((doc) => ({
-        value: doc.id,
-        poCode: doc.code,
-        orderDate: dayjs(doc.createdDate).format("DD/MM/YYYY"),
+        value: doc.outsourceId,
+        poCode: doc.ginId ? `XK${String(doc.ginId).padStart(5, '0')}` : "Không có mã XK",
+        orderDate: dayjs(doc.createdAt).format("DD/MM/YYYY"),
         supplierName: doc.partnerName,
-        details: doc.details || []
+        details: doc.materials || [],
       }));
       setAvailableOutsourceDocs(formatted);
     } catch (err) {
       console.error("Không lấy được danh sách chứng từ gia công:", err);
     }
   };
+  
 
   /**
    * Lấy danh sách đối tác Gia công
@@ -274,41 +274,58 @@ const AddReceiptNoteGeneral = () => {
   };
 
   // ------------------ Khi chọn chứng từ từ modal => load chi tiết ------------------
-  const handleChooseDoc = async (selectedOrder) => {
+  const handleChooseDoc = async (selectedDoc) => {
     setIsChooseDocModalOpen(false);
-    if (!selectedOrder) return;
-    console.log("Chọn chứng từ:", selectedOrder);
-    const { poId } = selectedOrder;
-    setReferenceDocument(poId);
-
-    try {
-      const po = await getPurchaseOrderById(poId);
-      setPartnerId(po.supplierId || null);
-      setPartnerName(po.supplierName || "");
-      setAddress(po.supplierAddress || "");
-      setContactName(po.supplierContactName || "");
-      setPartnerPhone(po.supplierPhone || "");
-
-      const defaultWarehouseCode = getDefaultWarehouse(category);//lấy kho mặc định theo category
-      const newItems = (po.details || []).map((detail, idx) => {
-        const remaining = detail.orderedQuantity - (detail.receivedQuantity || 0);
-
-        return {
-          id: idx + 1,
-          ...detail, // 👈 giữ nguyên các field như materialCode, productCode, unitName,...
-          warehouseCode: defaultWarehouseCode, // Gán kho mặc định
-          quantity: remaining > 0 ? remaining : 0,
-          remainingQuantity: remaining,
-        };
-      });
-
-      setDocumentItems(newItems);
-    } catch (err) {
-      console.error("Không lấy được chi tiết PO:", err);
+    if (!selectedDoc) return;
+    console.log("Chọn chứng từ:", selectedDoc);
+  
+    setReferenceDocument(selectedDoc.value);
+  
+    if (category === "Vật tư mua bán") {
+      const { poId } = selectedDoc;
+      try {
+        const po = await getPurchaseOrderById(poId);
+        setPartnerId(po.supplierId || null);
+        setPartnerName(po.supplierName || "");
+        setAddress(po.supplierAddress || "");
+        setContactName(po.supplierContactName || "");
+        setPartnerPhone(po.supplierPhone || "");
+  
+        const defaultWarehouseCode = getDefaultWarehouse(category);
+        const newItems = (po.details || []).map((detail, idx) => {
+          const remaining = detail.orderedQuantity - (detail.receivedQuantity || 0);
+  
+          return {
+            id: idx + 1,
+            ...detail,
+            warehouseCode: defaultWarehouseCode,
+            quantity: remaining > 0 ? remaining : 0,
+            remainingQuantity: remaining,
+          };
+        });
+  
+        setDocumentItems(newItems);
+      } catch (err) {
+        console.error("Không lấy được chi tiết PO:", err);
+      }
+    } else if (category === "Hàng hóa gia công") {
+      // 💥 Với gia công, không cần fetch lại từ server
+      const defaultWarehouseCode = getDefaultWarehouse(category);
+      setPartnerName(selectedDoc.supplierName || "");
+      setDocumentItems((selectedDoc.details || []).map((detail, idx) => ({
+        id: idx + 1,
+        materialCode: detail.materialCode,
+        materialName: detail.materialName,
+        unitName: detail.unitName,
+        quantity: detail.quantity || 0,
+        remainingQuantity: detail.quantity || 0,
+        warehouseCode: defaultWarehouseCode,
+        materialId: detail.materialId,
+        unitId: detail.unitId,
+      })));
     }
   };
-
-
+  
   // ------------------- Xử lý thay đổi cột quantity / warehouse / etc. -------------------
   const isQuantityValid = (value, maxRemain) => {
     const numValue = Number(value);
