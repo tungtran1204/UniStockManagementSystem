@@ -186,7 +186,7 @@ const PurchaseRequestPage = () => {
     const columnsConfig = [
         { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
         { field: 'purchaseRequestCode', headerName: 'Mã yêu cầu', flex: 1.5, minWidth: 150, editable: false, filterable: false },
-        { field: 'purchaseOrderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false, filterable: false, renderCell: (params) => params.value || "Chưa có" },
+        { field: 'purchaseOrderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false, filterable: false, renderCell: (params) => params.value || "-" },
         {
             field: 'createdDate',
             headerName: 'Ngày tạo yêu cầu',
