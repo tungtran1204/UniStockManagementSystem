@@ -21,4 +21,5 @@ public interface ProductsRepository extends JpaRepository<Product, Long> {
     Page<Product> findByIsProductionActiveTrue(Pageable pageable);
     @Query("SELECT p FROM Product p WHERE :search IS NULL OR p.productCode LIKE %:search% OR p.productName LIKE %:search%")
     List<Product> findByCodeOrName(@Param("search") String search);
+
 }

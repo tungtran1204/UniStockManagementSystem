@@ -230,8 +230,8 @@ public class IssueNoteService {
                             .flatMap(detail -> detail.getMaterials().stream())
                             .allMatch(mat -> mat.getReceivedQuantity() >= mat.getRequiredQuantity());
                     if (allMaterialsFulfilled) {
-                        salesOrder.setStatus(SalesOrder.OrderStatus.COMPLETED);
-                        logger.debug("SalesOrder ID {} updated to COMPLETED (all materials fulfilled)", salesOrder.getOrderId());
+//                        salesOrder.setStatus(SalesOrder.OrderStatus.COMPLETE_ISSUED_MATERIAL);
+                        logger.debug("SalesOrder ID {} updated to COMPLETE_ISSUED_MATERIAL (all materials fulfilled)", salesOrder.getOrderId());
                     } else if (isFirstIssuance) {
                         salesOrder.setStatus(SalesOrder.OrderStatus.PARTIALLY_ISSUED);
                         logger.debug("SalesOrder ID {} updated to PARTIALLY_ISSUED (first material issuance)", salesOrder.getOrderId());
@@ -265,6 +265,124 @@ public class IssueNoteService {
                     if (allProductsFulfilled) {
                         salesOrder.setStatus(SalesOrder.OrderStatus.COMPLETED);
                         logger.debug("SalesOrder ID {} updated to COMPLETED (all products fulfilled)", salesOrder.getOrderId());
+                        // Cập nhật Inventory: chuyển RESERVED thành AVAILABLE và cộng dồn số lượng
+                        List<SalesOrderDetail> orderDetails = salesOrder.getDetails();
+                        // Cập nhật Inventory cho Product
+                        for (SalesOrderDetail detail : orderDetails) {
+                            Product product = detail.getProduct();
+                            double quantityToRelease = detail.getQuantity();
+                            // Lấy tất cả bản ghi RESERVED cho Product
+                            List<Inventory> reservedInventories = inventoryRepository.findByProductIdAndStatus(
+                                    product.getProductId(), Inventory.InventoryStatus.RESERVED);
+                            // Nhóm số lượng theo Warehouse
+                            Map<Long, Double> warehouseQuantities = new HashMap<>();
+                            for (Inventory inventory : reservedInventories) {
+                                if (quantityToRelease <= 0) break;
+                                double quantityInInventory = inventory.getQuantity();
+                                double quantityToReleaseFromThis = Math.min(quantityInInventory, quantityToRelease);
+                                Long warehouseId = inventory.getWarehouse().getWarehouseId();
+                                warehouseQuantities.merge(warehouseId, quantityToReleaseFromThis, Double::sum);
+                                quantityToRelease -= quantityToReleaseFromThis;
+                            }
+                            // Cộng dồn số lượng vào bản ghi AVAILABLE cho mỗi Warehouse
+                            for (Map.Entry<Long, Double> entry : warehouseQuantities.entrySet()) {
+                                Long warehouseId = entry.getKey();
+                                double releasedQuantity = entry.getValue();
+                                Warehouse warehouse = reservedInventories.stream()
+                                        .filter(inv -> inv.getWarehouse().getWarehouseId().equals(warehouseId))
+                                        .findFirst()
+                                        .map(Inventory::getWarehouse)
+                                        .orElseThrow(() -> new RuntimeException("Warehouse not found for warehouseId: " + warehouseId));
+                                // Tìm hoặc tạo bản ghi AVAILABLE
+                                Inventory availableInventory = inventoryRepository.findByWarehouseAndProductAndStatus(
+                                                warehouse, product, Inventory.InventoryStatus.AVAILABLE)
+                                        .orElse(null);
+                                if (availableInventory == null) {
+                                    availableInventory = Inventory.builder()
+                                            .warehouse(warehouse)
+                                            .product(product)
+                                            .status(Inventory.InventoryStatus.AVAILABLE)
+                                            .quantity(0.0)
+                                            .build();
+                                }
+                                availableInventory.setQuantity(availableInventory.getQuantity() + releasedQuantity);
+                                availableInventory.setLastUpdated(LocalDateTime.now());
+                                availableInventory.setSalesOrder(null);
+                                inventoryRepository.save(availableInventory);
+                                logger.debug("Updated Inventory for Product ID {} in Warehouse ID {}: Added {} to AVAILABLE, salesOrder removed",
+                                        product.getProductId(), warehouseId, releasedQuantity);
+                                // Xóa các bản ghi RESERVED cho Warehouse này
+                                List<Inventory> reservedToDelete = reservedInventories.stream()
+                                        .filter(inv -> inv.getWarehouse().getWarehouseId().equals(warehouseId))
+                                        .toList();
+                                inventoryRepository.deleteAll(reservedToDelete);
+                                logger.debug("Deleted {} RESERVED Inventory records for Product ID {} in Warehouse ID {}",
+                                        reservedToDelete.size(), product.getProductId(), warehouseId);
+                            }
+                            if (quantityToRelease > 0) {
+                                logger.warn("Insufficient RESERVED inventory for Product ID {}: {} units remaining",
+                                        product.getProductId(), quantityToRelease);
+                            }
+                        }
+                        // Cập nhật Inventory cho Material
+                        for (SalesOrderDetail detail : orderDetails) {
+                            for (SalesOrderMaterial salesOrderMaterial : detail.getMaterials()) {
+                                Material material = salesOrderMaterial.getMaterial();
+                                double quantityToRelease = salesOrderMaterial.getRequiredQuantity();
+                                // Lấy tất cả bản ghi RESERVED cho Material
+                                List<Inventory> reservedInventories = inventoryRepository.findByMaterialIdAndStatus(
+                                        material.getMaterialId(), Inventory.InventoryStatus.RESERVED);
+                                // Nhóm số lượng theo Warehouse
+                                Map<Long, Double> warehouseQuantities = new HashMap<>();
+                                for (Inventory inventory : reservedInventories) {
+                                    if (quantityToRelease <= 0) break;
+                                    double quantityInInventory = inventory.getQuantity();
+                                    double quantityToReleaseFromThis = Math.min(quantityInInventory, quantityToRelease);
+                                    Long warehouseId = inventory.getWarehouse().getWarehouseId();
+                                    warehouseQuantities.merge(warehouseId, quantityToReleaseFromThis, Double::sum);
+                                    quantityToRelease -= quantityToReleaseFromThis;
+                                }
+                                // Cộng dồn số lượng vào bản ghi AVAILABLE cho mỗi Warehouse
+                                for (Map.Entry<Long, Double> entry : warehouseQuantities.entrySet()) {
+                                    Long warehouseId = entry.getKey();
+                                    double releasedQuantity = entry.getValue();
+                                    Warehouse warehouse = reservedInventories.stream()
+                                            .filter(inv -> inv.getWarehouse().getWarehouseId().equals(warehouseId))
+                                            .findFirst()
+                                            .map(Inventory::getWarehouse)
+                                            .orElseThrow(() -> new RuntimeException("Warehouse not found for warehouseId: " + warehouseId));
+                                    // Tìm hoặc tạo bản ghi AVAILABLE
+                                    Inventory availableInventory = inventoryRepository.findByWarehouseAndMaterialAndStatus(
+                                                    warehouse, material, Inventory.InventoryStatus.AVAILABLE)
+                                            .orElse(null);
+                                    if (availableInventory == null) {
+                                        availableInventory = Inventory.builder()
+                                                .warehouse(warehouse)
+                                                .material(material)
+                                                .status(Inventory.InventoryStatus.AVAILABLE)
+                                                .quantity(0.0)
+                                                .build();
+                                    }
+                                    availableInventory.setQuantity(availableInventory.getQuantity() + releasedQuantity);
+                                    availableInventory.setLastUpdated(LocalDateTime.now());
+                                    availableInventory.setSalesOrder(null);
+                                    inventoryRepository.save(availableInventory);
+                                    logger.debug("Updated Inventory for Material ID {} in Warehouse ID {}: Added {} to AVAILABLE, salesOrder removed",
+                                            material.getMaterialId(), warehouseId, releasedQuantity);
+                                    // Xóa các bản ghi RESERVED cho Warehouse này
+                                    List<Inventory> reservedToDelete = reservedInventories.stream()
+                                            .filter(inv -> inv.getWarehouse().getWarehouseId().equals(warehouseId))
+                                            .toList();
+                                    inventoryRepository.deleteAll(reservedToDelete);
+                                    logger.debug("Deleted {} RESERVED Inventory records for Material ID {} in Warehouse ID {}",
+                                            reservedToDelete.size(), material.getMaterialId(), warehouseId);
+                                }
+                                if (quantityToRelease > 0) {
+                                    logger.warn("Insufficient RESERVED inventory for Material ID {}: {} units remaining",
+                                            material.getMaterialId(), quantityToRelease);
+                                }
+                            }
+                        }
                     } else if (isFirstIssuance) {
                         salesOrder.setStatus(SalesOrder.OrderStatus.PARTIALLY_ISSUED);
                         logger.debug("SalesOrder ID {} updated to PARTIALLY_ISSUED (first issuance)", salesOrder.getOrderId());
