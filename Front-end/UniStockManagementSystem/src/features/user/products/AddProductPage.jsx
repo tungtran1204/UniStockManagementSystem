@@ -160,20 +160,29 @@ const AddProductPage = () => {
     };
 
     const handleAddRow = () => {
-        setProductMaterials((prev) => [
-            ...prev,
-            {
-                id: nextId,
-                materialId: "",
-                materialCode: "",
-                materialName: "",
-                unitName: "",
-                quantity: 1,
-            },
-        ]);
+        setProductMaterials((prev) => {
+            const newMaterials = [
+                ...prev,
+                {
+                    id: nextId,
+                    materialId: "",
+                    materialCode: "",
+                    materialName: "",
+                    unitName: "",
+                    quantity: 1,
+                }
+            ];
+            // ✨ Sau khi thêm dòng ➔ tính trang mới
+            const totalRecords = newMaterials.length;
+            const newPage = Math.floor((totalRecords - 1) / pageSize);
+            setCurrentPage(newPage);
+
+            return newMaterials;
+        });
         setNextId((prev) => prev + 1);
-        setBillOfMaterialsError(""); // Reset thông báo lỗi khi thêm dòng mới
+        setBillOfMaterialsError(""); // Reset lỗi nếu có
     };
+
 
     const handleRemoveAllRows = () => {
         setProductMaterials([]);
@@ -827,7 +836,10 @@ const AddProductPage = () => {
                             </Typography>
                         )}
 
-                        <Table data={data} columnsConfig={columnsConfig} enableSelection={false} />
+                        <Table data={getPaginatedData().map((item, index) => ({
+                            ...item,
+                            index: currentPage * pageSize + index + 1 // Cập nhật lại STT
+                        }))} columnsConfig={columnsConfig} enableSelection={false} />
 
                         {filteredTableMaterials.length > 0 && (
                             <div className="flex items-center justify-between border-t border-blue-gray-50 pt-4">
