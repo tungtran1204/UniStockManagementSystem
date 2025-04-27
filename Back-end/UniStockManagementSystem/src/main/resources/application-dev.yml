@@ -2,8 +2,8 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/unistock?createDatabaseIfNotExist=true
     username: root
-    password: 12345
-#    url: jdbc:mysql://unistock.mysql.database.azure.com/unistock?sslMode=REQUIRED
+    password: 1234
+#    url: jdbc:mysql://unistock.mysql.database.azure.com/unistock2?sslMode=REQUIRED
 #    username: uniadmin
 #    password: tst120403@
     driver-class-name: com.mysql.cj.jdbc.Driver

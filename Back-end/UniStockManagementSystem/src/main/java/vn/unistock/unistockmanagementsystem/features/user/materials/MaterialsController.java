@@ -80,7 +80,7 @@ public class MaterialsController {
         materialDTO.setIsUsing(isUsingActive);
         materialDTO.setSupplierIds(supplierIds);
 
-        MaterialsDTO createdMaterialDTO = materialsService.createMaterial(materialDTO, "Admin", image);
+        MaterialsDTO createdMaterialDTO = materialsService.createMaterial(materialDTO, image);
         return ResponseEntity.ok(createdMaterialDTO);
     }
 
