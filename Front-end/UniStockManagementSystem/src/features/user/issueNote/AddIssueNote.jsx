@@ -762,23 +762,6 @@ const AddIssueNote = () => {
               <td className="px-3 py-2 border-r text-sm">{wh.warehouseName || " "}</td>
               <td className="px-3 py-2 border-r text-sm text-right">{wh.quantity}</td>
               <td className="px-3 py-2 border-r text-sm w-24">
-                {/* <input
-                  type="number"
-                  className="border p-1 text-right w-[60px]"
-                  value={wh.exportQuantity || 0}
-                  max={maxExport}
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
-                    if (val > maxExport) return;
-                    setProducts(prev => prev.map(p => {
-                      if (p.id === mat.id) {
-                        const inStock = p.inStock.map((ins, i) => i === whIndex ? { ...ins, exportQuantity: val } : ins);
-                        return { ...p, inStock };
-                      }
-                      return p;
-                    }));
-                  }}
-                /> */}
                 <div style={{ width: "100%" }}>
                   <TextField
                     type="number"
@@ -1260,7 +1243,7 @@ const AddIssueNote = () => {
             console.log("Upload result:", uploadResult);
           } catch (uploadError) {
             console.error("Error uploading paper evidence:", uploadError);
-            alert("Lưu phiếu xuất thành công, nhưng lỗi khi tải file đính kèm!");
+            console.log("Lưu phiếu xuất thành công, nhưng lỗi khi tải file đính kèm!");
           }
         }
         navigate("/user/issueNote", { state: { successMessage: "Tạo phiếu xuất kho thành công!" } });

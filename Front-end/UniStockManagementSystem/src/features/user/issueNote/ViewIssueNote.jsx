@@ -406,6 +406,7 @@ const ViewIssueNote = () => {
                 )}
               </div>
             )}
+            
             {data.category === "Sản xuất" && data.receiver && (
               <div>
                 <Typography variant="medium" className="mb-1 text-black">
