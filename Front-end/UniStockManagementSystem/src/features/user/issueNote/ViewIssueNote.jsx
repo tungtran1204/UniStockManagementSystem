@@ -406,6 +406,28 @@ const ViewIssueNote = () => {
                 )}
               </div>
             )}
+            {data.category === "Sản xuất" && data.receiver && (
+              <div>
+                <Typography variant="medium" className="mb-1 text-black">
+                  Người nhận
+                </Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  color="success"
+                  variant="outlined"
+                  disabled
+                  value={data.receiver}
+                  sx={{
+                    '& .MuiInputBase-root.Mui-disabled': {
+                      bgcolor: '#eeeeee',
+                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                    },
+                  }}
+                />
+              </div>
+            )}
+
             <div>
               <Typography variant="medium" className="mb-1 text-black">
                 File đính kèm
@@ -447,27 +469,6 @@ const ViewIssueNote = () => {
                 showDownload={true}
               />
             </div>
-            {data.category === "Sản xuất" && data.receiver && (
-              <div>
-                <Typography variant="medium" className="mb-1 text-black">
-                  Người nhận
-                </Typography>
-                <TextField
-                  fullWidth
-                  size="small"
-                  color="success"
-                  variant="outlined"
-                  disabled
-                  value={data.receiver}
-                  sx={{
-                    '& .MuiInputBase-root.Mui-disabled': {
-                      bgcolor: '#eeeeee',
-                      '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
-                    },
-                  }}
-                />
-              </div>
-            )}
             {["Gia công", "Trả lại hàng mua"].includes(data.category) && data.partnerName && (
               <>
                 <div>

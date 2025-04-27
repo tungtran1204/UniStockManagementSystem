@@ -44,6 +44,7 @@ import { getSaleOrders, uploadPaperEvidence } from "./issueNoteService";
 import { getTotalQuantityOfMaterial } from "./issueNoteService";
 import { getTotalQuantityOfProduct } from "./issueNoteService";
 import { getProducts } from "../saleorders/saleOrdersService"; // Giả định có service này để lấy danh sách sản phẩm
+import { getWarehouseList } from "../warehouse/warehouseService";
 
 import useIssueNote from "./useIssueNote";
 
@@ -172,7 +173,7 @@ const AddIssueNote = () => {
   // ------------------ Lấy danh sách kho ------------------
   const fetchWarehouses = async () => {
     try {
-      const response = await getWarehouses(); // Giả định API trả về danh sách kho
+      const response = await getWarehouseList(); // Giả định API trả về danh sách kho
       if (response && response.content) {
         const mapped = response.content.map((wh) => ({
           id: wh.warehouseId,
@@ -341,7 +342,6 @@ const AddIssueNote = () => {
       setPartnerCode("");
       setPartnerName("");
       setPartnerId(null);
-      setCreateDate("");
       setDescription("");
       setAddress("");
       setContactName("");
@@ -353,9 +353,6 @@ const AddIssueNote = () => {
     setSoId(selectedOrder.id);
     setPartnerCode(selectedOrder.partnerCode);
     setPartnerName(selectedOrder.partnerName);
-    setCreateDate(
-      selectedOrder.orderDate ? dayjs(selectedOrder.orderDate).format("YYYY-MM-DD") : ""
-    );
     setDescription(selectedOrder.orderName || "");
     setAddress(selectedOrder.address || "");
     setContactName(selectedOrder.contactName || "");
@@ -765,7 +762,7 @@ const AddIssueNote = () => {
               <td className="px-3 py-2 border-r text-sm">{wh.warehouseName || " "}</td>
               <td className="px-3 py-2 border-r text-sm text-right">{wh.quantity}</td>
               <td className="px-3 py-2 border-r text-sm w-24">
-                <input
+                {/* <input
                   type="number"
                   className="border p-1 text-right w-[60px]"
                   value={wh.exportQuantity || 0}
@@ -781,34 +778,73 @@ const AddIssueNote = () => {
                       return p;
                     }));
                   }}
-                />
-                {/* <div style={{ width: "100%" }}>
+                /> */}
+                <div style={{ width: "100%" }}>
                   <TextField
                     type="number"
                     size="small"
                     color="success"
-                    // error={!!rowError}
+                    error={!!wh.error}
                     value={wh.exportQuantity || 0}
                     placeholder="0"
                     onChange={(e) => {
-                    const val = Number(e.target.value);
-                    if (val > maxExport) return;
-                    setProducts(prev => prev.map(p => {
-                      if (p.id === mat.id) {
-                        const inStock = p.inStock.map((ins, i) => i === whIndex ? { ...ins, exportQuantity: val } : ins);
-                        return { ...p, inStock };
+                      const val = Number(e.target.value);
+                      if (val > maxExport) {
+                        setProducts((prev) =>
+                          prev.map((p) => {
+                            if (p.id === mat.id) {
+                              const newInStock = p.inStock.map((ins, i) => {
+                                if (i === whIndex) {
+                                  return {
+                                    ...ins,
+                                    error: `Số lượng xuất không được vượt quá Tồn kho (${wh.quantity})!`
+                                  };
+                                }
+                                return ins;
+                              });
+                              return { ...p, inStock: newInStock };
+                            }
+                            return p;
+                          })
+                        );
+                        return;
                       }
-                      return p;
-                    }));
-                  }}
+                      if (val <= 0) {
+                        setProducts((prev) =>
+                          prev.map((p) => {
+                            if (p.id === mat.id) {
+                              const newInStock = p.inStock.map((ins, i) => {
+                                if (i === whIndex) {
+                                  return {
+                                    ...ins,
+                                    error: "Số lượng phải lớn hơn 0!"
+                                  };
+                                }
+                                return ins;
+                              });
+                              return { ...p, inStock: newInStock };
+                            }
+                            return p;
+                          })
+                        );
+                        return;
+                      }
+                      setProducts(prev => prev.map(p => {
+                        if (p.id === mat.id) {
+                          const inStock = p.inStock.map((ins, i) => i === whIndex ? { ...ins, exportQuantity: val, error: "" } : ins);
+                          return { ...p, inStock };
+                        }
+                        return p;
+                      }));
+                    }}
                     style={{ width: '100%' }}
                   />
-                  {rowError && (
+                  {wh.error && (
                     <Typography className="text-xs text-red-500 mt-1">
-                      {rowError}
+                      {wh.error}
                     </Typography>
                   )}
-                </div> */}
+                </div>
               </td>
               {isFirstRow && (
                 <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm">
@@ -1174,6 +1210,7 @@ const AddIssueNote = () => {
               materialId: row.materialId,
               quantity: row.expectedQuantity,
               unitId: row.unitId || 1,
+              received_quantity: 0, // Set default to 0 to satisfy NOT NULL constraint
             }));
         }
       } else { // Bán hàng hoặc Sản xuất
@@ -1209,7 +1246,7 @@ const AddIssueNote = () => {
         expectedReturns: category === "Gia công" ? expectedReturnDetails : undefined,
       };
 
-      console.log("Sending payload:", payload);
+      console.log("Sending payload:", JSON.stringify(payload, null, 2));
 
       const result = await addIssueNote(payload);
       if (result) {
@@ -1269,7 +1306,7 @@ const AddIssueNote = () => {
             Thông tin chung
           </Typography>
 
-          <div className="grid gap-x-12 gap-y-4 mb-4 grid-cols-2">
+          <div className="grid gap-4 mb-4 grid-cols-2">
             <div>
               <Typography variant="medium" className="mb-1 text-black">
                 Phân loại xuất kho <span className="text-red-500">*</span>
