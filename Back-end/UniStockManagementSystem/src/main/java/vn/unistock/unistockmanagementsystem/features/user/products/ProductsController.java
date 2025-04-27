@@ -106,7 +106,7 @@ public class ProductsController {
             dto.setImage(image);
             dto.setMaterials(materials);
 
-            Product createdProduct = productsService.createProduct(dto, "Admin");
+            Product createdProduct = productsService.createProduct(dto);
             return ResponseEntity.ok(createdProduct);
         } catch (Exception e) {
             log.error("Lỗi khi tạo sản phẩm với định mức: ", e);

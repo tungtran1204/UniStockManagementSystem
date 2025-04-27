@@ -47,7 +47,7 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
     const warehouseId = warehouseObj ? warehouseObj.warehouseId : null;
     const itemKey = item.materialId || item.productId;
 
-    const warehouseErrorMessage = !value ? "Chưa chọn kho nhập!" : "";
+    const warehouseErrorMessage = !value ? "Vui lòng chọn kho nhập!" : "";
     setWarehouseError(warehouseErrorMessage);
 
     onDataChange(itemKey, {
@@ -90,11 +90,11 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
         orderedQuantity: ordered,
         receivedQuantity: received,
         remainingQuantity: ordered - received,
-        warehouseError: !warehouse ? "Chưa chọn kho nhập!" : "",
+        warehouseError: !warehouse ? "Vui lòng chọn kho nhập!" : "",
         error
       });
     } else {
-      setQuantityError('Vui lòng nhập số nguyên dương!');
+      setQuantityError('Số lượng phải lớn hơn 0!');
     }
   };
 
@@ -143,21 +143,25 @@ const ProductRow = ({ item, index, warehouses, defaultWarehouseCode, currentPage
                 },
               }}
               renderInput={(params) => (
-                <TextField
-                  {...params}
-                  color="success"
-                  hiddenLabel
-                  placeholder="Chọn kho nhập"
-                  error={!!warehouseError}
-                  helperText={warehouseError}
-                />
+                <div>
+                  <TextField
+                    {...params}
+                    color="success"
+                    hiddenLabel
+                    placeholder="Chọn kho nhập"
+                    error={!!warehouseError}
+                  />
+                  {warehouseError && (
+                    <p className="text-red-500 text-xs mt-1">{warehouseError}</p>
+                  )}
+                </div>
               )}
             />
           </td>
           <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{item.orderedQuantity ?? 0}</td>
           <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{item.receivedQuantity ?? 0}</td>
           <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-fit border-r border-[rgba(224,224,224,1)]">{remainingQuantity}</td>
-          <td className="px-2 py-2 text-sm text-center text-[#000000DE] w-40 border-r border-[rgba(224,224,224,1)]">
+          <td className="px-2 py-2 text-sm text-[#000000DE] w-40 border-r border-[rgba(224,224,224,1)]">
             <div>
               <TextField
                 type="number"
