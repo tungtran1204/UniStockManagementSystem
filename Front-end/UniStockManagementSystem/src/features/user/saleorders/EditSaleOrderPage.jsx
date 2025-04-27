@@ -142,6 +142,7 @@ const EditSaleOrderPage = () => {
   const [description, setDescription] = useState("");
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
 
   // Mảng dòng sản phẩm
   const [items, setItems] = useState([]);
@@ -242,7 +243,7 @@ const EditSaleOrderPage = () => {
         });
       } catch (error) {
         console.error("Lỗi khi lấy đơn hàng:", error);
-        alert("Lỗi khi tải thông tin đơn hàng!");
+        console.log("Lỗi khi tải thông tin đơn hàng!");
       }
     };
 
@@ -340,11 +341,11 @@ const EditSaleOrderPage = () => {
           try {
             const materials = await getProductMaterialsByProduct(item.productId);
             if (!materials || materials.length === 0) {
-              newMaterialErrors[item.id] = `Mã SP ${item.productCode} chưa có định mức NVL`;
+              newMaterialErrors[item.id] = `Sản phẩm ${item.productCode} chưa có định mức NVL`;
             }
           } catch (error) {
             console.error("Lỗi khi kiểm tra định mức NVL:", error);
-            newMaterialErrors[item.id] = `Mã SP ${item.productCode} chưa có định mức NVL`;
+            newMaterialErrors[item.id] = `Sản phẩm ${item.productCode} chưa có định mức NVL`;
           }
         }
       })
@@ -385,7 +386,7 @@ const EditSaleOrderPage = () => {
       });
     } catch (error) {
       console.error("Lỗi khi hủy đơn hàng:", error);
-      alert("Không thể hủy đơn hàng. Vui lòng thử lại sau.");
+      console.log("Không thể hủy đơn hàng. Vui lòng thử lại sau.");
     }
   };
 
@@ -490,7 +491,7 @@ const EditSaleOrderPage = () => {
         setMaterialErrors((prev) => {
           const newErrors = { ...prev };
           if (!materials || materials.length === 0) {
-            newErrors[rowId] = `Mã SP ${opt.value} chưa có định mức NVL`;
+            newErrors[rowId] = `Sản phẩm ${opt.value} chưa có định mức NVL`;
           } else {
             delete newErrors[rowId];
           }
@@ -500,7 +501,7 @@ const EditSaleOrderPage = () => {
         console.error("Lỗi khi kiểm tra định mức NVL:", error);
         setMaterialErrors((prev) => ({
           ...prev,
-          [rowId]: `Mã SP ${opt.value} chưa có định mức NVL`,
+          [rowId]: `Sản phẩm ${opt.value} chưa có định mức NVL`,
         }));
       }
     }
@@ -549,7 +550,7 @@ const EditSaleOrderPage = () => {
 
   const handleCreatePurchaseRequest = async () => {
     if (!orderId) {
-      alert("Không tìm thấy đơn hàng để tạo yêu cầu mua vật tư!");
+      console.log("Không tìm thấy đơn hàng để tạo yêu cầu mua vật tư!");
       return;
     }
 
@@ -557,7 +558,7 @@ const EditSaleOrderPage = () => {
       const materialsToBuy = materialRequirements.filter((mat) => mat.quantityToBuy > 0);
 
       if (materialsToBuy.length === 0) {
-        alert("Không có vật tư nào cần mua từ đơn hàng này!");
+        console.log("Không có vật tư nào cần mua từ đơn hàng này!");
         return;
       }
 
@@ -746,7 +747,6 @@ const EditSaleOrderPage = () => {
           headers: error.response.headers,
         } : null,
       });
-      alert("Có lỗi xảy ra khi cập nhật đơn hàng hoặc chuẩn bị dữ liệu yêu cầu mua vật tư!");
     }
   };
 
@@ -764,11 +764,11 @@ const EditSaleOrderPage = () => {
     items.forEach((it) => {
       newItemsErrors[it.id] = {};
       if (!it.productCode) {
-        newItemsErrors[it.id].productError = "Chưa chọn sản phẩm!";
+        newItemsErrors[it.id].productError = "Vui lòng chọn sản phẩm cho dòng này!";
         hasError = true;
       }
       if (Number(it.quantity) <= 0) {
-        newItemsErrors[it.id].quantityError = "Số lượng > 0!";
+        newItemsErrors[it.id].quantityError = "Số lượng phải lớn hơn 0!";
         hasError = true;
       }
     });
@@ -821,12 +821,10 @@ const EditSaleOrderPage = () => {
     try {
       await updateExistingOrder(orderId, payload);
       handleSetMode(MODE_VIEW);
-      navigate("/user/sale-orders", {
-        state: { successMessage: "Cập nhật đơn bán hàng thành công!" },
-      });
+      setAlertMessage("Cập nhật đơn bán hàng thành công!");
+      setShowSuccessAlert(true);
     } catch (err) {
       console.error("Lỗi PUT order:", err);
-      alert("Lỗi khi cập nhật đơn hàng!");
     }
   };
 
@@ -1124,7 +1122,7 @@ const EditSaleOrderPage = () => {
               if (!materials || materials.length === 0) {
                 setMaterialErrors((prev) => ({
                   ...prev,
-                  [item.id]: `Mã SP ${item.productCode} chưa có định mức NVL`,
+                  [item.id]: `Sản phẩm ${item.productCode} chưa có định mức NVL`,
                 }));
                 return null;
               }
@@ -1133,7 +1131,7 @@ const EditSaleOrderPage = () => {
               console.error("Error fetching materials for product", item.productId, error);
               setMaterialErrors((prev) => ({
                 ...prev,
-                [item.id]: `Mã SP ${item.productCode} chưa có định mức NVL`,
+                [item.id]: `Sản phẩm ${item.productCode} chưa có định mức NVL`,
               }));
               return null;
             }
@@ -1867,20 +1865,19 @@ const EditSaleOrderPage = () => {
 
                           console.log("🔍 Gửi setPreparingStatus với payload:", JSON.stringify(statusPayload, null, 2));
 
-                          // Gọi setPreparingStatus để chuyển trạng thái
-                          await setPreparingStatus(statusPayload);
-
-                          alert("Đơn hàng đã được chuyển sang trạng thái 'Đang chuẩn bị'.");
-                          navigate("/user/sale-orders");
+                          await setPreparingStatus(payload);
+                          navigate("/user/sale-orders", {
+                            state: { successMessage: "Đơn hàng đang được chuẩn bị!" },
+                          });
                         } catch (err) {
-                          console.error("Lỗi khi cập nhật hoặc chuyển trạng thái đơn hàng:", err);
-                          alert("Không thể cập nhật hoặc chuyển trạng thái đơn hàng.");
+                          console.error("Lỗi khi chuyển trạng thái đơn hàng:", err);
+                          console.log("Không thể chuyển trạng thái đơn hàng.");
                         }
                       }}
                     >
                       <div className="flex items-center gap-2">
                         <FaCheck />
-                        <span>Hoàn thành chuẩn bị vật tư</span>
+                        <span>Chuẩn bị vật tư</span>
                       </div>
                     </Button>
                   ) : (
@@ -1922,6 +1919,11 @@ const EditSaleOrderPage = () => {
         />
       )}
 
+      <SuccessAlert
+        open={showSuccessAlert}
+        onClose={() => setShowSuccessAlert(false)}
+        message={alertMessage}
+      />
     </div>
   );
 };

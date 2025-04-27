@@ -13,11 +13,11 @@
       </jdbc-additional-properties>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
-    <data-source source="LOCAL" name="unistock" uuid="36d4fd39-0f73-433d-a82c-74fb426993c2">
+    <data-source source="LOCAL" name="unistock@unistock2.mysql.database.azure.com" uuid="21b61d41-ab85-4ef9-959b-8c6a32b563b5">
       <driver-ref>mysql.8</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
-      <jdbc-url>jdbc:mysql://unistock.mysql.database.azure.com:3306/unistock</jdbc-url>
+      <jdbc-url>jdbc:mysql://unistock2.mysql.database.azure.com/unistock</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.host.port" />
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />

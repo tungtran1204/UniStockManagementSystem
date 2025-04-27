@@ -228,7 +228,14 @@ export function Navbar({ brandName, routes }) {
             <Menu>
               <MenuHandler>
                 <div className="flex items-center gap-2 cursor-pointer mr-2">
-                  <AccountCircle sx={{ fontSize: 40 }} className="text-blue-gray-500" />
+                  {/* <AccountCircle sx={{ fontSize: 40 }} className="text-blue-gray-500" /> */}
+                  <Avatar
+                    src={user.avatar}
+                    alt={user.email}
+                    size="sm"
+                    variant="circular"
+                    className="mr-2"
+                  />
                   <div className="flex flex-col text-start">
                     <Typography variant="h5" className="font-bold text-blue-gray-700">
                       {user.username}
