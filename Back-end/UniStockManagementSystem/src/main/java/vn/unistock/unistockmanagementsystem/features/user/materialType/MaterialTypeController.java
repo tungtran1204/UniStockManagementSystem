@@ -35,7 +35,7 @@ public class MaterialTypeController {
 
     @PostMapping
     public ResponseEntity<MaterialTypeDTO> createMaterialType(@RequestBody MaterialTypeDTO materialTypeDTO) {
-        return ResponseEntity.ok(materialTypeService.createMaterialType(materialTypeDTO, "Admin"));
+        return ResponseEntity.ok(materialTypeService.createMaterialType(materialTypeDTO));
     }
 
     @PutMapping("/{id}")

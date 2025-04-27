@@ -38,7 +38,7 @@ public class MaterialTypeService {
     }
 
     @Transactional
-    public MaterialTypeDTO createMaterialType(MaterialTypeDTO dto, String createdBy) {
+    public MaterialTypeDTO createMaterialType(MaterialTypeDTO dto) {
         // Chuẩn hóa name
         String normalizedName = dto.getName().trim();
 
@@ -51,8 +51,6 @@ public class MaterialTypeService {
         // Cập nhật name đã chuẩn hóa
         dto.setName(normalizedName);
         MaterialType materialType = materialTypeMapper.toEntity(dto);
-        materialType.setCreatedBy(createdBy);
-        materialType.setCreatedAt(LocalDateTime.now());
         materialType.setStatus(true);
 
         MaterialType saved = materialTypeRepository.save(materialType);
@@ -77,8 +75,6 @@ public class MaterialTypeService {
 
         materialType.setName(normalizedName);
         materialType.setDescription(dto.getDescription());
-        materialType.setUpdatedAt(LocalDateTime.now());
-        materialType.setUpdatedBy("Admin");
 
         MaterialType saved = materialTypeRepository.save(materialType);
         return materialTypeMapper.toDTO(saved);
