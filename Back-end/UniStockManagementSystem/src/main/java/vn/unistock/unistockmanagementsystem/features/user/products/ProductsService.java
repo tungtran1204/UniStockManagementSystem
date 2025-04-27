@@ -42,15 +42,13 @@ public class ProductsService {
     }
 
     @Transactional
-    public Product createProduct(ProductsDTO dto, String createdBy) throws IOException {
+    public Product createProduct(ProductsDTO dto) throws IOException {
         if (productsRepository.existsByProductCode(dto.getProductCode())) {
             throw new IllegalArgumentException("Mã sản phẩm đã tồn tại!");
         }
 
         Product product = productsMapper.toEntity(dto);
         product.setIsProductionActive(dto.getIsProductionActive() != null ? dto.getIsProductionActive() : true);
-        product.setCreatedBy(createdBy);
-        product.setCreatedAt(LocalDateTime.now());
 
         if (dto.getImage() != null && !dto.getImage().isEmpty()) {
             String imageUrl = azureBlobService.uploadFile(dto.getImage());

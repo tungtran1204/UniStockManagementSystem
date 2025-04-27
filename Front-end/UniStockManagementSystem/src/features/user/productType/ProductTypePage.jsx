@@ -91,7 +91,7 @@ const ProductTypePage = () => {
             headerName: 'Mô tả',
             flex: 2,
             minWidth: 400,
-            renderCell: (params) => params.value || "Chưa có mô tả",
+            renderCell: (params) => params.value || "-",
         },
         {
             field: 'status',
