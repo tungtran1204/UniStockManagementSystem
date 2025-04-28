@@ -84,7 +84,7 @@ public class IssueNoteService {
 
     // Lấy danh sách phiếu xuất kho (sắp xếp giảm dần theo issueDate)
     public Page<IssueNoteDTO> getAllIssueNotes(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "issueDate"));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "ginId"));
         Page<GoodIssueNote> notes = issueNoteRepository.findAll(pageable);
         return notes.map(issueNoteMapper::toDTO);
     }

@@ -93,8 +93,8 @@ public class ProductsService {
         return productsMapper.toDTO(product);
     }
 
-    @Transactional
-    public ProductsDTO updateProduct(Long id, ProductsDTO updatedProduct, MultipartFile newImage) throws IOException {
+     @Transactional
+     public ProductsDTO updateProduct(Long id, ProductsDTO updatedProduct, MultipartFile newImage, boolean deleteImage) throws IOException {
         Product product = productsRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
 
@@ -118,13 +118,18 @@ public class ProductsService {
                     .orElseThrow(() -> new IllegalArgumentException("Loại sản phẩm không tồn tại!")));
         }
 
-        if (newImage != null && !newImage.isEmpty()) {
-            if (product.getImageUrl() != null) {
-                azureBlobService.deleteFile(product.getImageUrl());
-            }
-            String newImageUrl = azureBlobService.uploadFile(newImage);
-            product.setImageUrl(newImageUrl);
-        }
+         if (deleteImage) {
+             if (product.getImageUrl() != null) {
+                 azureBlobService.deleteFile(product.getImageUrl());
+                 product.setImageUrl(null);
+             }
+         } else if (newImage != null && !newImage.isEmpty()) {
+             if (product.getImageUrl() != null) {
+                 azureBlobService.deleteFile(product.getImageUrl());
+             }
+             String newImageUrl = azureBlobService.uploadFile(newImage);
+             product.setImageUrl(newImageUrl);
+         }
 
         List<ProductMaterial> productMaterials = product.getProductMaterials();
         if (updatedProduct.getMaterials() != null && !updatedProduct.getMaterials().isEmpty()) {

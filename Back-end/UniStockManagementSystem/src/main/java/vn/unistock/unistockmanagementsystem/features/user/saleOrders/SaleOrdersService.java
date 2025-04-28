@@ -21,6 +21,7 @@ import vn.unistock.unistockmanagementsystem.features.user.purchaseRequests.Purch
 import vn.unistock.unistockmanagementsystem.security.filter.CustomUserDetails;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,9 +55,27 @@ public class SaleOrdersService {
         this.materialsRepository   = materialsRepository;
     }
 
-    public Page<SaleOrdersDTO> getAllOrders(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<SalesOrder> salesOrderPage = saleOrdersRepository.findAll(pageable);
+    public Page<SaleOrdersDTO> getFilteredOrders(
+            String orderCode,
+            String partnerName,
+            List<SalesOrder.OrderStatus> statuses,
+            Date startDate,
+            Date endDate,
+            int page,
+            int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "orderId"));
+
+        // Nếu statuses rỗng hoặc null, không áp dụng bộ lọc trạng thái
+        List<SalesOrder.OrderStatus> filterStatuses = statuses != null && !statuses.isEmpty() ? statuses : null;
+
+        Page<SalesOrder> salesOrderPage = saleOrdersRepository.findByFilters(
+                orderCode != null && !orderCode.isBlank() ? orderCode : null,
+                partnerName != null && !partnerName.isBlank() ? partnerName : null,
+                filterStatuses,
+                startDate,
+                endDate,
+                pageable);
+
         return salesOrderPage.map(saleOrder -> {
             SaleOrdersDTO dto = saleOrdersMapper.toDTO(saleOrder);
             enrichStatusLabel(dto, saleOrder);

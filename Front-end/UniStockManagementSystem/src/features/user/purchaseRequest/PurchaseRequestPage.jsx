@@ -91,12 +91,12 @@ const PurchaseRequestPage = () => {
     const purchaseRequestStatus = [
         {
             value: "PENDING",
-            label: "Chờ xác nhận",
+            label: "Chờ duyệt",
             className: "bg-blue-50 text-blue-800",
         },
         {
             value: "CONFIRMED",
-            label: "Xác nhận",
+            label: "Đã duyệt",
             className: "bg-green-50 text-green-800",
         },
         {
@@ -115,6 +115,14 @@ const PurchaseRequestPage = () => {
             className: "bg-indigo-50 text-indigo-800",
         },
     ];
+
+    const statusMapping = {
+        PENDING: "bg-blue-50 text-blue-800",
+        CONFIRMED: "bg-green-50 text-green-800",
+        CANCELLED: "bg-gray-100 text-gray-800",
+        REJECTED: "bg-red-50 text-red-800",
+        PURCHASED: "bg-indigo-50 text-indigo-800",
+    };
 
     const filteredRequests = purchaseRequests.filter((request) => {
         const matchesStatus =
@@ -182,7 +190,6 @@ const PurchaseRequestPage = () => {
             };
 
             const response = await createOrdersFromRequest(payload);
-            await updatePurchaseRequestStatus(selectedRequestId, "PURCHASED");
             navigate("/user/purchaseOrder", { state: { successMessage: `Tạo ${response.orders.length} đơn hàng mua vật tư thành công!` } });
         } catch (error) {
             console.error("Lỗi tạo đơn hàng:", error);
@@ -197,7 +204,7 @@ const PurchaseRequestPage = () => {
     const columnsConfig = [
         { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
         { field: 'purchaseRequestCode', headerName: 'Mã yêu cầu', flex: 1.5, minWidth: 150, editable: false, filterable: false },
-        { field: 'purchaseOrderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false, filterable: false, renderCell: (params) => params.value || "Chưa có" },
+        { field: 'purchaseOrderCode', headerName: 'Mã đơn hàng', flex: 1.5, minWidth: 150, editable: false, filterable: false, renderCell: (params) => params.value || "-" },
         {
             field: 'createdDate',
             headerName: 'Ngày tạo yêu cầu',
@@ -216,16 +223,11 @@ const PurchaseRequestPage = () => {
             filterable: false,
             renderCell: (params) => (
                 <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                    ${params.value === 'Đã duyệt'
-                        ? 'bg-green-50 text-green-800'
-                        : params.value === 'Từ chối'
-                            ? 'bg-red-50 text-red-800'
-                            : 'bg-yellow-100 text-amber-800'
-                    }`
-                }>
-                    {params.value}
+                    ${statusMapping[params.value] || 'bg-yellow-100 text-amber-800'}`}
+                >
+                    {params.row?.statusLabel || params.value}
                 </div>
-            ),
+            )
         },
         {
             field: 'rejectionReason',

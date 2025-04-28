@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import vn.unistock.unistockmanagementsystem.entities.*;
 import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerRepository;
+import vn.unistock.unistockmanagementsystem.features.user.purchaseRequests.PurchaseRequestService;
 import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersDTO;
 import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersMapper;
 
@@ -41,10 +42,12 @@ public class PurchaseOrderService {
 
     private final PartnerRepository partnerRepository;
     private final MaterialsRepository materialRepository;
+    @Autowired
+    private PurchaseRequestService purchaseRequestService;
 
 
     public Page<PurchaseOrderDTO> getAllOrders(int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "orderDate"));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "poId"));
         Page<PurchaseOrder> orders = purchaseOrderRepository.findAll(pageable);
 
         orders.map(order -> PurchaseOrderDTO.builder()
@@ -189,6 +192,9 @@ public class PurchaseOrderService {
                 detail.setReceivedQuantity(0); // Ban đầu chưa nhận hàng
 
                 details.add(detail);
+            }
+            if (request.getPurchaseRequestId() != null) {
+                purchaseRequestService.markRequestAsPurchased(request.getPurchaseRequestId());
             }
 
             // Lưu tất cả chi tiết
