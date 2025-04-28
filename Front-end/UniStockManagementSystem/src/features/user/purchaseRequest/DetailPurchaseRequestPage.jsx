@@ -45,6 +45,7 @@ const DetailPurchaseRequestPage = () => {
         CONFIRMED: "Đã duyệt",
         CANCELLED: "Từ chối",
         FINISHED: "Đã hoàn thành",
+        PURCHASED: "Đã tạo đơn mua",
     };
 
     useEffect(() => {
