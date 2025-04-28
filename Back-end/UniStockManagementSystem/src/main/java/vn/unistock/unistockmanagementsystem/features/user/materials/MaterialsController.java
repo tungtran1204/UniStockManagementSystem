@@ -47,7 +47,7 @@ public class MaterialsController {
 
     // 🟢 API bật/tắt trạng thái sử dụng
     @PatchMapping("/{id}/toggle-using")
-    public ResponseEntity<Map<String, Object>> toggleUsingStatus(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> toggleUsingStatusMaterial(@PathVariable Long id) {
         MaterialsDTO updatedMaterial = materialsService.toggleUsingStatus(id);
         Map<String, Object> response = new HashMap<>();
         response.put("materialId", id);

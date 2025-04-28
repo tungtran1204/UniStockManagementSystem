@@ -173,7 +173,7 @@ const MaterialTypePage = () => {
                         <Typography variant="small" className="font-normal">
                             Trang {currentPage + 1} / {totalPages} • {totalElements} bản ghi
                         </Typography>
-                        <ReactPaginate
+                        {/* <ReactPaginate
                             previousLabel={<ArrowLeftIcon className="h-4 w-4" />}
                             nextLabel={<ArrowRightIcon className="h-4 w-4" />}
                             pageCount={totalPages}
@@ -181,6 +181,25 @@ const MaterialTypePage = () => {
                             containerClassName="flex items-center gap-1"
                             activeClassName="bg-[#0ab067] text-white border-[#0ab067]"
                             forcePage={currentPage}
+                        /> */}
+
+<ReactPaginate
+                            previousLabel={<ArrowLeftIcon strokeWidth={2} className="h-4 w-4" />}
+                            nextLabel={<ArrowRightIcon strokeWidth={2} className="h-4 w-4" />}
+                            breakLabel="..."
+                            pageCount={totalPages}
+                            marginPagesDisplayed={2}
+                            pageRangeDisplayed={5}
+                            onPageChange={handlePageChange}
+                            containerClassName="flex items-center gap-1"
+                            pageClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-[#0ab067] hover:text-white"
+                            pageLinkClassName="flex items-center justify-center w-full h-full"
+                            previousClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                            nextClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700 border border-gray-300 hover:bg-gray-100"
+                            breakClassName="h-8 min-w-[32px] flex items-center justify-center rounded-md text-xs text-gray-700"
+                            activeClassName="bg-[#0ab067] text-white border-[#0ab067] hover:bg-[#0ab067]"
+                            forcePage={currentPage}
+                            disabledClassName="opacity-50 cursor-not-allowed"
                         />
                     </div>
                 </CardBody>

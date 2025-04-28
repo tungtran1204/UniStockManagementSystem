@@ -6,7 +6,7 @@ import {
     Typography,
     Tooltip,
 } from "@material-tailwind/react";
-import { BiCartAdd, BiSolidEdit } from "react-icons/bi"; // Đảm bảo import BiSolidEdit từ react-icons/bi
+import { BiCartAdd, BiSolidEdit } from "react-icons/bi";
 import {
     IconButton,
 } from '@mui/material';
@@ -42,6 +42,7 @@ const PurchaseRequestPage = () => {
     const [selectedRequestId, setSelectedRequestId] = useState(null);
     const [showSuccessAlert, setShowSuccessAlert] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
+    const [currentUser, setCurrentUser] = useState(null);
     const location = useLocation();
 
     const [searchTerm, setSearchTerm] = useState("");
@@ -49,7 +50,7 @@ const PurchaseRequestPage = () => {
     const [pageSize, setPageSize] = useState(10);
     const { createOrdersFromRequest } = usePurchaseOrder();
 
-    //state for filter and search const [selectedStatuses, setSelectedStatuses] = useState([]);
+    //state for filter and search
     const [selectedStatuses, setSelectedStatuses] = useState([]);
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
@@ -59,6 +60,16 @@ const PurchaseRequestPage = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
+        // Lấy thông tin user từ localStorage
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+            try {
+                setCurrentUser(JSON.parse(storedUser));
+            } catch (err) {
+                console.error("Lỗi parse JSON từ localStorage:", err);
+            }
+        }
+
         if (location.state?.successMessage) {
             console.log("Component mounted, location.state:", location.state?.successMessage);
             setAlertMessage(location.state.successMessage);
@@ -248,8 +259,8 @@ const PurchaseRequestPage = () => {
                         </IconButton>
                     </Tooltip>
 
-                    {/* Nút tạo đơn hàng nếu đã duyệt */}
-                    {params.row.status === 'Đã duyệt' && (
+                    {/* Nút tạo đơn hàng nếu đã duyệt và có quyền createMultipleOrders */}
+                    {currentUser && params.row.status === 'Đã duyệt' && currentUser.permissions.includes("createMultipleOrders") && (
                         <Tooltip content="Tạo đơn mua hàng">
                             <IconButton
                                 size="small"

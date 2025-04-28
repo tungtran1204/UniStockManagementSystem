@@ -240,9 +240,15 @@ export function Navbar({ brandName, routes }) {
                     <Typography variant="h5" className="font-bold text-blue-gray-700">
                       {user.username}
                     </Typography>
-                    <Typography variant="small" className="text-blue-gray-700 text-[11px]">
-                      {user.roles?.join(', ')}
-                    </Typography>
+                    {user.roles && user.roles.filter(role => role.toLowerCase() !== "user").length > 0 && (
+  <Typography variant="small" className="text-blue-gray-700 text-[11px]">
+    {user.roles
+      .filter(role => role.toLowerCase() !== "user")
+      .join(", ")
+    }
+  </Typography>
+)}
+
                   </div>
                   <KeyboardArrowDown className="h-6 w-6 text-blue-gray-500" />
                 </div>
