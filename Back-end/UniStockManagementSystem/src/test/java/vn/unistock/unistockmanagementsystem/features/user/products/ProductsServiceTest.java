@@ -116,8 +116,6 @@ public class ProductsServiceTest {
         testProduct.setProductType(testType);
         testProduct.setIsProductionActive(true);
         testProduct.setImageUrl("http://example.com/image.jpg");
-        testProduct.setCreatedAt(LocalDateTime.now());
-        testProduct.setCreatedBy("Admin");
 
         // Khởi tạo định mức vật liệu
         testProductMaterial1 = new ProductMaterial();

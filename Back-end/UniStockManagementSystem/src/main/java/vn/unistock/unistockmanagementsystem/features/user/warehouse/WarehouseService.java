@@ -81,9 +81,6 @@ public class WarehouseService {
         return warehouseRepository.save(warehouse);
     }
 
-    public void deleteWarehouse(Long id) {
-        warehouseRepository.deleteById(id);
-    }
 
     public Warehouse updateWarehouseStatus(Long id, Boolean isActive) {
         Warehouse warehouse = getWarehouseById(id);
