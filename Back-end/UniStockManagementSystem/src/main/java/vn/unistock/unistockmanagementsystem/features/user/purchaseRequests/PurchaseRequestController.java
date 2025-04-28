@@ -43,7 +43,7 @@ public class PurchaseRequestController {
     }
 
     @PutMapping("/{purchaseRequestId}/status")
-    public ResponseEntity<PurchaseRequestDTO> updateStatus(
+    public ResponseEntity<PurchaseRequestDTO> updatePurchaseRequestStatus(
             @PathVariable Long purchaseRequestId,
             @RequestBody UpdateStatusRequestDTO request) {
         PurchaseRequestDTO updatedRequest =

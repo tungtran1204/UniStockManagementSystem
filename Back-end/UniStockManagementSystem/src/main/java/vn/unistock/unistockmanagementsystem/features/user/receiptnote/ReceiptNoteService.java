@@ -154,9 +154,12 @@ public class ReceiptNoteService {
                         logger.debug("PurchaseOrder ID {} not linked to any SalesOrder", linkedPurchaseOrder.getPoId());
                     }
                 } else if ("Hàng hóa gia công".equals(grnDto.getCategory())) {
-                    linkedOutsource = receiveOutsourceRepository.findById(grnDto.getPoId())
-                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Đơn gia công không tồn tại với ID: " + grnDto.getPoId()));
-                    grn.setGoodIssueNote(linkedOutsource.getGoodIssueNote());
+                    if ("Hàng hóa gia công".equals(grnDto.getCategory())) {
+                        linkedOutsource = receiveOutsourceRepository.findByGoodIssueNote_GinId(grnDto.getPoId())
+                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Đơn gia công không tồn tại với GIN ID: " + grnDto.getPoId()));
+                        grn.setGoodIssueNote(linkedOutsource.getGoodIssueNote());
+                    }
+
                 } else {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Loại phiếu nhập không hợp lệ với poId");
                 }

@@ -47,7 +47,7 @@ public class MaterialTypeController {
     }
 
     @PatchMapping("/{id}/toggle-status")
-    public ResponseEntity<MaterialTypeDTO> toggleStatus(
+    public ResponseEntity<MaterialTypeDTO> toggleStatusMaterialType(
             @PathVariable Long id,
             @RequestBody Map<String, Boolean> statusRequest
     ) {
