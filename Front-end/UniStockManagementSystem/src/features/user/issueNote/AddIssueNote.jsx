@@ -221,10 +221,26 @@ const AddIssueNote = () => {
     }
   };
 
-  // Hàm lọc danh sách vật tư/sản phẩm chưa được chọn
-  const getAvailableItems = () => {
+  // Hàm lọc danh sách vật tư/sản phẩm cho gia cong
+  const getAvailableMaterialsForExport = () => {
+    const selectedMaterialIds = products
+      .filter(p => p.materialId)
+      .map(p => p.materialId);
+    return materials.filter(mat => !selectedMaterialIds.includes(mat.materialId));
+  };
+
+  const getAvailableMaterialsForExpectedReturns = () => {
+    const selectedReturnIds = expectedReturns
+      .filter(p => p.materialId)
+      .map(p => p.materialId);
+    return materials.filter(mat => !selectedReturnIds.includes(mat.materialId));
+  };
+
+
+  // Hàm lọc danh sách vật tư/sản phẩm cho khac
+  const getAvailableItemsForKhac = () => {
     const selectedItemIds = products
-      .filter(p => p.itemId) // Chỉ lấy những dòng đã chọn vật tư/sản phẩm
+      .filter(p => p.itemId)
       .map(p => p.itemId);
     return itemList.filter(item => !selectedItemIds.includes(item.id));
   };
@@ -611,7 +627,7 @@ const AddIssueNote = () => {
                   </td>
                   <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
                     <Autocomplete
-                      options={materials || []}
+                      options={getAvailableMaterialsForExport() || []}
                       getOptionLabel={(option) =>
                         `${option.materialCode} - ${option.materialName}`
                       }
@@ -927,7 +943,7 @@ const AddIssueNote = () => {
                   </td>
                   <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
                     <Autocomplete
-                      options={itemList || []}
+                      options={getAvailableItemsForKhac() || []}
                       getOptionLabel={(option) =>
                         `${option.code} - ${option.name} (${option.type === 'material' ? 'Vật tư' : 'Sản phẩm'})`
                       }
@@ -1263,7 +1279,7 @@ const AddIssueNote = () => {
         <td className="px-3 py-2 border-r text-center text-sm">{index + 1}</td>
         <td className="px-3 py-2 border-r text-sm">
           <Autocomplete
-            options={materials || []}
+            options={getAvailableMaterialsForExpectedReturns() || []}
             getOptionLabel={(option) =>
               `${option.materialCode} - ${option.materialName}`
             }
