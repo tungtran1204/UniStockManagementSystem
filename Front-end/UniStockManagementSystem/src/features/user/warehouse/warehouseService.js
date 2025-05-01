@@ -1,8 +1,7 @@
 import axios from "axios";
 
 // API endpoint for warehouses
-//const API_URL = `${import.meta.env.VITE_API_URL}/user/warehouses`;
-const API_URL = `http://localhost:8080/api/unistock/user/warehouses`;
+const API_URL = `${import.meta.env.VITE_API_URL}/user/warehouses`;
 // take token from local storage
 const authHeader = () => {
   const token = localStorage.getItem("token");
