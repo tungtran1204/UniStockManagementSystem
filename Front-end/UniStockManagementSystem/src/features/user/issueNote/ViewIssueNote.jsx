@@ -138,6 +138,67 @@ const ViewIssueNote = () => {
     ];
   };
 
+  const columnsExpectedMaterials = [
+    {
+      field: "index",
+      headerName: "STT",
+      minWidth: 50,
+      flex: 0.5,
+      filterable: false,
+      editable: false,
+      renderCell: (params) => <div className="text-center">{params.row.index + 1}</div>,
+    },
+    {
+      field: "materialCode",
+      headerName: "Mã NVL",
+      minWidth: 100,
+      flex: 1,
+      filterable: false,
+      editable: false,
+      renderCell: (params) => (
+        <div className="text-center">{params.row.materialCode}</div>
+      ),
+    },
+    {
+      field: "materialName",
+      headerName: "Tên NVL",
+      minWidth: 150,
+      flex: 2,
+      filterable: false,
+      editable: false,
+      renderCell: (params) => (
+        <div className="text-center">{params.row.materialName}</div>
+      ),
+    },
+    {
+      field: "quantity",
+      headerName: "Số lượng dự kiến",
+      minWidth: 100,
+      flex: 1,
+      filterable: false,
+      editable: false,
+      renderCell: (params) => (
+        <div className="text-center">{params.row.quantity}</div>
+      ),
+    },
+    {
+      field: "unitName",
+      headerName: "Đơn vị",
+      minWidth: 100,
+      flex: 1,
+      filterable: false,
+      editable: false,
+      renderCell: (params) => (
+        <div className="text-center">{params.row.unitName}</div>
+      ),
+    },
+  ];
+
+  const expectedMaterials = data.receiveOutsource?.materials?.map((item, idx) => ({
+    ...item,
+    index: idx,
+  }));  
+
   const columnsConfig = getColumnsConfig(data.category);
 
   const handleExportPDF = () => {
@@ -406,7 +467,7 @@ const ViewIssueNote = () => {
                 )}
               </div>
             )}
-            
+
             {data.category === "Sản xuất" && data.receiver && (
               <div>
                 <Typography variant="medium" className="mb-1 text-black">
@@ -572,6 +633,22 @@ const ViewIssueNote = () => {
               enableSelection={false}
             />
           </div>
+
+          {data.category === "Gia công" && data.receiveOutsource?.materials?.length > 0 && (
+            <>
+              <Typography variant="h6" className="flex items-center mb-4 mt-8 text-black">
+                <ListBulletIcon className="h-5 w-5 mr-2" />
+                Danh sách NVL dự kiến nhận lại
+              </Typography>
+              <div className="overflow-auto border rounded">
+                <Table
+                  data={expectedMaterials}
+                  columnsConfig={columnsExpectedMaterials}
+                  enableSelection={false}
+                />
+              </div>
+            </>
+          )}
 
           {totalItems > 0 && (
             <div className="flex items-center justify-between py-4">

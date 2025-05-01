@@ -21,9 +21,9 @@ const usePurchaseOrder = () => {
   const [selectedStatus, setSelectedStatus] = useState("");
 
   // Lấy danh sách đơn hàng từ API
-  const fetchPaginatedOrders = async (page = currentPage, size = pageSize, search = searchKeyword, status = selectedStatus) => {
+  const fetchPaginatedOrders = async (page = currentPage, size = pageSize, search = searchKeyword, status = selectedStatus, startDate, endDate) => {
     try {
-      const response = await fetchPurchaseOrders(page, size, search, status);
+      const response = await fetchPurchaseOrders(page, size, search, status, startDate, endDate);
       console.log("API Response:", response);
       setPurchaseOrders(response.data || []);
       setTotalPages(response.totalPages);
