@@ -3,13 +3,15 @@ import { useNavigate, useLocation } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { Card, CardBody, Typography, Tooltip } from "@material-tailwind/react";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
-import { IconButton } from "@mui/material";
+import { IconButton, Button,  Menu as MuiMenu, MenuItem, Checkbox, ListItemText } from "@mui/material";
 import { VisibilityOutlined } from '@mui/icons-material';
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
 import SuccessAlert from "@/components/SuccessAlert";
 import { getIssueNotes } from "./issueNoteService";
+import DateFilterButton from "@/components/DateFilterButton";
+import { FaAngleDown } from "react-icons/fa";
 
 const IssueNotePage = () => {
   const [issueNotes, setIssueNotes] = useState([]);
@@ -26,6 +28,19 @@ const IssueNotePage = () => {
   const [alertMessage, setAlertMessage] = useState("");
   const location = useLocation();
 
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [categoryAnchorEl, setCategoryAnchorEl] = useState(null);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+
+  const categoryList = [
+    "Bán hàng",
+    "Sản xuất",
+    "Gia công",
+    "Trả lại hàng mua",
+    "Khác",
+  ];
+
   useEffect(() => {
     if (location.state?.successMessage) {
       console.log("Component mounted, location.state:", location.state?.successMessage);
@@ -38,12 +53,12 @@ const IssueNotePage = () => {
 
   useEffect(() => {
     fetchPaginatedIssueNotes(currentPage, pageSize);
-  }, [currentPage, pageSize]);
-
+  }, [currentPage, pageSize, searchTerm, selectedCategories, startDate, endDate]);
+  
   const fetchPaginatedIssueNotes = async (page, size, search = "") => {
     try {
       // API trả về dạng: { totalPages, content: [ { ginId, ginCode, description, category, issueDate, soCode, createdByUsername, details, ... } ] }
-      const data = await getIssueNotes(page, size);
+      const data = await getIssueNotes(page, size, searchTerm, selectedCategories, startDate, endDate);
       setIssueNotes(data.content || []);
       setTotalPages(data.totalPages);
       setTotalElements(data.totalElements);
@@ -51,6 +66,15 @@ const IssueNotePage = () => {
       console.error("Error fetching issue notes:", error);
     }
   };
+
+  console.log("🔍 Fetching IssueNotes with:", {
+    searchTerm,
+    selectedCategories,
+    startDate,
+    endDate,
+    startDateType: typeof startDate,
+    endDateType: typeof endDate,
+});
 
   const handlePageChange = (selectedItem) => {
     setCurrentPage(selectedItem.selected);
@@ -85,17 +109,17 @@ const IssueNotePage = () => {
     category: note.category || "N/A",
     description: note.description || "Không có ghi chú",
     issueDate: note.issueDate,
-    createdByUserName: note.createdByUserName ,
-    soId: note.soId, 
+    createdByUserName: note.createdByUserName,
+    soId: note.soId,
     soCode: note.soCode || "-"
   }));
 
   // Cấu hình các cột hiển thị; thay createdBy và soId bằng createdByUsername và soCode
   const columnsConfig = [
-  	{ field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
+    { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, editable: false, filterable: false },
     { field: 'ginCode', headerName: 'Mã phiếu xuất', flex: 1.5, minWidth: 150 },
     { field: 'category', headerName: 'Phân loại xuất kho', flex: 2, minWidth: 100 },
-    
+
     {
       field: 'issueDate',
       headerName: 'Ngày lập phiếu',
@@ -175,36 +199,156 @@ const IssueNotePage = () => {
             showImport={false}
             showExport={false}
           />
-          <div className="py-2 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Typography variant="small" color="blue-gray" className="font-light">
-                Hiển thị
-              </Typography>
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setCurrentPage(0);
-                }}
-                className="border text-sm rounded px-2 py-1"
-              >
-                {[5, 10, 20, 50].map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-              <Typography variant="small" color="blue-gray" className="font-normal">
-                bản ghi mỗi trang
-              </Typography>
+            <div className="py-2 flex items-center justify-between gap-2">
+              {/* Items per page */}
+              <div className="flex items-center gap-2">
+                <Typography variant="small" color="blue-gray" className="font-light">
+                  Hiển thị
+                </Typography>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(0);
+                  }}
+                  className="border text-sm rounded px-2 py-1"
+                >
+                  {[5, 10, 20, 50].map(size => (
+                    <option key={size} value={size}>{size}</option>
+                  ))}
+                </select>
+                <Typography variant="small" color="blue-gray" className="font-normal">
+                  bản ghi mỗi trang
+                </Typography>
+              </div>
+
+              <div className="mb-3 flex flex-wrap items-center gap-4">
+
+                {/* Filter by date */}
+                <DateFilterButton
+                  startDate={startDate}
+                  endDate={endDate}
+                  setStartDate={setStartDate}
+                  setEndDate={setEndDate}
+                  setCurrentPage={setCurrentPage}
+                />
+
+                {/* Filter by category */}
+                <div>
+                  <Button
+                    onClick={(e) => setCategoryAnchorEl(e.currentTarget)}
+                    size="sm"
+                    variant={selectedCategories.length > 0 ? "outlined" : "contained"}
+                    sx={{
+                      ...(selectedCategories.length > 0
+                        ? {
+                          backgroundColor: "#ffffff",
+                          boxShadow: "none",
+                          borderColor: "#089456",
+                          textTransform: "none",
+                          color: "#089456",
+                          px: 1.5,
+                          "&:hover": {
+                            backgroundColor: "#0894561A",
+                            borderColor: "#089456",
+                            boxShadow: "none",
+                          },
+                        }
+                        : {
+                          backgroundColor: "#0ab067",
+                          boxShadow: "none",
+                          textTransform: "none",
+                          color: "#ffffff",
+                          px: 1.5,
+                          "&:hover": {
+                            backgroundColor: "#089456",
+                            borderColor: "#089456",
+                            boxShadow: "none",
+                          },
+                        }),
+                    }}
+                  >
+                    {selectedCategories.length > 0 ? (
+                      <span className="flex items-center gap-[5px]">
+                        {selectedCategories[0]}
+                        {selectedCategories.length > 1 && (
+                          <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin ">
+                            +{selectedCategories.length - 1}
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-[5px]">
+                        Phân loại xuất
+                        <FaAngleDown className="h-4 w-4" />
+                      </span>
+                    )}
+                  </Button>
+
+                  <MuiMenu
+                    anchorEl={categoryAnchorEl}
+                    open={Boolean(categoryAnchorEl)}
+                    onClose={() => setCategoryAnchorEl(null)}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                  >
+                    {categoryList.map((category) => (
+                      <MenuItem
+                        key={category}
+                        onClick={() => {
+                          const isSelected = selectedCategories.includes(category);
+                          const updated = isSelected
+                            ? selectedCategories.filter((c) => c !== category)
+                            : [...selectedCategories, category];
+                          setSelectedCategories(updated);
+                        }}
+                        sx={{ paddingLeft: "7px", minWidth: "200px" }}
+                      >
+                        <Checkbox
+                          color="success"
+                          size="small"
+                          checked={selectedCategories.includes(category)}
+                        />
+                        <ListItemText primary={category} />
+                      </MenuItem>
+                    ))}
+                    {selectedCategories.length > 0 && (
+                      <div className="flex px-4 justify-end">
+                        <Button
+                          variant="text"
+                          size="medium"
+                          onClick={() => {
+                            setSelectedCategories([]);
+                            setCurrentPage(0);
+                            fetchPaginatedIssueNotes(0, pageSize, searchTerm, [], startDate, endDate);
+                          }}
+                          sx={{
+                            color: "#000000DE",
+                            "&:hover": {
+                              backgroundColor: "transparent",
+                              textDecoration: "underline",
+                            },
+                          }}
+                        >
+                          Xoá
+                        </Button>
+                      </div>
+                    )}
+                  </MuiMenu>
+
+                </div>
+
+                {/* Search input */}
+                <div className="w-[250px]">
+                  <TableSearch
+                    value={searchTerm}
+                    onChange={setSearchTerm}
+                    onSearch={handleSearch}
+                    placeholder="Tìm kiếm phiếu xuất"
+                  />
+                </div>
+              </div>
             </div>
-            <TableSearch
-              value={searchTerm}
-              onChange={setSearchTerm}
-              onSearch={handleSearch}
-              placeholder="Tìm kiếm phiếu xuất"
-            />
-          </div>
+
           <div className="w-full overflow-x-auto">
             <Table data={data} columnsConfig={columnsConfig} enableSelection={false} />
           </div>

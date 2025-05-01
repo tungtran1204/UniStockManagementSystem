@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import ReactPaginate from "react-paginate";
-import { Card, CardHeader, CardBody, Typography, Tooltip } from "@material-tailwind/react";
-import { FaPlus, FaEye, FaAngleDown } from "react-icons/fa";
+import { Card, CardBody, Typography, Tooltip } from "@material-tailwind/react";
+import { FaAngleDown } from "react-icons/fa";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 import {
@@ -215,6 +215,7 @@ const ReceiptNotePage = () => {
     poCode: receipt.poCode,
     ginCode: receipt.ginCode,
   }));
+  console.log("Table data:", data);
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
