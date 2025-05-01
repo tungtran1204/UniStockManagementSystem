@@ -7,7 +7,7 @@ import {
     Typography,
 } from "@material-tailwind/react";
 import { TextField, Button as MuiButton, Autocomplete, IconButton, Divider } from '@mui/material';
-import { checkMaterialCodeExists, fetchMaterialCategories, createMaterial } from "./materialService";
+import { checkMaterialCodeExists, createMaterial } from "./materialService";
 import { fetchActiveUnits } from "../unit/unitService";
 import PageHeader from '@/components/PageHeader';
 import ImageUploadBox from '@/components/ImageUploadBox';
