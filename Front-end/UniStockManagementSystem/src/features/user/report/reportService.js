@@ -1,8 +1,7 @@
 import axios from "axios";
 
 //báo cáo tồn kho
-const API_URL_IN_RP = "http://localhost:8080/api/unistock/user/inventory";
-//const API_URL_IN_RP = `${import.meta.env.VITE_API_URL}/user/inventory`;
+const API_URL_IN_RP = `${import.meta.env.VITE_API_URL}/user/inventory`;
 
 const authHeader = () => {
   const token = localStorage.getItem("token");
@@ -53,8 +52,7 @@ export const getInventoryReportPaginated = ({
 };
 
 //báo cáo nhập kho
-const API_URL_GRN_RP = "http://localhost:8080/api/unistock/user/receiptnote";
-//const API_URL_GRN_RP = `${import.meta.env.VITE_API_URL}/user/receiptnote`;
+const API_URL_GRN_RP = `${import.meta.env.VITE_API_URL}/user/receiptnote`;
 export const getGoodReceiptReportPaginated = ({
   page = 0,
   size = 10,
@@ -94,8 +92,7 @@ export const getGoodReceiptReportPaginated = ({
 };
 
 //báo cáo xuất kho
-const API_URL_GIN_RP = "http://localhost:8080/api/unistock/user/issuenote";
-//const API_URL_GIN_RP = `${import.meta.env.VITE_API_URL}/user/issuenote`;
+const API_URL_GIN_RP = `${import.meta.env.VITE_API_URL}/user/issuenote`;
 export const getGoodIssueReportPaginated = ({
   page = 0,
   size = 10,
@@ -138,8 +135,7 @@ export const getGoodIssueReportPaginated = ({
 };
 
 //báo cáo xuất nhập tồn
-const API_URL_SM_RP = "http://localhost:8080/api/unistock/user/stockmovement";
-//const API_URL_SM_RP = `${import.meta.env.VITE_API_URL}/user/stockmovement`;
+const API_URL_SM_RP = `${import.meta.env.VITE_API_URL}/user/stockmovement`;
 export const getStockMovementReportPaginated = async ({
   page = 0,
   size = 20,
