@@ -80,8 +80,8 @@ const PurchaseRequestPage = () => {
     }, [location.state]);
 
     useEffect(() => {
-        fetchPurchaseRequests(currentPage, pageSize, searchTerm);
-    }, [currentPage, pageSize, searchTerm]);
+        fetchPurchaseRequests(currentPage, pageSize, searchTerm, selectedStatuses.map(mapLabelToStatusCode), startDate, endDate);
+    }, [currentPage, pageSize, searchTerm, selectedStatuses, startDate, endDate]);    
 
     useEffect(() => {
         setAllStatuses(purchaseRequestStatus);
@@ -124,16 +124,26 @@ const PurchaseRequestPage = () => {
         PURCHASED: "bg-indigo-50 text-indigo-800",
     };
 
-    const filteredRequests = purchaseRequests.filter((request) => {
-        const matchesStatus =
-            selectedStatuses.length === 0 ||
-            selectedStatuses.includes(request.status);
+    const getStatusClass = (statusCode) => {
+        const found = purchaseRequestStatus.find(s => s.value === statusCode);
+        return found ? found.className : 'bg-yellow-100 text-amber-800';
+    };
 
-        const matchesSearch =
-            request.purchaseRequestCode?.toLowerCase().includes(searchTerm.toLowerCase());
+    const mapLabelToStatusCode = (label) => {
+        const found = purchaseRequestStatus.find(s => s.label === label);
+        return found ? found.value : label;
+    };    
 
-        return matchesStatus && matchesSearch;
-    });
+    // const filteredRequests = purchaseRequests.filter((request) => {
+    //     const matchesStatus =
+    //         selectedStatuses.length === 0 ||
+    //         selectedStatuses.includes(request.status);
+
+    //     const matchesSearch =
+    //         request.purchaseRequestCode?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    //     return matchesStatus && matchesSearch;
+    // });
 
     const getStatusLabel = (statusCode) => {
         const found = purchaseRequestStatus.find(s => s.value === statusCode);
@@ -155,9 +165,9 @@ const PurchaseRequestPage = () => {
     };
 
     const handleSearch = () => {
-        fetchPurchaseRequests(0, pageSize, searchTerm);
+        fetchPurchaseRequests(0, pageSize, searchTerm, selectedStatuses.map(mapLabelToStatusCode), startDate, endDate);
         setCurrentPage(0);
-    };
+    };    
 
     const handleConfirmCreatePurchaseOrder = (requestId) => {
         setSelectedRequestId(requestId);
@@ -223,9 +233,9 @@ const PurchaseRequestPage = () => {
             filterable: false,
             renderCell: (params) => (
                 <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                    ${statusMapping[params.value] || 'bg-yellow-100 text-amber-800'}`}
+                    ${getStatusClass(params.row.statusCode)}`}
                 >
-                    {params.row?.statusLabel || params.value}
+                    {params.row.status}
                 </div>
             )
         },
@@ -279,14 +289,15 @@ const PurchaseRequestPage = () => {
     ];
 
     const data = purchaseRequests.map((request, index) => ({
-        id: request.id,
+        id: request.purchaseRequestId,
         index: (currentPage * pageSize) + index + 1,
         purchaseRequestCode: request.purchaseRequestCode,
         purchaseOrderCode: request.saleOrderCode || "Chưa có",
         createdDate: request.createdDate,
-        status: getStatusLabel(request.status),
+        status: getStatusLabel(request.status),  
+        statusCode: request.status,             
         rejectionReason: request.rejectionReason,
-    }));
+    }));    
 
     return (
         <div className="mb-8 flex flex-col gap-12">

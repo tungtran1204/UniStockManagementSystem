@@ -6,19 +6,23 @@ const authHeader = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-export const getPurchaseRequests = async (page = 0, size = 10) => {
+export const getPurchaseRequests = async (page = 0, size = 10, search = '', statuses = [], startDate = null, endDate = null) => {
   try {
+    const params = new URLSearchParams({ page, size });
+    if (search) params.append('search', search);
+    if (statuses && statuses.length > 0) {
+      statuses.forEach(status => params.append('statuses', status));
+  }   
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+
     const response = await axios.get(`${API_URL}`, {
-      params: {
-        page: page,
-        size: size,
-        sort: "createdDate,desc" // Thêm sort để tránh lỗi
-      },
+      params,
       headers: {
         ...authHeader(),
         "Content-Type": "application/json",
       },
-      withCredentials: true, // Thêm withCredentials
+      withCredentials: true,
     });
 
     if (response.data && response.data.content) {
@@ -27,7 +31,7 @@ export const getPurchaseRequests = async (page = 0, size = 10) => {
         content: response.data.content.map((request) => ({
           id: request.purchaseRequestId, // Thêm id để tránh lỗi undefined
           ...request,
-          status: mapStatusToVietnamese(request.status),
+          //status: mapStatusToVietnamese(request.status),
           partnerName: request.partner?.partnerName || request.partnerName || "Không xác định",
         })),
       };
@@ -46,14 +50,14 @@ export const getPurchaseRequests = async (page = 0, size = 10) => {
   }
 };
 
-const mapStatusToVietnamese = (status) => {
-  const statusMap = {
-    PENDING: "Chờ duyệt",
-    CONFIRMED: "Đã duyệt",
-    CANCELLED: "Từ chối",
-  };
-  return statusMap[status] || status;
-};
+// const mapStatusToVietnamese = (status) => {
+//   const statusMap = {
+//     PENDING: "Chờ duyệt",
+//     CONFIRMED: "Đã duyệt",
+//     CANCELLED: "Từ chối",
+//   };
+//   return statusMap[status] || status;
+// };
 
 export const getNextRequestCode = async () => {
   try {
