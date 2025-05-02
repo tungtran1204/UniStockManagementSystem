@@ -327,22 +327,22 @@ const ModalEditUser = ({ open, onClose, onSuccess, user, fetchUsers }) => {
               Vai trò
             </Typography>
             <div className="flex flex-wrap gap-2">
-              {roles
-                .filter((r) => r.name !== "USER" && (isAdmin || r.name !== "ADMIN")) // Exclude "USER" role and "ADMIN" role if not admin
+            {roles
+                .filter((r) => r.name !== "USER" && (!isAdmin ? r.name !== "ADMIN" : true))
                 .map((r) => (
                   <MuiButton
                     key={r.id}
                     onClick={() => handleRoleChange(r.id)}
                     variant={selectedRoles.has(r.id) ? "contained" : "outlined"}
-                    disabled={!isAdmin} // Disable role selection if current role is "ADMIN"
+                    disabled={r.name === "ADMIN" && isAdmin}
                   >
                     {r.name}
                   </MuiButton>
                 ))}
-              {roles.filter((r) => r.name !== "USER" && (isAdmin || r.name !== "ADMIN")).length === 0 && (
+              {roles.filter((r) => r.name !== "USER" && (!isAdmin ? r.name !== "ADMIN" : true))
+                .length === 0 && (
                 <p className="text-sm text-gray-500">Không có sẵn vai trò.</p>
               )}
-
             </div>
           </div>
         </div>
