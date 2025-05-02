@@ -102,20 +102,22 @@ const PurchaseOrderPage = () => {
   // Fetch orders when component mounts or pagination changes
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      const selected = selectedStatuses.length > 0 ? selectedStatuses[0] : "";
-      fetchPaginatedOrders(currentPage, pageSize, searchTerm, selected);
+      const selected = selectedStatuses.length > 0 ? selectedStatuses[0].value : "";
+      fetchPaginatedOrders(currentPage, pageSize, searchTerm, selected, startDate, endDate);
     }, 500);
 
     console.log("Calling fetchPaginatedOrders with:", {
       page: currentPage,
       size: pageSize,
       search: searchTerm,
-      status: selectedStatuses[0],
-    });
-  
+      status: selectedStatuses.length > 0 ? selectedStatuses[0]?.value : "",
+      startDate,
+      endDate,
+  });  
+
     return () => clearTimeout(timeoutId);
-  }, [currentPage, pageSize, searchTerm, selectedStatuses]);
-  
+  }, [currentPage, pageSize, searchTerm, selectedStatuses, startDate, endDate]);
+
   // Sorting handler
   const handleSort = (column) => {
     if (sortColumn === column) {
@@ -163,12 +165,12 @@ const PurchaseOrderPage = () => {
     {
       value: "PENDING",
       label: "Chờ nhận",
-      className: "bg-yellow-100 text-yellow-800",
+      className: "bg-blue-50 text-blue-800",
     },
     {
       value: "IN_PROGRESS",
       label: "Đã nhập một phần",
-      className: "bg-blue-50 text-blue-800",
+      className: "bg-yellow-50 text-yellow-800",
     },
     {
       value: "COMPLETED",
@@ -178,7 +180,7 @@ const PurchaseOrderPage = () => {
     {
       value: "CANCELED",
       label: "Hủy",
-      className: "bg-gray-100 text-gray-800",
+      className: "bg-red-100 text-red-800",
     },
   ];
 
@@ -244,7 +246,7 @@ const PurchaseOrderPage = () => {
     const selected = selectedStatuses.length > 0 ? selectedStatuses[0] : "";
     fetchPaginatedOrders(0, pageSize, searchTerm, selected);
     setCurrentPage(0);
-  };  
+  };
 
   useEffect(() => {
     // Check if location.state exists and has nextCode
@@ -298,7 +300,20 @@ const PurchaseOrderPage = () => {
       minWidth: 150,
       editable: false,
       filterable: false,
-      renderCell: (params) => params.value || "Không có"
+      renderCell: (params) => {
+        const { purchaseRequestCode, purchaseRequestId } = params.row;
+        if (purchaseRequestCode && purchaseRequestId) {
+          return (
+            <button
+              className="text-blue-600 underline hover:text-blue-800 no-underline"
+              onClick={() => navigate(`/user/purchase-request/${purchaseRequestId}`)}
+            >
+              {purchaseRequestCode}
+            </button>
+          );
+        }
+        return "Không có";
+    }    
     },
     {
       field: 'actions',
@@ -341,6 +356,7 @@ const PurchaseOrderPage = () => {
     id: order.poId,
     index: currentPage * pageSize + index + 1,
     poCode: order.poCode,
+    purchaseRequestId: order.purchaseRequestId,
     purchaseRequestCode: order.purchaseRequestCode,
     supplierName: order.supplierName || "không có thông tin",
     supplierContactName: order.supplierContactName || "không có thông tin",

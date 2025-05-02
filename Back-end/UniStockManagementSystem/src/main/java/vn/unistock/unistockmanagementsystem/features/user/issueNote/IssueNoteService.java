@@ -89,6 +89,14 @@ public class IssueNoteService {
         return notes.map(issueNoteMapper::toDTO);
     }
 
+    public Page<IssueNoteDTO> getAllIssueNotesFiltered(
+            int page, int size, String search, LocalDate startDate, LocalDate endDate, List<String> categories
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "ginId"));
+        Page<GoodIssueNote> notes = issueNoteRepository.searchFilteredIssueNotes(search, startDate, endDate, categories, pageable);
+        return notes.map(issueNoteMapper::toDTO);
+    }
+
     // Tạo phiếu xuất kho mới
     @Transactional
     public IssueNoteDTO createGoodIssue(IssueNoteDTO issueNoteDto) {
@@ -595,6 +603,18 @@ public class IssueNoteService {
                 .map(PaperEvidence::getPaperUrl)
                 .collect(Collectors.toList());
         dto.setPaperEvidence(files);
+
+        receiveOutsourceRepository.findByGoodIssueNote_GinId(note.getGinId())
+                .ifPresent(receiveOutsource -> {
+                    ReceiveOutsourceDTO outsourceDTO = receiveOutsourceMapper.toDTO(receiveOutsource);
+                    // Map materials (danh sách NVL)
+                    outsourceDTO.setMaterials(
+                            receiveOutsource.getMaterials().stream()
+                                    .map(receiveOutsourceMaterialMapper::toDTO)
+                                    .toList()
+                    );
+                    dto.setReceiveOutsource(outsourceDTO);
+                });
 
         return dto;
     }
