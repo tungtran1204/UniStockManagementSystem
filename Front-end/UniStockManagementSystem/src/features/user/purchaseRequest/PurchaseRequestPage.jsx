@@ -80,7 +80,14 @@ const PurchaseRequestPage = () => {
     }, [location.state]);
 
     useEffect(() => {
-        fetchPurchaseRequests(currentPage, pageSize, searchTerm, selectedStatuses.map(mapLabelToStatusCode), startDate, endDate);
+        fetchPurchaseRequests(
+            currentPage,
+            pageSize,
+            searchTerm,
+            selectedStatuses.map(status => status.value),
+            startDate,
+            endDate
+        );        
     }, [currentPage, pageSize, searchTerm, selectedStatuses, startDate, endDate]);    
 
     useEffect(() => {
@@ -112,7 +119,7 @@ const PurchaseRequestPage = () => {
         {
             value: "PURCHASED",
             label: "Đã tạo đơn mua",
-            className: "bg-indigo-50 text-indigo-800",
+            className: "bg-yellow-50 text-yellow-800",
         },
     ];
 

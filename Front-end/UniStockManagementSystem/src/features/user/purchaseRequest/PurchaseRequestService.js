@@ -11,6 +11,7 @@ export const getPurchaseRequests = async (page = 0, size = 10, search = '', stat
     const params = new URLSearchParams({ page, size });
     if (search) params.append('search', search);
     if (statuses && statuses.length > 0) {
+      console.log("🟢 Statuses being sent:", statuses);
       statuses.forEach(status => params.append('statuses', status));
   }   
     if (startDate) params.append('startDate', startDate);
