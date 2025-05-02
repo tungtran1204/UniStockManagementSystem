@@ -5,7 +5,9 @@ import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,7 @@ import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerReposit
 import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersRepository;
 import vn.unistock.unistockmanagementsystem.features.user.saleOrders.UsedMaterialWarehouseDTO;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -547,5 +550,21 @@ public class PurchaseRequestService {
         request.setUpdatedAt(LocalDateTime.now());
         purchaseRequestRepository.save(request);
     }
+
+    public Page<PurchaseRequestDTO> getFilteredPurchaseRequests(
+            int page,
+            int size,
+            String search,
+            LocalDate startDate,
+            LocalDate endDate,
+            List<PurchaseRequest.RequestStatus> statuses
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "purchaseRequestId"));
+        Page<PurchaseRequest> filtered = purchaseRequestRepository.searchFilteredPurchaseRequests(
+                search, startDate, endDate, statuses, pageable
+        );
+        return filtered.map(purchaseRequestMapper::toDTO);
+    }
+
 
 }
