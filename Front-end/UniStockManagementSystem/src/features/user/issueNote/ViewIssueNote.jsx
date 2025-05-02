@@ -182,6 +182,28 @@ const ViewIssueNote = () => {
       ),
     },
     {
+      field: "receivedQuantity",
+      headerName: "Đã nhập",
+      minWidth: 100,
+      flex: 1,
+      filterable: false,
+      editable: false,
+      renderCell: (params) => (
+        <div className="text-center">{params.row.receivedQuantity ?? 0}</div>
+      ),
+    },
+    {
+      field: "remainingQuantity",
+      headerName: "Chưa nhập",
+      minWidth: 100,
+      flex: 1,
+      filterable: false,
+      editable: false,
+      renderCell: (params) => (
+        <div className="text-center">{params.row.remainingQuantity ?? (params.row.quantity ?? 0)}</div>
+      ),
+    },
+    {
       field: "unitName",
       headerName: "Đơn vị",
       minWidth: 100,
@@ -193,7 +215,7 @@ const ViewIssueNote = () => {
       ),
     },
   ];
-
+  
   const expectedMaterials = data.receiveOutsource?.materials?.map((item, idx) => ({
     ...item,
     index: idx,
