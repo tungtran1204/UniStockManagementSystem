@@ -638,8 +638,11 @@ public class IssueNoteService {
             List<Long> warehouseIds
     ) {
         Pageable pageable = PageRequest.of(page, size);
+        LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
+        LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(23, 59, 59) : null;
+
         return issueNoteDetailRepository.getFilteredExportReport(
-                search, startDate, endDate, itemType, minQuantity, maxQuantity, categories, warehouseIds, pageable
+                search, startDateTime, endDateTime, itemType, minQuantity, maxQuantity, categories, warehouseIds, pageable
         );
     }
 
