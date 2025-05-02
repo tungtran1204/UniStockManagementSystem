@@ -93,7 +93,13 @@ public class IssueNoteService {
             int page, int size, String search, LocalDate startDate, LocalDate endDate, List<String> categories
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "ginId"));
-        Page<GoodIssueNote> notes = issueNoteRepository.searchFilteredIssueNotes(search, startDate, endDate, categories, pageable);
+
+        LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
+        LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(23, 59, 59) : null;
+
+        Page<GoodIssueNote> notes = issueNoteRepository.searchFilteredIssueNotes(
+                search, startDateTime, endDateTime, categories, pageable
+        );
         return notes.map(issueNoteMapper::toDTO);
     }
 
