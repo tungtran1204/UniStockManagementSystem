@@ -1844,7 +1844,7 @@ const AddIssueNote = () => {
                         ...params.InputProps,
                         endAdornment: (
                           <div className="flex items-center space-x-1">
-                            <IconButton
+                            {/* <IconButton
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleOpenCreatePartnerPopup();
@@ -1852,7 +1852,7 @@ const AddIssueNote = () => {
                               size="small"
                             >
                               <FaPlus fontSize="small" />
-                            </IconButton>
+                            </IconButton> */}
                             {partnerCode && (
                               <IconButton
                                 onClick={(e) => {

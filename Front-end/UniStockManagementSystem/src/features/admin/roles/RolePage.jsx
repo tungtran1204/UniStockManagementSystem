@@ -1,7 +1,6 @@
 import React, { useCallback, useState, useEffect } from "react";
 import {
   Card,
-  CardHeader,
   CardBody,
   Typography,
   Checkbox,
@@ -10,31 +9,10 @@ import {
   Button,
 } from "@material-tailwind/react";
 import { Button as MuiButton } from "@mui/material";
-import { FaPlus, FaEdit } from "react-icons/fa";
+import { FaEdit } from "react-icons/fa";
 import useRole from "./useRole";
 import PageHeader from '@/components/PageHeader';
-import TableSearch from '@/components/TableSearch';
-
-export const PERMISSION_CATEGORIES = {
-  "Sản phẩm": ["viewProduct", "manageProduct"],
-  "Đối tác": ["viewPartner", "managePartner"],
-  "Kho": ["viewWarehouse", "manageWarehouse"],
-  "Nguyên vật liệu": ["viewMaterial", "manageMaterial"],
-  "Đơn hàng": ["viewSaleOrder", "manageSaleOrder"],
-};
-
-export const PERMISSION_LABELS = {
-  viewProduct: "Xem",
-  manageProduct: "Quản lý",
-  viewPartner: "Xem",
-  managePartner: "Quản lý",
-  viewWarehouse: "Xem",
-  manageWarehouse: "Quản lý",
-  viewMaterial: "Xem",
-  manageMaterial: "Quản lý",
-  viewSaleOrder: "Xem",
-  manageSaleOrder: "Quản lý",
-};
+import { PERMISSION_CATEGORIES, PERMISSION_LABELS } from './permissionConstants';
 
 function findCategoryByPermission(perm) {
   for (const [catName, perms] of Object.entries(PERMISSION_CATEGORIES)) {
@@ -47,6 +25,21 @@ function findCategoryByPermission(perm) {
 
 function getTdClassName(isLast) {
   return `py-3 px-5 ${isLast ? "" : "border-b border-blue-gray-50"}`;
+}
+
+function syncRowHeights() {
+  const rows = document.querySelectorAll('.sync-row');
+  let maxHeight = 0;
+
+  rows.forEach(row => {
+    row.style.minHeight = 'auto'; // Reset chiều cao trước khi tính toán
+    const height = row.getBoundingClientRect().height;
+    if (height > maxHeight) maxHeight = height;
+  });
+
+  rows.forEach(row => {
+    row.style.minHeight = `${maxHeight}px`;
+  });
 }
 
 function RolePage() {
@@ -63,6 +56,7 @@ function RolePage() {
   const [tempRoles, setTempRoles] = useState([]);
   const [editingRole, setEditingRole] = useState(null);
   const [editingRoleName, setEditingRoleName] = useState("");
+  const [tempPermissions, setTempPermissions] = useState({});
   const [saveError, setSaveError] = useState(null);
 
   const onAddTempRole = () => {
@@ -96,39 +90,80 @@ function RolePage() {
     }
   };
 
+  const handleEditRole = (role) => {
+    setEditingRole(role.id);
+    setEditingRoleName(role.name);
+    setTempPermissions({ [role.id]: [...(role.permissionKeys || [])] });
+  };
+
+  const handleSaveEditRole = async (role) => {
+    const updatedPermissions = tempPermissions[role.id] || role.permissionKeys;
+    const updatedRole = {
+      ...role,
+      name: editingRoleName,
+      permissionKeys: updatedPermissions,
+    };
+    try {
+      await handleUpdateRole(role.id, updatedRole);
+      updateRolePermissions(role.id, updatedPermissions);
+      setEditingRole(null);
+      setEditingRoleName("");
+      setTempPermissions((prev) => {
+        const newTemp = { ...prev };
+        delete newTemp[role.id];
+        return newTemp;
+      });
+      setSaveError(null);
+    } catch (err) {
+      console.error("❌ Lỗi khi cập nhật vai trò:", err);
+      setSaveError("Không thể cập nhật vai trò. Vui lòng thử lại.");
+    }
+  };
+
+  const handleCancelEditRole = () => {
+    setEditingRole(null);
+    setEditingRoleName("");
+    setTempPermissions({});
+  };
+
   const handleTogglePermission = useCallback(
     (role, permissionKey) => {
-      const currentPerms = role.permissionKeys || [];
-      const hasPerm = currentPerms.includes(permissionKey);
+      if (role.isTemp || editingRole === role.id) {
+        const currentPerms = role.isTemp
+          ? role.permissionKeys || []
+          : tempPermissions[role.id] || role.permissionKeys || [];
+        const hasPerm = currentPerms.includes(permissionKey);
 
-      let updatedKeys;
-      if (hasPerm) {
-        updatedKeys = currentPerms.filter((k) => k !== permissionKey);
-      } else {
-        updatedKeys = [...currentPerms, permissionKey];
-        const catName = findCategoryByPermission(permissionKey);
-        if (catName) {
-          const [p1, p2] = PERMISSION_CATEGORIES[catName];
-          const other = p1 === permissionKey ? p2 : p1;
-          updatedKeys = updatedKeys.filter((k) => k !== other);
+        let updatedKeys;
+        if (hasPerm) {
+          updatedKeys = currentPerms.filter((k) => k !== permissionKey);
+        } else {
+          updatedKeys = [...currentPerms, permissionKey];
+          const catName = findCategoryByPermission(permissionKey);
+          if (catName) {
+            const [p1, p2] = PERMISSION_CATEGORIES[catName] || [];
+            const other = p1 === permissionKey ? p2 : p1;
+            if (other) {
+              updatedKeys = updatedKeys.filter((k) => k !== other);
+            }
+          }
+        }
+
+        if (role.isTemp) {
+          setTempRoles((prev) =>
+            prev.map((r) =>
+              r.id === role.id ? { ...r, permissionKeys: updatedKeys } : r
+            )
+          );
+        } else {
+          setTempPermissions((prev) => ({
+            ...prev,
+            [role.id]: updatedKeys,
+          }));
         }
       }
-
-      const updatedRole = { ...role, permissionKeys: updatedKeys };
-
-      if (role.isTemp) {
-        setTempRoles((prev) =>
-          prev.map((r) => (r.id === role.id ? updatedRole : r))
-        );
-      } else {
-        updateRolePermissions(role.id, updatedKeys);
-        handleUpdateRole(role.id, updatedRole).catch((err) => {
-          updateRolePermissions(role.id, currentPerms);
-          console.error("❌ Lỗi khi cập nhật permission:", err);
-        });
-      }
     },
-    [handleUpdateRole, updateRolePermissions]
+    [editingRole, tempPermissions]
   );
 
   const handleTempRoleNameChange = (tempId, value) => {
@@ -137,10 +172,10 @@ function RolePage() {
     );
   };
 
-  const handleBlurEditRole = (role) => {
-    handleUpdateRole(role.id, { ...role, name: editingRoleName });
-    setEditingRole(null);
-  };
+  // Đồng bộ chiều cao hàng sau khi allRoles được định nghĩa
+  useEffect(() => {
+    syncRowHeights();
+  }, [roles, tempRoles, editingRole, tempPermissions]);
 
   if (loading) return <div>Loading ...</div>;
   if (error) return <div className="text-red-500">Error: {error}</div>;
@@ -151,223 +186,252 @@ function RolePage() {
   const allRoles = [...filteredRoles, ...tempRoles];
 
   return (
-    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh - 100px)' }}>
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
-        <CardBody className="pb-2 bg-white rounded-xl overflow-x-auto">
-          <PageHeader
-            title="Danh sách Vai Trò"
-            addButtonLabel="Thêm vai trò"
-            onAdd={onAddTempRole}
-            showImport={false}
-            showExport={false}
-          />
-          {saveError && (
-            <Typography color="red" className="mb-4 text-center">
-              {saveError}
-            </Typography>
-          )}
-          <table className="w-full min-w-[640px] table-auto overflow-x-auto">
-            <thead>
-              <tr>
-                <th className="border-b border-blue-gray-50 py-3 px-5 text-center sticky left-0 bg-white z-10">
-                  <Typography
-                    variant="small"
-                    className="text-[11px] font-bold uppercase text-blue-gray-400"
-                  ></Typography>
-                </th>
-                <th className="border-b border-blue-gray-50 py-3 px-5 text-center sticky left-[68.5px] bg-white z-10">
-                  <Typography
-                    variant="small"
-                    className="text-[11px] font-bold uppercase text-blue-gray-400"
-                  >
-                    Vai trò
-                  </Typography>
-                </th>
-                {Object.keys(PERMISSION_CATEGORIES).map((cat) => (
-                  <th
-                    key={cat}
-                    colSpan={PERMISSION_CATEGORIES[cat].length}
-                    className="border-b border-blue-gray-50 py-3 px-5 text-center"
-                  >
-                    <Typography
-                      variant="small"
-                      className="text-[11px] font-bold uppercase text-blue-gray-400"
-                    >
-                      {cat}
-                    </Typography>
-                  </th>
-                ))}
-              </tr>
-              <tr>
-                <th className="border-b border-blue-gray-50 py-3 px-5 text-left sticky left-0 bg-white z-10">
-                  <Typography
-                    variant="small"
-                    className="text-[11px] font-bold uppercase text-blue-gray-400"
-                  >
-                    STT
-                  </Typography>
-                </th>
-                <th className="border-b border-blue-gray-50 py-3 px-5 text-center sticky left-[68.5px] bg-white z-10">
-                  <Typography
-                    variant="small"
-                    className="text-[11px] font-bold uppercase text-blue-gray-400"
-                  ></Typography>
-                </th>
-                {Object.values(PERMISSION_CATEGORIES)
-                  .flat()
-                  .map((perm) => (
-                    <th
-                      key={perm}
-                      className="border-b border-blue-gray-50 py-3 px-5 text-center"
-                    >
+        <PageHeader
+          title="Danh sách Vai Trò"
+          addButtonLabel="Thêm vai trò"
+          onAdd={onAddTempRole}
+          showImport={false}
+          showExport={false}
+        />
+        {saveError && (
+          <Typography color="red" className="mb-4 text-center">
+            {saveError}
+          </Typography>
+        )}
+        <CardBody className="pb-2 bg-white rounded-xl">
+          <div className="relative flex">
+            {/* Cột cố định: STT và Vai trò */}
+            <div className="flex flex-col sticky left-0 z-10 bg-white">
+              <table className="table-auto">
+                <thead>
+                  <tr>
+                    <th className="border-b border-blue-gray-50 py-3 px-5 text-left w-[68.5px]">
                       <Typography
                         variant="small"
                         className="text-[11px] font-bold uppercase text-blue-gray-400"
                       >
-                        {PERMISSION_LABELS[perm] || perm}
+                        STT
                       </Typography>
                     </th>
-                  ))}
-              </tr>
-            </thead>
-            <tbody>
-              {allRoles.length > 0 ? (
-                allRoles.map((role, idx) => {
-                  const isLast = idx === allRoles.length - 1;
-                  const currentPerms = role.permissionKeys || [];
-
-                  return (
-                    <React.Fragment key={role.id}>
-                      <tr>
-                        <td className={`${getTdClassName(isLast)} sticky left-0 bg-white z-10`}>
-                          <Typography
-                            variant="small"
-                            color="blue-gray"
-                            className="font-semibold text-left"
-                          >
-                            {idx + 1}
-                          </Typography>
-                        </td>
-                        <td className={`${getTdClassName(isLast)} sticky left-[68.5px] bg-white z-10`}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex flex-col gap-2 min-w-[200px]">
-                              {editingRole === role.id && !role.isTemp ? (
-                                <Input
-                                  value={editingRoleName}
-                                  onChange={(e) =>
-                                    setEditingRoleName(e.target.value)
-                                  }
-                                  onBlur={() => handleBlurEditRole(role)}
-                                />
-                              ) : role.isTemp ? (
-                                <Input
-                                  value={role.name}
-                                  onChange={(e) =>
-                                    handleTempRoleNameChange(role.id, e.target.value)
-                                  }
-                                  placeholder="Nhập tên vai trò"
-                                />
-                              ) : (
-                                <Typography
-                                  variant="small"
-                                  color="blue-gray"
-                                  className="font-semibold"
-                                >
-                                  {role.name}
-                                </Typography>
-                              )}
-                              {role.active !== undefined && !role.isTemp && (
-                                <div className="flex items-center gap-2">
-                                  <Switch
-                                    color="green"
-                                    checked={!!role.active}
-                                    onChange={() =>
-                                      handleToggleRoleStatus(role.id, role.active)
+                    <th className="border-b border-blue-gray-50 py-3 px-5 text-center min-w-[200px]">
+                      <Typography
+                        variant="small"
+                        className="text-[11px] font-bold uppercase text-blue-gray-400"
+                      >
+                        Vai trò
+                      </Typography>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allRoles.length > 0 ? (
+                    allRoles.map((role, idx) => {
+                      const isLast = idx === allRoles.length - 1;
+                      return (
+                        <tr key={role.id} className="sync-row">
+                          <td className={`${getTdClassName(isLast)} w-[68.5px]`}>
+                            <Typography
+                              variant="small"
+                              color="blue-gray"
+                              className="font-semibold text-left"
+                            >
+                              {idx + 1}
+                            </Typography>
+                          </td>
+                          <td className={getTdClassName(isLast)}>
+                            <div className="flex items-center justify-between min-w-[200px]">
+                              <div className="flex flex-col gap-2">
+                                {editingRole === role.id && !role.isTemp ? (
+                                  <Input
+                                    value={editingRoleName}
+                                    onChange={(e) =>
+                                      setEditingRoleName(e.target.value)
                                     }
+                                    placeholder="Nhập tên vai trò"
                                   />
-                                  <Typography className="text-xs font-semibold text-blue-gray-600">
-                                    {role.active ? "Hoạt động" : "Vô hiệu hóa"}
+                                ) : role.isTemp ? (
+                                  <Input
+                                    value={role.name}
+                                    onChange={(e) =>
+                                      handleTempRoleNameChange(role.id, e.target.value)
+                                    }
+                                    placeholder="Nhập tên vai trò"
+                                  />
+                                ) : (
+                                  <Typography
+                                    variant="small"
+                                    color="blue-gray"
+                                    className="font-semibold"
+                                  >
+                                    {role.name}
                                   </Typography>
-                                </div>
+                                )}
+                                {role.active !== undefined && !role.isTemp && (
+                                  <div className="flex items-center gap-2">
+                                    {/* <Switch
+                                      color="green"
+                                      checked={!!role.active}
+                                      onChange={() =>
+                                        handleToggleRoleStatus(role.id, role.active)
+                                      }
+                                    /> */}
+                                    {/* <Typography className="text-xs font-semibold text-blue-gray-600">
+                                      {role.active ? "Hoạt động" : "Vô hiệu hóa"}
+                                    </Typography> */}
+                                  </div>
+                                )}
+                              </div>
+                              {!role.isTemp && (
+                                <Button
+                                  size="sm"
+                                  className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white items-center"
+                                  onClick={() => handleEditRole(role)}
+                                >
+                                  <FaEdit />
+                                </Button>
                               )}
-                            </div>
-                            {!role.isTemp && (
-                              <Button
-                                size="sm"
-                                className="p-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white items-center"
-                                onClick={() => {
-                                  setEditingRole(role.id);
-                                  setEditingRoleName(role.name);
-                                }}
-                              >
-                                <FaEdit />
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                        {Object.values(PERMISSION_CATEGORIES)
-                          .flat()
-                          .map((perm) => {
-                            const checked = currentPerms.includes(perm);
-                            return (
-                              <td key={perm} className={getTdClassName(isLast)}>
-                                <div className="flex items-center justify-center">
-                                  <Checkbox
-                                    checked={checked}
-                                    onChange={() =>
-                                      handleTogglePermission(role, perm)
-                                    }
-                                  />
-                                </div>
-                              </td>
-                            );
-                          })}
-                      </tr>
-                      {role.isTemp && (
-                        <tr>
-                          <td
-                            colSpan={
-                              2 + Object.values(PERMISSION_CATEGORIES).flat().length
-                            }
-                          >
-                            <div className="flex justify-end py-2 pr-5">
-                              <MuiButton
-                                size="medium"
-                                color="error"
-                                variant="outlined"
-                                onClick={() => onRemoveTempRole(role.id)}
-                              >
-                                Hủy
-                              </MuiButton>
-                              <Button
-                                size="lg"
-                                color="white"
-                                variant="text"
-                                className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-3 rounded-[4px] transition-all duration-200 ease-in-out"
-                                ripple={true}
-                                onClick={() => onSaveTempRole(role)}
-                              >
-                                Lưu
-                              </Button>
                             </div>
                           </td>
                         </tr>
-                      )}
-                    </React.Fragment>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td
-                    colSpan={2 + Object.values(PERMISSION_CATEGORIES).flat().length}
-                    className="border-b border-gray-200 px-3 py-4 text-center text-gray-500"
-                  >
-                    Không có dữ liệu
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                      );
+                    })
+                  ) : (
+                    <tr className="sync-row">
+                      <td
+                        colSpan={2}
+                        className="border-b border-gray-200 px-3 py-4 text-center text-gray-500"
+                      >
+                        Không có dữ liệu
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {/* Cột có thể cuộn: Quyền */}
+            <div className="flex-1 overflow-x-auto">
+              <table className="w-full min-w-[640px] table-auto">
+                <thead>
+                  <tr>
+                    {Object.keys(PERMISSION_CATEGORIES).map((cat) => (
+                      <th
+                        key={cat}
+                        colSpan={PERMISSION_CATEGORIES[cat].length}
+                        className="border-b border-blue-gray-50 py-3 px-5 text-center"
+                      >
+                        <Typography
+                          variant="small"
+                          className="text-[11px] font-bold uppercase text-blue-gray-400"
+                        >
+                          {cat}
+                        </Typography>
+                      </th>
+                    ))}
+                  </tr>
+                  <tr>
+                    {Object.values(PERMISSION_CATEGORIES)
+                      .flat()
+                      .map((perm) => (
+                        <th
+                          key={perm}
+                          className="border-b border-blue-gray-50 py-3 px-5 text-center"
+                        >
+                          <Typography
+                            variant="small"
+                            className="text-[11px] font-bold uppercase text-blue-gray-400"
+                          >
+                            {PERMISSION_LABELS[perm] || perm}
+                          </Typography>
+                        </th>
+                      ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {allRoles.length > 0 ? (
+                    allRoles.map((role, idx) => {
+                      const isLast = idx === allRoles.length - 1;
+                      const currentPerms = role.isTemp
+                        ? role.permissionKeys || []
+                        : tempPermissions[role.id] || role.permissionKeys || [];
+                      return (
+                        <React.Fragment key={role.id}>
+                          <tr className="sync-row">
+                            {Object.values(PERMISSION_CATEGORIES)
+                              .flat()
+                              .map((perm) => {
+                                const checked = currentPerms.includes(perm);
+                                return (
+                                  <td key={perm} className={getTdClassName(isLast)}>
+                                    <div className="flex items-center justify-center">
+                                      <Checkbox
+                                        checked={checked}
+                                        onChange={() =>
+                                          handleTogglePermission(role, perm)
+                                        }
+                                        disabled={
+                                          !role.isTemp && editingRole !== role.id
+                                        }
+                                      />
+                                    </div>
+                                  </td>
+                                );
+                              })}
+                          </tr>
+                          {(role.isTemp || editingRole === role.id) && (
+                            <tr className="sync-row">
+                              <td
+                                colSpan={Object.values(PERMISSION_CATEGORIES).flat().length}
+                              >
+                                <div className="flex justify-end py-2 pr-5">
+                                  <MuiButton
+                                    size="medium"
+                                    color="error"
+                                    variant="outlined"
+                                    onClick={() =>
+                                      role.isTemp
+                                        ? onRemoveTempRole(role.id)
+                                        : handleCancelEditRole()
+                                    }
+                                  >
+                                    Hủy
+                                  </MuiButton>
+                                  <Button
+                                    size="lg"
+                                    color="white"
+                                    variant="text"
+                                    className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-3 rounded-[4px] transition-all duration-200 ease-in-out"
+                                    ripple={true}
+                                    onClick={() =>
+                                      role.isTemp
+                                        ? onSaveTempRole(role)
+                                        : handleSaveEditRole(role)
+                                    }
+                                  >
+                                    Lưu
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })
+                  ) : (
+                    <tr className="sync-row">
+                      <td
+                        colSpan={Object.values(PERMISSION_CATEGORIES).flat().length}
+                        className="border-b border-gray-200 px-3 py-4 text-center text-gray-500"
+                      >
+                        Không có dữ liệu
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </CardBody>
       </Card>
     </div>
