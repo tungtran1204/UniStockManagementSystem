@@ -51,6 +51,7 @@ public class MaterialsService {
         material.setMaterialCode(materialDTO.getMaterialCode());
         material.setMaterialName(materialDTO.getMaterialName());
         material.setDescription(materialDTO.getDescription());
+        material.setLowStockThreshold(materialDTO.getLowStockThreshold()); // Thêm ngưỡng tồn kho thấp
         if (materialDTO.getMaterialCode() == null || materialDTO.getMaterialCode().trim().isEmpty()) {
             throw new IllegalArgumentException("Mã nguyên vật liệu không được rỗng!");
         }
@@ -69,12 +70,10 @@ public class MaterialsService {
 
         // Xử lý upload ảnh
         if (image != null && !image.isEmpty()) {
-            // Kiểm tra định dạng file
             String contentType = image.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
                 throw new IllegalArgumentException("File phải là ảnh (JPG, PNG, v.v.)");
             }
-            // Kiểm tra kích thước file
             if (image.getSize() == 0) {
                 throw new IllegalArgumentException("File ảnh không được rỗng!");
             }
@@ -84,7 +83,6 @@ public class MaterialsService {
             } catch (Exception e) {
                 throw new IOException("Không thể upload ảnh: " + e.getMessage(), e);
             }
-        } else {
         }
 
         Material savedMaterial = materialsRepository.save(material);
@@ -149,6 +147,7 @@ public class MaterialsService {
         material.setMaterialCode(updatedMaterial.getMaterialCode());
         material.setMaterialName(updatedMaterial.getMaterialName());
         material.setDescription(updatedMaterial.getDescription());
+        material.setLowStockThreshold(updatedMaterial.getLowStockThreshold()); // Thêm ngưỡng tồn kho thấp
 
         if (updatedMaterial.getUnitId() != null) {
             material.setUnit(unitRepository.findById(updatedMaterial.getUnitId())
@@ -202,14 +201,6 @@ public class MaterialsService {
         log.info("Updated material with imageUrl: {}", savedMaterial.getImageUrl());
         return materialsMapper.toDTO(savedMaterial);
     }
-
-//    // 🟢 Lấy danh sách nguyên liệu theo nhà cung cấp
-//    public List<MaterialsDTO> getMaterialsByPartner(Long partnerId) {
-//        List<Material> materials = materialsRepository.findByPartnerId(partnerId);
-//        return materials.stream()
-//                .map(materialsMapper::toDTO)
-//                .collect(Collectors.toList());
-//    }
 
     // 🟢 Lấy danh sách nguyên liệu đang hoạt động
     public List<MaterialsDTO> getAllActiveMaterials() {

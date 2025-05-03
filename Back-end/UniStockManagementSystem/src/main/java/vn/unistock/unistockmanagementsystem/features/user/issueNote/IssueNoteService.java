@@ -19,6 +19,7 @@ import vn.unistock.unistockmanagementsystem.entities.*;
 import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryRepository;
 import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryTransactionRepository;
 import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
+import vn.unistock.unistockmanagementsystem.features.user.notification.NotificationService;
 import vn.unistock.unistockmanagementsystem.features.user.products.ProductsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.receiptnote.PaperEvidenceRepository;
 import vn.unistock.unistockmanagementsystem.features.user.saleOrders.SaleOrdersRepository;
@@ -39,6 +40,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class IssueNoteService {
     private static final Logger logger = LoggerFactory.getLogger(IssueNoteService.class);
+
+    @Autowired
+    private NotificationService notificationService;
 
     @Autowired
     private IssueNoteRepository issueNoteRepository;
@@ -177,6 +181,8 @@ public class IssueNoteService {
                         detail.setUnit(material.getUnit());
                     }
                     updateInventoryAndTransactionForExport(warehouse, material, null, detailDto.getQuantity(), issueNote, hasSalesOrder);
+                    // ✅ Thêm dòng này để kiểm tra tồn kho thấp
+                    notificationService.checkLowStock(material.getMaterialId());
                 } else if (detailDto.getProductId() != null) {
                     Product product = productRepository.findById(detailDto.getProductId())
                             .orElseThrow(() -> new RuntimeException("Product not found with ID: " + detailDto.getProductId()));

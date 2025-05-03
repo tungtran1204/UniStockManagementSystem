@@ -48,6 +48,8 @@ import { getWarehouseList } from "../warehouse/warehouseService";
 import { getAllActiveMaterials } from '../materials/materialService';
 
 import useIssueNote from "./useIssueNote";
+import { useNotifications } from "../notification/useNotifications";
+
 
 const OUTSOURCE_TYPE_ID = 3;
 const SUPPLIER_TYPE_ID = 2;
@@ -114,6 +116,7 @@ const buildMaterialRows = async (orderDetails, orderId) => {
 // 🔄 END PATCH
 
 const AddIssueNote = () => {
+  const { fetchNotifications } = useNotifications();
   const navigate = useNavigate();
   const { fetchNextCode, addIssueNote, materials } = useIssueNote();
 
@@ -1498,6 +1501,7 @@ const AddIssueNote = () => {
 
       const result = await addIssueNote(payload);
       if (result) {
+        window.dispatchEvent(new Event("refreshNotifications"));
         if (files && files.length > 0) {
           try {
             const uploadResult = await uploadPaperEvidence(
