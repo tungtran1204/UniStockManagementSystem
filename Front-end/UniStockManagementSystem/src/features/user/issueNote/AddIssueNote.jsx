@@ -79,7 +79,7 @@ const buildMaterialRows = async (orderDetails, orderId) => {
       exists.orderQuantity += m.requiredQuantity || 0;
       exists.exportedQuantity += m.receivedQuantity || 0;
       exists.pendingQuantity = exists.orderQuantity - exists.exportedQuantity;
-
+      console.log(`[buildMaterialRows] Material: ${m.materialCode} (${m.materialId}) | Required: ${m.requiredQuantity} | Received: ${m.receivedQuantity} | Pending: ${exists.pendingQuantity}`);
       rowsMap.set(key, exists);
     }
   }
