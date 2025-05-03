@@ -398,6 +398,7 @@ const AddIssueNote = () => {
   const handleOpenChooseOrderModal = () => setIsChooseOrderModalOpen(true);
   const handleCloseChooseOrderModal = () => setIsChooseOrderModalOpen(false);
 
+  // ------------------ Handle chọn đơn hàng ------------------
   const handleOrderSelected = async (selectedOrder) => {
     if (!selectedOrder) {
       setReferenceDocument("");
@@ -413,7 +414,7 @@ const AddIssueNote = () => {
     }
 
     setReferenceDocument(selectedOrder.orderCode);
-    setSoId(selectedOrder.id);
+    setSoId(selectedOrder.orderId); // Changed from selectedOrder.id to selectedOrder.orderId
     setPartnerCode(selectedOrder.partnerCode);
     setPartnerName(selectedOrder.partnerName);
     setDescription(selectedOrder.orderName || "");
@@ -422,7 +423,7 @@ const AddIssueNote = () => {
 
     if (category === "Sản xuất") {
       // 👉 Lấy danh sách vật tư theo đơn hàng
-      const materialRows = await buildMaterialRows(selectedOrder.orderDetails, selectedOrder.id);
+      const materialRows = await buildMaterialRows(selectedOrder.orderDetails, selectedOrder.orderId);
       console.log("Material rows for production:", materialRows);
       setProducts(materialRows);
       handleCloseChooseOrderModal();
@@ -434,7 +435,7 @@ const AddIssueNote = () => {
       let inStockArr = [];
       try {
         if (detail.productId) {
-          inStockArr = await getTotalQuantityOfProduct(detail.productId, selectedOrder.id);
+          inStockArr = await getTotalQuantityOfProduct(detail.productId, selectedOrder.orderId);
         }
       } catch (err) {
         console.error("Lỗi getTotalQuantityOfProduct:", err);
