@@ -97,16 +97,11 @@ const PurchaseRequestPage = () => {
         {
             value: "CONFIRMED",
             label: "Đã duyệt",
-            className: "bg-green-50 text-green-800",
+            className: "bg-teal-50 text-teal-800",
         },
         {
             value: "CANCELLED",
-            label: "Đã hủy",
-            className: "bg-gray-100 text-gray-800",
-        },
-        {
-            value: "REJECTED",
-            label: "Bị từ chối",
+            label: "Từ chối",
             className: "bg-red-50 text-red-800",
         },
         {
@@ -114,14 +109,19 @@ const PurchaseRequestPage = () => {
             label: "Đã tạo đơn mua",
             className: "bg-indigo-50 text-indigo-800",
         },
+        {
+            value: "FINISHED",
+            label: "Đã hoàn thành",
+            className: "bg-green-50 text-green-800",
+        },
     ];
 
     const statusMapping = {
         PENDING: "bg-blue-50 text-blue-800",
         CONFIRMED: "bg-green-50 text-green-800",
-        CANCELLED: "bg-gray-100 text-gray-800",
-        REJECTED: "bg-red-50 text-red-800",
+        CANCELLED: "bg-red-50 text-red-800",
         PURCHASED: "bg-indigo-50 text-indigo-800",
+        FINISHED: "bg-green-50 text-green-800",
     };
 
     const filteredRequests = purchaseRequests.filter((request) => {
@@ -223,7 +223,7 @@ const PurchaseRequestPage = () => {
             filterable: false,
             renderCell: (params) => (
                 <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                    ${statusMapping[params.value] || 'bg-yellow-100 text-amber-800'}`}
+                    ${statusMapping[params.value]}`}
                 >
                     {params.row?.statusLabel || params.value}
                 </div>
@@ -237,7 +237,7 @@ const PurchaseRequestPage = () => {
             editable: false,
             filterable: false,
             renderCell: (params) => {
-                if (params.row.status !== 'Từ chối') return '';
+                if (params.row.status !== 'CANCELLED') return '';
                 if (!params.value) return 'Không có';
                 return params.value.startsWith('Khác') ? 'Khác' : params.value;
             },
@@ -284,7 +284,8 @@ const PurchaseRequestPage = () => {
         purchaseRequestCode: request.purchaseRequestCode,
         purchaseOrderCode: request.saleOrderCode || "Chưa có",
         createdDate: request.createdDate,
-        status: getStatusLabel(request.status),
+        status: request.status,  // 👈 giữ nguyên code
+        statusLabel: getStatusLabel(request.status),
         rejectionReason: request.rejectionReason,
     }));
 

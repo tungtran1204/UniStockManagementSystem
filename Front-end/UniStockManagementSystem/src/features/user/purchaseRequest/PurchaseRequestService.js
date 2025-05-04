@@ -27,7 +27,7 @@ export const getPurchaseRequests = async (page = 0, size = 10) => {
         content: response.data.content.map((request) => ({
           id: request.purchaseRequestId, // Thêm id để tránh lỗi undefined
           ...request,
-          status: mapStatusToVietnamese(request.status),
+          status: request.status,
           partnerName: request.partner?.partnerName || request.partnerName || "Không xác định",
         })),
       };

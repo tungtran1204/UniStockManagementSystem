@@ -66,7 +66,7 @@ const SaleOrdersPage = () => {
     {
         value: "PREPARING_MATERIAL",
         label: "Đang chuẩn bị",
-        className: "bg-yellow-100 text-amber-800",
+        className: "bg-yellow-100 text-orange-800",
     },
     {
         value: "PARTIALLY_ISSUED",
@@ -194,7 +194,7 @@ const SaleOrdersPage = () => {
       field: 'status',
       headerName: 'Trạng thái',
       flex: 1.5,
-      minWidth: 150,
+      minWidth: 210,
       editable: false,
       filterable: false,
       renderCell: (params) => {

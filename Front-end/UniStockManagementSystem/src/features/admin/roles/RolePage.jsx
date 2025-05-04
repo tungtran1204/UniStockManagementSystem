@@ -3,12 +3,25 @@ import {
   Card,
   CardBody,
   Typography,
-  Checkbox,
+  // Checkbox,
   Input,
   Switch,
   Button,
 } from "@material-tailwind/react";
-import { Button as MuiButton } from "@mui/material";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Checkbox,
+  IconButton,
+  TextField,
+  Button as MuiButton,
+  Paper,
+} from '@mui/material';
+import ModeEditOutlineOutlinedIcon from '@mui/icons-material/ModeEditOutlineOutlined';
 import { FaEdit } from "react-icons/fa";
 import useRole from "./useRole";
 import PageHeader from '@/components/PageHeader';
@@ -186,23 +199,210 @@ function RolePage() {
   const allRoles = [...filteredRoles, ...tempRoles];
 
   return (
-    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh - 100px)' }}>
+    <div className="mb-8 flex flex-col gap-12">
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
-        <PageHeader
-          title="Danh sách Vai Trò"
-          addButtonLabel="Thêm vai trò"
-          onAdd={onAddTempRole}
-          showImport={false}
-          showExport={false}
-        />
-        {saveError && (
-          <Typography color="red" className="mb-4 text-center">
-            {saveError}
-          </Typography>
-        )}
-        <CardBody className="pb-2 bg-white rounded-xl">
-          <div className="relative flex">
-            {/* Cột cố định: STT và Vai trò */}
+        <CardBody className="mb-3 bg-white rounded-xl">
+          <PageHeader
+            title="Danh sách Vai Trò"
+            addButtonLabel="Thêm vai trò"
+            onAdd={onAddTempRole}
+            showImport={false}
+            showExport={false}
+          />
+          {saveError && (
+            <Typography color="red" className="mb-4 text-center">
+              {saveError}
+            </Typography>
+          )}
+          <div style={{ display: 'flex' }}>
+            {/* Cột cố định */}
+            <TableContainer
+              component={Paper}
+              sx={{
+                fontFamily: 'Roboto, sans-serif',
+                overflowX: 'auto',
+                '& .MuiTableRow-root': {
+                  minHeight: '40px',
+                },
+                '& table': {
+                  borderCollapse: 'separate', // sử dụng separate thay vì collapse
+                  borderSpacing: 0, // không để khoảng cách
+                  width: '100%',
+                },
+                '& th, & td': {
+                  border: '0.5px solid rgba(224, 224, 224, 1)',
+                  textAlign: 'center',
+                  whiteSpace: 'nowrap',
+                },
+                '& th': {
+                  backgroundColor: '#f5f5f5',
+                  fontWeight: 'semibold',
+                },
+              }}
+            >
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell
+                      sx={{
+                        position: 'sticky',
+                        left: 0,
+                        zIndex: 2,
+                        backgroundColor: '#fff',
+                        minWidth: 70,
+                        fontSize: '14px',
+                        textAlign: 'center',
+                        borderRight: '1px solid rgba(224, 224, 224, 1)',
+                      }}
+                      rowSpan={2}
+                    >
+                      STT
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        position: 'sticky',
+                        left: 70,
+                        zIndex: 2,
+                        backgroundColor: '#fff',
+                        minWidth: 200,
+                        fontSize: '14px',
+                        textAlign: 'center',
+                        borderLeft: 'none',
+                        borderRight: '1px solid rgba(224, 224, 224, 1)',}}
+                      rowSpan={2}
+                    >
+                      Vai trò
+                    </TableCell>
+                    {Object.keys(PERMISSION_CATEGORIES).map((cat) => (
+                      <TableCell
+                        key={cat}
+                        align="center"
+                        colSpan={PERMISSION_CATEGORIES[cat].length}
+                        sx={{ fontSize: '14px', padding: '10px' }}
+                      >
+                        {cat}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                  <TableRow>
+                    {Object.values(PERMISSION_CATEGORIES)
+                      .flat()
+                      .map((perm) => (
+                        <TableCell key={perm} align="center" sx={{ fontSize: '12px', padding: '8px' }}>
+                          {PERMISSION_LABELS[perm] || perm}
+                        </TableCell>
+                      ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {allRoles.length > 0 ? (
+                    allRoles.map((role, idx) => {
+                      const currentPerms = role.isTemp
+                        ? role.permissionKeys || []
+                        : tempPermissions[role.id] || role.permissionKeys || [];
+                      return (
+                        <React.Fragment key={role.id}>
+                          <TableRow>
+                            <TableCell sx={{ position: 'sticky', left: 0, zIndex: 1, backgroundColor: '#fff' }}>{idx + 1}</TableCell>
+                            <TableCell sx={{ position: 'sticky', left: 70, zIndex: 1, backgroundColor: '#fff' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                  {editingRole === role.id && !role.isTemp ? (
+                                    <TextField
+                                      size="small"
+                                      color="success"
+                                      value={editingRoleName}
+                                      onChange={(e) => setEditingRoleName(e.target.value)}
+                                      placeholder="Nhập tên vai trò"
+                                    />
+                                  ) : role.isTemp ? (
+                                    <TextField
+                                      size="small"
+                                      color="success"
+                                      value={role.name}
+                                      onChange={(e) => handleTempRoleNameChange(role.id, e.target.value)}
+                                      placeholder="Nhập tên vai trò"
+                                    />
+                                  ) : (
+                                    <Typography variant="body2" fontWeight="bold">
+                                      {role.name}
+                                    </Typography>
+                                  )}
+                                </div>
+                                {!role.isTemp && (
+                                  <IconButton size="small" color="primary" onClick={() => handleEditRole(role)}>
+                                    <ModeEditOutlineOutlinedIcon fontSize="small" />
+                                  </IconButton>
+                                )}
+                              </div>
+                            </TableCell>
+                            {Object.values(PERMISSION_CATEGORIES)
+                              .flat()
+                              .map((perm) => (
+                                <TableCell key={perm} align="center">
+                                  <Checkbox
+                                    checked={currentPerms.includes(perm)}
+                                    onChange={() => handleTogglePermission(role, perm)}
+                                    disabled={!role.isTemp && editingRole !== role.id}
+                                    size="small"
+                                    sx={{
+                                      '&.Mui-checked:not(.Mui-disabled)': {
+                                        color: '#0ab048',
+                                      },
+                                    }}
+                                  />
+                                </TableCell>
+                              ))}
+                          </TableRow>
+                        </React.Fragment>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={Object.values(PERMISSION_CATEGORIES).flat().length + 2} align="center">
+                        Không có dữ liệu
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </div>
+          {/* Phần nút Huỷ & Lưu luôn hiển thị đầy đủ và cố định dưới bảng */}
+          {(editingRole || tempRoles.length > 0) && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+              <MuiButton
+                size="medium"
+                color="error"
+                variant="outlined"
+                onClick={() =>
+                  editingRole
+                    ? handleCancelEditRole()
+                    : tempRoles.length > 0 && onRemoveTempRole(tempRoles[tempRoles.length - 1].id)
+                }
+              >
+                Hủy
+              </MuiButton>
+              <Button
+                size="lg"
+                color="white"
+                variant="text"
+                className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 ml-3 rounded-[4px] transition-all duration-200 ease-in-out"
+                ripple={true}
+                onClick={() => {
+                  const role = editingRole
+                    ? roles.find((r) => r.id === editingRole)
+                    : tempRoles[tempRoles.length - 1];
+                  if (role) {
+                    role.isTemp ? onSaveTempRole(role) : handleSaveEditRole(role);
+                  }
+                }}
+              >
+                Lưu
+              </Button>
+            </div>
+          )}
+          {/* <div className="relative flex">
             <div className="flex flex-col sticky left-0 z-10 bg-white">
               <table className="table-auto">
                 <thead>
@@ -269,18 +469,18 @@ function RolePage() {
                                   </Typography>
                                 )}
                                 {role.active !== undefined && !role.isTemp && (
-                                  <div className="flex items-center gap-2">
-                                    {/* <Switch
+                                  <div className="flex items-center gap-2"> */}
+          {/* <Switch
                                       color="green"
                                       checked={!!role.active}
                                       onChange={() =>
                                         handleToggleRoleStatus(role.id, role.active)
                                       }
                                     /> */}
-                                    {/* <Typography className="text-xs font-semibold text-blue-gray-600">
+          {/* <Typography className="text-xs font-semibold text-blue-gray-600">
                                       {role.active ? "Hoạt động" : "Vô hiệu hóa"}
                                     </Typography> */}
-                                  </div>
+          {/* </div>
                                 )}
                               </div>
                               {!role.isTemp && (
@@ -310,7 +510,6 @@ function RolePage() {
                 </tbody>
               </table>
             </div>
-            {/* Cột có thể cuộn: Quyền */}
             <div className="flex-1 overflow-x-auto">
               <table className="w-full min-w-[640px] table-auto">
                 <thead>
@@ -431,7 +630,7 @@ function RolePage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </div> */}
         </CardBody>
       </Card>
     </div>

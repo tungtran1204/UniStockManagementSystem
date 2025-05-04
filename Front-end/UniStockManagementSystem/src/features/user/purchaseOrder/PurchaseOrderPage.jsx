@@ -170,17 +170,17 @@ const PurchaseOrderPage = () => {
     {
       value: "IN_PROGRESS",
       label: "Đã nhập một phần",
-      className: "bg-yellow-50 text-yellow-800",
+      className: "bg-yellow-100 text-orange-800",
     },
     {
       value: "COMPLETED",
-      label: "Hoàn thành",
+      label: "Đã hoàn thành",
       className: "bg-green-50 text-green-800",
     },
     {
-      value: "CANCELED",
-      label: "Hủy",
-      className: "bg-red-100 text-red-800",
+      value: "CANCELLED",
+      label: "Đã hủy",
+      className: "bg-red-50 text-red-800",
     },
   ];
 
@@ -200,10 +200,10 @@ const PurchaseOrderPage = () => {
       case "COMPLETED":
         return "bg-green-50 text-green-800";
       case "IN_PROGRESS":
-        return "bg-yellow-100 text-amber-800";
+        return "bg-yellow-100 text-orange-800";
       case "PENDING":
         return "bg-blue-50 text-blue-800";
-      case "CANCELED":
+      case "CANCELLED":
         return "bg-red-50 text-red-800";
       default:
         return "bg-gray-50 text-gray-800";
@@ -305,7 +305,7 @@ const PurchaseOrderPage = () => {
         if (purchaseRequestCode && purchaseRequestId) {
           return (
             <button
-              className="text-blue-600 underline hover:text-blue-800 no-underline"
+              className="text-blue-600 hover:text-blue-800 no-underline"
               onClick={() => navigate(`/user/purchase-request/${purchaseRequestId}`)}
             >
               {purchaseRequestCode}
