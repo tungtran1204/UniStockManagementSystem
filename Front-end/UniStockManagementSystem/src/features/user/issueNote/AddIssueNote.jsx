@@ -48,6 +48,8 @@ import { getWarehouseList } from "../warehouse/warehouseService";
 import { getAllActiveMaterials } from '../materials/materialService';
 
 import useIssueNote from "./useIssueNote";
+import { useNotifications } from "../notification/useNotifications";
+
 
 const OUTSOURCE_TYPE_ID = 3;
 const SUPPLIER_TYPE_ID = 2;
@@ -56,32 +58,48 @@ const SUPPLIER_TYPE_ID = 2;
 /** Gom vật tư từ danh sách orderDetails.
  *  Trả về mảng [{ materialId, materialCode?, materialName?, unitName, orderQty, exportedQty, pendingQty, inStock:[...] }]
  */
-const buildMaterialRows = async (orderDetails, orderId) => {
+const buildMaterialRows = async (materials, orderId) => {
+  console.log("[buildMaterialRows] Input materials:", JSON.stringify(materials, null, 2));
+
   const rowsMap = new Map();
 
-  for (const detail of orderDetails) {
-    if (!Array.isArray(detail.materials)) continue;
+  if (!Array.isArray(materials) || materials.length === 0) {
+    console.warn("[buildMaterialRows] Materials is empty or not an array");
+    return [];
+  }
 
-    for (const m of detail.materials) {
-      const key = m.materialId;
-      const exists = rowsMap.get(key) || {
-        id: `m-${key}`,
-        materialId: key,
-        materialCode: m.materialCode || "",
-        materialName: m.materialName || "",
-        unitName: m.unitName || "",
-        orderQuantity: 0,
-        exportedQuantity: 0,
-        pendingQuantity: 0,
-        inStock: []
-      };
-
-      exists.orderQuantity += m.requiredQuantity || 0;
-      exists.exportedQuantity += m.receivedQuantity || 0;
-      exists.pendingQuantity = exists.orderQuantity - exists.exportedQuantity;
-      console.log(`[buildMaterialRows] Material: ${m.materialCode} (${m.materialId}) | Required: ${m.requiredQuantity} | Received: ${m.receivedQuantity} | Pending: ${exists.pendingQuantity}`);
-      rowsMap.set(key, exists);
+  for (const m of materials) {
+    // Kiểm tra xem material có materialId hợp lệ không
+    if (!m.materialId) {
+      console.warn("[buildMaterialRows] Skipping material with missing materialId:", JSON.stringify(m, null, 2));
+      continue;
     }
+
+    const key = m.materialId;
+    const exists = rowsMap.get(key) || {
+      id: `m-${key}`,
+      materialId: key,
+      materialCode: m.materialCode || "",
+      materialName: m.materialName || "",
+      unitName: m.unitName || "",
+      unitId: m.unitId || null,
+      orderQuantity: 0,
+      exportedQuantity: 0,
+      pendingQuantity: 0,
+      inStock: []
+    };
+
+    exists.orderQuantity += m.requiredQuantity || 0;
+    exists.exportedQuantity += m.receivedQuantity || 0;
+    exists.pendingQuantity = exists.orderQuantity - exists.exportedQuantity;
+    console.log(`[buildMaterialRows] Material: ${m.materialCode} (${m.materialId}) | Required: ${m.requiredQuantity} | Received: ${m.receivedQuantity} | Pending: ${exists.pendingQuantity}`);
+    rowsMap.set(key, exists);
+  }
+
+  // Kiểm tra nếu không có vật tư hợp lệ
+  if (rowsMap.size === 0) {
+    console.warn("[buildMaterialRows] No valid materials found");
+    return [];
   }
 
   // 👉 nạp tồn kho từng vật tư
@@ -109,11 +127,14 @@ const buildMaterialRows = async (orderDetails, orderId) => {
     return row;
   });
 
-  return Promise.all(promises);
+  const result = await Promise.all(promises);
+  console.log("[buildMaterialRows] Output rows:", JSON.stringify(result, null, 2));
+  return result;
 };
 // 🔄 END PATCH
 
 const AddIssueNote = () => {
+  const { fetchNotifications } = useNotifications();
   const navigate = useNavigate();
   const { fetchNextCode, addIssueNote, materials } = useIssueNote();
 
@@ -210,6 +231,7 @@ const AddIssueNote = () => {
             address: order.address,
             contactName: order.contactName,
             orderDetails: order.orderDetails,
+            materials: order.materials,
           }));
         setOrders(mapped);
       } else {
@@ -398,6 +420,7 @@ const AddIssueNote = () => {
   const handleOpenChooseOrderModal = () => setIsChooseOrderModalOpen(true);
   const handleCloseChooseOrderModal = () => setIsChooseOrderModalOpen(false);
 
+  // ------------------ Handle chọn đơn hàng ------------------
   const handleOrderSelected = async (selectedOrder) => {
     if (!selectedOrder) {
       setReferenceDocument("");
@@ -413,7 +436,7 @@ const AddIssueNote = () => {
     }
 
     setReferenceDocument(selectedOrder.orderCode);
-    setSoId(selectedOrder.id);
+    setSoId(selectedOrder.orderId); // Changed from selectedOrder.id to selectedOrder.orderId
     setPartnerCode(selectedOrder.partnerCode);
     setPartnerName(selectedOrder.partnerName);
     setDescription(selectedOrder.orderName || "");
@@ -421,9 +444,25 @@ const AddIssueNote = () => {
     setContactName(selectedOrder.contactName || "");
 
     if (category === "Sản xuất") {
-      // 👉 Lấy danh sách vật tư theo đơn hàng
-      const materialRows = await buildMaterialRows(selectedOrder.orderDetails, selectedOrder.id);
-      console.log("Material rows for production:", materialRows);
+      // Kiểm tra materials trước khi gọi buildMaterialRows
+      if (!selectedOrder.materials || !Array.isArray(selectedOrder.materials) || selectedOrder.materials.length === 0) {
+        console.warn("[handleOrderSelected] No materials found in selected order");
+        setProducts([]);
+        setItemsError("Đơn hàng không có danh sách vật tư!");
+        handleCloseChooseOrderModal();
+        return;
+      }
+  
+      // 👉 Lấy danh sách vật tư từ SalesOrder.materials
+      const materialRows = await buildMaterialRows(selectedOrder.materials, selectedOrder.orderId);
+      console.log("[handleOrderSelected] Material rows for production:", JSON.stringify(materialRows, null, 2));
+  
+      if (materialRows.length === 0) {
+        setItemsError("Không tìm thấy vật tư hợp lệ trong đơn hàng!");
+      } else {
+        setItemsError("");
+      }
+  
       setProducts(materialRows);
       handleCloseChooseOrderModal();
       return;
@@ -434,7 +473,7 @@ const AddIssueNote = () => {
       let inStockArr = [];
       try {
         if (detail.productId) {
-          inStockArr = await getTotalQuantityOfProduct(detail.productId, selectedOrder.id);
+          inStockArr = await getTotalQuantityOfProduct(detail.productId, selectedOrder.orderId);
         }
       } catch (err) {
         console.error("Lỗi getTotalQuantityOfProduct:", err);
@@ -1497,6 +1536,7 @@ const AddIssueNote = () => {
 
       const result = await addIssueNote(payload);
       if (result) {
+        window.dispatchEvent(new Event("refreshNotifications"));
         if (files && files.length > 0) {
           try {
             const uploadResult = await uploadPaperEvidence(

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import useProductType from "./useProductType";
 import CreateProductTypeModal from "./CreateProductTypeModal";
-import EditProductTypePopUp from "./EditProductTypeModal";
+import EditProductTypeModal from "./EditProductTypeModal";
 import {
     Card,
     CardBody,
@@ -43,6 +43,9 @@ const ProductTypePage = () => {
         fetchProductTypes(currentPage, pageSize);
     }, [currentPage, pageSize, fetchProductTypes]);
 
+    useEffect(() => {
+    }, [showCreateModal]);
+
     const handlePageChange = (selectedItem) => {
         setCurrentPage(selectedItem.selected);
     };
@@ -66,13 +69,10 @@ const ProductTypePage = () => {
 
     const handleEditSuccess = async (formData) => {
         try {
-            // Đảm bảo có typeId từ editProductType
             const typeId = editProductType.typeId || editProductType.id;
-
             if (!typeId) {
                 throw new Error("Không tìm thấy ID của dòng sản phẩm!");
             }
-
             await updateProductType(typeId, formData);
             setShowEditPopup(false);
             setSuccessMessage("Cập nhật dòng sản phẩm thành công!");
@@ -130,7 +130,7 @@ const ProductTypePage = () => {
                                 ...params.row,
                                 typeId: params.row.id
                             };
-                            setEditProductType(params.row);
+                            setEditProductType(productTypeWithCorrectId);
                             setShowEditPopup(true);
                         }}
                         color="primary"
@@ -143,7 +143,7 @@ const ProductTypePage = () => {
     ];
 
     const data = productTypes.map((type, index) => ({
-        id: type.typeId, // Sửa: dùng typeId
+        id: type.typeId,
         index: (currentPage * pageSize) + index + 1,
         typeName: type.typeName,
         description: type.description,
@@ -156,7 +156,9 @@ const ProductTypePage = () => {
                 <CardBody className="pb-2 bg-white rounded-xl">
                     <PageHeader
                         title="Danh sách dòng sản phẩm"
-                        onAdd={() => setShowCreateModal(true)}
+                        onAdd={() => {
+                            setShowCreateModal(true);
+                        }}
                         addButtonLabel="Thêm dòng sản phẩm"
                         showImport={false}
                         showExport={false}
@@ -221,7 +223,7 @@ const ProductTypePage = () => {
             />
 
             {showEditPopup && editProductType && (
-                <EditProductTypePopUp
+                <EditProductTypeModal
                     productType={editProductType}
                     onClose={() => setShowEditPopup(false)}
                     onSuccess={handleEditSuccess}

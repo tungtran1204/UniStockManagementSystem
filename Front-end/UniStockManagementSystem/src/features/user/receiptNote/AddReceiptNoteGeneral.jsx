@@ -589,6 +589,9 @@ const AddReceiptNoteGeneral = () => {
       // Gọi API tạo phiếu nhập
       const response = await createReceiptNote(payload);
 
+      window.dispatchEvent(new Event("refreshNotifications"));
+
+
       // Upload file đính kèm nếu có
       if (files.length > 0) {
         await uploadPaperEvidence(response.grnId, "GOOD_RECEIPT_NOTE", files);
