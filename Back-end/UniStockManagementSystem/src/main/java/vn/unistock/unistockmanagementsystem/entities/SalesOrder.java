@@ -58,6 +58,9 @@ public class SalesOrder {
     @OneToMany(mappedBy = "salesOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SalesOrderDetail> details;
 
+    @JsonIgnore
+    @OneToMany(mappedBy = "salesOrder", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SalesOrderMaterial> materials;
     @OneToMany(mappedBy = "salesOrder")
     private List<PurchaseRequest> purchaseRequests;
 
