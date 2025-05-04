@@ -33,12 +33,6 @@ public class MaterialsController {
         return ResponseEntity.ok(materialsService.getAllMaterials(page, size));
     }
 
-//    @GetMapping("/by-partner/{partnerId}")
-//    public ResponseEntity<List<MaterialsDTO>> getMaterialsByPartner(@PathVariable Long partnerId) {
-//        List<MaterialsDTO> materials = materialsService.getMaterialsByPartner(partnerId);
-//        return ResponseEntity.ok(materials);
-//    }
-
     // 🟢 API lấy thông tin nguyên liệu theo ID
     @GetMapping("/{id}")
     public ResponseEntity<MaterialsDTO> getMaterialById(@PathVariable Long id) {
@@ -64,6 +58,7 @@ public class MaterialsController {
             @RequestParam(value = "unitId", required = false) Long unitId,
             @RequestParam(value = "typeId", required = false) Long typeId,
             @RequestParam(value = "isUsingActive", required = false) Boolean isUsingActive,
+            @RequestParam(value = "lowStockThreshold", required = false) Double lowStockThreshold, // Thêm tham số
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam(value = "supplierIds", required = false) List<Long> supplierIds
     ) throws IOException {
@@ -78,6 +73,7 @@ public class MaterialsController {
         materialDTO.setUnitId(unitId);
         materialDTO.setTypeId(typeId);
         materialDTO.setIsUsing(isUsingActive);
+        materialDTO.setLowStockThreshold(lowStockThreshold); // Gán giá trị
         materialDTO.setSupplierIds(supplierIds);
 
         MaterialsDTO createdMaterialDTO = materialsService.createMaterial(materialDTO, image);
@@ -106,6 +102,7 @@ public class MaterialsController {
             @RequestParam(value = "unitId", required = false) Long unitId,
             @RequestParam(value = "typeId", required = false) Long typeId,
             @RequestParam(value = "isUsingActive", required = false) Boolean isUsingActive,
+            @RequestParam(value = "lowStockThreshold", required = false) Double lowStockThreshold, // Thêm tham số
             @RequestParam(value = "image", required = false) MultipartFile image,
             @RequestParam(value = "supplierIds", required = false) List<Long> supplierIds
     ) throws IOException {
@@ -116,6 +113,7 @@ public class MaterialsController {
         materialDTO.setUnitId(unitId);
         materialDTO.setTypeId(typeId);
         materialDTO.setIsUsing(isUsingActive);
+        materialDTO.setLowStockThreshold(lowStockThreshold); // Gán giá trị
         materialDTO.setSupplierIds(supplierIds);
 
         return ResponseEntity.ok(materialsService.updateMaterial(id, materialDTO, image));

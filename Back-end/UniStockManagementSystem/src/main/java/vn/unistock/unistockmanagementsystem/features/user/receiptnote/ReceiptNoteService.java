@@ -18,6 +18,7 @@ import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryRep
 import vn.unistock.unistockmanagementsystem.features.user.inventory.InventoryTransactionRepository;
 import vn.unistock.unistockmanagementsystem.features.user.issueNote.ReceiveOutsourceRepository;
 import vn.unistock.unistockmanagementsystem.features.user.materials.MaterialsRepository;
+import vn.unistock.unistockmanagementsystem.features.user.notification.NotificationService;
 import vn.unistock.unistockmanagementsystem.features.user.products.ProductsRepository;
 import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderDTO;
 import vn.unistock.unistockmanagementsystem.features.user.purchaseOrder.PurchaseOrderDetailRepository;
@@ -59,6 +60,8 @@ public class ReceiptNoteService {
     private ReceiveOutsourceRepository receiveOutsourceRepository;
     @Autowired
     private SaleOrdersService saleOrdersService;
+    @Autowired
+    private NotificationService notificationService;
 
     public Page<ReceiptNoteDTO> getAllReceiptNote(int page, int size, String search, List<String> categories, String startDate, String endDate) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "grnId"));
@@ -201,6 +204,8 @@ public class ReceiptNoteService {
                     detail.setMaterial(material);
                     if (detail.getUnit() == null) detail.setUnit(material.getUnit());
                     updateInventoryAndTransaction(warehouse, material, null, detailDto.getQuantity(), hasSaleOrder, saleOrderCompleted, linkedSaleOrder, grn);
+
+                    notificationService.clearLowStockNotificationIfRecovered(material.getMaterialId());
 
                     // Xử lý Vật tư mua bán
                     if ("Vật tư mua bán".equals(grnDto.getCategory()) && linkedPurchaseOrder != null) {

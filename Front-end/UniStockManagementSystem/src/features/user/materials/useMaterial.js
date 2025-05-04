@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { getAllMaterials } from "./materialService";
 import axios from "axios";
 
-
 const authHeader = () => {
   const token = localStorage.getItem("token");
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -47,13 +46,12 @@ const useMaterial = () => {
     try {
       const response = await axios.patch(
         `${import.meta.env.VITE_API_URL}/user/materials/${materialId}/toggle-using`,
-        {}, // PATCH request cần body rỗng
-        { headers: authHeader() } // ✅ Thêm Bearer Token vào headers
+        {},
+        { headers: authHeader() }
       );
 
       console.log("✅ [handleToggleStatus] API Response:", response.data);
 
-      // Cập nhật trạng thái trong React state
       setMaterials((prevMaterials) =>
         prevMaterials.map((mat) =>
           mat.materialId === materialId ? { ...mat, isUsing: response.data.isUsing } : mat
@@ -66,9 +64,6 @@ const useMaterial = () => {
     }
   };
 
-
-
-
   const handlePageChange = (page) => {
     setCurrentPage(page);
     fetchPaginatedMaterials(page, pageSize);
@@ -80,7 +75,6 @@ const useMaterial = () => {
     fetchPaginatedMaterials(0, size);
   };
 
-  // Load dữ liệu ban đầu
   useEffect(() => {
     fetchPaginatedMaterials();
   }, []);
