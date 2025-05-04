@@ -210,13 +210,13 @@ export function Navbar({ brandName, routes }) {
             </MenuList>
 
           </Menu>
-          <IconButton
+          {/* <IconButton
             variant="text"
             color="blue-gray"
             onClick={() => setOpenConfigurator(dispatch, true)}
           >
             <Cog6ToothIcon className="h-5 w-5 text-blue-gray-500" />
-          </IconButton>
+          </IconButton> */}
           <div className="h-10 w-px bg-gray-300 mx-4"></div>
           {user ? (
             <Menu>

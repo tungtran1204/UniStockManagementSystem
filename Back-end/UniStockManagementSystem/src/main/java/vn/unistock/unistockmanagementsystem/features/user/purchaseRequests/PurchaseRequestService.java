@@ -284,7 +284,7 @@ public class PurchaseRequestService {
         PurchaseRequest.RequestStatus statusEnum = PurchaseRequest.RequestStatus.valueOf(status);
         request.setStatus(statusEnum);
 
-        if (statusEnum == PurchaseRequest.RequestStatus.CANCELLED) {
+        if (statusEnum == PurchaseRequest.RequestStatus.REJECTED) {
             request.setRejectionReason(rejectionReason);
 
             // Release RESERVED inventory for materials
