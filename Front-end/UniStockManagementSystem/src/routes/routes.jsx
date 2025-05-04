@@ -37,7 +37,6 @@ import MaterialPage from "@/features/user/materials/MaterialPage";
 import MaterialTypePage from "@/features/user/materialType/MaterialTypePage";
 import ReceiptNotePage from "../features/user/receiptNote/ReceiptNotePage";
 import AddSaleOrderPage from "../features/user/saleorders/AddSaleOrderPage";
-import AddReceiptNote from "../features/user/receiptNote/AddReceiptNote";
 import IssueNotePage from "../features/user/issueNote/IssueNotePage";
 import AddIssueNote from "../features/user/issueNote/AddIssueNote";
 import PurchaseOrderPage from "../features/user/purchaseOrder/PurchaseOrderPage";
@@ -52,7 +51,6 @@ import DetailMaterialPage from "@/features/user/materials/DetailMaterialPage";
 import ViewReceiptNote from "../features/user/receiptNote/ViewReceiptNote";
 import EditSaleOrderPage from "../features/user/saleorders/EditSaleOrderPage";
 import DetailPurchaseRequestPage from "../features/user/purchaseRequest/DetailPurchaseRequestPage";
-import AddReceiptNoteManually from "../features/user/receiptNote/AddReceiptNoteManually";
 import ForgotPassword from "../features/auth/reset_password/ConfirmEmailPage";
 import ResetPassword from "../features/auth/reset_password/ResetPasswordPage";
 import LoginPage from "../features/auth/login/LoginPage";
@@ -363,13 +361,13 @@ export const routes = [
         element: <EditSaleOrderPage />,
         roles: ["USER"],
       },
-      {
-        layout: "Nhập kho",
-        name: "Thêm phiếu nhập",
-        path: "/user/receiptNote/add",
-        element: <AddReceiptNote />,
-        roles: ["USER"],
-      },
+      // {
+      //   layout: "Nhập kho",
+      //   name: "Thêm phiếu nhập",
+      //   path: "/user/receiptNote/add",
+      //   element: <AddReceiptNote />,
+      //   roles: ["USER"],
+      // },
       {
         icon: <TableCellsIcon {...icon} />,
         name: "Thêm phiếu xuất",
@@ -433,13 +431,13 @@ export const routes = [
         element: <ViewReceiptNote />,
         roles: ["USER"],
       },
-      {
-        layout: "Nhập kho",
-        name: "Thêm phiếu nhập kho",
-        path: "/user/receiptNote/manual",
-        element: <AddReceiptNoteManually />,
-        roles: ["USER"],
-      },
+      // {
+      //   layout: "Nhập kho",
+      //   name: "Thêm phiếu nhập kho",
+      //   path: "/user/receiptNote/manual",
+      //   element: <AddReceiptNoteManually />,
+      //   roles: ["USER"],
+      // },
       {
         layout: "Nhập kho",
         name: "Thêm phiếu nhập",
