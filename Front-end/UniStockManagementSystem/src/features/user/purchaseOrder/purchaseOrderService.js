@@ -125,3 +125,10 @@ export const fetchPendingOrInProgressOrders = async () => {
   }
 };
 
+export const getPurchaseRequestById = async (requestId) => {
+  const response = await axios.get(`${import.meta.env.VITE_API_URL}/user/purchase-requests/${requestId}`, {
+    headers: authHeader(),
+  });
+  return response.data;
+};
+
