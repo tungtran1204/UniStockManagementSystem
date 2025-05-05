@@ -54,23 +54,31 @@ const CreateUnitModal = ({ show, onClose, loading, onSuccess }) => {
     };
 
     const handleCreateUnit = async () => {
-        const newErrors = {};
-
-        if (isEmptyOrWhitespace(formData.unitName)) {
-            newErrors.unitName = "Tên đơn vị tính không được để trống hoặc chỉ chứa khoảng trắng!";
+        if (!formData.unitName.trim()) {
+            setNameError("Vui lòng nhập tên đơn vị.");
+            return;
         }
 
-        setValidationErrors(newErrors);
+        const normalizedName = formData.unitName.trim();
 
-        if (Object.keys(newErrors).length === 0 && !unitNameError) {
-            try {
-                await onSuccess({ ...formData, status: true });
-                onClose();
-            } catch (error) {
-                console.error("Error creating unit:", error);
+        try {
+            // ✅ Check tồn tại lần cuối trước khi submit
+            const exists = await checkUnitNameExists(normalizedName);
+
+            if (exists) {
+                setNameError("Tên đơn vị đã tồn tại.");
+                return;
             }
+
+            // ✅ Submit với tên đã chuẩn hóa (trim)
+            await onSuccess({ ...formData, unitName: normalizedName, status: true });
+            handleClose();
+        } catch (error) {
+            console.error("Lỗi khi tạo đơn vị:", error);
+            toast.error("Đã xảy ra lỗi khi tạo đơn vị.");
         }
     };
+
 
     const isCreateDisabled = () => {
         return loading || !!unitNameError;

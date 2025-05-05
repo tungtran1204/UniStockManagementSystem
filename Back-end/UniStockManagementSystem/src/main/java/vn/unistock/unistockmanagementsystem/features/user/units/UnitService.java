@@ -73,9 +73,12 @@ public class UnitService {
     }
 
     public boolean isUnitNameExists(String unitName, Long excludeId) {
+        String normalizedName = unitName.trim();  // ✅ chuẩn hóa tên ở đây
+
         if (excludeId != null) {
-            return unitRepository.existsByUnitNameIgnoreCaseAndUnitIdNot(unitName, excludeId);
+            return unitRepository.existsByUnitNameIgnoreCaseAndUnitIdNot(normalizedName, excludeId);
         }
-        return unitRepository.existsByUnitNameIgnoreCase(unitName);
+        return unitRepository.existsByUnitNameIgnoreCase(normalizedName);
     }
+
 }

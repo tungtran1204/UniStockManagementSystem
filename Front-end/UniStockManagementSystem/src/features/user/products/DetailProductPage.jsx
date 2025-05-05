@@ -163,7 +163,7 @@ const DetailProductPage = () => {
                 ...prev,
                 materials: [],
             }));
-            alert("Không thể tải định mức nguyên vật liệu. Vui lòng thử lại!");
+            alert("Không thể tải định mức vật tư. Vui lòng thử lại!");
         }
     };
 
@@ -227,7 +227,7 @@ const DetailProductPage = () => {
                     item.quantity <= 0
             )
         ) {
-            newErrors.materials = "Vui lòng điền đầy đủ thông tin cho tất cả các dòng nguyên vật liệu!";
+            newErrors.materials = "Vui lòng điền đầy đủ thông tin cho tất cả các dòng vật tư!";
         }
 
         setValidationErrors(newErrors);
@@ -440,7 +440,7 @@ const DetailProductPage = () => {
         { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50, filterable: false, editable: false },
         {
             field: 'materialCode',
-            headerName: 'Mã NVL',
+            headerName: 'Mã VT',
             flex: 1.5,
             minWidth: 250,
             filterable: false,
@@ -478,7 +478,7 @@ const DetailProductPage = () => {
                                 color="success"
                                 hiddenLabel
                                 {...params}
-                                placeholder="Mã nguyên vật liệu"
+                                placeholder="Mã vật tư"
                             />
                         )}
                     />
@@ -489,7 +489,7 @@ const DetailProductPage = () => {
         },
         {
             field: 'materialName',
-            headerName: 'Tên NVL',
+            headerName: 'Tên VT',
             flex: 2,
             minWidth: 400,
             editable: false,
@@ -802,7 +802,7 @@ const DetailProductPage = () => {
                     </div>
                     <div className="mt-8">
                         <Typography variant="h6" color="blue-gray" className="mb-4">
-                            Định mức nguyên vật liệu
+                            Định mức vật tư
                         </Typography>
                         {validationErrors.materials && (
                             <Typography className="text-xs text-red-500 mb-2">
