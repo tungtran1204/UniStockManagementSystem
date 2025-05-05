@@ -38,7 +38,7 @@ import FileUploadBox from "@/components/FileUploadBox";
 import ModalAddPartner from "./ModalAddPartner";
 import ModalChooseOrder from "./ModalChooseOrder";
 import TableSearch from "@/components/TableSearch";
-
+import CircularProgress from '@mui/material/CircularProgress';
 import { getPartnersByType } from "@/features/user/partner/partnerService";
 import { getSaleOrders, uploadPaperEvidence } from "./issueNoteService";
 import { getTotalQuantityOfMaterial } from "./issueNoteService";
@@ -152,6 +152,7 @@ const AddIssueNote = () => {
   const [partnerId, setPartnerId] = useState(null);
   const [soId, setSoId] = useState(null);
   const [isSaving, setIsSaving] = useState(false); // Thêm state cho loading
+  const [loading, setLoading] = useState(true);
 
   //State hiển thị lỗi
   const [issueCategoryError, setIssueCategoryError] = useState("");
@@ -183,11 +184,14 @@ const AddIssueNote = () => {
   // ------------------ Lấy mã phiếu + đặt ngày mặc định ------------------
   useEffect(() => {
     (async () => {
+      setLoading(true);
       try {
         const code = await fetchNextCode();
         setIssueNoteCode(code || "");
       } catch (err) {
         console.error("Lỗi khi fetchNextCode:", err);
+      } finally {
+        setLoading(false);
       }
     })();
     if (!createdDate) {
@@ -659,8 +663,8 @@ const AddIssueNote = () => {
     if (displayed.length === 0) {
       return (
         <tr>
-          <td colSpan={category === "Bán hàng" || category === "Sản xuất" ? 11 : 8} className="text-center py-3 text-gray-500">
-            {category === "Gia công" ? "Chưa có vật tư nào" : category === "Sản xuất" ? "Chưa có vật tư nào" : category === "Trả lại hàng mua" ? "Chưa có vật tư nào" : category === "Khác" ? "Chưa có vật tư/sản phẩm nào" : "Chưa có sản phẩm nào"}
+          <td colSpan={category === "Bán hàng" || category === "Sản xuất" ? 11 : 8} className="h-[104px] px-4 py-2 text-[14px] text-center text-[#000000DE] align-middle">
+            Không có dữ liệu
           </td>
         </tr>
       );
@@ -679,10 +683,10 @@ const AddIssueNote = () => {
             <tr key={`${nvl.id}-wh-${whIndex}`} className="border-b hover:bg-gray-50">
               {isFirstRow && (
                 <>
-                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-center text-sm">
+                  <td rowSpan={rowSpan} className="px-2 py-2 text-sm text-[#000000DE] text-center w-10 border-r border-[rgba(224,224,224,1)]">
                     {currentPage * pageSize + nvlIndex + 1}
                   </td>
-                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
+                  <td rowSpan={rowSpan} className="px-2 py-2 text-sm w-60 border-r border-[rgba(224,224,224,1)]">
                     <Autocomplete
                       options={getAvailableItemsForGiaCong() || []}
                       getOptionLabel={(option) =>
@@ -773,19 +777,19 @@ const AddIssueNote = () => {
                       </Typography>
                     )}
                   </td>
-                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
+                  <td rowSpan={rowSpan} className="px-2 py-2 text-sm w-60 border-r border-[rgba(224,224,224,1)]">
                     {nvl.materialName}
                   </td>
-                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
+                  <td rowSpan={rowSpan} className="px-2 py-2 text-sm w-28 border-r border-[rgba(224,224,224,1)]">
                     {nvl.unitName}
                   </td>
                 </>
               )}
-              <td className="px-3 py-2 border-r text-sm">
+              <td className="px-2 py-2 text-sm w-52 border-r border-[rgba(224,224,224,1)]">
                 {wh.warehouseName || " "}
               </td>
-              <td className="px-3 py-2 border-r text-sm text-right">{wh.quantity}</td>
-              <td className="px-3 py-2 border-r text-sm w-24">
+              <td className="px-2 py-2 text-sm text-center w-24 border-r border-[rgba(224,224,224,1)]">{wh.quantity}</td>
+              <td className="px-3 py-2 border-r text-sm w-40">
                 <div style={{ width: "100%" }}>
                   <TextField
                     type="number"
@@ -866,7 +870,7 @@ const AddIssueNote = () => {
                 </div>
               </td>
               {isFirstRow && (
-                <td rowSpan={rowSpan} className="px-3 py-2 text-center text-sm">
+                <td rowSpan={rowSpan} className="px-2 py-2 text-center text-sm">
                   <Tooltip title="Xóa">
                     <IconButton
                       size="small"
@@ -893,7 +897,7 @@ const AddIssueNote = () => {
             <tr key={`${mat.id}-wh-${whIndex}`} className="border-b hover:bg-gray-50">
               {isFirstRow && (
                 <>
-                  <td rowSpan={rowSpan} className="px-3 py-2 border-r text-center text-sm">
+                  <td rowSpan={rowSpan} className="px-2 py-2 text-sm text-[#000000DE] w-20 border-r border-[rgba(224,224,224,1)]">
                     {currentPage * pageSize + (matIndex + 1)}
                   </td>
                   <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">{mat.materialCode}</td>
@@ -1329,8 +1333,8 @@ const AddIssueNote = () => {
     if (expectedReturns.length === 0) {
       return (
         <tr>
-          <td colSpan={7} className="text-center py-3 text-gray-500">
-            Chưa có vật tư nào
+          <td colSpan={7} className="h-[104px] px-4 py-2 text-[14px] text-center text-[#000000DE] align-middle">
+            Không có dữ liệu
           </td>
         </tr>
       );
@@ -1338,8 +1342,8 @@ const AddIssueNote = () => {
 
     return expectedReturns.map((item, index) => (
       <tr key={item.id} className="border-b hover:bg-gray-50">
-        <td className="px-3 py-2 border-r text-center text-sm">{index + 1}</td>
-        <td className="px-3 py-2 border-r text-sm">
+        <td className="px-2 py-2 text-sm text-[#000000DE] text-center w-10 border-r border-[rgba(224,224,224,1)]">{index + 1}</td>
+        <td className="px-2 py-2 text-sm w-72 border-r border-[rgba(224,224,224,1)]">
           <Autocomplete
             options={getAvailableMaterialsForExpectedReturns() || []}
             getOptionLabel={(option) =>
@@ -1377,27 +1381,10 @@ const AddIssueNote = () => {
             )}
           />
         </td>
-        <td className="px-3 py-2 border-r text-sm">{item.materialName}</td>
-        <td className="px-3 py-2 border-r text-sm">{item.unitName}</td>
-        <td className="px-3 py-2 border-r text-sm w-24">
+        <td className="px-4 py-2 text-sm w-72 border-r border-[rgba(224,224,224,1)]">{item.materialName}</td>
+        <td className="px-4 py-2 text-sm w-36 border-r border-[rgba(224,224,224,1)]">{item.unitName}</td>
+        <td className="px-4 py-2 text-sm w-44 border-r border-[rgba(224,224,224,1)]">
           <div>
-            {/* <input
-              type="number"
-              className={`border p-1 text-right w-[60px] ${item.error && item.expectedQuantity <= 0 ? "border-red-500" : ""}`}
-              value={item.expectedQuantity || 0}
-              onChange={(e) => {
-                const val = Number(e.target.value);
-                const error = val <= 0 ? "Số lượng phải lớn hơn 0" : "";
-                setExpectedReturns((prev) =>
-                  prev.map((p) => {
-                    if (p.id === item.id) {
-                      return { ...p, expectedQuantity: val, error };
-                    }
-                    return p;
-                  })
-                );
-              }}
-            /> */}
             <TextField
               type="number"
               size="small"
@@ -1424,7 +1411,7 @@ const AddIssueNote = () => {
             )}
           </div>
         </td>
-        <td className="px-3 py-2 text-center text-sm">
+        <td className="px-4 py-2 text-center text-sm">
           <Tooltip title="Xóa">
             <IconButton
               size="small"
@@ -1588,11 +1575,33 @@ const AddIssueNote = () => {
           errorMessage = error.response.data.message || "Lỗi server. Vui lòng thử lại sau.";
         }
       }
-      alert(errorMessage);
+      console.log(errorMessage);
     } finally {
       setIsSaving(false);
     }
   };
+
+  const [dotCount, setDotCount] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDotCount((prev) => (prev < 3 ? prev + 1 : 0));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center" style={{ height: '60vh' }}>
+        <div className="flex flex-col items-center">
+          <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#0ab067' }} />
+          <Typography variant="body1">
+            Đang tải{'.'.repeat(dotCount)}
+          </Typography>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -2179,39 +2188,39 @@ const AddIssueNote = () => {
           </div>
 
           {category === "Gia công" || category === "Trả lại hàng mua" || category === "Khác" ? (
-            <div className="border rounded mb-4 overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
-                <thead className="bg-gray-50 border-b">
+            <div className="border border-gray-200 rounded mb-4 overflow-x-auto border-[rgba(224,224,224,1)]">
+              <table className="w-full min-w-max text-left border-collapse border-[rgba(224,224,224,1)]">
+                <thead className="bg-[#f5f5f5] border-b border-[rgba(224,224,224,1)]">
                   <tr>
-                    <th className="px-3 py-2 border-r">STT</th>
-                    <th className="px-3 py-2 border-r">{category === "Khác" ? "Mã vật tư/sản phẩm" : "Mã VT"}</th>
-                    <th className="px-3 py-2 border-r">{category === "Khác" ? "Tên vật tư/sản phẩm" : "Tên VT"}</th>
-                    <th className="px-3 py-2 border-r">Đơn vị</th>
-                    <th className="px-3 py-2 border-r">Kho</th>
-                    <th className="px-3 py-2 border-r">Tồn kho</th>
-                    <th className="px-3 py-2 border-r">SL xuất</th>
-                    <th className="px-3 py-2">Thao tác</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">STT</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{category === "Khác" ? "Mã vật tư/sản phẩm" : "Mã NVL"}</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{category === "Khác" ? "Tên vật tư/sản phẩm" : "Tên NVL"}</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Đơn vị</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Kho</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Tồn kho</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">SL xuất</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE]">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>{renderUnifiedTableBody()}</tbody>
               </table>
             </div>
           ) : (
-            <div className="border rounded mb-4 overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
-                <thead className="bg-gray-50 border-b">
+            <div className="border border-gray-200 rounded mb-4 overflow-x-auto border-[rgba(224,224,224,1)]">
+              <table className="w-full min-w-max text-left border-collapse border-[rgba(224,224,224,1)]">
+                <thead className="bg-[#f5f5f5] border-b border-[rgba(224,224,224,1)]">
                   <tr>
-                    <th className="px-3 py-2 border-r">STT</th>
-                    <th className="px-3 py-2 border-r">Mã hàng</th>
-                    <th className="px-3 py-2 border-r">Tên hàng</th>
-                    <th className="px-3 py-2 border-r">Đơn vị</th>
-                    <th className="px-3 py-2 border-r">SL Đặt</th>
-                    <th className="px-3 py-2 border-r">SL đã xuất</th>
-                    <th className="px-3 py-2 border-r">SL còn phải xuất</th>
-                    <th className="px-3 py-2 border-r">Kho</th>
-                    <th className="px-3 py-2 border-r">Tồn kho</th>
-                    <th className="px-3 py-2 border-r">SL xuất</th>
-                    <th className="px-3 py-2">Thao tác</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">STT</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Mã hàng</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Tên hàng</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Đơn vị</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">SL Đặt</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">SL đã xuất</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">SL còn phải xuất</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Kho</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Tồn kho</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">SL xuất</th>
+                    <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE]">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>{renderUnifiedTableBody()}</tbody>
@@ -2256,16 +2265,16 @@ const AddIssueNote = () => {
                 <ListBulletIcon className="h-5 w-5 mr-2" />
                 Danh sách hàng hóa dự kiến nhận lại
               </Typography>
-              <div className="border rounded mb-4 overflow-x-auto">
-                <table className="w-full border-collapse text-sm">
-                  <thead className="bg-gray-50 border-b">
+              <div className="border border-gray-200 rounded mb-4 overflow-x-auto border-[rgba(224,224,224,1)]">
+                <table className="w-full min-w-max text-left border-collapse border-[rgba(224,224,224,1)]">
+                  <thead className="bg-[#f5f5f5] border-b border-[rgba(224,224,224,1)]">
                     <tr>
-                      <th className="px-3 py-2 border-r">STT</th>
-                      <th className="px-3 py-2 border-r">Mã VT</th>
-                      <th className="px-3 py-2 border-r">Tên VT</th>
-                      <th className="px-3 py-2 border-r">Đơn vị</th>
-                      <th className="px-3 py-2 border-r">SL nhận</th>
-                      <th className="px-3 py-2">Thao tác</th>
+                      <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">STT</th>
+                      <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Mã NVL</th>
+                      <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Tên NVL</th>
+                      <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">Đơn vị</th>
+                      <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE] border-r border-[rgba(224,224,224,1)]">SL nhận</th>
+                      <th className="bg-[#f5f5f5] h-[40px] px-4 py-2 text-sm font-medium text-[#000000DE]">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody>{renderExpectedReturnsTable()}</tbody>

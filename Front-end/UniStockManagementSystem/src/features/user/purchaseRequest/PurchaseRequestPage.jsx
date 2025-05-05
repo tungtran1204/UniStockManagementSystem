@@ -6,7 +6,6 @@ import {
     Typography,
     Tooltip,
 } from "@material-tailwind/react";
-import { BiCartAdd, BiSolidEdit } from "react-icons/bi";
 import {
     IconButton,
 } from '@mui/material';
@@ -14,6 +13,7 @@ import {
     VisibilityOutlined,
     AddShoppingCartRounded
 } from '@mui/icons-material';
+import CircularProgress from '@mui/material/CircularProgress';
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
@@ -34,6 +34,7 @@ const PurchaseRequestPage = () => {
         purchaseRequests,
         totalPages,
         totalElements,
+        loading,
         fetchPurchaseRequests,
         getNextCode,
     } = usePurchaseRequest();
@@ -108,31 +109,31 @@ const PurchaseRequestPage = () => {
         {
             value: "CONFIRMED",
             label: "Đã duyệt",
-            className: "bg-green-50 text-green-800",
+            className: "bg-teal-50 text-teal-800",
         },
         {
             value: "CANCELLED",
-            label: "Đã hủy",
-            className: "bg-gray-100 text-gray-800",
-        },
-        {
-            value: "REJECTED",
-            label: "Bị từ chối",
+            label: "Từ chối",
             className: "bg-red-50 text-red-800",
         },
         {
             value: "PURCHASED",
             label: "Đã tạo đơn mua",
-            className: "bg-yellow-50 text-yellow-800",
+            className: "bg-yellow-100 text-orange-800",
+        },
+        {
+            value: "FINISHED",
+            label: "Đã hoàn thành",
+            className: "bg-green-50 text-green-800",
         },
     ];
 
     const statusMapping = {
         PENDING: "bg-blue-50 text-blue-800",
         CONFIRMED: "bg-green-50 text-green-800",
-        CANCELLED: "bg-gray-100 text-gray-800",
-        REJECTED: "bg-red-50 text-red-800",
+        CANCELLED: "bg-red-50 text-red-800",
         PURCHASED: "bg-indigo-50 text-indigo-800",
+        FINISHED: "bg-green-50 text-green-800",
     };
 
     const getStatusClass = (statusCode) => {
@@ -258,7 +259,7 @@ const PurchaseRequestPage = () => {
             editable: false,
             filterable: false,
             renderCell: (params) => {
-                if (params.row.status !== 'Từ chối') return '';
+                if (params.row.status !== 'CANCELLED') return '';
                 if (!params.value) return 'Không có';
                 return params.value.startsWith('Khác') ? 'Khác' : params.value;
             },
@@ -309,6 +310,28 @@ const PurchaseRequestPage = () => {
         statusCode: request.status,
         rejectionReason: request.rejectionReason,
     }));
+
+    const [dotCount, setDotCount] = useState(0);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setDotCount((prev) => (prev < 3 ? prev + 1 : 0));
+        }, 500);
+        return () => clearInterval(interval);
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center" style={{ height: '60vh' }}>
+                <div className="flex flex-col items-center">
+                    <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#0ab067' }} />
+                    <Typography variant="body1">
+                        Đang tải{'.'.repeat(dotCount)}
+                    </Typography>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="mb-8 flex flex-col gap-12">

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { Card, CardBody, Typography, Tooltip } from "@material-tailwind/react";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
-import { IconButton, Button,  Menu as MuiMenu, MenuItem, Checkbox, ListItemText } from "@mui/material";
+import { IconButton, Button, Menu as MuiMenu, MenuItem, Checkbox, ListItemText } from "@mui/material";
 import { VisibilityOutlined } from '@mui/icons-material';
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
@@ -12,6 +12,7 @@ import SuccessAlert from "@/components/SuccessAlert";
 import { getIssueNotes } from "./issueNoteService";
 import DateFilterButton from "@/components/DateFilterButton";
 import { FaAngleDown } from "react-icons/fa";
+import CircularProgress from '@mui/material/CircularProgress';
 
 const IssueNotePage = () => {
   const [issueNotes, setIssueNotes] = useState([]);
@@ -32,6 +33,7 @@ const IssueNotePage = () => {
   const [endDate, setEndDate] = useState(null);
   const [categoryAnchorEl, setCategoryAnchorEl] = useState(null);
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const categoryList = [
     "Bán hàng",
@@ -54,9 +56,10 @@ const IssueNotePage = () => {
   useEffect(() => {
     fetchPaginatedIssueNotes(currentPage, pageSize);
   }, [currentPage, pageSize, searchTerm, selectedCategories, startDate, endDate]);
-  
+
   const fetchPaginatedIssueNotes = async (page, size, search = "") => {
     try {
+      setLoading(true);
       // API trả về dạng: { totalPages, content: [ { ginId, ginCode, description, category, issueDate, soCode, createdByUsername, details, ... } ] }
       const data = await getIssueNotes(page, size, searchTerm, selectedCategories, startDate, endDate);
       setIssueNotes(data.content || []);
@@ -64,6 +67,8 @@ const IssueNotePage = () => {
       setTotalElements(data.totalElements);
     } catch (error) {
       console.error("Error fetching issue notes:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,7 +79,7 @@ const IssueNotePage = () => {
     endDate,
     startDateType: typeof startDate,
     endDateType: typeof endDate,
-});
+  });
 
   const handlePageChange = (selectedItem) => {
     setCurrentPage(selectedItem.selected);
@@ -188,6 +193,28 @@ const IssueNotePage = () => {
     },
   ];
 
+  const [dotCount, setDotCount] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDotCount((prev) => (prev < 3 ? prev + 1 : 0));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center" style={{ height: '60vh' }}>
+        <div className="flex flex-col items-center">
+          <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#0ab067' }} />
+          <Typography variant="body1">
+            Đang tải{'.'.repeat(dotCount)}
+          </Typography>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mb-8 flex flex-col gap-8" style={{ height: 'calc(100vh - 100px)' }}>
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
@@ -199,155 +226,155 @@ const IssueNotePage = () => {
             showImport={false}
             showExport={false}
           />
-            <div className="py-2 flex items-center justify-between gap-2">
-              {/* Items per page */}
-              <div className="flex items-center gap-2">
-                <Typography variant="small" color="blue-gray" className="font-light">
-                  Hiển thị
-                </Typography>
-                <select
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setCurrentPage(0);
+          <div className="py-2 flex items-center justify-between gap-2">
+            {/* Items per page */}
+            <div className="flex items-center gap-2">
+              <Typography variant="small" color="blue-gray" className="font-light">
+                Hiển thị
+              </Typography>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(0);
+                }}
+                className="border text-sm rounded px-2 py-1"
+              >
+                {[5, 10, 20, 50].map(size => (
+                  <option key={size} value={size}>{size}</option>
+                ))}
+              </select>
+              <Typography variant="small" color="blue-gray" className="font-normal">
+                bản ghi mỗi trang
+              </Typography>
+            </div>
+
+            <div className="mb-3 flex flex-wrap items-center gap-4">
+
+              {/* Filter by date */}
+              <DateFilterButton
+                startDate={startDate}
+                endDate={endDate}
+                setStartDate={setStartDate}
+                setEndDate={setEndDate}
+                setCurrentPage={setCurrentPage}
+              />
+
+              {/* Filter by category */}
+              <div>
+                <Button
+                  onClick={(e) => setCategoryAnchorEl(e.currentTarget)}
+                  size="sm"
+                  variant={selectedCategories.length > 0 ? "outlined" : "contained"}
+                  sx={{
+                    ...(selectedCategories.length > 0
+                      ? {
+                        backgroundColor: "#ffffff",
+                        boxShadow: "none",
+                        borderColor: "#089456",
+                        textTransform: "none",
+                        color: "#089456",
+                        px: 1.5,
+                        "&:hover": {
+                          backgroundColor: "#0894561A",
+                          borderColor: "#089456",
+                          boxShadow: "none",
+                        },
+                      }
+                      : {
+                        backgroundColor: "#0ab067",
+                        boxShadow: "none",
+                        textTransform: "none",
+                        color: "#ffffff",
+                        px: 1.5,
+                        "&:hover": {
+                          backgroundColor: "#089456",
+                          borderColor: "#089456",
+                          boxShadow: "none",
+                        },
+                      }),
                   }}
-                  className="border text-sm rounded px-2 py-1"
                 >
-                  {[5, 10, 20, 50].map(size => (
-                    <option key={size} value={size}>{size}</option>
+                  {selectedCategories.length > 0 ? (
+                    <span className="flex items-center gap-[5px]">
+                      {selectedCategories[0]}
+                      {selectedCategories.length > 1 && (
+                        <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin ">
+                          +{selectedCategories.length - 1}
+                        </span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-[5px]">
+                      Phân loại xuất
+                      <FaAngleDown className="h-4 w-4" />
+                    </span>
+                  )}
+                </Button>
+
+                <MuiMenu
+                  anchorEl={categoryAnchorEl}
+                  open={Boolean(categoryAnchorEl)}
+                  onClose={() => setCategoryAnchorEl(null)}
+                  anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                >
+                  {categoryList.map((category) => (
+                    <MenuItem
+                      key={category}
+                      onClick={() => {
+                        const isSelected = selectedCategories.includes(category);
+                        const updated = isSelected
+                          ? selectedCategories.filter((c) => c !== category)
+                          : [...selectedCategories, category];
+                        setSelectedCategories(updated);
+                      }}
+                      sx={{ paddingLeft: "7px", minWidth: "200px" }}
+                    >
+                      <Checkbox
+                        color="success"
+                        size="small"
+                        checked={selectedCategories.includes(category)}
+                      />
+                      <ListItemText primary={category} />
+                    </MenuItem>
                   ))}
-                </select>
-                <Typography variant="small" color="blue-gray" className="font-normal">
-                  bản ghi mỗi trang
-                </Typography>
+                  {selectedCategories.length > 0 && (
+                    <div className="flex px-4 justify-end">
+                      <Button
+                        variant="text"
+                        size="medium"
+                        onClick={() => {
+                          setSelectedCategories([]);
+                          setCurrentPage(0);
+                          fetchPaginatedIssueNotes(0, pageSize, searchTerm, [], startDate, endDate);
+                        }}
+                        sx={{
+                          color: "#000000DE",
+                          "&:hover": {
+                            backgroundColor: "transparent",
+                            textDecoration: "underline",
+                          },
+                        }}
+                      >
+                        Xoá
+                      </Button>
+                    </div>
+                  )}
+                </MuiMenu>
+
               </div>
 
-              <div className="mb-3 flex flex-wrap items-center gap-4">
-
-                {/* Filter by date */}
-                <DateFilterButton
-                  startDate={startDate}
-                  endDate={endDate}
-                  setStartDate={setStartDate}
-                  setEndDate={setEndDate}
-                  setCurrentPage={setCurrentPage}
+              {/* Search input */}
+              <div className="w-[250px]">
+                <TableSearch
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                  onSearch={handleSearch}
+                  placeholder="Tìm kiếm phiếu xuất"
                 />
-
-                {/* Filter by category */}
-                <div>
-                  <Button
-                    onClick={(e) => setCategoryAnchorEl(e.currentTarget)}
-                    size="sm"
-                    variant={selectedCategories.length > 0 ? "outlined" : "contained"}
-                    sx={{
-                      ...(selectedCategories.length > 0
-                        ? {
-                          backgroundColor: "#ffffff",
-                          boxShadow: "none",
-                          borderColor: "#089456",
-                          textTransform: "none",
-                          color: "#089456",
-                          px: 1.5,
-                          "&:hover": {
-                            backgroundColor: "#0894561A",
-                            borderColor: "#089456",
-                            boxShadow: "none",
-                          },
-                        }
-                        : {
-                          backgroundColor: "#0ab067",
-                          boxShadow: "none",
-                          textTransform: "none",
-                          color: "#ffffff",
-                          px: 1.5,
-                          "&:hover": {
-                            backgroundColor: "#089456",
-                            borderColor: "#089456",
-                            boxShadow: "none",
-                          },
-                        }),
-                    }}
-                  >
-                    {selectedCategories.length > 0 ? (
-                      <span className="flex items-center gap-[5px]">
-                        {selectedCategories[0]}
-                        {selectedCategories.length > 1 && (
-                          <span className="text-xs bg-[#089456] text-white p-1 rounded-xl font-thin ">
-                            +{selectedCategories.length - 1}
-                          </span>
-                        )}
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-[5px]">
-                        Phân loại xuất
-                        <FaAngleDown className="h-4 w-4" />
-                      </span>
-                    )}
-                  </Button>
-
-                  <MuiMenu
-                    anchorEl={categoryAnchorEl}
-                    open={Boolean(categoryAnchorEl)}
-                    onClose={() => setCategoryAnchorEl(null)}
-                    anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                  >
-                    {categoryList.map((category) => (
-                      <MenuItem
-                        key={category}
-                        onClick={() => {
-                          const isSelected = selectedCategories.includes(category);
-                          const updated = isSelected
-                            ? selectedCategories.filter((c) => c !== category)
-                            : [...selectedCategories, category];
-                          setSelectedCategories(updated);
-                        }}
-                        sx={{ paddingLeft: "7px", minWidth: "200px" }}
-                      >
-                        <Checkbox
-                          color="success"
-                          size="small"
-                          checked={selectedCategories.includes(category)}
-                        />
-                        <ListItemText primary={category} />
-                      </MenuItem>
-                    ))}
-                    {selectedCategories.length > 0 && (
-                      <div className="flex px-4 justify-end">
-                        <Button
-                          variant="text"
-                          size="medium"
-                          onClick={() => {
-                            setSelectedCategories([]);
-                            setCurrentPage(0);
-                            fetchPaginatedIssueNotes(0, pageSize, searchTerm, [], startDate, endDate);
-                          }}
-                          sx={{
-                            color: "#000000DE",
-                            "&:hover": {
-                              backgroundColor: "transparent",
-                              textDecoration: "underline",
-                            },
-                          }}
-                        >
-                          Xoá
-                        </Button>
-                      </div>
-                    )}
-                  </MuiMenu>
-
-                </div>
-
-                {/* Search input */}
-                <div className="w-[250px]">
-                  <TableSearch
-                    value={searchTerm}
-                    onChange={setSearchTerm}
-                    onSearch={handleSearch}
-                    placeholder="Tìm kiếm phiếu xuất"
-                  />
-                </div>
               </div>
             </div>
+          </div>
 
           <div className="w-full overflow-x-auto">
             <Table data={data} columnsConfig={columnsConfig} enableSelection={false} />

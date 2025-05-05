@@ -45,51 +45,12 @@ import { canCreatePurchaseRequest } from "@/features/user/purchaseRequest/Purcha
 import CancelSaleOrderModal from "./CancelSaleOrderModal";
 import { getTotalQuantityOfMaterial } from "@/features/user/issueNote/issueNoteService";
 import SuccessAlert from "@/components/SuccessAlert";
-import ConfirmDialog from "@/components/ConfirmDialog";
+import CircularProgress from '@mui/material/CircularProgress';
 
 const MODE_VIEW = "view";
 const MODE_EDIT = "edit";
 const MODE_DINHMUC = "dinhMuc";
 const CUSTOMER_TYPE_ID = 1;
-
-// List status for filter and display
-const saleOrderStatuses = [
-  {
-    value: "PROCESSING",
-    label: "Chưa có yêu cầu",
-    className: "bg-gray-100 text-gray-800",
-  },
-  {
-    value: "PROCESSING_PENDING_REQUEST",
-    label: "Đang chờ yêu cầu được duyệt",
-    className: "bg-blue-50 text-blue-800",
-  },
-  {
-    value: "PROCESSING_REJECTED_REQUEST",
-    label: "Yêu cầu bị từ chối",
-    className: "bg-pink-50 text-pink-800",
-  },
-  {
-    value: "PREPARING_MATERIAL",
-    label: "Đang chuẩn bị",
-    className: "bg-yellow-100 text-amber-800",
-  },
-  {
-    value: "PARTIALLY_ISSUED",
-    label: "Đã xuất một phần",
-    className: "bg-indigo-50 text-indigo-800",
-  },
-  {
-    value: "COMPLETED",
-    label: "Đã hoàn thành",
-    className: "bg-green-50 text-green-800",
-  },
-  {
-    value: "CANCELLED",
-    label: "Đã huỷ",
-    className: "bg-red-50 text-red-800",
-  },
-];
 
 // Hàm tính toán nhãn hiển thị dựa trên status và purchaseRequestStatus
 const getDisplayLabel = (status, purchaseRequestStatus) => {
@@ -161,8 +122,7 @@ const EditSaleOrderPage = () => {
   const [showMaterialTable, setShowMaterialTable] = useState(false);
   const [materialRequirements, setMaterialRequirements] = useState([]);
   const [canCreatePurchaseRequestState, setCanCreatePurchaseRequestState] = useState(false);
-
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Gọi API từ service để kiểm tra khả năng tạo PurchaseRequest
   useEffect(() => {
@@ -183,6 +143,7 @@ const EditSaleOrderPage = () => {
 
   useEffect(() => {
     const fetchOrderDetail = async () => {
+      setLoading(true);
       try {
         const orderData = await getSaleOrderById(orderId);
         setOrderCode(orderData.orderCode || "");
@@ -245,6 +206,8 @@ const EditSaleOrderPage = () => {
       } catch (error) {
         console.error("Lỗi khi lấy đơn hàng:", error);
         console.log("Lỗi khi tải thông tin đơn hàng!");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -252,6 +215,14 @@ const EditSaleOrderPage = () => {
       fetchOrderDetail();
     }
   }, [orderId]);
+
+  const [dotCount, setDotCount] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDotCount((prev) => (prev < 3 ? prev + 1 : 0));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchCustomers = async () => {
     try {
@@ -1182,6 +1153,19 @@ const EditSaleOrderPage = () => {
     }
   }, [items, mode, showMaterialTable]);
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center" style={{ height: '60vh' }}>
+        <div className="flex flex-col items-center">
+          <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#0ab067' }} />
+          <Typography variant="body1">
+            Đang tải{'.'.repeat(dotCount)}
+          </Typography>
+        </div>
+      </div>
+    );
+  }  
+
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: "calc(100vh - 180px)" }}>
       <Card className="bg-gray-50 p-7">
@@ -1668,7 +1652,7 @@ const EditSaleOrderPage = () => {
                   </MuiButton>
                 )}
 
-                {mode === MODE_VIEW && canCreatePurchaseRequestState && originalData?.status !== "CANCELLED" && (
+                {mode === MODE_VIEW && canCreatePurchaseRequestState && originalData?.status === "PROCESSING" && (
                   <MuiButton
                     variant="contained"
                     size="medium"
