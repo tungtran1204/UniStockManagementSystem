@@ -41,8 +41,8 @@ const DetailPurchaseRequestPage = () => {
     const statusLabels = {
         PENDING: "Chờ duyệt",
         CONFIRMED: "Đã duyệt",
-        CANCELLED: "Từ chối",
-        FINISHED: "Đã hoàn thành",
+        REJECTED: "Bị từ chối",
+        CANCELLED: "Đã hủy",
         PURCHASED: "Đã tạo đơn mua",
     };
 
@@ -82,7 +82,7 @@ const DetailPurchaseRequestPage = () => {
     const handleReject = async (reason) => {
         console.log("🛑 Lý do từ chối:", reason);
         try {
-            await updatePurchaseRequestStatus(id, "CANCELLED", reason);
+            await updatePurchaseRequestStatus(id, "REJECTED", reason);
             await fetchPurchaseRequest();
         } catch (error) {
             console.error("Lỗi từ chối yêu cầu:", error);
@@ -343,7 +343,7 @@ const DetailPurchaseRequestPage = () => {
                                     }}
                                 />
                             </div>
-                            {purchaseRequest.status === "CANCELLED" && (
+                            {purchaseRequest.status === "REJECTED" && (
                                 <div>
                                     <Typography variant="medium" className="mb-1 text-black">
                                         Lý do hủy

@@ -13,6 +13,7 @@ import {
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import SuccessAlert from "@/components/SuccessAlert";
+import { Cancel as CancelIcon } from '@mui/icons-material';
 import {
   Card,
   CardBody,
@@ -22,7 +23,7 @@ import {
 import usePurchaseOrder from "./usePurchaseOrder";
 import CircularProgress from '@mui/material/CircularProgress';
 import { getNextCode } from "../receiptNote/receiptNoteService";
-import { getSaleOrderByPurchaseOrderId } from "./purchaseOrderService";
+import { getPurchaseRequestById, getSaleOrderByPurchaseOrderId } from "./purchaseOrderService";
 import DateFilterButton from "@/components/DateFilterButton";
 import StatusFilterButton from "@/components/StatusFilterButton";
 
@@ -247,6 +248,36 @@ const PurchaseOrderPage = () => {
     setCurrentPage(0);
   };
 
+  const handleCancelOrder = async (order) => {
+    if (order.purchaseRequestId) {
+      try {
+        // Gọi API kiểm tra yêu cầu mua liên kết
+        const request = await getPurchaseRequestById(order.purchaseRequestId);
+        if (request.status !== "CANCELLED") {
+          alert("Không thể hủy đơn mua hàng khi yêu cầu mua vật tư liên kết chưa bị hủy.");
+          return;
+        }
+      } catch (error) {
+        console.error("Lỗi khi kiểm tra yêu cầu mua:", error);
+        alert("Lỗi khi kiểm tra yêu cầu mua.");
+        return;
+      }
+    }
+  
+    // Nếu thỏa mãn điều kiện thì gọi API hủy đơn
+    if (window.confirm("Bạn có chắc chắn muốn hủy đơn mua hàng này không?")) {
+      try {
+        await updatePurchaseOrderStatus(order.id, "CANCELED");
+        alert("Đã hủy đơn mua hàng thành công.");
+        fetchPaginatedOrders(currentPage, pageSize, searchTerm, selectedStatuses[0]?.value, startDate, endDate);
+      } catch (error) {
+        console.error("Lỗi khi hủy đơn mua hàng:", error);
+        alert("Hủy đơn mua hàng thất bại.");
+      }
+    }
+  };
+  
+
   useEffect(() => {
     // Check if location.state exists and has nextCode
     console.log("navigator state:", navigator.state);
@@ -333,6 +364,18 @@ const PurchaseOrderPage = () => {
               <VisibilityOutlined />
             </IconButton>
           </Tooltip>
+
+          {params.row.status !== "COMPLETED" && (
+            <Tooltip content="Hủy đơn">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => handleCancelOrder(params.row)}
+              >
+                <CancelIcon />
+              </IconButton>
+            </Tooltip>
+          )}
 
           {/* Nút Nhập kho */}
           {/* {params.row.status !== "COMPLETED" && (

@@ -142,6 +142,17 @@ const PurchaseRequestPage = () => {
         return found ? found.value : label;
     };
 
+    // const filteredRequests = purchaseRequests.filter((request) => {
+    //     const matchesStatus =
+    //         selectedStatuses.length === 0 ||
+    //         selectedStatuses.includes(request.status);
+
+    //     const matchesSearch =
+    //         request.purchaseRequestCode?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    //     return matchesStatus && matchesSearch;
+    // });
+
     const getStatusLabel = (statusCode) => {
         const found = purchaseRequestStatus.find(s => s.value === statusCode);
         return found ? found.label : statusCode;
@@ -289,7 +300,7 @@ const PurchaseRequestPage = () => {
         id: request.purchaseRequestId,
         index: (currentPage * pageSize) + index + 1,
         purchaseRequestCode: request.purchaseRequestCode,
-        purchaseOrderCode: request.saleOrderCode || "Chưa có",
+        purchaseOrderCode: request.saleOrderCode || "-",
         createdDate: request.createdDate,
         status: getStatusLabel(request.status),
         statusCode: request.status,
@@ -326,6 +337,7 @@ const PurchaseRequestPage = () => {
                         title="Danh sách yêu cầu mua vật tư"
                         onAdd={handleAddRequest}
                         addButtonLabel="Thêm yêu cầu"
+                        showAdd={currentUser && currentUser.permissions.includes("createManualPurchaseRequest")}
                         showImport={false}
                         showExport={false}
                     />

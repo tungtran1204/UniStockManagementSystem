@@ -243,7 +243,6 @@ const ModalEditUser = ({ open, onClose, onSuccess, user, fetchUsers }) => {
         <div>
           <Typography variant="medium" className="text-black">
             Email
-            <span className="text-red-500"> *</span>
           </Typography>
           <TextField
             fullWidth
@@ -296,7 +295,6 @@ const ModalEditUser = ({ open, onClose, onSuccess, user, fetchUsers }) => {
         <div className="relative">
           <Typography variant="medium" className="text-black">
             Mật khẩu
-            <span className="text-red-500"> *</span>
           </Typography>
           <div className="relative">
             <TextField

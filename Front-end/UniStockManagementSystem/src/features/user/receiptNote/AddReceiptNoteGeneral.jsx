@@ -109,7 +109,7 @@ const AddReceiptNoteGeneral = () => {
   const initialNextCode = location.state?.nextCode;
 
   // Ẩn kho KPL khỏi dropdown nếu không phải "Hàng hóa trả lại"
-  const isReturnCategory = category === "Hàng hóa trả lại";
+  const isReturnCategory = category === "Hàng hóa trả lại" || category === "Khác";
   const filteredWarehouses = warehouses.filter(w =>
     isReturnCategory || w.warehouseCode !== "KPL"
   );
