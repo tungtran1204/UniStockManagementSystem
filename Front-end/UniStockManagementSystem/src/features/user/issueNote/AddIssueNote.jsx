@@ -251,6 +251,23 @@ const AddIssueNote = () => {
     return materials.filter(mat => !selectedMaterialIds.includes(mat.materialId));
   };
 
+  const getAvailableItemsForGiaCong = () => {
+    const selectedItemIds = products
+      .filter(p => p.itemId)
+      .map(p => p.itemId);
+    return itemList.filter(item => !selectedItemIds.includes(item.id));
+  };
+
+  const getAvailableMaterialsForReturn = () => {
+    const selectedMaterialIds = products
+      .filter(p => p.materialId)
+      .map(p => p.materialId);
+    return itemList.filter(item =>
+      item.type === 'material' && !selectedMaterialIds.includes(item.id.split('-')[1])
+    );
+  };
+
+
   const getAvailableMaterialsForExpectedReturns = () => {
     const selectedReturnIds = expectedReturns
       .filter(p => p.materialId)
@@ -393,6 +410,7 @@ const AddIssueNote = () => {
     if (category === "Gia công") {
       fetchOutsources();
       fetchWarehouses();
+      fetchItems();
       setExpectedReturns([]);
     }
     if (category === "Trả lại hàng mua") {
@@ -452,17 +470,17 @@ const AddIssueNote = () => {
         handleCloseChooseOrderModal();
         return;
       }
-  
+
       // 👉 Lấy danh sách vật tư từ SalesOrder.materials
       const materialRows = await buildMaterialRows(selectedOrder.materials, selectedOrder.orderId);
       console.log("[handleOrderSelected] Material rows for production:", JSON.stringify(materialRows, null, 2));
-  
+
       if (materialRows.length === 0) {
         setItemsError("Không tìm thấy vật tư hợp lệ trong đơn hàng!");
       } else {
         setItemsError("");
       }
-  
+
       setProducts(materialRows);
       handleCloseChooseOrderModal();
       return;
@@ -642,7 +660,7 @@ const AddIssueNote = () => {
       return (
         <tr>
           <td colSpan={category === "Bán hàng" || category === "Sản xuất" ? 11 : 8} className="text-center py-3 text-gray-500">
-            {category === "Gia công" ? "Chưa có nguyên vật liệu nào" : category === "Sản xuất" ? "Chưa có vật tư nào" : category === "Trả lại hàng mua" ? "Chưa có nguyên vật liệu nào" : category === "Khác" ? "Chưa có vật tư/sản phẩm nào" : "Chưa có sản phẩm nào"}
+            {category === "Gia công" ? "Chưa có vật tư nào" : category === "Sản xuất" ? "Chưa có vật tư nào" : category === "Trả lại hàng mua" ? "Chưa có vật tư nào" : category === "Khác" ? "Chưa có vật tư/sản phẩm nào" : "Chưa có sản phẩm nào"}
           </td>
         </tr>
       );
@@ -666,25 +684,29 @@ const AddIssueNote = () => {
                   </td>
                   <td rowSpan={rowSpan} className="px-3 py-2 border-r text-sm">
                     <Autocomplete
-                      options={getAvailableMaterialsForExport() || []}
+                      options={getAvailableItemsForGiaCong() || []}
                       getOptionLabel={(option) =>
-                        `${option.materialCode} - ${option.materialName}`
+                        `${option.code} - ${option.name} (${option.type === 'material' ? 'Vật tư' : 'Sản phẩm'})`
                       }
                       value={materials.find(mat => mat.materialId === nvl.materialId) || null}
                       onChange={async (event, newValue) => {
                         if (newValue) {
                           try {
-                            const inventoryData = await getTotalQuantityOfMaterial(newValue.materialId);
+                            const inventoryData = newValue.type === 'material'
+                              ? await getTotalQuantityOfMaterial(newValue.id.split('-')[1])
+                              : await getTotalQuantityOfProduct(newValue.id.split('-')[1]);
+
                             setProducts((prev) =>
                               prev.map((p) => {
                                 if (p.id === nvl.id) {
                                   return {
                                     ...p,
-                                    materialId: newValue.materialId,
-                                    materialCode: newValue.materialCode,
-                                    materialName: newValue.materialName,
+                                    itemId: newValue.id,
+                                    itemCode: newValue.code,
+                                    itemName: newValue.name,
                                     unitName: newValue.unitName,
                                     unitId: newValue.unitId,
+                                    itemType: newValue.type,
                                     inventory: inventoryData && inventoryData.length > 0
                                       ? inventoryData.map((i) => ({
                                         warehouseId: i.warehouseId,
@@ -706,7 +728,7 @@ const AddIssueNote = () => {
                               })
                             );
                           } catch (error) {
-                            console.error("Lỗi khi lấy tồn kho vật tư:", error);
+                            console.error("Lỗi khi lấy tồn kho:", error);
                           }
                         } else {
                           setProducts((prev) =>
@@ -714,11 +736,12 @@ const AddIssueNote = () => {
                               if (p.id === nvl.id) {
                                 return {
                                   ...p,
-                                  materialId: null,
-                                  materialCode: "",
-                                  materialName: "",
+                                  itemId: null,
+                                  itemCode: "",
+                                  itemName: "",
                                   unitName: "",
                                   unitId: null,
+                                  itemType: "",
                                   inventory: [{
                                     warehouseId: null,
                                     warehouseName: " ",
@@ -737,7 +760,7 @@ const AddIssueNote = () => {
                         <TextField
                           {...params}
                           error={!!wh.error}
-                          placeholder="Chọn NVL"
+                          placeholder="Chọn VT"
                           variant="outlined"
                           size="small"
                           color="success"
@@ -1307,7 +1330,7 @@ const AddIssueNote = () => {
       return (
         <tr>
           <td colSpan={7} className="text-center py-3 text-gray-500">
-            Chưa có nguyên vật liệu nào
+            Chưa có vật tư nào
           </td>
         </tr>
       );
@@ -1334,7 +1357,7 @@ const AddIssueNote = () => {
                       materialName: newValue ? newValue.materialName : "",
                       unitId: newValue ? newValue.unitId : null,
                       unitName: newValue ? newValue.unitName : "",
-                      error: newValue ? "" : "Vui lòng chọn NVL"
+                      error: newValue ? "" : "Vui lòng chọn VT"
                     };
                   }
                   return p;
@@ -1344,7 +1367,7 @@ const AddIssueNote = () => {
             renderInput={(params) => (
               <TextField
                 {...params}
-                placeholder="Chọn NVL"
+                placeholder="Chọn VT"
                 variant="outlined"
                 size="small"
                 color="success"
@@ -2128,7 +2151,7 @@ const AddIssueNote = () => {
             className="flex items-center mb-4 mt-8 text-black"
           >
             <ListBulletIcon className="h-5 w-5 mr-2" />
-            Danh sách sản phẩm
+            Danh sách hàng hóa
           </Typography>
           <div className="py-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -2161,8 +2184,8 @@ const AddIssueNote = () => {
                 <thead className="bg-gray-50 border-b">
                   <tr>
                     <th className="px-3 py-2 border-r">STT</th>
-                    <th className="px-3 py-2 border-r">{category === "Khác" ? "Mã vật tư/sản phẩm" : "Mã NVL"}</th>
-                    <th className="px-3 py-2 border-r">{category === "Khác" ? "Tên vật tư/sản phẩm" : "Tên NVL"}</th>
+                    <th className="px-3 py-2 border-r">{category === "Khác" ? "Mã vật tư/sản phẩm" : "Mã VT"}</th>
+                    <th className="px-3 py-2 border-r">{category === "Khác" ? "Tên vật tư/sản phẩm" : "Tên VT"}</th>
                     <th className="px-3 py-2 border-r">Đơn vị</th>
                     <th className="px-3 py-2 border-r">Kho</th>
                     <th className="px-3 py-2 border-r">Tồn kho</th>
@@ -2231,15 +2254,15 @@ const AddIssueNote = () => {
                 className="flex items-center mb-4 mt-8 text-black"
               >
                 <ListBulletIcon className="h-5 w-5 mr-2" />
-                Danh sách NVL dự kiến nhận lại
+                Danh sách hàng hóa dự kiến nhận lại
               </Typography>
               <div className="border rounded mb-4 overflow-x-auto">
                 <table className="w-full border-collapse text-sm">
                   <thead className="bg-gray-50 border-b">
                     <tr>
                       <th className="px-3 py-2 border-r">STT</th>
-                      <th className="px-3 py-2 border-r">Mã NVL</th>
-                      <th className="px-3 py-2 border-r">Tên NVL</th>
+                      <th className="px-3 py-2 border-r">Mã VT</th>
+                      <th className="px-3 py-2 border-r">Tên VT</th>
                       <th className="px-3 py-2 border-r">Đơn vị</th>
                       <th className="px-3 py-2 border-r">SL nhận</th>
                       <th className="px-3 py-2">Thao tác</th>

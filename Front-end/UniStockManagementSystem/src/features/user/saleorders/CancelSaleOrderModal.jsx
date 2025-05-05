@@ -28,7 +28,7 @@ const CancelSaleOrderModal = ({ open, onClose, onConfirm }) => {
             return;
         }
 
-        const confirmed = window.confirm("Bạn có chắc chắn muốn huỷ đơn hàng này? Việc hủy đơn hàng cũng sẽ hủy yêu cầu mua vật tư cho đơn hàng này");
+        const confirmed = window.confirm("Bạn có chắc chắn muốn huỷ đơn hàng này? Việc hủy đơn hàng cũng sẽ hủy yêu cầu mua vật tư (nếu có) cho đơn hàng này");
         if (!confirmed) return;
 
         onConfirm(reason);
