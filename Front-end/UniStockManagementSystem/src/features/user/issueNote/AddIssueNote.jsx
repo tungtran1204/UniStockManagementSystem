@@ -436,7 +436,7 @@ const AddIssueNote = () => {
     }
 
     setReferenceDocument(selectedOrder.orderCode);
-    setSoId(selectedOrder.orderId); // Changed from selectedOrder.id to selectedOrder.orderId
+    setSoId(selectedOrder.orderId || selectedOrder.id); // Changed from selectedOrder.id to selectedOrder.orderId
     setPartnerCode(selectedOrder.partnerCode);
     setPartnerName(selectedOrder.partnerName);
     setDescription(selectedOrder.orderName || "");
@@ -1705,10 +1705,15 @@ const AddIssueNote = () => {
                     orders.find((o) => o.orderCode === referenceDocument) ||
                     null
                   }
-                  onChange={(event, selectedOrder) => {
-                    if (selectedOrder) {
-                      handleOrderSelected(selectedOrder);
-                      setReferenceDocumentError("");
+                  onChange={async (event, newValue) => {
+                    if (newValue) {
+                      await handleOrderSelected(newValue); 
+                      console.log("Selected order:", newValue);
+                    } else {
+                      // reset nếu bỏ chọn
+                      setReferenceDocument("");
+                      setSoId(null);
+                      setProducts([]);
                     }
                   }}
                   renderInput={(params) => (
