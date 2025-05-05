@@ -87,8 +87,8 @@ const PurchaseRequestPage = () => {
             selectedStatuses.map(status => status.value),
             startDate,
             endDate
-        );        
-    }, [currentPage, pageSize, searchTerm, selectedStatuses, startDate, endDate]);    
+        );
+    }, [currentPage, pageSize, searchTerm, selectedStatuses, startDate, endDate]);
 
     useEffect(() => {
         setAllStatuses(purchaseRequestStatus);
@@ -139,7 +139,7 @@ const PurchaseRequestPage = () => {
     const mapLabelToStatusCode = (label) => {
         const found = purchaseRequestStatus.find(s => s.label === label);
         return found ? found.value : label;
-    };    
+    };
 
     // const filteredRequests = purchaseRequests.filter((request) => {
     //     const matchesStatus =
@@ -174,7 +174,7 @@ const PurchaseRequestPage = () => {
     const handleSearch = () => {
         fetchPurchaseRequests(0, pageSize, searchTerm, selectedStatuses.map(mapLabelToStatusCode), startDate, endDate);
         setCurrentPage(0);
-    };    
+    };
 
     const handleConfirmCreatePurchaseOrder = (requestId) => {
         setSelectedRequestId(requestId);
@@ -299,12 +299,12 @@ const PurchaseRequestPage = () => {
         id: request.purchaseRequestId,
         index: (currentPage * pageSize) + index + 1,
         purchaseRequestCode: request.purchaseRequestCode,
-        purchaseOrderCode: request.saleOrderCode || "Chưa có",
+        purchaseOrderCode: request.saleOrderCode || "-",
         createdDate: request.createdDate,
-        status: getStatusLabel(request.status),  
-        statusCode: request.status,             
+        status: getStatusLabel(request.status),
+        statusCode: request.status,
         rejectionReason: request.rejectionReason,
-    }));    
+    }));
 
     return (
         <div className="mb-8 flex flex-col gap-12">
@@ -314,6 +314,7 @@ const PurchaseRequestPage = () => {
                         title="Danh sách yêu cầu mua vật tư"
                         onAdd={handleAddRequest}
                         addButtonLabel="Thêm yêu cầu"
+                        showAdd={currentUser && currentUser.permissions.includes("createManualPurchaseRequest")}
                         showImport={false}
                         showExport={false}
                     />

@@ -361,13 +361,7 @@ export const routes = [
         element: <EditSaleOrderPage />,
         roles: ["USER"],
       },
-      // {
-      //   layout: "Nhập kho",
-      //   name: "Thêm phiếu nhập",
-      //   path: "/user/receiptNote/add",
-      //   element: <AddReceiptNote />,
-      //   roles: ["USER"],
-      // },
+      
       {
         icon: <TableCellsIcon {...icon} />,
         name: "Thêm phiếu xuất",
@@ -431,13 +425,7 @@ export const routes = [
         element: <ViewReceiptNote />,
         roles: ["USER"],
       },
-      // {
-      //   layout: "Nhập kho",
-      //   name: "Thêm phiếu nhập kho",
-      //   path: "/user/receiptNote/manual",
-      //   element: <AddReceiptNoteManually />,
-      //   roles: ["USER"],
-      // },
+      
       {
         layout: "Nhập kho",
         name: "Thêm phiếu nhập",
