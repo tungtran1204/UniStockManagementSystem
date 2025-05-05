@@ -28,6 +28,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 import { getPurchaseRequestById, updatePurchaseRequestStatus } from "./PurchaseRequestService";
 import DateFilterButton from "@/components/DateFilterButton";
 import StatusFilterButton from "@/components/StatusFilterButton";
+import UnauthorizedPage from "../../../components/UnauthorizedPage";
 
 const PurchaseRequestPage = () => {
     const {
@@ -95,6 +96,9 @@ const PurchaseRequestPage = () => {
         setAllStatuses(purchaseRequestStatus);
     }, []);
 
+    // if (!currentUser?.permissions?.includes("getAllPurchaseRequests")) {
+    //     return <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-center">Heloo</div>;
+    // }
     //list status for filter 
     const purchaseRequestStatus = [
         {
