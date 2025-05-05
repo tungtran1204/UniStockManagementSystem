@@ -45,51 +45,12 @@ import { canCreatePurchaseRequest } from "@/features/user/purchaseRequest/Purcha
 import CancelSaleOrderModal from "./CancelSaleOrderModal";
 import { getTotalQuantityOfMaterial } from "@/features/user/issueNote/issueNoteService";
 import SuccessAlert from "@/components/SuccessAlert";
-import ConfirmDialog from "@/components/ConfirmDialog";
+import CircularProgress from '@mui/material/CircularProgress';
 
 const MODE_VIEW = "view";
 const MODE_EDIT = "edit";
 const MODE_DINHMUC = "dinhMuc";
 const CUSTOMER_TYPE_ID = 1;
-
-// List status for filter and display
-const saleOrderStatuses = [
-  {
-    value: "PROCESSING",
-    label: "Chưa có yêu cầu",
-    className: "bg-gray-100 text-gray-800",
-  },
-  {
-    value: "PROCESSING_PENDING_REQUEST",
-    label: "Đang chờ yêu cầu được duyệt",
-    className: "bg-blue-50 text-blue-800",
-  },
-  {
-    value: "PROCESSING_REJECTED_REQUEST",
-    label: "Yêu cầu bị từ chối",
-    className: "bg-pink-50 text-pink-800",
-  },
-  {
-    value: "PREPARING_MATERIAL",
-    label: "Đang chuẩn bị",
-    className: "bg-yellow-100 text-amber-800",
-  },
-  {
-    value: "PARTIALLY_ISSUED",
-    label: "Đã xuất một phần",
-    className: "bg-indigo-50 text-indigo-800",
-  },
-  {
-    value: "COMPLETED",
-    label: "Đã hoàn thành",
-    className: "bg-green-50 text-green-800",
-  },
-  {
-    value: "CANCELLED",
-    label: "Đã huỷ",
-    className: "bg-red-50 text-red-800",
-  },
-];
 
 // Hàm tính toán nhãn hiển thị dựa trên status và purchaseRequestStatus
 const getDisplayLabel = (status, purchaseRequestStatus) => {
@@ -161,8 +122,7 @@ const EditSaleOrderPage = () => {
   const [showMaterialTable, setShowMaterialTable] = useState(false);
   const [materialRequirements, setMaterialRequirements] = useState([]);
   const [canCreatePurchaseRequestState, setCanCreatePurchaseRequestState] = useState(false);
-
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Gọi API từ service để kiểm tra khả năng tạo PurchaseRequest
   useEffect(() => {
@@ -183,6 +143,7 @@ const EditSaleOrderPage = () => {
 
   useEffect(() => {
     const fetchOrderDetail = async () => {
+      setLoading(true);
       try {
         const orderData = await getSaleOrderById(orderId);
         setOrderCode(orderData.orderCode || "");
@@ -245,6 +206,8 @@ const EditSaleOrderPage = () => {
       } catch (error) {
         console.error("Lỗi khi lấy đơn hàng:", error);
         console.log("Lỗi khi tải thông tin đơn hàng!");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -252,6 +215,14 @@ const EditSaleOrderPage = () => {
       fetchOrderDetail();
     }
   }, [orderId]);
+
+  const [dotCount, setDotCount] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDotCount((prev) => (prev < 3 ? prev + 1 : 0));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchCustomers = async () => {
     try {
@@ -554,15 +525,15 @@ const EditSaleOrderPage = () => {
       console.log("Không tìm thấy đơn hàng để tạo yêu cầu mua vật tư!");
       return;
     }
-  
+
     try {
       const materialsToBuy = materialRequirements.filter((mat) => mat.quantityToBuy > 0);
-  
+
       if (materialsToBuy.length === 0) {
         console.log("Không có vật tư nào cần mua từ đơn hàng này!");
         return;
       }
-  
+
       // Tạo danh sách materials cho mỗi orderDetail
       const materialPromises = items.map(async (item) => {
         if (item.productId && item.produceQuantity > 0) {
@@ -587,10 +558,10 @@ const EditSaleOrderPage = () => {
         }
         return [];
       });
-  
+
       const materialsByItem = await Promise.all(materialPromises);
       console.log("🔍 materialsByItem:", JSON.stringify(materialsByItem, null, 2));
-  
+
       // Tạo usedMaterialsFromWarehouses
       const usedMaterialsFromWarehouses = await Promise.all(
         materialRequirements
@@ -616,7 +587,7 @@ const EditSaleOrderPage = () => {
           })
       ).then((results) => results.flat());
       console.log("🔍 usedMaterialsFromWarehouses:", JSON.stringify(usedMaterialsFromWarehouses, null, 2));
-  
+
       // Tạo usedProductsFromWarehouses
       const usedProductsFromWarehouses = items.flatMap((item) =>
         (item.inStock || [])
@@ -631,7 +602,7 @@ const EditSaleOrderPage = () => {
             warehouseName: d.warehouseName,
           }))
       );
-  
+
       // Tạo danh sách materials cho toàn bộ đơn hàng
       const orderMaterials = materialRequirements
         .filter((mat) => mat.requiredQuantity > 0)
@@ -640,7 +611,7 @@ const EditSaleOrderPage = () => {
           requiredQuantity: mat.requiredQuantity,
           receivedQuantity: mat.receivedQuantity || 0,
         }));
-  
+
       // Tạo payload cho updateSaleOrder
       const updatePayload = {
         orderId: Number(orderId),
@@ -668,12 +639,12 @@ const EditSaleOrderPage = () => {
         })),
         materials: orderMaterials,
       };
-  
+
       console.log("🔍 Payload for updateSaleOrder:", JSON.stringify(updatePayload, null, 2));
-  
+
       // Gọi API updateSaleOrder
       await updateExistingOrder(orderId, updatePayload);
-  
+
       // Chuẩn bị dữ liệu cho PurchaseRequest
       const itemsWithSuppliers = await Promise.all(
         materialsToBuy.map(async (item) => {
@@ -685,9 +656,9 @@ const EditSaleOrderPage = () => {
             name: supplier.partnerName,
             code: supplier.partnerCode || "",
           }));
-  
+
           const defaultSupplier = mappedSuppliers.length > 0 ? mappedSuppliers[0] : null;
-  
+
           return {
             id: `temp-${item.materialId}`,
             materialId: item.materialId,
@@ -702,20 +673,20 @@ const EditSaleOrderPage = () => {
           };
         })
       );
-  
+
       // Sắp xếp: vật tư có từ 2 nhà cung cấp trở lên lên đầu
       const sortedItems = itemsWithSuppliers.sort((a, b) => {
         if (a.supplierCount >= 2 && b.supplierCount < 2) return -1;
         if (a.supplierCount < 2 && b.supplierCount >= 2) return 1;
         return 0;
       });
-  
+
       console.log("🔍 Navigating to purchase request with data:", {
         sortedItems,
         usedProductsFromWarehouses,
         usedMaterialsFromWarehouses,
       });
-  
+
       navigate("/user/purchase-request/add", {
         state: {
           fromSaleOrder: true,
@@ -1181,6 +1152,19 @@ const EditSaleOrderPage = () => {
       recalcMaterialRequirements();
     }
   }, [items, mode, showMaterialTable]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center" style={{ height: '60vh' }}>
+        <div className="flex flex-col items-center">
+          <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#0ab067' }} />
+          <Typography variant="body1">
+            Đang tải{'.'.repeat(dotCount)}
+          </Typography>
+        </div>
+      </div>
+    );
+  }  
 
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: "calc(100vh - 180px)" }}>
@@ -1668,7 +1652,7 @@ const EditSaleOrderPage = () => {
                   </MuiButton>
                 )}
 
-                {mode === MODE_VIEW && canCreatePurchaseRequestState && originalData?.status !== "CANCELLED" && (
+                {mode === MODE_VIEW && canCreatePurchaseRequestState && originalData?.status === "PROCESSING" && (
                   <MuiButton
                     variant="contained"
                     size="medium"
@@ -1717,122 +1701,122 @@ const EditSaleOrderPage = () => {
                 showMaterialTable && (
                   materialRequirements.every((mat) => mat.quantityToBuy === 0) ? (
                     <Button
-  size="lg"
-  color="white"
-  variant="text"
-  className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
-  ripple={true}
-  disabled={Object.keys(materialErrors).length > 0}
-  onClick={async () => {
-    try {
-      // Tạo usedProductsFromWarehouses
-      const usedProductsFromWarehouses = items.flatMap((item) =>
-        (item.inStock || [])
-          .filter((d) => d.usedQuantity > 0)
-          .map((d) => ({
-            productId: item.productId,
-            productCode: item.productCode,
-            productName: item.productName,
-            unitName: item.unitName,
-            quantity: d.usedQuantity,
-            warehouseId: d.warehouseId,
-            warehouseName: d.warehouseName,
-          }))
-      );
+                      size="lg"
+                      color="white"
+                      variant="text"
+                      className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                      ripple={true}
+                      disabled={Object.keys(materialErrors).length > 0}
+                      onClick={async () => {
+                        try {
+                          // Tạo usedProductsFromWarehouses
+                          const usedProductsFromWarehouses = items.flatMap((item) =>
+                            (item.inStock || [])
+                              .filter((d) => d.usedQuantity > 0)
+                              .map((d) => ({
+                                productId: item.productId,
+                                productCode: item.productCode,
+                                productName: item.productName,
+                                unitName: item.unitName,
+                                quantity: d.usedQuantity,
+                                warehouseId: d.warehouseId,
+                                warehouseName: d.warehouseName,
+                              }))
+                          );
 
-      // Tạo usedMaterialsFromWarehouses
-      const usedMaterialsFromWarehouses = await Promise.all(
-        materialRequirements
-          .filter((req) => req.totalInStock > 0)
-          .map(async (req) => {
-            try {
-              const warehouses = await getTotalQuantityOfMaterial(req.materialId);
-              return warehouses
-                .filter((w) => w.quantity > 0)
-                .map((w) => ({
-                  materialId: req.materialId,
-                  materialCode: req.materialCode,
-                  materialName: req.materialName,
-                  unitName: req.unitName,
-                  quantity: Math.min(w.quantity, req.requiredQuantity),
-                  warehouseId: w.warehouseId,
-                  warehouseName: w.warehouseName,
-                }));
-            } catch (error) {
-              console.error(`Lỗi khi lấy tồn kho cho NVL ${req.materialCode}:`, error);
-              return [];
-            }
-          })
-      ).then((results) => results.flat());
+                          // Tạo usedMaterialsFromWarehouses
+                          const usedMaterialsFromWarehouses = await Promise.all(
+                            materialRequirements
+                              .filter((req) => req.totalInStock > 0)
+                              .map(async (req) => {
+                                try {
+                                  const warehouses = await getTotalQuantityOfMaterial(req.materialId);
+                                  return warehouses
+                                    .filter((w) => w.quantity > 0)
+                                    .map((w) => ({
+                                      materialId: req.materialId,
+                                      materialCode: req.materialCode,
+                                      materialName: req.materialName,
+                                      unitName: req.unitName,
+                                      quantity: Math.min(w.quantity, req.requiredQuantity),
+                                      warehouseId: w.warehouseId,
+                                      warehouseName: w.warehouseName,
+                                    }));
+                                } catch (error) {
+                                  console.error(`Lỗi khi lấy tồn kho cho NVL ${req.materialCode}:`, error);
+                                  return [];
+                                }
+                              })
+                          ).then((results) => results.flat());
 
-      // Tạo danh sách materials cho toàn bộ đơn hàng
-      const orderMaterials = materialRequirements
-        .filter((mat) => mat.requiredQuantity > 0)
-        .map((mat) => ({
-          materialId: mat.materialId,
-          requiredQuantity: mat.requiredQuantity,
-          receivedQuantity: mat.receivedQuantity || 0,
-        }));
+                          // Tạo danh sách materials cho toàn bộ đơn hàng
+                          const orderMaterials = materialRequirements
+                            .filter((mat) => mat.requiredQuantity > 0)
+                            .map((mat) => ({
+                              materialId: mat.materialId,
+                              requiredQuantity: mat.requiredQuantity,
+                              receivedQuantity: mat.receivedQuantity || 0,
+                            }));
 
-      // Tạo payload cho updateSaleOrder trước khi setPreparingStatus
-      const updatePayload = {
-        orderId: Number(orderId),
-        orderCode,
-        partnerId,
-        partnerCode: customerCode,
-        partnerName: customerName,
-        address,
-        phoneNumber,
-        contactName,
-        status: "PROCESSING",
-        orderDate,
-        note: description,
-        orderDetails: items.map((it) => ({
-          orderDetailId: it.orderDetailId || null,
-          productId: it.productId || null,
-          productCode: it.productCode,
-          productName: it.productName,
-          quantity: it.quantity,
-          unitName: it.unitName,
-          inStock: it.inStock,
-          usedQuantity: it.usedQuantity,
-          receivedQuantity: it.exportedQuantity,
-          produceQuantity: it.produceQuantity,
-        })),
-        materials: orderMaterials, // Thêm danh sách materials
-      };
+                          // Tạo payload cho updateSaleOrder trước khi setPreparingStatus
+                          const updatePayload = {
+                            orderId: Number(orderId),
+                            orderCode,
+                            partnerId,
+                            partnerCode: customerCode,
+                            partnerName: customerName,
+                            address,
+                            phoneNumber,
+                            contactName,
+                            status: "PROCESSING",
+                            orderDate,
+                            note: description,
+                            orderDetails: items.map((it) => ({
+                              orderDetailId: it.orderDetailId || null,
+                              productId: it.productId || null,
+                              productCode: it.productCode,
+                              productName: it.productName,
+                              quantity: it.quantity,
+                              unitName: it.unitName,
+                              inStock: it.inStock,
+                              usedQuantity: it.usedQuantity,
+                              receivedQuantity: it.exportedQuantity,
+                              produceQuantity: it.produceQuantity,
+                            })),
+                            materials: orderMaterials, // Thêm danh sách materials
+                          };
 
-      console.log("🔍 Payload for updateSaleOrder:", JSON.stringify(updatePayload, null, 2));
+                          console.log("🔍 Payload for updateSaleOrder:", JSON.stringify(updatePayload, null, 2));
 
-      // Gọi API updateSaleOrder
-      await updateExistingOrder(orderId, updatePayload);
+                          // Gọi API updateSaleOrder
+                          await updateExistingOrder(orderId, updatePayload);
 
-      // Tạo payload cho setPreparingStatus
-      const statusPayload = {
-        saleOrderId: Number(orderId),
-        usedProductsFromWarehouses,
-        usedMaterialsFromWarehouses,
-      };
+                          // Tạo payload cho setPreparingStatus
+                          const statusPayload = {
+                            saleOrderId: Number(orderId),
+                            usedProductsFromWarehouses,
+                            usedMaterialsFromWarehouses,
+                          };
 
-      console.log("🔍 Payload for setPreparingStatus:", JSON.stringify(statusPayload, null, 2));
+                          console.log("🔍 Payload for setPreparingStatus:", JSON.stringify(statusPayload, null, 2));
 
-      // Gọi API setPreparingStatus
-      await setPreparingStatus(statusPayload);
+                          // Gọi API setPreparingStatus
+                          await setPreparingStatus(statusPayload);
 
-      navigate("/user/sale-orders", {
-        state: { successMessage: "Đơn hàng đang được chuẩn bị!" },
-      });
-    } catch (err) {
-      console.error("Lỗi khi chuyển trạng thái đơn hàng:", err);
-      setGlobalError("Không thể chuyển trạng thái đơn hàng. Vui lòng thử lại sau.");
-    }
-  }}
->
-  <div className="flex items-center gap-2">
-    <FaCheck />
-    <span>Chuẩn bị vật tư</span>
-  </div>
-</Button>
+                          navigate("/user/sale-orders", {
+                            state: { successMessage: "Đơn hàng đang được chuẩn bị!" },
+                          });
+                        } catch (err) {
+                          console.error("Lỗi khi chuyển trạng thái đơn hàng:", err);
+                          setGlobalError("Không thể chuyển trạng thái đơn hàng. Vui lòng thử lại sau.");
+                        }
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <FaCheck />
+                        <span>Chuẩn bị vật tư</span>
+                      </div>
+                    </Button>
                   ) : (
                     <Button
                       size="lg"

@@ -489,7 +489,7 @@ const ViewIssueNote = () => {
                 )}
               </div>
             )}
-
+            
             {data.category === "Sản xuất" && data.receiver && (
               <div>
                 <Typography variant="medium" className="mb-1 text-black">
@@ -648,29 +648,13 @@ const ViewIssueNote = () => {
             <ListBulletIcon className="h-5 w-5 mr-2" />
             Danh sách hàng hóa
           </Typography>
-          <div className="overflow-auto border rounded">
+          <div className="overflow-auto">
             <Table
               data={displayedItemsWithIndex}
               columnsConfig={columnsConfig}
               enableSelection={false}
             />
           </div>
-
-          {data.category === "Gia công" && data.receiveOutsource?.materials?.length > 0 && (
-            <>
-              <Typography variant="h6" className="flex items-center mb-4 mt-8 text-black">
-                <ListBulletIcon className="h-5 w-5 mr-2" />
-                Danh sách NVL dự kiến nhận lại
-              </Typography>
-              <div className="overflow-auto border rounded">
-                <Table
-                  data={expectedMaterials}
-                  columnsConfig={columnsExpectedMaterials}
-                  enableSelection={false}
-                />
-              </div>
-            </>
-          )}
 
           {totalItems > 0 && (
             <div className="flex items-center justify-between py-4">

@@ -22,10 +22,6 @@ import {
 import routes from "@/routes/routes"; // Import routes từ file routes.jsx
 import { useNotifications } from "../features/user/notification/useNotifications";
 
-
-
-
-
 // Hàm tìm kiếm layoutName và pageName từ routes.jsx
 const getPageInfo = (pathname) => {
   for (const route of routes) {
@@ -102,9 +98,6 @@ export function Navbar({ brandName, routes }) {
     };
   }, []);
 
-
-
-
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -113,6 +106,8 @@ export function Navbar({ brandName, routes }) {
   useEffect(() => {
     window.addEventListener("resize", () => window.innerWidth >= 960 && setOpenSidenav(false));
   }, []);
+
+  console.log("Navbar rendered with user:", user);
 
   return (
     <MTNavbar fullWidth className="py-2 shadow-none bg-white border-b border-l-0 border-gray-200">
@@ -222,9 +217,8 @@ export function Navbar({ brandName, routes }) {
             <Menu>
               <MenuHandler>
                 <div className="flex items-center gap-2 cursor-pointer mr-2">
-                  {/* <AccountCircle sx={{ fontSize: 40 }} className="text-blue-gray-500" /> */}
                   <Avatar
-                    src={user.avatar}
+                    src={user.avatar || "/img/default-avatar.png"}
                     alt={user.email}
                     size="sm"
                     variant="circular"
