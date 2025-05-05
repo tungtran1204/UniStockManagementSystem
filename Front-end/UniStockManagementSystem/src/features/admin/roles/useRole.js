@@ -11,10 +11,11 @@ import {
 
 // Thêm ánh xạ từ PermissionHierarchy để kiểm tra quyền
 const PERMISSION_HIERARCHY = {
-  viewProduct: ["getAllProducts", "getProductById"],
+  viewProduct: ["getAllProducts", "getProductById", "getMaterialsByProduct"],
   manageProduct: [
     "getAllProducts",
     "getProductById",
+    "getMaterialsByProduct",
     "updateProduct",
     "checkProductCode",
     "toggleProductionStatus",

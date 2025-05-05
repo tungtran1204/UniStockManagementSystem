@@ -9,12 +9,14 @@ public class PermissionHierarchy {
     static {
         PERMISSION_MAP.put("viewProduct", List.of(
                 "getAllProducts",
-                "getProductById"
+                "getProductById",
+                "getMaterialsByProduct"
         ));
         // manageProduct = bao gồm mọi API của "Sản phẩm" (kể cả xem)
         PERMISSION_MAP.put("manageProduct", List.of(
                 "getAllProducts",
                 "getProductById",
+                "getMaterialsByProduct",
                 "updateProduct",
                 "checkProductCode",
                 "toggleProductionStatus",
