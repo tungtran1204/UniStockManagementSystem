@@ -24,7 +24,7 @@ const PERMISSION_HIERARCHY = {
   ],
   viewProductType: ["getAllProductTypes"],
   manageProductType: ["createProductType", "updateProductType", "checkTypeName"],
-  viewPartner: ["getAllPartners", "getPartnerCode", "getPartnersByType"],
+  viewPartner: ["getAllPartners", "getPartnerCode", "getPartnersByType", "getAllPartnerTypes"],
   managePartner: [
     "getAllPartners",
     "getPartnerCode",

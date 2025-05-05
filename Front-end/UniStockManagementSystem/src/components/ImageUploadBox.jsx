@@ -1,15 +1,19 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Button } from '@mui/material';
+import WarningAlert from "@/components/WarningAlert";  // ✅ đổi path nếu cần
 
 const ImageUploadBox = ({ onFileSelect }) => {
     const inputRef = useRef();
+    const [warningOpen, setWarningOpen] = useState(false);
+    const [warningMessage, setWarningMessage] = useState("");
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file && file.size <= 5 * 1024 * 1024) {
             onFileSelect(file);
         } else {
-            alert("Vui lòng chọn file nhỏ hơn 5MB");
+            setWarningMessage("Vui lòng chọn file nhỏ hơn 5MB");
+            setWarningOpen(true);
         }
     };
 
@@ -19,7 +23,8 @@ const ImageUploadBox = ({ onFileSelect }) => {
         if (file && file.size <= 5 * 1024 * 1024) {
             onFileSelect(file);
         } else {
-            alert("Vui lòng chọn file nhỏ hơn 5MB");
+            setWarningMessage("Vui lòng chọn file nhỏ hơn 5MB");
+            setWarningOpen(true);
         }
     };
 
@@ -52,6 +57,11 @@ const ImageUploadBox = ({ onFileSelect }) => {
                 accept="image/*"
                 onChange={handleFileChange}
                 className="hidden"
+            />
+            <WarningAlert
+                open={warningOpen}
+                onClose={() => setWarningOpen(false)}
+                message={warningMessage}
             />
         </div>
     );

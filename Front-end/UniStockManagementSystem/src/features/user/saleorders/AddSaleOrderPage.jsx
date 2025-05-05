@@ -273,7 +273,7 @@ const AddSaleOrderPage = () => {
       });
     } catch (error) {
       console.error("Lỗi khi lưu đơn hàng:", error);
-      alert("Lỗi khi lưu đơn hàng. Vui lòng thử lại!");
+      console.log("Lỗi khi lưu đơn hàng. Vui lòng thử lại!");
     }
   };
 

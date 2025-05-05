@@ -23,11 +23,12 @@ import Table from "@/components/Table";
 import StatusFilterButton from "@/components/StatusFilterButton";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import SuccessAlert from "@/components/SuccessAlert";
+import CircularProgress from '@mui/material/CircularProgress';
 
 // Define the WarehousePage component
 const WarehousePage = () => {
   // Destructure values from useWarehouse hook
-  const { warehouses, fetchPaginatedWarehouses, toggleStatus, totalPages, totalElements } = useWarehouse();
+  const { warehouses, fetchPaginatedWarehouses, toggleStatus, totalPages, totalElements, loading } = useWarehouse();
   const navigate = useNavigate(); // Hook for navigation
   const [openAddModal, setOpenAddModal] = useState(false); // State to control Add Modal visibility
   const [openEditModal, setOpenEditModal] = useState(false); // State to control Edit Modal visibility
@@ -91,7 +92,7 @@ const WarehousePage = () => {
       setOpenEditModal(true);
     } catch (error) {
       console.error(" Error fetching warehouse data:", error);
-      alert("Unable to fetch warehouse data!");
+      console.log("Unable to fetch warehouse data!");
     }
   };
 
@@ -169,8 +170,29 @@ const WarehousePage = () => {
     isActive: warehouse.isActive,
   }));
 
+  const [dotCount, setDotCount] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDotCount((prev) => (prev < 3 ? prev + 1 : 0));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center" style={{ height: '60vh' }}>
+        <div className="flex flex-col items-center">
+          <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#0ab067' }} />
+          <Typography variant="body1">
+            Đang tải{'.'.repeat(dotCount)}
+          </Typography>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+    <div className="mb-8 flex flex-col gap-12">
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader
@@ -268,7 +290,7 @@ const WarehousePage = () => {
 
       {/* Modal Add Warehouse */}
       {openAddModal && <ModalAddWarehouse show={openAddModal} onClose={() => setOpenAddModal(false)} onAdd={() => {
-        setCurrentPage(0); 
+        setCurrentPage(0);
         fetchPaginatedWarehouses(1, pageSize);
         setSuccessMessage("Tạo kho thành công!"), setSuccessAlertOpen(true);
       }} />}

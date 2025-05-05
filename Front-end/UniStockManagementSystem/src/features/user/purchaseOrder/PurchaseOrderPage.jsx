@@ -32,8 +32,19 @@ const PurchaseOrderPage = () => {
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const location = useLocation();
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
+    // Lấy thông tin user từ localStorage
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        setCurrentUser(JSON.parse(storedUser));
+      } catch (err) {
+        console.error("Lỗi parse JSON từ localStorage:", err);
+      }
+    }
+
     if (location.state?.successMessage) {
       console.log("Component mounted, location.state:", location.state?.successMessage);
       setAlertMessage(location.state.successMessage);
@@ -42,6 +53,12 @@ const PurchaseOrderPage = () => {
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
+
+  useEffect(() => {
+    if (currentUser && !currentUser.permissions?.includes("getAllOrdersFiltered")) {
+      navigate("/unauthorized");
+    }
+  }, [currentUser, navigate]);
 
   //state for filter and search 
   const [selectedStatuses, setSelectedStatuses] = useState([]);
@@ -98,7 +115,6 @@ const PurchaseOrderPage = () => {
   const [pageSize, setPageSize] = useState(10);
   const [selectedOrders, setSelectedOrders] = useState([]);
 
-
   // Fetch orders when component mounts or pagination changes
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -116,7 +132,7 @@ const PurchaseOrderPage = () => {
     });
 
     return () => clearTimeout(timeoutId);
-  }, [currentPage, pageSize, searchTerm, selectedStatuses, startDate, endDate]);
+  }, [currentPage, pageSize, searchTerm, selectedStatuses, startDate, endDate])
 
   // Sorting handler
   const handleSort = (column) => {
@@ -226,7 +242,7 @@ const PurchaseOrderPage = () => {
   };
 
   const printOrders = () => {
-    alert(`In các đơn hàng: ${selectedOrders.join(", ")}`);
+    console.log(`In các đơn hàng: ${selectedOrders.join(", ")}`);
   };
 
   // View order details
@@ -254,29 +270,29 @@ const PurchaseOrderPage = () => {
         // Gọi API kiểm tra yêu cầu mua liên kết
         const request = await getPurchaseRequestById(order.purchaseRequestId);
         if (request.status !== "CANCELLED") {
-          alert("Không thể hủy đơn mua hàng khi yêu cầu mua vật tư liên kết chưa bị hủy.");
+          console.log("Không thể hủy đơn mua hàng khi yêu cầu mua vật tư liên kết chưa bị hủy.");
           return;
         }
       } catch (error) {
         console.error("Lỗi khi kiểm tra yêu cầu mua:", error);
-        alert("Lỗi khi kiểm tra yêu cầu mua.");
+        console.log("Lỗi khi kiểm tra yêu cầu mua.");
         return;
       }
     }
-  
+
     // Nếu thỏa mãn điều kiện thì gọi API hủy đơn
     if (window.confirm("Bạn có chắc chắn muốn hủy đơn mua hàng này không?")) {
       try {
         await updatePurchaseOrderStatus(order.id, "CANCELED");
-        alert("Đã hủy đơn mua hàng thành công.");
+        console.log("Đã hủy đơn mua hàng thành công.");
         fetchPaginatedOrders(currentPage, pageSize, searchTerm, selectedStatuses[0]?.value, startDate, endDate);
       } catch (error) {
         console.error("Lỗi khi hủy đơn mua hàng:", error);
-        alert("Hủy đơn mua hàng thất bại.");
+        console.log("Hủy đơn mua hàng thất bại.");
       }
     }
   };
-  
+
 
   useEffect(() => {
     // Check if location.state exists and has nextCode

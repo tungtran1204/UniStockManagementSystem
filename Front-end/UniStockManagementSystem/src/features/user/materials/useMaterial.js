@@ -39,7 +39,7 @@ const useMaterial = () => {
 
   const handleToggleStatus = async (materialId) => {
     if (!materialId) {
-      alert("❌ Lỗi: Không tìm thấy ID nguyên vật liệu!");
+      console.log("❌ Lỗi: Không tìm thấy ID nguyên vật liệu!");
       return;
     }
 
@@ -60,7 +60,7 @@ const useMaterial = () => {
 
     } catch (error) {
       console.error("❌ Lỗi khi thay đổi trạng thái:", error);
-      alert("Lỗi khi thay đổi trạng thái nguyên vật liệu!");
+      console.log("Lỗi khi thay đổi trạng thái nguyên vật liệu!");
     }
   };
 
