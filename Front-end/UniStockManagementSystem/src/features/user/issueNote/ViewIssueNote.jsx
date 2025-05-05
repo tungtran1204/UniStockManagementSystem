@@ -138,6 +138,89 @@ const ViewIssueNote = () => {
     ];
   };
 
+  const columnsExpectedMaterials = [
+    {
+      field: "index",
+      headerName: "STT",
+      minWidth: 50,
+      flex: 0.5,
+      filterable: false,
+      editable: false,
+      renderCell: (params) => <div className="text-center">{params.row.index + 1}</div>,
+    },
+    {
+      field: "materialCode",
+      headerName: "Mã NVL",
+      minWidth: 100,
+      flex: 1,
+      filterable: false,
+      editable: false,
+      renderCell: (params) => (
+        <div className="text-center">{params.row.materialCode}</div>
+      ),
+    },
+    {
+      field: "materialName",
+      headerName: "Tên NVL",
+      minWidth: 150,
+      flex: 2,
+      filterable: false,
+      editable: false,
+      renderCell: (params) => (
+        <div className="text-center">{params.row.materialName}</div>
+      ),
+    },
+    {
+      field: "quantity",
+      headerName: "Số lượng dự kiến",
+      minWidth: 100,
+      flex: 1,
+      filterable: false,
+      editable: false,
+      renderCell: (params) => (
+        <div className="text-center">{params.row.quantity}</div>
+      ),
+    },
+    {
+      field: "receivedQuantity",
+      headerName: "Đã nhập",
+      minWidth: 100,
+      flex: 1,
+      filterable: false,
+      editable: false,
+      renderCell: (params) => (
+        <div className="text-center">{params.row.receivedQuantity ?? 0}</div>
+      ),
+    },
+    {
+      field: "remainingQuantity",
+      headerName: "Chưa nhập",
+      minWidth: 100,
+      flex: 1,
+      filterable: false,
+      editable: false,
+      renderCell: (params) => (
+        <div className="text-center">{params.row.remainingQuantity ?? (params.row.quantity ?? 0)}</div>
+      ),
+    },
+    {
+      field: "unitName",
+      headerName: "Đơn vị",
+      minWidth: 100,
+      flex: 1,
+      filterable: false,
+      editable: false,
+      renderCell: (params) => (
+        <div className="text-center">{params.row.unitName}</div>
+      ),
+    },
+  ];
+  
+  const expectedMaterials = data.receiveOutsource?.materials?.map((item, idx) => ({
+    ...item,
+    index: idx,
+  }));  
+
   const columnsConfig = getColumnsConfig(data.category);
 
   const handleExportPDF = () => {

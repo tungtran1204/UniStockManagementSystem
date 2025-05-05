@@ -29,7 +29,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/vi"; // Sử dụng ngôn ngữ Tiếng Việt cho DatePicker
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-
+import CircularProgress from '@mui/material/CircularProgress';
 import PageHeader from '@/components/PageHeader';
 import FileUploadBox from '@/components/FileUploadBox';
 import TableSearch from '@/components/TableSearch';
@@ -61,6 +61,7 @@ const AddReceiptNoteGeneral = () => {
   const [description, setDescription] = useState("");          // Lý do xuất/ diễn giải
   const [referenceDocument, setReferenceDocument] = useState("");  // Chứng từ tham chiếu
   const isReferenceFlow = (category === "Vật tư mua bán" || category === "Hàng hóa gia công") && !!referenceDocument;
+  const [loading, setLoading] = useState(false);
 
   // Thông tin đối tác
   const [partnerId, setPartnerId] = useState(null);
@@ -177,6 +178,7 @@ const AddReceiptNoteGeneral = () => {
   useEffect(() => {
     // Lấy danh sách kho, sản phẩm, mã phiếu nhập
     const fetchInitData = async () => {
+      setLoading(true);
       try {
         // Lấy danh sách kho
         const resWarehouses = await getWarehouseList();
@@ -192,6 +194,8 @@ const AddReceiptNoteGeneral = () => {
         setReceiptCode(nextCode);
       } catch (err) {
         console.error("Lỗi khi lấy dữ liệu khởi tạo:", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchInitData();
@@ -589,6 +593,9 @@ const AddReceiptNoteGeneral = () => {
       // Gọi API tạo phiếu nhập
       const response = await createReceiptNote(payload);
 
+      window.dispatchEvent(new Event("refreshNotifications"));
+
+
       // Upload file đính kèm nếu có
       if (files.length > 0) {
         await uploadPaperEvidence(response.grnId, "GOOD_RECEIPT_NOTE", files);
@@ -853,6 +860,27 @@ const AddReceiptNoteGeneral = () => {
       });
     }
   };
+
+  const [dotCount, setDotCount] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDotCount((prev) => (prev < 3 ? prev + 1 : 0));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center" style={{ height: '60vh' }}>
+        <div className="flex flex-col items-center">
+          <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#0ab067' }} />
+          <Typography variant="body1">
+            Đang tải{'.'.repeat(dotCount)}
+          </Typography>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-8 flex flex-col gap-12">

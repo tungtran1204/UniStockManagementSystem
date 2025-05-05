@@ -10,8 +10,9 @@ import {
   IconButton,
 } from '@mui/material';
 import {
-  VisibilityOutlined
+  VisibilityOutlined, 
 } from '@mui/icons-material';
+import CircularProgress from '@mui/material/CircularProgress';
 import useSaleOrder from "./useSaleOrder";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
@@ -31,6 +32,7 @@ const SaleOrdersPage = () => {
     totalPages,
     totalElements,
     getNextCode,
+    loading,
   } = useSaleOrder();
 
   // State quản lý tìm kiếm, phân trang
@@ -48,40 +50,40 @@ const SaleOrdersPage = () => {
   // List status for filter and display
   const saleOrderStatuses = [
     {
-        value: "PROCESSING",
-        label: "Chưa có yêu cầu",
-        className: "bg-gray-100 text-gray-800",
+      value: "PROCESSING",
+      label: "Chưa có yêu cầu",
+      className: "bg-gray-100 text-gray-800",
     },
-    
+
     {
-        value: "PROCESSING_PENDING_REQUEST",
-        label: "Đang chờ yêu cầu được duyệt",
-        className: "bg-blue-50 text-blue-800",
-    },
-    {
-        value: "PROCESSING_REJECTED_REQUEST",
-        label: "Yêu cầu bị từ chối",
-        className: "bg-pink-50 text-pink-800",
+      value: "PROCESSING_PENDING_REQUEST",
+      label: "Đang chờ yêu cầu được duyệt",
+      className: "bg-blue-50 text-blue-800",
     },
     {
-        value: "PREPARING_MATERIAL",
-        label: "Đang chuẩn bị",
-        className: "bg-yellow-100 text-orange-800",
+      value: "PROCESSING_REJECTED_REQUEST",
+      label: "Yêu cầu bị từ chối",
+      className: "bg-pink-50 text-pink-800",
     },
     {
-        value: "PARTIALLY_ISSUED",
-        label: "Đã xuất một phần",
-        className: "bg-indigo-50 text-indigo-800",
+      value: "PREPARING_MATERIAL",
+      label: "Đang chuẩn bị",
+      className: "bg-yellow-100 text-orange-800",
     },
     {
-        value: "COMPLETED",
-        label: "Đã hoàn thành",
-        className: "bg-green-50 text-green-800",
+      value: "PARTIALLY_ISSUED",
+      label: "Đã xuất một phần",
+      className: "bg-indigo-50 text-indigo-800",
     },
     {
-        value: "CANCELLED",
-        label: "Đã huỷ",
-        className: "bg-red-50 text-red-800",
+      value: "COMPLETED",
+      label: "Đã hoàn thành",
+      className: "bg-green-50 text-green-800",
+    },
+    {
+      value: "CANCELLED",
+      label: "Đã huỷ",
+      className: "bg-red-50 text-red-800",
     },
   ];
 
@@ -148,6 +150,15 @@ const SaleOrdersPage = () => {
     }
   }, [location.state]);
 
+  const [dotCount, setDotCount] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDotCount((prev) => (prev < 3 ? prev + 1 : 0));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleAddOrder = async () => {
     const code = await getNextCode();
     navigate("/user/sale-orders/add", { state: { nextCode: code } });
@@ -198,7 +209,7 @@ const SaleOrdersPage = () => {
       editable: false,
       filterable: false,
       renderCell: (params) => {
-        const statusObj = saleOrderStatuses.find((s) => s.label === params.row.status) || 
+        const statusObj = saleOrderStatuses.find((s) => s.label === params.row.status) ||
           { className: "bg-gray-100 text-gray-800", label: params.row.status };
         return (
           <div
@@ -209,7 +220,7 @@ const SaleOrdersPage = () => {
           </div>
         );
       },
-    },    
+    },
     {
       field: 'orderDate',
       headerName: 'Ngày đặt hàng',
@@ -251,8 +262,21 @@ const SaleOrdersPage = () => {
     orderDate: order.orderDate,
   }));
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center" style={{ height: '60vh' }}>
+        <div className="flex flex-col items-center">
+          <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#0ab067' }} />
+          <Typography variant="body1">
+            Đang tải{'.'.repeat(dotCount)}
+          </Typography>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+    <div className="mb-8 flex flex-col gap-12">
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader

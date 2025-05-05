@@ -3,9 +3,6 @@ import {
   Card,
   CardBody,
   Typography,
-  // Checkbox,
-  Input,
-  Switch,
   Button,
 } from "@material-tailwind/react";
 import {
@@ -20,9 +17,11 @@ import {
   TextField,
   Button as MuiButton,
   Paper,
+  Box,
 } from '@mui/material';
 import ModeEditOutlineOutlinedIcon from '@mui/icons-material/ModeEditOutlineOutlined';
-import { FaEdit } from "react-icons/fa";
+import SuccessAlert from "@/components/SuccessAlert";
+import CircularProgress from '@mui/material/CircularProgress';
 import useRole from "./useRole";
 import PageHeader from '@/components/PageHeader';
 import { PERMISSION_CATEGORIES, PERMISSION_LABELS } from './permissionConstants';
@@ -60,6 +59,10 @@ function RolePage() {
     roles,
     loading,
     error,
+    errorRole,
+    errorEditRole,
+    setErrorEditRole,
+    setErrorRole,
     handleAddRole,
     handleUpdateRole,
     handleToggleRoleStatus,
@@ -70,7 +73,10 @@ function RolePage() {
   const [editingRole, setEditingRole] = useState(null);
   const [editingRoleName, setEditingRoleName] = useState("");
   const [tempPermissions, setTempPermissions] = useState({});
-  const [saveError, setSaveError] = useState(null);
+  const [successAlert, setSuccessAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [dotCount, setDotCount] = useState(0);
+  const [savingRoleId, setSavingRoleId] = useState(null);
 
   const onAddTempRole = () => {
     const newTempRole = {
@@ -94,12 +100,14 @@ function RolePage() {
       active: true,
     };
     try {
-      await handleAddRole(newRole);
-      setTempRoles((prev) => prev.filter((r) => r.id !== tempRole.id));
-      setSaveError(null);
+      const success = await handleAddRole(newRole);
+      if (success) {
+        setTempRoles((prev) => prev.filter((r) => r.id !== tempRole.id));
+        setAlertMessage('Tạo vai trò thành công!');
+        setSuccessAlert(true);
+      }
     } catch (err) {
       console.error("Lỗi khi lưu vai trò:", err);
-      setSaveError("Không thể lưu vai trò. Vui lòng thử lại.");
     }
   };
 
@@ -110,6 +118,7 @@ function RolePage() {
   };
 
   const handleSaveEditRole = async (role) => {
+    setSavingRoleId(role.id);
     const updatedPermissions = tempPermissions[role.id] || role.permissionKeys;
     const updatedRole = {
       ...role,
@@ -117,19 +126,22 @@ function RolePage() {
       permissionKeys: updatedPermissions,
     };
     try {
-      await handleUpdateRole(role.id, updatedRole);
-      updateRolePermissions(role.id, updatedPermissions);
-      setEditingRole(null);
-      setEditingRoleName("");
-      setTempPermissions((prev) => {
-        const newTemp = { ...prev };
-        delete newTemp[role.id];
-        return newTemp;
-      });
-      setSaveError(null);
+      const success = await handleUpdateRole(role.id, updatedRole);
+      if (success) {
+        updateRolePermissions(role.id, updatedPermissions);
+        setEditingRole(null);
+        setEditingRoleName("");
+        setTempPermissions((prev) => {
+          const newTemp = { ...prev };
+          delete newTemp[role.id];
+          return newTemp;
+        });
+        setAlertMessage('Cập nhật vai trò thành công!');
+        setSuccessAlert(true);
+      }
+      setSavingRoleId(null);
     } catch (err) {
       console.error("❌ Lỗi khi cập nhật vai trò:", err);
-      setSaveError("Không thể cập nhật vai trò. Vui lòng thử lại.");
     }
   };
 
@@ -185,12 +197,37 @@ function RolePage() {
     );
   };
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDotCount((prev) => (prev < 3 ? prev + 1 : 0));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
   // Đồng bộ chiều cao hàng sau khi allRoles được định nghĩa
   useEffect(() => {
     syncRowHeights();
   }, [roles, tempRoles, editingRole, tempPermissions]);
 
-  if (loading) return <div>Loading ...</div>;
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '60vh',
+        }}
+      >
+        <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#43a047' }} />
+        <Typography variant="body1">
+          Đang tải{'.'.repeat(dotCount)}
+        </Typography>
+      </Box>
+    );
+  }
+
   if (error) return <div className="text-red-500">Error: {error}</div>;
 
   const filteredRoles = roles.filter(
@@ -209,11 +246,6 @@ function RolePage() {
             showImport={false}
             showExport={false}
           />
-          {saveError && (
-            <Typography color="red" className="mb-4 text-center">
-              {saveError}
-            </Typography>
-          )}
           <div style={{ display: 'flex' }}>
             {/* Cột cố định */}
             <TableContainer
@@ -268,7 +300,8 @@ function RolePage() {
                         fontSize: '14px',
                         textAlign: 'center',
                         borderLeft: 'none',
-                        borderRight: '1px solid rgba(224, 224, 224, 1)',}}
+                        borderRight: '1px solid rgba(224, 224, 224, 1)',
+                      }}
                       rowSpan={2}
                     >
                       Vai trò
@@ -305,33 +338,60 @@ function RolePage() {
                           <TableRow>
                             <TableCell sx={{ position: 'sticky', left: 0, zIndex: 1, backgroundColor: '#fff' }}>{idx + 1}</TableCell>
                             <TableCell sx={{ position: 'sticky', left: 70, zIndex: 1, backgroundColor: '#fff' }}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <div className="flex items-center justify-between gap-2">
                                 <div>
                                   {editingRole === role.id && !role.isTemp ? (
-                                    <TextField
-                                      size="small"
-                                      color="success"
-                                      value={editingRoleName}
-                                      onChange={(e) => setEditingRoleName(e.target.value)}
-                                      placeholder="Nhập tên vai trò"
-                                    />
+                                    <div>
+                                      <TextField
+                                        size="small"
+                                        color="success"
+                                        value={editingRoleName}
+                                        onChange={(e) => {
+                                          setEditingRoleName(e.target.value);
+                                          setErrorEditRole(null);
+                                        }}
+                                        placeholder="Nhập tên vai trò"
+                                        error={!!errorEditRole}
+                                      />
+                                      {errorEditRole && (
+                                        <Typography color="red" className="text-sm text-left">
+                                          {errorEditRole}
+                                        </Typography>
+                                      )}
+                                    </div>
                                   ) : role.isTemp ? (
-                                    <TextField
-                                      size="small"
-                                      color="success"
-                                      value={role.name}
-                                      onChange={(e) => handleTempRoleNameChange(role.id, e.target.value)}
-                                      placeholder="Nhập tên vai trò"
-                                    />
+                                    <div>
+                                      <TextField
+                                        size="small"
+                                        color="success"
+                                        value={role.name}
+                                        onChange={(e) => {
+                                          handleTempRoleNameChange(role.id, e.target.value);
+                                          setErrorRole(null);
+                                        }}
+                                        placeholder="Nhập tên vai trò"
+                                        error={!!errorRole}
+                                      />
+                                      {errorRole && (
+                                        <Typography color="red" className="text-sm text-left">
+                                          {errorRole}
+                                        </Typography>
+                                      )}
+                                    </div>
                                   ) : (
                                     <Typography variant="body2" fontWeight="bold">
                                       {role.name}
                                     </Typography>
                                   )}
+
                                 </div>
                                 {!role.isTemp && (
                                   <IconButton size="small" color="primary" onClick={() => handleEditRole(role)}>
-                                    <ModeEditOutlineOutlinedIcon fontSize="small" />
+                                    {savingRoleId === role.id ? (
+                                      <CircularProgress size={18} color="success" />
+                                    ) : (
+                                      <ModeEditOutlineOutlinedIcon fontSize="small" />
+                                    )}
                                   </IconButton>
                                 )}
                               </div>
@@ -397,11 +457,22 @@ function RolePage() {
                     role.isTemp ? onSaveTempRole(role) : handleSaveEditRole(role);
                   }
                 }}
+                disabled={savingRoleId !== null}
               >
-                Lưu
+                {savingRoleId ? (
+                  'Đang lưu'
+                ) : (
+                  'Lưu'
+                )}
               </Button>
             </div>
           )}
+
+          <SuccessAlert
+            open={successAlert}
+            onClose={() => setSuccessAlert(false)}
+            message={alertMessage}
+          />
           {/* <div className="relative flex">
             <div className="flex flex-col sticky left-0 z-10 bg-white">
               <table className="table-auto">

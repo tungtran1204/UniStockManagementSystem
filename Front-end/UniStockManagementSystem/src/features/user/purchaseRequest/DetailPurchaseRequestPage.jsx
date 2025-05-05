@@ -3,9 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
     Card,
     CardBody,
-    Button,
-    Input,
-    Textarea,
     Typography,
 } from "@material-tailwind/react";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
@@ -25,6 +22,7 @@ import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from '@/components/Table';
 import ConfirmDialog from "@/components/ConfirmDialog";
+import CircularProgress from '@mui/material/CircularProgress';
 
 const DetailPurchaseRequestPage = () => {
     const { id } = useParams();
@@ -117,7 +115,27 @@ const DetailPurchaseRequestPage = () => {
         setCurrentPage(selectedItem.selected);
     };
 
-    if (!currentUser || loading) return <Typography>Đang tải...</Typography>;
+    const [dotCount, setDotCount] = useState(0);
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setDotCount((prev) => (prev < 3 ? prev + 1 : 0));
+        }, 500);
+        return () => clearInterval(interval);
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center" style={{ height: '60vh' }}>
+                <div className="flex flex-col items-center">
+                    <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#0ab067' }} />
+                    <Typography variant="body1">
+                        Đang tải{'.'.repeat(dotCount)}
+                    </Typography>
+                </div>
+            </div>
+        );
+    }
+
     if (error) return <Typography className="text-red-500">{error}</Typography>;
     if (!purchaseRequest) return <Typography>Không tìm thấy yêu cầu mua vật tư.</Typography>;
 

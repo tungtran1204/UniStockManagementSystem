@@ -22,7 +22,6 @@ import {
     exportExcel,
     createMaterial,
     fetchMaterialCategories,
-
 } from "./materialService";
 import { fetchActiveUnits } from "../unit/unitService";
 import { getPartnersByType } from "../partner/partnerService";
@@ -31,7 +30,7 @@ import {
     Tooltip,
     Switch,
 } from "@material-tailwind/react";
-import ImportMaterialModal from "./ImportMaterialModal"; // Thêm import này
+import ImportMaterialModal from "./ImportMaterialModal";
 import StatusFilterButton from "@/components/StatusFilterButton";
 import { FaAngleDown } from "react-icons/fa";
 
@@ -79,11 +78,9 @@ const MaterialPage = () => {
         },
     ];
 
-    // Handle search
     const handleSearch = () => {
-        // Reset to first page when searching
         setCurrentPage(0);
-        fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
+        fetchPaginatedMaterials(0, pageSize, searchTerm);
     };
 
     const [newMaterial, setNewMaterial] = useState({
@@ -93,7 +90,8 @@ const MaterialPage = () => {
         unitId: "",
         typeId: "",
         isActive: "true",
-        supplierIds: []
+        supplierIds: [],
+        lowStockThreshold: '', // Thêm trường mới
     });
 
     const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -107,7 +105,6 @@ const MaterialPage = () => {
             console.log("Component mounted, location.state:", location.state?.successMessage);
             setAlertMessage(location.state.successMessage);
             setShowSuccessAlert(true);
-            // Xóa state để không hiển thị lại nếu người dùng refresh
             window.history.replaceState({}, document.title);
         }
     }, [location.state]);
@@ -161,7 +158,6 @@ const MaterialPage = () => {
         }
     };
 
-
     const handleEdit = (material) => {
         setSelectedMaterial(material);
     };
@@ -171,8 +167,8 @@ const MaterialPage = () => {
     };
 
     const columnsConfig = [
-        { field: 'materialCode', headerName: 'Mã NVL', flex: 1, minWidth: 50, editable: false, filterable: false },
-        { field: 'materialName', headerName: 'Tên nguyên vật liệu', flex: 2, minWidth: 250, editable: false, filterable: false },
+        { field: 'materialCode', headerName: 'Mã VT', flex: 1, minWidth: 50, editable: false, filterable: false },
+        { field: 'materialName', headerName: 'Tên vật tư', flex: 2, minWidth: 250, editable: false, filterable: false },
         {
             field: 'unitName',
             headerName: 'Đơn vị',
@@ -208,7 +204,7 @@ const MaterialPage = () => {
                         }}
                     />
                 ) : (
-                    <Typography >-</Typography>
+                    <Typography>-</Typography>
                 );
             },
         },
@@ -270,6 +266,7 @@ const MaterialPage = () => {
         materialName: material.materialName,
         unitName: material.unitName || "N/A",
         materialTypeName: materialCategories.find(cat => cat.materialTypeId === material.typeId)?.name || material.typeName || "Không có danh mục",
+        lowStockThreshold: material.lowStockThreshold || 'N/A', // Thêm cột mới
         imageUrl: material.imageUrl,
         isUsing: material.isUsing,
     }));
@@ -321,7 +318,6 @@ const MaterialPage = () => {
                         </div>
 
                         <div className="mb-3 flex flex-wrap items-center gap-4">
-                            {/* Filter by status */}
                             <StatusFilterButton
                                 anchorEl={statusAnchorEl}
                                 setAnchorEl={setStatusAnchorEl}
@@ -331,7 +327,6 @@ const MaterialPage = () => {
                                 buttonLabel="Trạng thái"
                             />
 
-                            {/* Filter by material type */}
                             <Button
                                 onClick={(e) => setMaterialTypeAnchorEl(e.currentTarget)}
                                 size="sm"
@@ -430,8 +425,6 @@ const MaterialPage = () => {
                                 )}
                             </Menu>
 
-
-                            {/* Search input */}
                             <div className="w-[250px]">
                                 <TableSearch
                                     value={searchTerm}
@@ -490,7 +483,7 @@ const MaterialPage = () => {
                 onClose={() => setConfirmDialogOpen(false)}
                 onConfirm={() => {
                     if (pendingToggleRow) {
-                        handleToggleStatus(pendingToggleRow.id); // truyền đúng giá trị mới
+                        handleToggleStatus(pendingToggleRow.id);
                         setAlertMessage("Cập nhật trạng thái thành công!");
                         setShowSuccessAlert(true);
                     }

@@ -9,7 +9,6 @@ import {
 } from '@mui/material';
 import {
   VisibilityOutlined,
-  AddShoppingCartRounded
 } from '@mui/icons-material';
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
@@ -21,7 +20,7 @@ import {
   Tooltip,
 } from "@material-tailwind/react";
 import usePurchaseOrder from "./usePurchaseOrder";
-import useReceiptNote from "../receiptNote/useReceiptNote"
+import CircularProgress from '@mui/material/CircularProgress';
 import { getNextCode } from "../receiptNote/receiptNoteService";
 import { getSaleOrderByPurchaseOrderId } from "./purchaseOrderService";
 import DateFilterButton from "@/components/DateFilterButton";
@@ -113,7 +112,7 @@ const PurchaseOrderPage = () => {
       status: selectedStatuses.length > 0 ? selectedStatuses[0]?.value : "",
       startDate,
       endDate,
-  });  
+    });
 
     return () => clearTimeout(timeoutId);
   }, [currentPage, pageSize, searchTerm, selectedStatuses, startDate, endDate]);
@@ -313,7 +312,7 @@ const PurchaseOrderPage = () => {
           );
         }
         return "Không có";
-    }    
+      }
     },
     {
       field: 'actions',
@@ -365,10 +364,30 @@ const PurchaseOrderPage = () => {
     status: order.status,
   }));
 
-  console.log("Data for table:", data);
+  const [dotCount, setDotCount] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDotCount((prev) => (prev < 3 ? prev + 1 : 0));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center" style={{ height: '60vh' }}>
+        <div className="flex flex-col items-center">
+          <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#0ab067' }} />
+          <Typography variant="body1">
+            Đang tải{'.'.repeat(dotCount)}
+          </Typography>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+    <div className="mb-8 flex flex-col gap-12">
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader

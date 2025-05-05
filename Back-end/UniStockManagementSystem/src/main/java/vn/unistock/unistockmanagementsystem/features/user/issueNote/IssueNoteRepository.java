@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import vn.unistock.unistockmanagementsystem.entities.GoodIssueNote;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -28,8 +29,8 @@ public interface IssueNoteRepository extends JpaRepository<GoodIssueNote, Long> 
 """)
     Page<GoodIssueNote> searchFilteredIssueNotes(
             @Param("search") String search,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
             @Param("categories") List<String> categories,
             Pageable pageable
     );

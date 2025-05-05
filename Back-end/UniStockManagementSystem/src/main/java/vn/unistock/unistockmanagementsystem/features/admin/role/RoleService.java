@@ -32,7 +32,7 @@ public class RoleService {
 
     public RoleDTO createRole(RoleDTO dto) {
         if (roleRepository.existsByRoleName(dto.getName())) {
-            throw new RuntimeException("Vai trò đã tồn tại");
+            throw new IllegalArgumentException("DUPLICATE_ROLE");
         }
         Role entity = roleMapper.toEntity(dto);
 
@@ -81,6 +81,12 @@ public class RoleService {
     public RoleDTO updateRole(Long id, RoleDTO dto) {
         Role existingRole = roleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy vai trò"));
+
+        // ✅ Check trùng tên với vai trò khác
+        if (roleRepository.existsByRoleName(dto.getName()) &&
+                !existingRole.getRoleName().equals(dto.getName())) {
+            throw new IllegalArgumentException("DUPLICATE_ROLE");
+        }
 
         existingRole.setRoleName(dto.getName());
         existingRole.setDescription(dto.getDescription());
