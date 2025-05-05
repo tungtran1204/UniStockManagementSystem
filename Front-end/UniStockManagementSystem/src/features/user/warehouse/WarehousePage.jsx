@@ -270,7 +270,7 @@ const WarehousePage = () => {
       {openAddModal && <ModalAddWarehouse show={openAddModal} onClose={() => setOpenAddModal(false)} onAdd={() => {
         setCurrentPage(0); 
         fetchPaginatedWarehouses(1, pageSize);
-        setSuccessMessage("Thêm kho thành công!"), setSuccessAlertOpen(true);
+        setSuccessMessage("Tạo kho thành công!"), setSuccessAlertOpen(true);
       }} />}
 
       {/* Modal Edit Warehouse */}

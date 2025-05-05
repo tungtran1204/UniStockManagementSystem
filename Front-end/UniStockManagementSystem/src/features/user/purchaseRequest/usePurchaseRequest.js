@@ -10,8 +10,10 @@ const usePurchaseRequest = () => {
   const [purchaseRequests, setPurchaseRequests] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
+  const [loading, setLoading] = useState(false); // ✅ New loading state
 
   const fetchPurchaseRequests = async (page = 0, size = 10, search = '', statuses = [], startDate = null, endDate = null) => {
+    setLoading(true);
     try {
       const data = await getPurchaseRequests(page, size, search, statuses, startDate, endDate);
       setPurchaseRequests(data.content || []);
@@ -22,8 +24,10 @@ const usePurchaseRequest = () => {
       setPurchaseRequests([]);
       setTotalPages(1);
       setTotalElements(0);
+    } finally {
+      setLoading(false);
     }
-  };  
+  };
 
   const getNextCode = async () => {
     try {
@@ -83,6 +87,7 @@ const usePurchaseRequest = () => {
     purchaseRequests,
     totalPages,
     totalElements,
+    loading,
     fetchPurchaseRequests,
     getNextCode,
     addRequest,

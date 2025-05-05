@@ -161,6 +161,7 @@ const ModalAddUser = ({ open, onClose, onSuccess, fetchUsers }) => {
         <div>
           <Typography variant="medium" className="text-black">
             Họ và tên
+            {/* <span className="text-red-500"> *</span> */}
           </Typography>
           <TextField
             fullWidth
@@ -187,6 +188,7 @@ const ModalAddUser = ({ open, onClose, onSuccess, fetchUsers }) => {
             color="success"
             value={email}
             onChange={(e) => handleCheckEmail(e.target.value)}
+            error={!!emailError}
           />
           {emailError && <Typography variant="small" color="red">{emailError}</Typography>}
         </div>
@@ -194,6 +196,7 @@ const ModalAddUser = ({ open, onClose, onSuccess, fetchUsers }) => {
         <div>
           <Typography variant="medium" className="text-black">
             Số điện thoại
+            {/* <span className="text-red-500"> *</span> */}
           </Typography>
           <TextField
             fullWidth
@@ -224,6 +227,7 @@ const ModalAddUser = ({ open, onClose, onSuccess, fetchUsers }) => {
               color="success"
               value={password}
               onChange={(e) => handlePasswordChange(e.target.value)}
+              error={!!passwordError}
             />
             <button
               type="button"

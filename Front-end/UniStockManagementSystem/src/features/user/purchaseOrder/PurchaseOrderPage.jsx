@@ -9,11 +9,11 @@ import {
 } from '@mui/material';
 import {
   VisibilityOutlined,
-  AddShoppingCartRounded
 } from '@mui/icons-material';
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import SuccessAlert from "@/components/SuccessAlert";
+import { Cancel as CancelIcon } from '@mui/icons-material';
 import {
   Card,
   CardBody,
@@ -21,9 +21,9 @@ import {
   Tooltip,
 } from "@material-tailwind/react";
 import usePurchaseOrder from "./usePurchaseOrder";
-import useReceiptNote from "../receiptNote/useReceiptNote"
+import CircularProgress from '@mui/material/CircularProgress';
 import { getNextCode } from "../receiptNote/receiptNoteService";
-import { getSaleOrderByPurchaseOrderId } from "./purchaseOrderService";
+import { getPurchaseRequestById, getSaleOrderByPurchaseOrderId } from "./purchaseOrderService";
 import DateFilterButton from "@/components/DateFilterButton";
 import StatusFilterButton from "@/components/StatusFilterButton";
 
@@ -113,7 +113,7 @@ const PurchaseOrderPage = () => {
       status: selectedStatuses.length > 0 ? selectedStatuses[0]?.value : "",
       startDate,
       endDate,
-  });  
+    });
 
     return () => clearTimeout(timeoutId);
   }, [currentPage, pageSize, searchTerm, selectedStatuses, startDate, endDate]);
@@ -170,17 +170,17 @@ const PurchaseOrderPage = () => {
     {
       value: "IN_PROGRESS",
       label: "Đã nhập một phần",
-      className: "bg-yellow-50 text-yellow-800",
+      className: "bg-yellow-100 text-orange-800",
     },
     {
       value: "COMPLETED",
-      label: "Hoàn thành",
+      label: "Đã hoàn thành",
       className: "bg-green-50 text-green-800",
     },
     {
-      value: "CANCELED",
-      label: "Hủy",
-      className: "bg-red-100 text-red-800",
+      value: "CANCELLED",
+      label: "Đã hủy",
+      className: "bg-red-50 text-red-800",
     },
   ];
 
@@ -200,10 +200,10 @@ const PurchaseOrderPage = () => {
       case "COMPLETED":
         return "bg-green-50 text-green-800";
       case "IN_PROGRESS":
-        return "bg-yellow-100 text-amber-800";
+        return "bg-yellow-100 text-orange-800";
       case "PENDING":
         return "bg-blue-50 text-blue-800";
-      case "CANCELED":
+      case "CANCELLED":
         return "bg-red-50 text-red-800";
       default:
         return "bg-gray-50 text-gray-800";
@@ -247,6 +247,36 @@ const PurchaseOrderPage = () => {
     fetchPaginatedOrders(0, pageSize, searchTerm, selected);
     setCurrentPage(0);
   };
+
+  const handleCancelOrder = async (order) => {
+    if (order.purchaseRequestId) {
+      try {
+        // Gọi API kiểm tra yêu cầu mua liên kết
+        const request = await getPurchaseRequestById(order.purchaseRequestId);
+        if (request.status !== "CANCELLED") {
+          alert("Không thể hủy đơn mua hàng khi yêu cầu mua vật tư liên kết chưa bị hủy.");
+          return;
+        }
+      } catch (error) {
+        console.error("Lỗi khi kiểm tra yêu cầu mua:", error);
+        alert("Lỗi khi kiểm tra yêu cầu mua.");
+        return;
+      }
+    }
+  
+    // Nếu thỏa mãn điều kiện thì gọi API hủy đơn
+    if (window.confirm("Bạn có chắc chắn muốn hủy đơn mua hàng này không?")) {
+      try {
+        await updatePurchaseOrderStatus(order.id, "CANCELED");
+        alert("Đã hủy đơn mua hàng thành công.");
+        fetchPaginatedOrders(currentPage, pageSize, searchTerm, selectedStatuses[0]?.value, startDate, endDate);
+      } catch (error) {
+        console.error("Lỗi khi hủy đơn mua hàng:", error);
+        alert("Hủy đơn mua hàng thất bại.");
+      }
+    }
+  };
+  
 
   useEffect(() => {
     // Check if location.state exists and has nextCode
@@ -305,7 +335,7 @@ const PurchaseOrderPage = () => {
         if (purchaseRequestCode && purchaseRequestId) {
           return (
             <button
-              className="text-blue-600 underline hover:text-blue-800 no-underline"
+              className="text-blue-600 hover:text-blue-800 no-underline"
               onClick={() => navigate(`/user/purchase-request/${purchaseRequestId}`)}
             >
               {purchaseRequestCode}
@@ -313,7 +343,7 @@ const PurchaseOrderPage = () => {
           );
         }
         return "Không có";
-    }    
+      }
     },
     {
       field: 'actions',
@@ -334,6 +364,18 @@ const PurchaseOrderPage = () => {
               <VisibilityOutlined />
             </IconButton>
           </Tooltip>
+
+          {params.row.status !== "COMPLETED" && (
+            <Tooltip content="Hủy đơn">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => handleCancelOrder(params.row)}
+              >
+                <CancelIcon />
+              </IconButton>
+            </Tooltip>
+          )}
 
           {/* Nút Nhập kho */}
           {/* {params.row.status !== "COMPLETED" && (
@@ -365,10 +407,30 @@ const PurchaseOrderPage = () => {
     status: order.status,
   }));
 
-  console.log("Data for table:", data);
+  const [dotCount, setDotCount] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDotCount((prev) => (prev < 3 ? prev + 1 : 0));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center" style={{ height: '60vh' }}>
+        <div className="flex flex-col items-center">
+          <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#0ab067' }} />
+          <Typography variant="body1">
+            Đang tải{'.'.repeat(dotCount)}
+          </Typography>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+    <div className="mb-8 flex flex-col gap-12">
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
         <CardBody className="pb-2 bg-white rounded-xl">
           <PageHeader

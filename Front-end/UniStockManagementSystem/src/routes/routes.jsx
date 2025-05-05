@@ -5,7 +5,6 @@ import {
 } from "@heroicons/react/24/solid";
 
 import {
-  Dashboard,
   LockPerson,
   AccountCircle,
   Home,
@@ -27,7 +26,6 @@ import RolePage from "@/features/admin/roles/RolePage";
 import UnauthorizedPage from "@/components/UnauthorizedPage";
 import ProfilePage from "@/features/profile/ProfilePage";
 import NotFoundPage from "@/components/NotFoundPage";
-import AdminDashboard from "@/features/admin/dashboard/AdminDashboard";
 import WarehousePage from "@/features/user/warehouse/WarehousePage";
 import ProductPage from "@/features/user/products/ProductPage";
 import SaleOrdersPage from "../features/user/saleorders/SaleOrdersPage";
@@ -64,6 +62,7 @@ import StockMovementReportPage from "../features/user/report/StockMovementReport
 import PartnerReportPage from "../features/user/report/PartnerReportPage";
 import ViewIssueNote from "../features/user/issueNote/ViewIssueNote";
 import UnitPage from "../features/user/unit/UnitPage";
+import HomePage from "../features/home/HomePage";
 
 const icon = { className: "w-5 h-5 text-inherit" };
 
@@ -82,13 +81,6 @@ export const routes = [
     title: "",
     layout: "admin",
     pages: [
-      {
-        icon: <Dashboard {...icon} />,
-        name: "Bảng Điều Khiển",
-        path: "/admin/dashboard",
-        element: <AdminDashboard />,
-        roles: ["ADMIN"],
-      },
       {
         icon: <AccountCircle {...icon} />,
         name: "Người Dùng",
@@ -113,7 +105,7 @@ export const routes = [
         icon: <Home {...icon} />,
         name: "Trang chủ",
         path: "/user/home",
-        element: <WarehousePage />,
+        element: <HomePage />,
         roles: ["USER"],
       },
       {
@@ -361,7 +353,13 @@ export const routes = [
         element: <EditSaleOrderPage />,
         roles: ["USER"],
       },
-      
+      {
+        layout: "Nhập kho",
+        name: "Thêm phiếu nhập",
+        path: "/user/receiptNote/add",
+        element: <AddReceiptNoteGeneral />,
+        roles: ["USER"],
+      },
       {
         icon: <TableCellsIcon {...icon} />,
         name: "Thêm phiếu xuất",
@@ -425,7 +423,13 @@ export const routes = [
         element: <ViewReceiptNote />,
         roles: ["USER"],
       },
-      
+      {
+        layout: "Nhập kho",
+        name: "Thêm phiếu nhập kho",
+        path: "/user/receiptNote/manual",
+        element: <AddReceiptNoteGeneral />,
+        roles: ["USER"],
+      },
       {
         layout: "Nhập kho",
         name: "Thêm phiếu nhập",
