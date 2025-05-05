@@ -29,6 +29,7 @@ const PERMISSION_HIERARCHY = {
     "getAllPartners",
     "getPartnerCode",
     "getPartnersByType",
+    "getAllPartnerTypes",
     "createPartner",
     "createPartnerType",
     "updatePartnerType",

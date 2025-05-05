@@ -45,6 +45,7 @@ public class PermissionHierarchy {
                 "getPartnerCode",
                 "getPartnersByType",
                 // Thêm quyền quản lý (tạo, sửa, ...):
+                "getAllPartnerTypes",
                 "createPartner",
                 "createPartnerType",
                 "updatePartnerType",

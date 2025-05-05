@@ -177,7 +177,6 @@ function RolePage() {
     syncRowHeights();
   }, [roles, tempRoles, editingRole, tempPermissions]);
 
-  if (loading) return <div>Loading ...</div>;
   if (error) return <div className="text-red-500">Error: {error}</div>;
 
   const filteredRoles = roles.filter(
