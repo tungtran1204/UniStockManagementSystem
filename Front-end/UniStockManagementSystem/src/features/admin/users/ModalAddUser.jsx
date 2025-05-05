@@ -161,7 +161,6 @@ const ModalAddUser = ({ open, onClose, onSuccess, fetchUsers }) => {
         <div>
           <Typography variant="medium" className="text-black">
             Họ và tên
-            <span className="text-red-500"> *</span>
           </Typography>
           <TextField
             fullWidth
@@ -195,7 +194,6 @@ const ModalAddUser = ({ open, onClose, onSuccess, fetchUsers }) => {
         <div>
           <Typography variant="medium" className="text-black">
             Số điện thoại
-            <span className="text-red-500"> *</span>
           </Typography>
           <TextField
             fullWidth

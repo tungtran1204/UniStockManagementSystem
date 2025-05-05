@@ -186,7 +186,6 @@ const ModalEditUser = ({ open, onClose, onSuccess, user, fetchUsers }) => {
         <div>
           <Typography variant="medium" className="text-black">
             Họ và tên
-            <span className="text-red-500"> *</span>
           </Typography>
           <TextField
             fullWidth
@@ -203,7 +202,6 @@ const ModalEditUser = ({ open, onClose, onSuccess, user, fetchUsers }) => {
         <div>
           <Typography variant="medium" className="text-black">
             Ngày sinh
-            <span className="text-red-500"> *</span>
           </Typography>
           <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
             <style>
@@ -243,7 +241,6 @@ const ModalEditUser = ({ open, onClose, onSuccess, user, fetchUsers }) => {
         <div>
           <Typography variant="medium" className="text-black">
             Email
-            <span className="text-red-500"> *</span>
           </Typography>
           <TextField
             fullWidth
@@ -260,7 +257,6 @@ const ModalEditUser = ({ open, onClose, onSuccess, user, fetchUsers }) => {
         <div>
           <Typography variant="medium" className="text-black">
             Số điện thoại
-            <span className="text-red-500"> *</span>
           </Typography>
           <TextField
             fullWidth
@@ -277,7 +273,6 @@ const ModalEditUser = ({ open, onClose, onSuccess, user, fetchUsers }) => {
         <div>
           <Typography variant="medium" className="text-black">
             Địa chỉ
-            <span className="text-red-500"> *</span>
           </Typography>
           <TextField
             fullWidth
@@ -295,7 +290,6 @@ const ModalEditUser = ({ open, onClose, onSuccess, user, fetchUsers }) => {
         <div className="relative">
           <Typography variant="medium" className="text-black">
             Mật khẩu
-            <span className="text-red-500"> *</span>
           </Typography>
           <div className="relative">
             <TextField

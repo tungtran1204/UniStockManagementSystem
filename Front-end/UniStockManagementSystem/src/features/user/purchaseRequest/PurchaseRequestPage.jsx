@@ -318,6 +318,7 @@ const PurchaseRequestPage = () => {
                         title="Danh sách yêu cầu mua vật tư"
                         onAdd={handleAddRequest}
                         addButtonLabel="Thêm yêu cầu"
+                        showAdd={currentUser && currentUser.permissions.includes("createManualPurchaseRequest")}
                         showImport={false}
                         showExport={false}
                     />
