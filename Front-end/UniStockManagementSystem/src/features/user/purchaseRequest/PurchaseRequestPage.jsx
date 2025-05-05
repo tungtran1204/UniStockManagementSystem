@@ -94,6 +94,10 @@ const PurchaseRequestPage = () => {
         setAllStatuses(purchaseRequestStatus);
     }, []);
 
+    // if (!currentUser?.permissions?.includes("getAllPurchaseRequests")) {
+    //     return <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 text-center">Heloo</div>;
+    // }
+
     //list status for filter 
     const purchaseRequestStatus = [
         {

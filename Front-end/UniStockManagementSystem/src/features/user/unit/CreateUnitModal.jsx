@@ -39,9 +39,10 @@ const CreateUnitModal = ({ show, onClose, loading, onSuccess }) => {
         // Cập nhật giá trị
         setFormData({ ...formData, unitName: newName || "" });
 
-        if (newName.trim()) {
+        const normalizedName = newName.trim();
+        if (normalizedName) {
             try {
-                const exists = await checkUnitNameExists(newName);
+                const exists = await checkUnitNameExists(normalizedName);
                 if (exists) {
                     setUnitNameError("Tên đơn vị tính đã tồn tại!");
                 }

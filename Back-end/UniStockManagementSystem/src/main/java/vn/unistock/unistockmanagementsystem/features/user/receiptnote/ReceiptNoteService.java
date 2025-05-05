@@ -206,6 +206,7 @@ public class ReceiptNoteService {
                     updateInventoryAndTransaction(warehouse, material, null, detailDto.getQuantity(), hasSaleOrder, saleOrderCompleted, linkedSaleOrder, grn);
 
                     notificationService.clearLowStockNotificationIfRecovered(material.getMaterialId());
+                    notificationService.checkLowStock(material.getMaterialId());
 
                     // Xử lý Vật tư mua bán
                     if ("Vật tư mua bán".equals(grnDto.getCategory()) && linkedPurchaseOrder != null) {
