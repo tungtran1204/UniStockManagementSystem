@@ -24,6 +24,7 @@ import robotoFont from '@/assets/fonts/Roboto-Regular-normal.js';
 import robotoBoldFont from '@/assets/fonts/Roboto-Regular-bold.js';
 import { getGoodReceiptReportPaginated } from "./reportService";
 import { getWarehouseList } from "../warehouse/warehouseService";
+import CircularProgress from '@mui/material/CircularProgress';
 
 const GoodReceiptReportPage = () => {
     const [currentPage, setCurrentPage] = useState(0);
@@ -44,6 +45,8 @@ const GoodReceiptReportPage = () => {
     const [reportData, setReportData] = useState([]);
     const [totalPages, setTotalPages] = useState(1);
     const [totalElements, setTotalElements] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [isFirstLoad, setIsFirstLoad] = useState(true);  // ✅ Thêm dòng này
 
     const [warehouseList, setWarehouses] = useState([]);
     const [itemTypeAnchorEl, setItemTypeAnchorEl] = useState(null);
@@ -51,7 +54,11 @@ const GoodReceiptReportPage = () => {
 
     // Fetch report data
 
-    const fetchReport = async (page = currentPage, size = pageSize) => {
+    const fetchReport = async (page = currentPage, size = pageSize, isFirstLoad) => {
+        if (isFirstLoad) {
+            setLoading(true);
+        }
+
         try {
             const response = await getGoodReceiptReportPaginated({
                 page,
@@ -83,11 +90,20 @@ const GoodReceiptReportPage = () => {
         } catch (error) {
             console.error("❌ Lỗi khi lấy dữ liệu báo cáo nhập kho:", error);
             setReportData([]);
+        } finally {
+            if (isFirstLoad) {
+                setLoading(false);
+            }
         }
     };
 
     useEffect(() => {
-        fetchReport();
+        fetchReport(currentPage, pageSize, isFirstLoad);
+
+        if (isFirstLoad) {
+            setIsFirstLoad(false);  // ✅ Sau lần đầu, tắt flag này
+        }
+
     }, [
         currentPage,
         pageSize,
@@ -96,7 +112,8 @@ const GoodReceiptReportPage = () => {
         endDate,
         selectedCategories,
         selectedWarehouses,
-        quantityFilters
+        quantityFilters,
+        isFirstLoad,
     ]);
 
     // Handle page change
@@ -255,6 +272,27 @@ const GoodReceiptReportPage = () => {
         fetchInitData();
     }, []);
 
+    const [dotCount, setDotCount] = useState(0);
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setDotCount((prev) => (prev < 3 ? prev + 1 : 0));
+        }, 500);
+        return () => clearInterval(interval);
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center" style={{ height: '60vh' }}>
+                <div className="flex flex-col items-center">
+                    <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#0ab067' }} />
+                    <Typography variant="body1">
+                        Đang tải{'.'.repeat(dotCount)}
+                    </Typography>
+                </div>
+            </div>
+        );
+    }
+
 
     const columnsConfig = [
         { field: 'stt', headerName: 'STT', flex: 1, minWidth: 80, editable: false, filterable: false },
@@ -350,7 +388,7 @@ const GoodReceiptReportPage = () => {
     const paginatedData = filteredData.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
 
     return (
-        <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+        <div className="mb-8 flex flex-col gap-12">
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
                 <CardBody className="pb-2 bg-white rounded-xl">
                     <PageHeader

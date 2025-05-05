@@ -168,7 +168,7 @@ const PurchaseRequestPage = () => {
             navigate("/user/purchase-request/add", { state: { nextCode: code } });
         } catch (error) {
             console.error("Lỗi khi lấy mã tiếp theo:", error);
-            alert("Có lỗi xảy ra khi tạo mã yêu cầu mới");
+            console.log("Có lỗi xảy ra khi tạo mã yêu cầu mới");
         }
     };
 
@@ -211,7 +211,7 @@ const PurchaseRequestPage = () => {
             navigate("/user/purchaseOrder", { state: { successMessage: `Tạo ${response.orders.length} đơn hàng mua vật tư thành công!` } });
         } catch (error) {
             console.error("Lỗi tạo đơn hàng:", error);
-            alert("Không thể tạo đơn mua hàng. Vui lòng thử lại.");
+            console.log("Không thể tạo đơn mua hàng. Vui lòng thử lại.");
             setShowConfirmDialog({
                 open: false,
                 message: "",

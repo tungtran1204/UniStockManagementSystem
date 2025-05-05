@@ -1843,6 +1843,7 @@ const EditSaleOrderPage = () => {
           open={showCancelModal}
           onClose={() => setShowCancelModal(false)}
           onConfirm={handleCancelSaleOrder}
+          orderStatus={originalData?.status}
         />
       )}
 

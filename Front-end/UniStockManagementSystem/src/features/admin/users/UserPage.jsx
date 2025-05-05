@@ -73,7 +73,7 @@ const UserPage = () => {
       setOpenEditModal(true);
     } catch (error) {
       console.error("❌ Lỗi khi lấy thông tin user:", error);
-      alert("Không thể lấy thông tin user!");
+      console.log("Không thể lấy thông tin user!");
     }
   };
 
