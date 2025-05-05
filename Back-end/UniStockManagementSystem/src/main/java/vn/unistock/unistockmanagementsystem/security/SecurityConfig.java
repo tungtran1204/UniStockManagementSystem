@@ -44,7 +44,8 @@ public class SecurityConfig {
                                 "/api/unistock/auth/login",
                                 "/api/unistock/auth/forgot-password",
                                 "/api/unistock/auth/verify-otp",
-                                "/api/unistock/auth/reset-password")
+                                "/api/unistock/auth/reset-password",
+                                "/api/unistock/user/notification/unread")
                         .permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

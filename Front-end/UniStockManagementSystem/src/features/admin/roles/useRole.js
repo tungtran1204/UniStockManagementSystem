@@ -29,6 +29,7 @@ const PERMISSION_HIERARCHY = {
     "getAllPartners",
     "getPartnerCode",
     "getPartnersByType",
+    "getAllPartnerTypes",
     "createPartner",
     "createPartnerType",
     "updatePartnerType",
@@ -221,6 +222,8 @@ const useRole = () => {
   const [selectedRole, setSelectedRole] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [errorRole, setErrorRole] = useState(null);
+  const [errorEditRole, setErrorEditRole] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -336,20 +339,40 @@ const useRole = () => {
   );
 
   const handleAddRole = useCallback(async (role) => {
+    if (!role.name.trim()) {
+      setErrorRole('Tên vai trò không được để trống!');
+      return false;
+    }
+
     try {
-      const newRole = await addRole(role);
+      const cleanedRole = { ...role, name: role.name.trim() };
+      const newRole = await addRole(cleanedRole);
       if (newRole) {
         setRoles((prev) => [...prev, { ...newRole, permissionKeys: role.permissionKeys }]);
       }
+      setErrorRole(null); // clear lỗi cũ
+      return true;
     } catch (err) {
       console.error("❌ [useRole] Lỗi khi add Role:", err);
-      throw err;
+      if (err.response?.status === 409) {
+        const errorCode = err.response.data;
+        if (errorCode === "DUPLICATE_ROLE") {
+          setErrorRole("Vai trò đã tồn tại!");
+        }
+      }
+      return false;
     }
   }, []);
 
   const handleUpdateRole = useCallback(async (id, updatedRole) => {
+    if (!updatedRole.name.trim()) {
+      setErrorEditRole('Tên vai trò không được để trống!');
+      return false;
+    }
+
     try {
-      const updated = await updateRole(id, updatedRole);
+      const cleanedRole = { ...updatedRole, name: updatedRole.name.trim() };
+      const updated = await updateRole(id, cleanedRole);
       if (updated) {
         setRoles((prev) =>
           prev.map((r) =>
@@ -360,9 +383,17 @@ const useRole = () => {
         );
         console.log("✅ [useRole] Role updated:", updated);
       }
+      setErrorEditRole(null); // clear lỗi cũ
+      return true; // ✅ báo thành công
     } catch (err) {
       console.error("❌ [useRole] Lỗi khi updateRole:", err);
-      throw err;
+      if (err.response?.status === 409) {
+        const errorCode = err.response.data;
+        if (errorCode === "DUPLICATE_ROLE") {
+          setErrorEditRole("Vai trò đã tồn tại!");
+        }
+      }
+      return false;
     }
   }, []);
 
@@ -407,6 +438,10 @@ const useRole = () => {
     selectedRole,
     loading,
     error,
+    errorRole,
+    errorEditRole,
+    setErrorEditRole,
+    setErrorRole,
     handleSelectRole,
     handleAddRole,
     handleUpdateRole,
