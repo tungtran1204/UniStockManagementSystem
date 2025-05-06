@@ -11,10 +11,10 @@ import {
 
 // Thêm ánh xạ từ PermissionHierarchy để kiểm tra quyền
 const PERMISSION_HIERARCHY = {
-  viewProduct: ["getAllProducts", "getProductById", "getMaterialsByProduct",
+  viewProduct: ["getProducts", "getProductById", "getMaterialsByProduct",
      "getAllProductTypes", "getActiveMaterials", "getAllMaterials", "getAllMaterialTypes"],
   manageProduct: [
-    "getAllProducts",
+    "getProducts",
     "getProductById",
     "getMaterialsByProduct",
     "getAllProductTypes",
@@ -141,7 +141,7 @@ const PERMISSION_HIERARCHY = {
     "createGoodReceipt",
     "getNextNoteCode",
     "uploadPaperEvidence",
-    "getAllProducts",
+    "getProducts",
     "getActiveMaterials",
     "getAllActiveWarehouses",
     "getPendingOrInProgressOrders",
@@ -159,7 +159,7 @@ const PERMISSION_HIERARCHY = {
     "createIssueNote",
     "getNextIssueCode",
     "uploadPaperEvidence",
-    "getAllProducts",
+    "getProducts",
     "getAllMaterials",
     "getInventoryDetailsByWarehouse",
     "getInventoryDetailsByWarehouseM",
@@ -215,7 +215,7 @@ const API_TO_FE_KEY = {
   createGoodReceipt: "manageReceiptNote",
   getNextNoteCode: "manageReceiptNote",
   uploadPaperEvidence: "manageReceiptNote",
-  getAllProducts: "manageReceiptNote",
+  getProducts: "manageReceiptNote",
   getActiveMaterials: "manageReceiptNote",
   getAllActiveWarehouses: "manageReceiptNote",
   getPendingOrInProgressOrders: "manageReceiptNote",

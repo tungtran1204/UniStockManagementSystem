@@ -85,7 +85,7 @@ useEffect(() => {
       className: "bg-blue-50 text-blue-800",
     },
     {
-      value: "PROCESSING",
+      value: "PROCESSING_REJECTED_REQUEST",
       label: "Yêu cầu bị từ chối",
       className: "bg-pink-50 text-pink-800",
     },
