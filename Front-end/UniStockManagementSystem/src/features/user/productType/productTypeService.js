@@ -13,8 +13,13 @@ export const fetchProductTypes = async ({ page = 0, size = 10, search, statuses 
         params.append("page", page);
         params.append("size", size);
         if (search) params.append("search", search);
-        if (Array.isArray(statuses) && statuses.length === 1) {
-            params.append("status", statuses[0]);  // chỉ truyền 1 giá trị true/false
+        
+        // Sửa lỗi: Xử lý tham số statuses đúng cách
+        if (Array.isArray(statuses)) {
+            if (statuses.length === 1) {
+                params.append("status", statuses[0]);
+            }
+            // Nếu cần hỗ trợ nhiều trạng thái, có thể thêm xử lý tùy theo API backend
         }
 
         const response = await axios.get(`${API_URL}?${params.toString()}`, {
@@ -27,7 +32,6 @@ export const fetchProductTypes = async ({ page = 0, size = 10, search, statuses 
         throw error;
     }
 };
-
 
 export const toggleStatus = async (typeId, newStatus) => {
     try {

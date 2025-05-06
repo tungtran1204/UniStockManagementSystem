@@ -61,7 +61,7 @@ const ProductTypePage = () => {
             setShowCreateModal(false);
             setSuccessMessage("Tạo dòng sản phẩm thành công!");
             setSuccessAlertOpen(true);
-            fetchProductTypes(currentPage, pageSize);
+            fetchProductTypes(currentPage, pageSize, buildFilters());
         } catch (error) {
             console.log(error.message || "Lỗi khi tạo dòng sản phẩm");
         }
@@ -77,7 +77,7 @@ const ProductTypePage = () => {
             setShowEditPopup(false);
             setSuccessMessage("Cập nhật dòng sản phẩm thành công!");
             setSuccessAlertOpen(true);
-            fetchProductTypes(currentPage, pageSize);
+            fetchProductTypes(currentPage, pageSize, buildFilters());
         } catch (error) {
             console.log(error.message || "Lỗi khi cập nhật dòng sản phẩm");
         }
@@ -85,16 +85,16 @@ const ProductTypePage = () => {
 
     const allStatuses = [
         {
-          value: true,
-          label: "Đang hoạt động",
-          className: "bg-green-50 text-green-800",
+            value: true,
+            label: "Đang hoạt động",
+            className: "bg-green-50 text-green-800",
         },
         {
-          value: false,
-          label: "Ngừng hoạt động",
-          className: "bg-red-50 text-red-800",
+            value: false,
+            label: "Ngừng hoạt động",
+            className: "bg-red-50 text-red-800",
         },
-      ];
+    ];
 
     const buildFilters = () => ({
         search: searchTerm || undefined,
@@ -103,18 +103,23 @@ const ProductTypePage = () => {
             : undefined,
     });
 
-
-    // useEffect(() => {
-    //     applyFilters(buildFilters(), currentPage, pageSize);
-    // }, [currentPage, pageSize, applyFilters]);
+    const handleSearch = () => {
+        applyFilters(buildFilters(), 0, pageSize, false);  // Không loading
+    };
     
+
+    // useEffect cho phân trang
+    useEffect(() => {
+        applyFilters(buildFilters(), currentPage, pageSize, true);  // 👉 Lần đầu hoặc đổi page thì loading
+    }, [currentPage, pageSize]);
+
     useEffect(() => {
         const delayDebounce = setTimeout(() => {
-            applyFilters(buildFilters(), 0, pageSize); 
+            applyFilters(buildFilters(), 0, pageSize, false);  // 👉 Filter thì KHÔNG loading
             setCurrentPage(0);
         }, 500);
         return () => clearTimeout(delayDebounce);
-    }, [searchTerm, selectedStatuses, applyFilters]);    
+    }, [searchTerm, selectedStatuses, pageSize]);    
 
     const columnsConfig = [
         { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50 },
@@ -314,7 +319,7 @@ const ProductTypePage = () => {
                         setSuccessAlertOpen(true);
                     }
                     setConfirmDialogOpen(false);
-                }}                
+                }}
                 message={`Bạn có chắc chắn muốn ${pendingToggleRow?.status ? "ngưng hoạt động" : "kích hoạt lại"} dòng sản phẩm này không?`}
                 confirmText="Có"
                 cancelText="Không"

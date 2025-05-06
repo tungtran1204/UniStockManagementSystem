@@ -45,7 +45,7 @@ const ProductPage = () => {
   // Sử dụng useProduct hook
   const { products, loading, currentPage, pageSize, totalPages, totalElements, fetchPaginatedProducts, handleToggleStatus, handlePageChange, handlePageSizeChange, applyFilters } = useProduct();
 
-
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
   // Các state trong component
   const [showImportPopup, setShowImportPopup] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -81,8 +81,13 @@ const ProductPage = () => {
   };
 
   useEffect(() => {
-    applyFilters(buildFilters());
-  }, [selectedProductTypes]);
+    applyFilters(buildFilters(), true); 
+}, []);
+
+useEffect(() => {
+  applyFilters(buildFilters());
+}, [selectedProductTypes]);
+
   
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -93,15 +98,20 @@ const ProductPage = () => {
   }, [searchTerm]);
   
 
-  const buildFilters = () => ({
-    search: searchTerm || undefined,
-    statuses: selectedStatuses.length
-      ? selectedStatuses.map(s => s.value)
-      : undefined,
-    typeIds: selectedProductTypes.length
-      ? selectedProductTypes.map(t => t.typeId)
-      : undefined,
-  });
+  const buildFilters = () => {
+    const filters = {
+        search: searchTerm || undefined,
+        statuses: selectedStatuses.length
+          ? selectedStatuses.map(s => s.value)
+          : undefined,
+          typeIds: selectedProductTypes.length
+          ? selectedProductTypes.map(t => t.typeId ?? t.value)  // support cả typeId hoặc value
+          : undefined,
+    };
+    console.log("🔥 Filters:", filters);
+    return filters;
+};
+
 
   useEffect(() => {
     applyFilters(buildFilters());
@@ -330,13 +340,13 @@ const ProductPage = () => {
     isProductionActive: !!product.isProductionActive,
   }));
 
-  // Add this function
-  const filteredProducts = Array.isArray(products)
-    ? products.filter(product =>
-      product.productCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.productName?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    : [];
+  // // Add this function
+  // const filteredProducts = Array.isArray(products)
+  //   ? products.filter(product =>
+  //     product.productCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     product.productName?.toLowerCase().includes(searchTerm.toLowerCase())
+  //   )
+  //   : [];
 
   const hasInvalidRows = previewResults.some((row) => row.valid === false);
 

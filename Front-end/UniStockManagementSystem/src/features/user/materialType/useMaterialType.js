@@ -16,9 +16,9 @@ const useMaterialType = () => {
         statuses: undefined,
     });    
 
-    const fetchMaterialTypes = useCallback(async (page = 0, size = 10, filters = filterState) => {
+    const fetchMaterialTypes = useCallback(async (page = 0, size = 10, filters = filterState, showLoading = true) => {
         try {
-            setLoading(true);
+            if (showLoading) setLoading(true);    
             const data = await fetchMaterialTypesService({
                 page,
                 size,
@@ -46,14 +46,14 @@ const useMaterialType = () => {
             setTotalElements(0);
             console.error("❌ Lỗi khi lấy danh sách loại nguyên liệu:", error.message);
         } finally {
-            setLoading(false);
+            if (showLoading) setLoading(false);
         }
     }, []);
 
-    const applyFilters = (filters, page = 0, size = 10) => {
+    const applyFilters = (filters, page = 0, size = 10, showLoading = false) => {
         setFilterState(filters);
-        fetchMaterialTypes(page, size, filters);
-    };    
+        fetchMaterialTypes(page, size, filters, showLoading);
+    };     
 
     const toggleStatus = async (materialTypeId, currentStatus) => {
         try {

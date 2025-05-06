@@ -12,21 +12,17 @@ const useProductType = () => {
         statuses: undefined,
     }); 
     
-    const applyFilters = (filters, page = 0, size = 10) => {
-        setFilterState(filters);
-        fetchProductTypes(page, size, filters);
-    };
-    
-    const fetchProductTypes = useCallback(async (page = 0, size = 10, filters) => {
+    const fetchProductTypes = useCallback(async (page = 0, size = 10, filters = filterState, showLoading = true) => {
         try {
-            setLoading(true);
+            if (showLoading) setLoading(true);
             const data = await fetchProductTypesService({
                 page,
                 size,
-                search: filters.search,
-                statuses: filters.statuses,
-            });    
-
+                search: filters?.search,
+                statuses: filters?.statuses,
+            });
+    
+            // Xử lý data như cũ
             if (Array.isArray(data)) {
                 setProductTypes(data);
                 setTotalPages(1);
@@ -47,9 +43,39 @@ const useProductType = () => {
             setTotalElements(0);
             console.error("❌ Lỗi khi lấy danh sách dòng sản phẩm:", error.message);
         } finally {
-            setLoading(false);
+            if (showLoading) setLoading(false);
         }
     }, []);
+    
+    const applyFilters = useCallback((filters, page = 0, size = 10, showLoading = false) => {
+        setFilterState(prevState => ({
+            ...prevState,
+            ...filters
+        }));
+        fetchProductTypes(page, size, filters, showLoading);
+    }, [fetchProductTypes]);    
+    
+    // const fetchProductTypes = useCallback(async (page = 0, size = 10, filters = filterState) => {
+    //     try {
+    //         setLoading(true);
+            
+    //         // Đảm bảo filters luôn có giá trị hợp lệ
+    //         const currentFilters = filters || filterState;
+            
+    //         const data = await fetchProductTypesService({
+    //             page,
+    //             size,
+    //             search: currentFilters?.search,
+    //             statuses: currentFilters?.statuses,
+    //         });
+            
+    //         // Xử lý dữ liệu trả về...
+    //     } catch (error) {
+    //         // Xử lý lỗi...
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // }, [filterState]);
 
     const toggleStatus = async (typeId, currentStatus, page = 0, size = 10) => {
         try {
