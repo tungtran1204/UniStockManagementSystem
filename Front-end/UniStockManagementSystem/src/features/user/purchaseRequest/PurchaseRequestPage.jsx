@@ -80,6 +80,11 @@ const PurchaseRequestPage = () => {
             window.history.replaceState({}, document.title);
         }
     }, [location.state]);
+    useEffect(() => {
+        if (currentUser && !currentUser.permissions?.includes("getAllPurchaseRequests")) {
+          navigate("/unauthorized");
+        }
+      }, [currentUser, navigate]);
 
     useEffect(() => {
         fetchPurchaseRequests(
@@ -113,7 +118,7 @@ const PurchaseRequestPage = () => {
         },
         {
             value: "CANCELLED",
-            label: "Từ chối",
+            label: "Bị huỷ",
             className: "bg-red-50 text-red-800",
         },
         {
@@ -122,9 +127,9 @@ const PurchaseRequestPage = () => {
             className: "bg-yellow-100 text-orange-800",
         },
         {
-            value: "FINISHED",
-            label: "Đã hoàn thành",
-            className: "bg-green-50 text-green-800",
+            value: "REJECTED",
+            label: "Từ chối",
+            className: "bg-pink-50 text-pink-800",
         },
     ];
 

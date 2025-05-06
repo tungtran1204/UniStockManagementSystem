@@ -17,7 +17,7 @@ import useSaleOrder from "./useSaleOrder";
 import ReactPaginate from "react-paginate";
 import { ArrowRightIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import dayjs from "dayjs";
-import { useNavigate } from "react-router-dom";
+import { useNavigate} from "react-router-dom";
 import PageHeader from '@/components/PageHeader';
 import TableSearch from '@/components/TableSearch';
 import Table from "@/components/Table";
@@ -34,19 +34,43 @@ const SaleOrdersPage = () => {
     getNextCode,
     loading,
   } = useSaleOrder();
-
+  const [currentUser, setCurrentUser] = useState(null);
   // State quản lý tìm kiếm, phân trang
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-
+  const location = useLocation();
+  const navigate = useNavigate();
   // State for filter and search
   const [selectedStatuses, setSelectedStatuses] = useState([]);
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [statusAnchorEl, setStatusAnchorEl] = useState(null);
   const [allStatuses, setAllStatuses] = useState([]);
+useEffect(() => {
+        // Lấy thông tin user từ localStorage
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+            try {
+                setCurrentUser(JSON.parse(storedUser));
+            } catch (err) {
+                console.error("Lỗi parse JSON từ localStorage:", err);
+            }
+        }
 
+        if (location.state?.successMessage) {
+            console.log("Component mounted, location.state:", location.state?.successMessage);
+            setAlertMessage(location.state.successMessage);
+            setShowSuccessAlert(true);
+            // Xóa state để không hiển thị lại nếu người dùng refresh
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
+    useEffect(() => {
+        if (currentUser && !currentUser.permissions?.includes("getFilteredOrders")) {
+          navigate("/unauthorized");
+        }
+      }, [currentUser, navigate]);
   // List status for filter and display
   const saleOrderStatuses = [
     {
@@ -61,7 +85,7 @@ const SaleOrdersPage = () => {
       className: "bg-blue-50 text-blue-800",
     },
     {
-      value: "PROCESSING_REJECTED_REQUEST",
+      value: "PROCESSING",
       label: "Yêu cầu bị từ chối",
       className: "bg-pink-50 text-pink-800",
     },
@@ -136,8 +160,6 @@ const SaleOrdersPage = () => {
     fetchPaginatedSaleOrders(currentPage, pageSize);
   }, [currentPage, pageSize]);
 
-  const navigate = useNavigate();
-  const location = useLocation();
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
 
@@ -283,6 +305,7 @@ const SaleOrdersPage = () => {
             title="Danh sách đơn đặt hàng bán"
             addButtonLabel="Thêm đơn hàng"
             onAdd={() => handleAddOrder(true)}
+            showAdd={currentUser && currentUser.permissions.includes("createSaleOrder")}
             onImport={() => {/* Xử lý import nếu có */ }}
             onExport={() => {/* Xử lý export file ở đây nếu có */ }}
             showImport={false}

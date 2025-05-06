@@ -381,7 +381,7 @@ const PurchaseOrderPage = () => {
             </IconButton>
           </Tooltip>
 
-          {params.row.status !== "COMPLETED" && (
+          {/* {params.row.status !== "COMPLETED" && (
             <Tooltip content="Hủy đơn">
               <IconButton
                 size="small"
@@ -391,7 +391,7 @@ const PurchaseOrderPage = () => {
                 <CancelIcon />
               </IconButton>
             </Tooltip>
-          )}
+          )} */}
 
           {/* Nút Nhập kho */}
           {/* {params.row.status !== "COMPLETED" && (

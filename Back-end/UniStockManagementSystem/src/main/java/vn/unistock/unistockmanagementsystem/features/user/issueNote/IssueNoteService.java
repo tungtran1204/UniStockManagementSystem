@@ -235,10 +235,9 @@ public class IssueNoteService {
                     boolean allMaterialsFulfilled = orderMaterials.stream()
                             .allMatch(mat -> mat.getReceivedQuantity() >= mat.getRequiredQuantity());
                     if (allMaterialsFulfilled) {
-                        salesOrder.setStatus(SalesOrder.OrderStatus.COMPLETED);
                         logger.debug("SalesOrder ID {} updated to COMPLETED (all materials fulfilled)", salesOrder.getOrderId());
                     } else if (isFirstIssuance) {
-                        salesOrder.setStatus(SalesOrder.OrderStatus.PARTIALLY_ISSUED);
+
                         logger.debug("SalesOrder ID {} updated to PARTIALLY_ISSUED (first material issuance)", salesOrder.getOrderId());
                     }
 
