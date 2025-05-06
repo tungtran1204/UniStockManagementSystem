@@ -52,7 +52,7 @@ const useProduct = () => {
   const handleToggleStatus = async (productId) => {
     if (!productId) {
       console.error("❌ Lỗi: Không tìm thấy ID sản phẩm!");
-      alert("Lỗi: Không tìm thấy ID sản phẩm!");
+      console.log("Lỗi: Không tìm thấy ID sản phẩm!");
       return;
     }
   
@@ -67,7 +67,7 @@ const useProduct = () => {
       fetchPaginatedProducts(); // Refresh danh sách sản phẩm
     } catch (error) {
       console.error("❌ Lỗi khi thay đổi trạng thái sản phẩm:", error);
-      alert(error.response?.data?.message || "Bạn không có quyền thay đổi trạng thái sản phẩm!");
+      console.log(error.response?.data?.message || "Bạn không có quyền thay đổi trạng thái sản phẩm!");
     }
   };
 

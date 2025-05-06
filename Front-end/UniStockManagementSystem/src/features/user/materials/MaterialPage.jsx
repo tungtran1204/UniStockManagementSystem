@@ -33,6 +33,7 @@ import {
 import ImportMaterialModal from "./ImportMaterialModal";
 import StatusFilterButton from "@/components/StatusFilterButton";
 import { FaAngleDown } from "react-icons/fa";
+import CircularProgress from '@mui/material/CircularProgress';
 
 const MaterialPage = () => {
     const navigate = useNavigate();
@@ -79,7 +80,7 @@ const MaterialPage = () => {
     ];
 
     const handleSearch = () => {
-        setCurrentPage(0);
+        // setCurrentPage(0);
         fetchPaginatedMaterials(0, pageSize, searchTerm);
     };
 
@@ -134,28 +135,25 @@ const MaterialPage = () => {
     }, []);
 
     const handleExport = () => {
-        const confirmExport = window.confirm("Bạn có muốn xuất danh sách vật tư ra file Excel không?");
-        if (confirmExport) {
-            setLocalLoading(true);
-            exportExcel()
-                .then((blob) => {
-                    const url = window.URL.createObjectURL(new Blob([blob]));
-                    const link = document.createElement("a");
-                    link.href = url;
-                    link.setAttribute("download", "materials_export.xlsx");
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-                    alert("✅ Xuất file Excel thành công!");
-                })
-                .catch((err) => {
-                    alert("❌ Lỗi khi xuất file Excel: " + (err.message || "Không xác định"));
-                })
-                .finally(() => {
-                    setLocalLoading(false);
-                });
-        }
+        setLocalLoading(true);
+        exportExcel()
+            .then((blob) => {
+                const url = window.URL.createObjectURL(new Blob([blob]));
+                const link = document.createElement("a");
+                link.href = url;
+                link.setAttribute("download", "materials_export.xlsx");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                console.log("✅ Xuất file Excel thành công!");
+            })
+            .catch((err) => {
+                console.log("❌ Lỗi khi xuất file Excel: " + (err.message || "Không xác định"));
+            })
+            .finally(() => {
+                setLocalLoading(false);
+            });
     };
 
     const handleEdit = (material) => {
@@ -285,8 +283,29 @@ const MaterialPage = () => {
         })
         : [];
 
+    const [dotCount, setDotCount] = useState(0);
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setDotCount((prev) => (prev < 3 ? prev + 1 : 0));
+        }, 500);
+        return () => clearInterval(interval);
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center" style={{ height: '60vh' }}>
+                <div className="flex flex-col items-center">
+                    <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#0ab067' }} />
+                    <Typography variant="body1">
+                        Đang tải{'.'.repeat(dotCount)}
+                    </Typography>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
+        <div className="mb-8 flex flex-col gap-12">
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
                 <CardBody className="pb-2 bg-white rounded-xl">
                     <PageHeader

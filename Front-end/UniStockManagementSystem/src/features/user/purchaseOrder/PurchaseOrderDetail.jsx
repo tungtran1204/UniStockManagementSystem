@@ -158,7 +158,7 @@ const PurchaseOrderDetail = () => {
       saveAs(new Blob([buffer]), `DonDatHang_${order.poCode}.xlsx`);
     } catch (err) {
       console.error("Lỗi xuất file:", err);
-      alert("Có lỗi xảy ra khi xuất Excel");
+      console.log("Có lỗi xảy ra khi xuất Excel");
     }
   };
 

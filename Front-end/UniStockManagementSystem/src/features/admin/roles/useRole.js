@@ -24,7 +24,7 @@ const PERMISSION_HIERARCHY = {
   ],
   viewProductType: ["getAllProductTypes"],
   manageProductType: ["createProductType", "updateProductType", "checkTypeName"],
-  viewPartner: ["getAllPartners", "getPartnerCode", "getPartnersByType"],
+  viewPartner: ["getAllPartners", "getPartnerCode", "getPartnersByType", "getAllPartnerTypes"],
   managePartner: [
     "getAllPartners",
     "getPartnerCode",
@@ -87,11 +87,13 @@ const PERMISSION_HIERARCHY = {
     "getAllPartners",
     "getInventoryDetailsByWarehouse",
     "getInventoryDetailsByWarehouseM",
+    "getActiveProducts",
   ],
   viewPurchaseRequest: ["getAllPurchaseRequests", "getPurchaseRequestById"],
   managePurchaseRequest: [
     "getAllPurchaseRequests",
     "getPurchaseRequestById",
+    "getPartnersByMaterial",
     "getNextRequestCode",
     "createManualPurchaseRequest",
     "updatePurchaseRequestStatus",
@@ -132,6 +134,7 @@ const PERMISSION_HIERARCHY = {
     "getPendingOrInProgressReceiveOutsource",
     "getPartnersByCodePrefix",
     "getOrderById",
+    "getActiveProducts"
   ],
   viewIssueNote: ["getAllIssueNotes", "getIssueNoteById"],
   manageIssueNote: [
@@ -147,6 +150,7 @@ const PERMISSION_HIERARCHY = {
     "getFilteredOrders",
     "getPartnersByType",
     "getOrderById",
+    "getActiveProducts"
   ],
   acceptPurchaseRequest: ["updatePurchaseRequestStatus"],
 };

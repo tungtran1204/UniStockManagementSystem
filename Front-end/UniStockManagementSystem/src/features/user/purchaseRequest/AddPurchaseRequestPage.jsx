@@ -298,7 +298,7 @@ const AddPurchaseRequestPage = () => {
     if (loading) return;
 
     if (quantityValidationError) {
-      alert(quantityValidationError);
+      setQuantityValidationError(quantityValidationError);
       return;
     }
 

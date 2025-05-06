@@ -44,6 +44,7 @@ public class PermissionHierarchy {
                 "getAllPartners",
                 "getPartnerCode",
                 "getPartnersByType",
+                "getAllPartnerTypes",
                 // Thêm quyền quản lý (tạo, sửa, ...):
                 "getAllPartnerTypes",
                 "createPartner",
@@ -130,7 +131,8 @@ public class PermissionHierarchy {
                 "setPreparingMaterial",
                 "getAllPartners",
                 "getInventoryDetailsByWarehouse",
-                "getInventoryDetailsByWarehouseM"
+                "getInventoryDetailsByWarehouseM",
+                "getActiveProducts"
         ));
 
         // ======================
@@ -144,6 +146,7 @@ public class PermissionHierarchy {
                 "getAllPurchaseRequests",
                 "getPurchaseRequestById",
 
+                "getPartnersByMaterial",
                 "getNextRequestCode",
                 "createManualPurchaseRequest",
                 "updatePurchaseRequestStatus",
@@ -220,7 +223,8 @@ public class PermissionHierarchy {
                 "getPendingOrInProgressOrders",
                 "getPendingOrInProgressReceiveOutsource",
                 "getPartnersByCodePrefix",
-                "getOrderById"
+                "getOrderById",
+                "getActiveProducts"
         ));
 
         // ======================
@@ -243,7 +247,8 @@ public class PermissionHierarchy {
                 "getInventoryDetailsByWarehouseM",
                 "getFilteredOrders",
                 "getPartnersByType",
-                "getOrderById"
+                "getOrderById",
+                "getActiveProducts"
         ));
 
         // ======================

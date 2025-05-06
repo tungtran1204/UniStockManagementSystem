@@ -86,7 +86,7 @@ const DetailPurchaseRequestPage = () => {
             await fetchPurchaseRequest();
         } catch (error) {
             console.error("Lỗi từ chối yêu cầu:", error);
-            alert("Không thể từ chối yêu cầu. Vui lòng thử lại.");
+            console.log("Không thể từ chối yêu cầu. Vui lòng thử lại.");
         }
     };
 
@@ -96,7 +96,7 @@ const DetailPurchaseRequestPage = () => {
             navigate("/user/purchase-request", { state: { successMessage: "Đã duyệt yêu cầu mua vật tư thành công!" } });
         } catch (error) {
             console.error("Lỗi duyệt yêu cầu:", error);
-            alert("❌ Không thể duyệt yêu cầu. Vui lòng thử lại.");
+            console.log("❌ Không thể duyệt yêu cầu. Vui lòng thử lại.");
         }
     };
 
