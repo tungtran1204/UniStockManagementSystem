@@ -15,14 +15,24 @@ const useProduct = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
 
-  const fetchPaginatedProducts = async (page = currentPage, size = pageSize) => {
+  const [filterState, setFilterState] = useState({
+    search: undefined,
+    statuses: undefined,
+    typeIds: undefined,
+  });  
+
+  const fetchPaginatedProducts = async (page = currentPage, size = pageSize, filters = filterState) => {
     try {
       setLoading(true);
-      const response = await getAllProducts(page, size);
-
+      const response = await getAllProducts({
+        page,
+        size,
+        ...filters,
+      });
       setProducts(response.products || []);
       setTotalPages(response.totalPages || 0);
       setTotalElements(response.totalElements || 0);
+      setCurrentPage(page);
       return response;
     } catch (error) {
       console.error("❌ Lỗi khi lấy danh sách sản phẩm:", error);
@@ -34,6 +44,11 @@ const useProduct = () => {
     }
   };
 
+  const applyFilters = (filters) => {
+    setFilterState(filters);
+    fetchPaginatedProducts(0, pageSize, filters);
+  };
+  
   const handleToggleStatus = async (productId) => {
     if (!productId) {
       console.error("❌ Lỗi: Không tìm thấy ID sản phẩm!");
@@ -82,7 +97,8 @@ const useProduct = () => {
     fetchPaginatedProducts,
     handleToggleStatus,
     handlePageChange,
-    handlePageSizeChange
+    handlePageSizeChange,
+    applyFilters
   };
 };
 

@@ -43,18 +43,8 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 const ProductPage = () => {
   const navigate = useNavigate();
   // Sử dụng useProduct hook
-  const {
-    products,
-    loading,
-    currentPage,
-    pageSize,
-    totalPages,
-    totalElements,
-    fetchPaginatedProducts,
-    handleToggleStatus,
-    handlePageChange,
-    handlePageSizeChange
-  } = useProduct();
+  const { products, loading, currentPage, pageSize, totalPages, totalElements, fetchPaginatedProducts, handleToggleStatus, handlePageChange, handlePageSizeChange, applyFilters } = useProduct();
+
 
   // Các state trong component
   const [showImportPopup, setShowImportPopup] = useState(false);
@@ -87,10 +77,35 @@ const ProductPage = () => {
 
   // Handle search
   const handleSearch = () => {
-    // Reset to first page when searching
-    setCurrentPage(0);
-    fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
+    applyFilters(buildFilters());
   };
+
+  useEffect(() => {
+    applyFilters(buildFilters());
+  }, [selectedProductTypes]);
+  
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      applyFilters(buildFilters());
+    }, 500);  // debounce 500ms
+  
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm]);
+  
+
+  const buildFilters = () => ({
+    search: searchTerm || undefined,
+    statuses: selectedStatuses.length
+      ? selectedStatuses.map(s => s.value)
+      : undefined,
+    typeIds: selectedProductTypes.length
+      ? selectedProductTypes.map(t => t.typeId)
+      : undefined,
+  });
+
+  useEffect(() => {
+    applyFilters(buildFilters());
+  }, [selectedStatuses]);  
 
   const [newProduct, setNewProduct] = useState({
     productCode: "",
@@ -318,16 +333,6 @@ const ProductPage = () => {
     isProductionActive: !!product.isProductionActive,
   }));
 
-  // Add this function
-  const filteredProducts = Array.isArray(products)
-    ? products.filter(product =>
-      product.productCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.productName?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    : [];
-
-  const hasInvalidRows = previewResults.some((row) => row.valid === false);
-
   return (
     <div className="mb-8 flex flex-col gap-12" style={{ height: 'calc(100vh-100px)' }}>
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
@@ -432,7 +437,6 @@ const ProductPage = () => {
                         ? selectedProductTypes.filter(p => p !== pt)
                         : [...selectedProductTypes, pt];
                       setSelectedProductTypes(updated);
-                      setCurrentPage(0);
                     }}
                     sx={{ paddingLeft: "7px", minWidth: "150px" }}
                   >
@@ -447,7 +451,7 @@ const ProductPage = () => {
                       size="medium"
                       onClick={() => {
                         setSelectedProductTypes([]);
-                        setCurrentPage(0);
+                        applyFilters(buildFilters());
                       }}
                       sx={{
                         color: "#000000DE",
