@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import useProductType from "./useProductType";
 import CreateProductTypeModal from "./CreateProductTypeModal";
 import EditProductTypeModal from "./EditProductTypeModal";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
     Card,
     CardBody,
@@ -45,6 +46,34 @@ const ProductTypePage = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedStatuses, setSelectedStatuses] = useState([]);
     const [statusAnchorEl, setStatusAnchorEl] = useState(null);
+const navigate = useNavigate();
+const [currentUser, setCurrentUser] = useState(null);
+  const location = useLocation();
+
+  useEffect(() => {
+            // Lấy thông tin user từ localStorage
+            const storedUser = localStorage.getItem("user");
+            if (storedUser) {
+                try {
+                    setCurrentUser(JSON.parse(storedUser));
+                } catch (err) {
+                    console.error("Lỗi parse JSON từ localStorage:", err);
+                }
+            }
+    
+            if (location.state?.successMessage) {
+                console.log("Component mounted, location.state:", location.state?.successMessage);
+                setAlertMessage(location.state.successMessage);
+                setShowSuccessAlert(true);
+                // Xóa state để không hiển thị lại nếu người dùng refresh
+                window.history.replaceState({}, document.title);
+            }
+        }, [location.state]);
+  useEffect(() => {
+          if (currentUser && !currentUser.permissions?.includes("getAllProductTypes")) {
+            navigate("/unauthorized");
+          }
+        }, [currentUser, navigate]);
 
     const handlePageChange = (selectedItem) => {
         setCurrentPage(selectedItem.selected);

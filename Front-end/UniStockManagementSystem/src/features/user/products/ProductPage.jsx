@@ -62,6 +62,34 @@ const ProductPage = () => {
   const [selectedProductTypes, setSelectedProductTypes] = useState([]);
   const [productTypeAnchorEl, setProductTypeAnchorEl] = useState(null);
 
+const [currentUser, setCurrentUser] = useState(null);
+  const location = useLocation();
+
+  useEffect(() => {
+            // Lấy thông tin user từ localStorage
+            const storedUser = localStorage.getItem("user");
+            if (storedUser) {
+                try {
+                    setCurrentUser(JSON.parse(storedUser));
+                } catch (err) {
+                    console.error("Lỗi parse JSON từ localStorage:", err);
+                }
+            }
+    
+            if (location.state?.successMessage) {
+                console.log("Component mounted, location.state:", location.state?.successMessage);
+                setAlertMessage(location.state.successMessage);
+                setShowSuccessAlert(true);
+                // Xóa state để không hiển thị lại nếu người dùng refresh
+                window.history.replaceState({}, document.title);
+            }
+        }, [location.state]);
+  useEffect(() => {
+          if (currentUser && !currentUser.permissions?.includes("getProducts")) {
+            navigate("/unauthorized");
+          }
+        }, [currentUser, navigate]);
+
   const allStatuses = [
     {
       value: true,
@@ -130,7 +158,7 @@ useEffect(() => {
   const [pendingToggleRow, setPendingToggleRow] = useState(null);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
-  const location = useLocation();
+  // const location = useLocation();
 
   useEffect(() => {
     if (location.state?.successMessage) {

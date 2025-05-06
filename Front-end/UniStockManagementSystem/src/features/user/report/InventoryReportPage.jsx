@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import ReactPaginate from "react-paginate";
 import { Card, CardBody, Typography } from "@material-tailwind/react";
 import {
@@ -56,6 +56,34 @@ const InventoryReportPage = () => {
     const [selectedProductTypes, setSelectedProductTypes] = useState([]);
     const [materialTypeList, setMaterialTypeList] = useState([]);
     const [selectedMaterialTypes, setSelectedMaterialTypes] = useState([]);
+
+    const [currentUser, setCurrentUser] = useState(null);
+      const location = useLocation();
+    
+      useEffect(() => {
+                // Lấy thông tin user từ localStorage
+                const storedUser = localStorage.getItem("user");
+                if (storedUser) {
+                    try {
+                        setCurrentUser(JSON.parse(storedUser));
+                    } catch (err) {
+                        console.error("Lỗi parse JSON từ localStorage:", err);
+                    }
+                }
+        
+                if (location.state?.successMessage) {
+                    console.log("Component mounted, location.state:", location.state?.successMessage);
+                    setAlertMessage(location.state.successMessage);
+                    setShowSuccessAlert(true);
+                    // Xóa state để không hiển thị lại nếu người dùng refresh
+                    window.history.replaceState({}, document.title);
+                }
+            }, [location.state]);
+      useEffect(() => {
+              if (currentUser && !currentUser.permissions?.includes("getInventoryReport")) {
+                navigate("/unauthorized");
+              }
+            }, [currentUser, navigate]);
 
     const fetchReport = async (page, size, itemType, isFirstLoad) => {
         if (isFirstLoad) {

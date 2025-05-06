@@ -48,10 +48,7 @@ public class PermissionHierarchy {
         // 2) ĐỐI TÁC
         // ======================
         PERMISSION_MAP.put("viewPartner", List.of(
-                "getAllPartners",
-                "getPartnerCode",
-                "getPartnersByType",
-                "getAllPartnerTypes"
+                "getAllPartners"
         ));
         PERMISSION_MAP.put("managePartner", List.of(
                 // Gồm quyền xem:
@@ -96,7 +93,9 @@ public class PermissionHierarchy {
                 "downloadTemplate",
                 "exportMaterials",
                 "getAllMaterialTypes",
-                "getActiveUnits"
+                "getActiveUnits",
+                "getActiveMaterialTypes",
+                "getPartnersByType"
         ));
         PERMISSION_MAP.put("manageMaterial", List.of(
                 // Gồm quyền xem:
@@ -138,12 +137,20 @@ public class PermissionHierarchy {
         PERMISSION_MAP.put("viewSaleOrder", List.of(
                 "getFilteredOrders",
                 "getOrderById",
-                "getMaterialsByProduct"
+                "getMaterialsByProduct",
+                "getInventoryDetailsByWarehouse",
+                "getInventoryDetailsByWarehouseM",
+                "getActiveProducts",
+                "getPartnersByType"
         ));
         PERMISSION_MAP.put("manageSaleOrder", List.of(
                 "getFilteredOrders",
                 "getOrderById",
                 "getMaterialsByProduct",
+                "getInventoryDetailsByWarehouse",
+                "getInventoryDetailsByWarehouseM",
+                "getActiveProducts",
+                "getPartnersByType",
 
                 "getNextOrderCode",
                 "createSaleOrder",
@@ -172,7 +179,8 @@ public class PermissionHierarchy {
                 "createManualPurchaseRequest",
                 "canCreatePurchaseRequest",
                 "getAllMaterials",
-                "getAllMaterialTypes"
+                "getAllMaterialTypes",
+                "getPartnersByType"
 
         ));
 
@@ -181,12 +189,15 @@ public class PermissionHierarchy {
         // ======================
         PERMISSION_MAP.put("viewPurchaseOrder", List.of(
                 "getAllOrdersFiltered",
-                "getOrderById"
+                "getPurchaseOrderById",
+                "getPurchaseRequestById"
         ));
 
         PERMISSION_MAP.put("managePurchaseOrder", List.of(
                 "getAllOrdersFiltered",
-                "getOrderById",
+                "getPurchaseOrderById",
+                "getPurchaseRequestById",
+                "getAllPurchaseRequests",
 
                 "createMultipleOrders",
                 "getSaleOrderByPurchaseOrder"
@@ -214,6 +225,9 @@ public class PermissionHierarchy {
         PERMISSION_MAP.put("viewReport", List.of(
                 //Tồn kho
                 "getInventoryReport",
+                "getAllActiveWarehouses",
+                "getActiveProductTypes",
+                "getActiveMaterialTypes",
 
                 //Xuất nhập tồn
                 "getStockMovementReport",
@@ -231,12 +245,14 @@ public class PermissionHierarchy {
         PERMISSION_MAP.put("viewReceiptNote", List.of(
                 "getAllGoodReceipts",
                 "getGoodReceiptById",
-                "getIssueNoteById"
+                "getIssueNoteById",
+                "getPurchaseOrderById"
         ));
         PERMISSION_MAP.put("manageReceiptNote", List.of(
                 "getAllGoodReceipts",
                 "getGoodReceiptById",
                 "getIssueNoteById",
+                "getPurchaseOrderById",
 
                 "createGoodReceipt",
                 "getNextNoteCode",
@@ -247,8 +263,10 @@ public class PermissionHierarchy {
                 "getPendingOrInProgressOrders",
                 "getPendingOrInProgressReceiveOutsource",
                 "getPartnersByCodePrefix",
-                "getOrderById",
-                "getActiveProducts"
+                "getPurchaseOrderById",
+                "getActiveProducts",
+                "getFilteredOrders",
+                "getAllMaterials"
         ));
 
         // ======================
@@ -258,13 +276,23 @@ public class PermissionHierarchy {
                 "getAllIssueNotes",
                 "getIssueNoteById",
                 "getOrderById",
-                "getMaterialsByProduct"
+
+
+                "getMaterialsByProduct",
+                "getInventoryDetailsByWarehouse",
+                "getInventoryDetailsByWarehouseM",
+                "getActiveProducts",
+                "getPartnersByType"
         ));
         PERMISSION_MAP.put("manageIssueNote", List.of(
                 "getAllIssueNotes",
                 "getIssueNoteById",
                 "getOrderById",
+
                 "getMaterialsByProduct",
+
+                "getActiveProducts",
+
 
                 "createIssueNote",
                 "getNextIssueCode",
@@ -274,9 +302,8 @@ public class PermissionHierarchy {
                 "getInventoryDetailsByWarehouse",
                 "getInventoryDetailsByWarehouseM",
                 "getFilteredOrders",
-                "getPartnersByType",
-                "getOrderById",
-                "getActiveProducts"
+                "getPartnersByType"
+
         ));
 
         // ======================

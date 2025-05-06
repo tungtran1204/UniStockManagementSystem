@@ -19,6 +19,7 @@ import SuccessAlert from "@/components/SuccessAlert";
 import StatusFilterButton from "@/components/StatusFilterButton";
 import TableSearch from '@/components/TableSearch';
 import CircularProgress from '@mui/material/CircularProgress';
+import { useNavigate, useLocation } from "react-router-dom";
 
 const MaterialTypePage = () => {
     const { materialTypes, fetchMaterialTypes, toggleStatus, createMaterialType, updateMaterialType, totalPages, applyFilters, totalElements, loading } = useMaterialType();
@@ -36,6 +37,34 @@ const MaterialTypePage = () => {
     const [selectedStatuses, setSelectedStatuses] = useState([]);
     const [statusAnchorEl, setStatusAnchorEl] = useState(null);
 
+    const navigate = useNavigate();
+    const [currentUser, setCurrentUser] = useState(null);
+      const location = useLocation();
+    
+      useEffect(() => {
+                // Lấy thông tin user từ localStorage
+                const storedUser = localStorage.getItem("user");
+                if (storedUser) {
+                    try {
+                        setCurrentUser(JSON.parse(storedUser));
+                    } catch (err) {
+                        console.error("Lỗi parse JSON từ localStorage:", err);
+                    }
+                }
+        
+                if (location.state?.successMessage) {
+                    console.log("Component mounted, location.state:", location.state?.successMessage);
+                    setAlertMessage(location.state.successMessage);
+                    setShowSuccessAlert(true);
+                    // Xóa state để không hiển thị lại nếu người dùng refresh
+                    window.history.replaceState({}, document.title);
+                }
+            }, [location.state]);
+      useEffect(() => {
+              if (currentUser && !currentUser.permissions?.includes("getAllMaterialTypes")) {
+                navigate("/unauthorized");
+              }
+            }, [currentUser, navigate]);
     const allStatuses = [
         {
             value: true,
@@ -157,6 +186,7 @@ const MaterialTypePage = () => {
 
     const data = materialTypes.map((type, index) => ({
         id: type.materialTypeId,
+        materialTypeId: type.materialTypeId,  
         index: (currentPage * pageSize) + index + 1,
         name: type.name,
         description: type.description,

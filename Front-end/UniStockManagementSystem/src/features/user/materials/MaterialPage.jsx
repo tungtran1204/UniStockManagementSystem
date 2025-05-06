@@ -101,6 +101,33 @@ const MaterialPage = () => {
     const [alertMessage, setAlertMessage] = useState("");
     const location = useLocation();
 
+    const [currentUser, setCurrentUser] = useState(null);
+    
+      useEffect(() => {
+                // Lấy thông tin user từ localStorage
+                const storedUser = localStorage.getItem("user");
+                if (storedUser) {
+                    try {
+                        setCurrentUser(JSON.parse(storedUser));
+                    } catch (err) {
+                        console.error("Lỗi parse JSON từ localStorage:", err);
+                    }
+                }
+        
+                if (location.state?.successMessage) {
+                    console.log("Component mounted, location.state:", location.state?.successMessage);
+                    setAlertMessage(location.state.successMessage);
+                    setShowSuccessAlert(true);
+                    // Xóa state để không hiển thị lại nếu người dùng refresh
+                    window.history.replaceState({}, document.title);
+                }
+            }, [location.state]);
+      useEffect(() => {
+              if (currentUser && !currentUser.permissions?.includes("getAllMaterials")) {
+                navigate("/unauthorized");
+              }
+            }, [currentUser, navigate]);
+
     useEffect(() => {
         if (location.state?.successMessage) {
             console.log("Component mounted, location.state:", location.state?.successMessage);

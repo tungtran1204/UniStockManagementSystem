@@ -34,6 +34,7 @@ const IssueNotePage = () => {
   const [categoryAnchorEl, setCategoryAnchorEl] = useState(null);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const categoryList = [
     "Bán hàng",
@@ -42,6 +43,31 @@ const IssueNotePage = () => {
     "Trả lại hàng mua",
     "Khác",
   ];
+
+useEffect(() => {
+          // Lấy thông tin user từ localStorage
+          const storedUser = localStorage.getItem("user");
+          if (storedUser) {
+              try {
+                  setCurrentUser(JSON.parse(storedUser));
+              } catch (err) {
+                  console.error("Lỗi parse JSON từ localStorage:", err);
+              }
+          }
+  
+          if (location.state?.successMessage) {
+              console.log("Component mounted, location.state:", location.state?.successMessage);
+              setAlertMessage(location.state.successMessage);
+              setShowSuccessAlert(true);
+              // Xóa state để không hiển thị lại nếu người dùng refresh
+              window.history.replaceState({}, document.title);
+          }
+      }, [location.state]);
+useEffect(() => {
+        if (currentUser && !currentUser.permissions?.includes("getAllIssueNotes")) {
+          navigate("/unauthorized");
+        }
+      }, [currentUser, navigate]);
 
   useEffect(() => {
     if (location.state?.successMessage) {
