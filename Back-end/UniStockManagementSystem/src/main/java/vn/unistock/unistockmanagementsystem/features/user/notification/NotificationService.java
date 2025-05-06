@@ -51,7 +51,6 @@ public class NotificationService {
                     notificationRepository.save(notification);
                 }
                 else {
-                    // ✅ Đã có ➔ update message
                     Notification existing = existingNotifications.get(0);  // Lấy notification chưa đọc gần nhất
                     existing.setMessage(String.format("Vật tư %s (Mã: %s) có tồn kho thấp: %s/%s",
                             material.getMaterialName(),

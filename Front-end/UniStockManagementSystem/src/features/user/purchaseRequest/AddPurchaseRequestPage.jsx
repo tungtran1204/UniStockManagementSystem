@@ -404,10 +404,14 @@ const AddPurchaseRequestPage = () => {
     setCurrentPage(selectedItem.selected);
   };
 
-  const getAvailableMaterials = () => {
-    const selectedMaterialIds = items.map((item) => item.materialId).filter(Boolean);
+  const getAvailableMaterials = (currentMaterialId) => {
+    const selectedMaterialIds = items
+      .map((item) => item.materialId)
+      .filter((id) => id && id !== currentMaterialId); // Loại dòng hiện tại
+
     return materials.filter((m) => !selectedMaterialIds.includes(m.materialId));
   };
+
 
 
   const [dotCount, setDotCount] = useState(0);
@@ -598,7 +602,7 @@ const AddPurchaseRequestPage = () => {
                           item.materialCode
                         ) : (
                           <Autocomplete
-                            options={materials}
+                            options={getAvailableMaterials(item.materialId)}
                             size="small"
                             getOptionLabel={(option) => `${option.materialCode} - ${option.materialName}`}
                             value={

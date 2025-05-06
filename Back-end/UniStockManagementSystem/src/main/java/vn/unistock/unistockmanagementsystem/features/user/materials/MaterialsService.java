@@ -12,6 +12,7 @@ import vn.unistock.unistockmanagementsystem.entities.Material;
 import vn.unistock.unistockmanagementsystem.entities.MaterialPartner;
 import vn.unistock.unistockmanagementsystem.entities.Partner;
 import vn.unistock.unistockmanagementsystem.features.user.materialType.MaterialTypeRepository;
+import vn.unistock.unistockmanagementsystem.features.user.notification.NotificationService;
 import vn.unistock.unistockmanagementsystem.features.user.partner.PartnerRepository;
 import vn.unistock.unistockmanagementsystem.features.user.units.UnitRepository;
 import vn.unistock.unistockmanagementsystem.utils.storage.AzureBlobService;
@@ -32,6 +33,8 @@ public class MaterialsService {
     private final AzureBlobService azureBlobService;
     private final MaterialPartnerRepository materialPartnerRepository;
     private final PartnerRepository partnerRepository;
+    private final NotificationService notificationService;
+
 
     // 🟢 Lấy tất cả nguyên liệu có phân trang
     public Page<MaterialsDTO> getAllMaterials(int page, int size) {
@@ -199,6 +202,8 @@ public class MaterialsService {
 
         Material savedMaterial = materialsRepository.save(material);
         log.info("Updated material with imageUrl: {}", savedMaterial.getImageUrl());
+        notificationService.clearLowStockNotificationIfRecovered(savedMaterial.getMaterialId());
+        notificationService.checkLowStock(savedMaterial.getMaterialId());
         return materialsMapper.toDTO(savedMaterial);
     }
 

@@ -6,27 +6,44 @@ const ImageUploadBox = ({ onFileSelect }) => {
     const inputRef = useRef();
     const [warningOpen, setWarningOpen] = useState(false);
     const [warningMessage, setWarningMessage] = useState("");
+    const isImageFile = (file) => {
+        return file && file.type.startsWith("image/");
+    };
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
-        if (file && file.size <= 5 * 1024 * 1024) {
-            onFileSelect(file);
-        } else {
-            setWarningMessage("Vui lòng chọn file nhỏ hơn 5MB");
-            setWarningOpen(true);
+        if (file) {
+            if (!isImageFile(file)) {
+                setWarningMessage("Vui lòng chọn đúng file ảnh hợp lệ (jpg, png, jpeg, ...)");
+                setWarningOpen(true);
+            } else if (file.size > 5 * 1024 * 1024) {
+                setWarningMessage("Vui lòng chọn file nhỏ hơn 5MB");
+                setWarningOpen(true);
+            } else {
+                onFileSelect(file);
+            }
         }
     };
+
 
     const handleDrop = (e) => {
         e.preventDefault();
         const file = e.dataTransfer.files[0];
-        if (file && file.size <= 5 * 1024 * 1024) {
-            onFileSelect(file);
-        } else {
-            setWarningMessage("Vui lòng chọn file nhỏ hơn 5MB");
-            setWarningOpen(true);
+        if (file) {
+            if (!isImageFile(file)) {
+                setWarningMessage("Vui lòng chọn đúng file ảnh hợp lệ (jpg, png, jpeg, ...)");
+                setWarningOpen(true);
+            } else if (file.size > 5 * 1024 * 1024) {
+                setWarningMessage("Vui lòng chọn file nhỏ hơn 5MB");
+                setWarningOpen(true);
+            } else {
+                onFileSelect(file);
+            }
         }
     };
+
+
+
 
     return (
         <div
