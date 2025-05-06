@@ -43,19 +43,9 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 const ProductPage = () => {
   const navigate = useNavigate();
   // Sử dụng useProduct hook
-  const {
-    products,
-    loading,
-    currentPage,
-    pageSize,
-    totalPages,
-    totalElements,
-    fetchPaginatedProducts,
-    handleToggleStatus,
-    handlePageChange,
-    handlePageSizeChange
-  } = useProduct();
+  const { products, loading, currentPage, pageSize, totalPages, totalElements, fetchPaginatedProducts, handleToggleStatus, handlePageChange, handlePageSizeChange, applyFilters } = useProduct();
 
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
   // Các state trong component
   const [showImportPopup, setShowImportPopup] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -87,10 +77,45 @@ const ProductPage = () => {
 
   // Handle search
   const handleSearch = () => {
-    // Reset to first page when searching
-    // setCurrentPage(0);
-    fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
+    applyFilters(buildFilters());
   };
+
+  useEffect(() => {
+    applyFilters(buildFilters(), true); 
+}, []);
+
+useEffect(() => {
+  applyFilters(buildFilters());
+}, [selectedProductTypes]);
+
+  
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      applyFilters(buildFilters());
+    }, 500);  // debounce 500ms
+  
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm]);
+  
+
+  const buildFilters = () => {
+    const filters = {
+        search: searchTerm || undefined,
+        statuses: selectedStatuses.length
+          ? selectedStatuses.map(s => s.value)
+          : undefined,
+          typeIds: selectedProductTypes.length
+          ? selectedProductTypes.map(t => t.typeId ?? t.value)  // support cả typeId hoặc value
+          : undefined,
+    };
+    console.log("🔥 Filters:", filters);
+    return filters;
+};
+
+
+  useEffect(() => {
+    applyFilters(buildFilters());
+  }, [selectedStatuses]);  
 
   const [newProduct, setNewProduct] = useState({
     productCode: "",
@@ -315,13 +340,13 @@ const ProductPage = () => {
     isProductionActive: !!product.isProductionActive,
   }));
 
-  // Add this function
-  const filteredProducts = Array.isArray(products)
-    ? products.filter(product =>
-      product.productCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.productName?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    : [];
+  // // Add this function
+  // const filteredProducts = Array.isArray(products)
+  //   ? products.filter(product =>
+  //     product.productCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     product.productName?.toLowerCase().includes(searchTerm.toLowerCase())
+  //   )
+  //   : [];
 
   const hasInvalidRows = previewResults.some((row) => row.valid === false);
 
@@ -450,7 +475,6 @@ const ProductPage = () => {
                         ? selectedProductTypes.filter(p => p !== pt)
                         : [...selectedProductTypes, pt];
                       setSelectedProductTypes(updated);
-                      setCurrentPage(0);
                     }}
                     sx={{ paddingLeft: "7px", minWidth: "150px" }}
                   >
@@ -465,7 +489,7 @@ const ProductPage = () => {
                       size="medium"
                       onClick={() => {
                         setSelectedProductTypes([]);
-                        setCurrentPage(0);
+                        applyFilters(buildFilters());
                       }}
                       sx={{
                         color: "#000000DE",

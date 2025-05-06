@@ -15,11 +15,11 @@ const useMaterial = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
 
-  const fetchPaginatedMaterials = async (page = currentPage, size = pageSize) => {
+  const fetchPaginatedMaterials = async (page = currentPage, size = pageSize, filters = {}, showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       console.log("Fetching materials with page:", page, "size:", size);
-      const response = await getAllMaterials(page, size);
+      const response = await getAllMaterials(page, size, filters);
 
       console.log("API Response:", response);
 
@@ -33,7 +33,7 @@ const useMaterial = () => {
       setTotalPages(0);
       setTotalElements(0);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 

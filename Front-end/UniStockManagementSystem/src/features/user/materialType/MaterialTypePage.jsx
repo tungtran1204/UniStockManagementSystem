@@ -16,10 +16,12 @@ import PageHeader from '@/components/PageHeader';
 import Table from "@/components/Table";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import SuccessAlert from "@/components/SuccessAlert";
+import StatusFilterButton from "@/components/StatusFilterButton";
+import TableSearch from '@/components/TableSearch';
 import CircularProgress from '@mui/material/CircularProgress';
 
 const MaterialTypePage = () => {
-    const { materialTypes, fetchMaterialTypes, toggleStatus, createMaterialType, updateMaterialType, totalPages, totalElements, loading } = useMaterialType();
+    const { materialTypes, fetchMaterialTypes, toggleStatus, createMaterialType, updateMaterialType, totalPages, applyFilters, totalElements, loading } = useMaterialType();
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -30,10 +32,38 @@ const MaterialTypePage = () => {
     const [editMaterialType, setEditMaterialType] = useState(null);
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedStatuses, setSelectedStatuses] = useState([]);
+    const [statusAnchorEl, setStatusAnchorEl] = useState(null);
+
+    const allStatuses = [
+        {
+            value: true,
+            label: "Đang hoạt động",
+            className: "bg-green-50 text-green-800",
+        },
+        {
+            value: false,
+            label: "Ngừng hoạt động",
+            className: "bg-red-50 text-red-800",
+        },
+    ];
 
     useEffect(() => {
-        fetchMaterialTypes(currentPage, pageSize);
-    }, [currentPage, pageSize, fetchMaterialTypes]);
+        const filters = buildFilters();
+        applyFilters(filters, currentPage, pageSize);
+    }, [currentPage, pageSize, searchTerm, selectedStatuses]);
+
+    const buildFilters = () => ({
+        search: searchTerm || undefined,
+        statuses: selectedStatuses.length
+            ? selectedStatuses.map(s => s.value)
+            : undefined,
+    });
+
+    const handleSearch = () => {
+        applyFilters(buildFilters(), currentPage, pageSize);
+    };
 
     const handlePageChange = (selectedItem) => {
         setCurrentPage(selectedItem.selected);
@@ -182,6 +212,26 @@ const MaterialTypePage = () => {
                             <Typography variant="small" className="font-normal whitespace-nowrap">
                                 bản ghi mỗi trang
                             </Typography>
+                        </div>
+                        <div className="mb-3 flex flex-wrap items-center gap-4">
+                            {/* Filter by status */}
+                            <StatusFilterButton
+                                anchorEl={statusAnchorEl}
+                                setAnchorEl={setStatusAnchorEl}
+                                selectedStatuses={selectedStatuses}
+                                setSelectedStatuses={setSelectedStatuses}
+                                allStatuses={allStatuses}
+                                buttonLabel="Trạng thái"
+                            />
+                            {/* Search input */}
+                            <div className="w-[250px]">
+                                <TableSearch
+                                    value={searchTerm}
+                                    onChange={setSearchTerm}
+                                    onSearch={handleSearch}
+                                    placeholder="Tìm kiếm sản phẩm"
+                                />
+                            </div>
                         </div>
                     </div>
 
