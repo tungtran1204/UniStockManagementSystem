@@ -11,11 +11,20 @@ const useMaterialType = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [totalElements, setTotalElements] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [filterState, setFilterState] = useState({
+        search: undefined,
+        statuses: undefined,
+    });    
 
-    const fetchMaterialTypes = useCallback(async (page = 0, size = 10) => {
+    const fetchMaterialTypes = useCallback(async (page = 0, size = 10, filters = filterState) => {
         try {
             setLoading(true);
-            const data = await fetchMaterialTypesService(page, size);
+            const data = await fetchMaterialTypesService({
+                page,
+                size,
+                search: filters?.search,
+                statuses: filters?.statuses,
+            });    
 
             if (Array.isArray(data)) {
                 setMaterialTypes(data);
@@ -40,6 +49,11 @@ const useMaterialType = () => {
             setLoading(false);
         }
     }, []);
+
+    const applyFilters = (filters, page = 0, size = 10) => {
+        setFilterState(filters);
+        fetchMaterialTypes(page, size, filters);
+    };    
 
     const toggleStatus = async (materialTypeId, currentStatus) => {
         try {
@@ -89,6 +103,7 @@ const useMaterialType = () => {
         totalPages,
         totalElements,
         loading,
+        applyFilters
     };
 };
 

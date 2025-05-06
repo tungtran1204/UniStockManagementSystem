@@ -102,9 +102,6 @@ const ProductTypePage = () => {
             : undefined,
     });
 
-    const handleSearch = () => {
-        applyFilters(buildFilters(), currentPage, pageSize);
-    };
 
     // useEffect(() => {
     //     applyFilters(buildFilters(), currentPage, pageSize);
