@@ -23,6 +23,7 @@ import Table from "@/components/Table";
 import StatusFilterButton from "@/components/StatusFilterButton";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import SuccessAlert from "@/components/SuccessAlert";
+import ErrorAlert from "@/components/ErrorAlert";
 import CircularProgress from '@mui/material/CircularProgress';
 
 // Define the WarehousePage component
@@ -37,6 +38,8 @@ const WarehousePage = () => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [successAlertOpen, setSuccessAlertOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [errorAlertOpen, setErrorAlertOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const [pendingToggleRow, setPendingToggleRow] = useState(null);
   // State for pagination
   const [currentPage, setCurrentPage] = useState(0); // Current page number
@@ -301,13 +304,18 @@ const WarehousePage = () => {
       <ConfirmDialog
         open={confirmDialogOpen}
         onClose={() => setConfirmDialogOpen(false)}
-        onConfirm={() => {
-          if (pendingToggleRow) {
-            toggleStatus(pendingToggleRow.id, pendingToggleRow.isActive); // truyền đúng giá trị mới
-            setSuccessMessage("Cập nhật trạng thái thành công!");
-            setSuccessAlertOpen(true);
-          }
+        onConfirm={async () => {
           setConfirmDialogOpen(false);
+          if (pendingToggleRow) {
+            const result = await toggleStatus(pendingToggleRow.id, pendingToggleRow.isActive);
+            if (result.success) {
+              setSuccessMessage("Cập nhật trạng thái thành công!");
+              setSuccessAlertOpen(true);
+            } else {
+              setErrorMessage(result.message || "Lỗi khi cập nhật trạng thái kho");
+              setErrorAlertOpen(true);
+            }
+          }
         }}
         message={`Bạn có chắc chắn muốn ${pendingToggleRow?.isActive ? "ngưng hoạt động" : "kích hoạt"} kho này không?`}
         confirmText="Có"
@@ -318,6 +326,13 @@ const WarehousePage = () => {
         open={successAlertOpen}
         onClose={() => setSuccessAlertOpen(false)}
         message={successMessage}
+      />
+
+      <ErrorAlert
+        open={errorAlertOpen}
+        onClose={() => setErrorAlertOpen(false)}
+        title="Thao tác không thành công!"
+        message={errorMessage}
       />
     </div>
   );

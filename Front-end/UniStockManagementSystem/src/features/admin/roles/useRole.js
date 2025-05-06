@@ -244,31 +244,74 @@ const useRole = () => {
         await Promise.all(
           rolesData.map(async (role) => {
             const rolePerms = await getRolePermissions(role.id);
+            // const permissionNames = rolePerms.permissions.map((p) => p.name);
+
+            // // Kiểm tra quyền dựa trên PermissionHierarchy
+            // const feKeys = new Set();
+            // Object.keys(PERMISSION_HIERARCHY).forEach((key) => {
+            //   const permApis = PERMISSION_HIERARCHY[key];
+            //   // Kiểm tra xem tất cả API của quyền này có trong permissionNames không
+            //   const hasAllApis = permApis.every((api) =>
+            //     permissionNames.includes(api)
+            //   );
+            //   // Nếu quyền là "view" và không có API độc quyền của "manage", ưu tiên "view"
+            //   if (hasAllApis) {
+            //     if (key.startsWith("view") || key === "acceptPurchaseRequest") {
+            //       const manageKey = key.replace("view", "manage");
+            //       const manageApis = PERMISSION_HIERARCHY[manageKey] || [];
+            //       const hasExclusiveManageApis = manageApis.some(
+            //         (api) => !permApis.includes(api) && permissionNames.includes(api)
+            //       );
+            //       if (!hasExclusiveManageApis) {
+            //         feKeys.add(key);
+            //       } else {
+            //         feKeys.add(manageKey);
+            //       }
+            //     } else if (key.startsWith("manage")) {
+            //       feKeys.add(key);
+            //     }
+            //   }
+            // });
+
             const permissionNames = rolePerms.permissions.map((p) => p.name);
 
-            // Kiểm tra quyền dựa trên PermissionHierarchy
             const feKeys = new Set();
             Object.keys(PERMISSION_HIERARCHY).forEach((key) => {
               const permApis = PERMISSION_HIERARCHY[key];
-              // Kiểm tra xem tất cả API của quyền này có trong permissionNames không
               const hasAllApis = permApis.every((api) =>
                 permissionNames.includes(api)
               );
-              // Nếu quyền là "view" và không có API độc quyền của "manage", ưu tiên "view"
+
               if (hasAllApis) {
                 if (key.startsWith("view") || key === "acceptPurchaseRequest") {
                   const manageKey = key.replace("view", "manage");
                   const manageApis = PERMISSION_HIERARCHY[manageKey] || [];
-                  const hasExclusiveManageApis = manageApis.some(
-                    (api) => !permApis.includes(api) && permissionNames.includes(api)
+
+                  // Kiểm tra có quyền cơ bản (create/add)
+                  const hasBasicCreateOrAdd = manageApis.some(api =>
+                    ['create', 'add'].some(kw => api.toLowerCase().includes(kw)) &&
+                    permissionNames.includes(api)
                   );
-                  if (!hasExclusiveManageApis) {
-                    feKeys.add(key);
+
+                  if (hasBasicCreateOrAdd) {
+                    feKeys.add(manageKey);  // Chỉ add manage nếu có quyền create/add
                   } else {
-                    feKeys.add(manageKey);
+                    feKeys.add(key);  // fallback to view
                   }
                 } else if (key.startsWith("manage")) {
-                  feKeys.add(key);
+                  const manageApis = PERMISSION_HIERARCHY[key] || [];
+                  const hasBasicCreateOrAdd = manageApis.some(api =>
+                    ['create', 'add'].some(kw => api.toLowerCase().includes(kw)) &&
+                    permissionNames.includes(api)
+                  );
+
+                  if (hasBasicCreateOrAdd) {
+                    feKeys.add(key);
+                  } else {
+                    // Nếu không có quyền create/add, downgrade thành view
+                    const viewKey = key.replace("manage", "view");
+                    feKeys.add(viewKey);
+                  }
                 }
               }
             });
@@ -293,29 +336,72 @@ const useRole = () => {
   const fetchRolePermissions = useCallback(async (roleId) => {
     try {
       const rolePerms = await getRolePermissions(roleId);
+      // const permissionNames = rolePerms.permissions.map((p) => p.name);
+
+      // // Kiểm tra quyền dựa trên PermissionHierarchy
+      // const feKeys = new Set();
+      // Object.keys(PERMISSION_HIERARCHY).forEach((key) => {
+      //   const permApis = PERMISSION_HIERARCHY[key];
+      //   const hasAllApis = permApis.every((api) =>
+      //     permissionNames.includes(api)
+      //   );
+      //   if (hasAllApis) {
+      //     if (key.startsWith("view") || key === "acceptPurchaseRequest") {
+      //       const manageKey = key.replace("view", "manage");
+      //       const manageApis = PERMISSION_HIERARCHY[manageKey] || [];
+      //       const hasExclusiveManageApis = manageApis.some(
+      //         (api) => !permApis.includes(api) && permissionNames.includes(api)
+      //       );
+      //       if (!hasExclusiveManageApis) {
+      //         feKeys.add(key);
+      //       } else {
+      //         feKeys.add(manageKey);
+      //       }
+      //     } else if (key.startsWith("manage")) {
+      //       feKeys.add(key);
+      //     }
+      //   }
+      // });
+
       const permissionNames = rolePerms.permissions.map((p) => p.name);
 
-      // Kiểm tra quyền dựa trên PermissionHierarchy
       const feKeys = new Set();
       Object.keys(PERMISSION_HIERARCHY).forEach((key) => {
         const permApis = PERMISSION_HIERARCHY[key];
         const hasAllApis = permApis.every((api) =>
           permissionNames.includes(api)
         );
+
         if (hasAllApis) {
           if (key.startsWith("view") || key === "acceptPurchaseRequest") {
             const manageKey = key.replace("view", "manage");
             const manageApis = PERMISSION_HIERARCHY[manageKey] || [];
-            const hasExclusiveManageApis = manageApis.some(
-              (api) => !permApis.includes(api) && permissionNames.includes(api)
+
+            // Kiểm tra có quyền cơ bản (create/add)
+            const hasBasicCreateOrAdd = manageApis.some(api =>
+              ['create', 'add'].some(kw => api.toLowerCase().includes(kw)) &&
+              permissionNames.includes(api)
             );
-            if (!hasExclusiveManageApis) {
-              feKeys.add(key);
+
+            if (hasBasicCreateOrAdd) {
+              feKeys.add(manageKey);  // Chỉ add manage nếu có quyền create/add
             } else {
-              feKeys.add(manageKey);
+              feKeys.add(key);  // fallback to view
             }
           } else if (key.startsWith("manage")) {
-            feKeys.add(key);
+            const manageApis = PERMISSION_HIERARCHY[key] || [];
+            const hasBasicCreateOrAdd = manageApis.some(api =>
+              ['create', 'add'].some(kw => api.toLowerCase().includes(kw)) &&
+              permissionNames.includes(api)
+            );
+
+            if (hasBasicCreateOrAdd) {
+              feKeys.add(key);
+            } else {
+              // Nếu không có quyền create/add, downgrade thành view
+              const viewKey = key.replace("manage", "view");
+              feKeys.add(viewKey);
+            }
           }
         }
       });
@@ -444,6 +530,7 @@ const useRole = () => {
     error,
     errorRole,
     errorEditRole,
+    PERMISSION_HIERARCHY,
     setErrorEditRole,
     setErrorRole,
     handleSelectRole,

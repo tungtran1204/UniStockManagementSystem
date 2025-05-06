@@ -43,8 +43,11 @@ const useWarehouse = () => {
       await updateWarehouseStatus(warehouseId, newStatus);
       await fetchPaginatedWarehouses(currentPage, pageSize);
     } catch (error) {
-      console.log(error?.response?.data?.message || "Lỗi khi cập nhật trạng thái kho");
       console.error("Error updating warehouse status:", error);
+      return {
+        success: false,
+        message: error?.response?.data?.message || "Lỗi khi cập nhật trạng thái kho",
+    };
     }    
 };
 
