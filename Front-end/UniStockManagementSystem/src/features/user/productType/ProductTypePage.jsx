@@ -16,6 +16,7 @@ import PageHeader from '@/components/PageHeader';
 import Table from "@/components/Table";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import SuccessAlert from "@/components/SuccessAlert";
+import CircularProgress from '@mui/material/CircularProgress';
 
 const ProductTypePage = () => {
     const {
@@ -63,7 +64,7 @@ const ProductTypePage = () => {
             setSuccessAlertOpen(true);
             fetchProductTypes(currentPage, pageSize);
         } catch (error) {
-            alert(error.message || "Lỗi khi tạo dòng sản phẩm");
+            console.log(error.message || "Lỗi khi tạo dòng sản phẩm");
         }
     };
 
@@ -79,7 +80,7 @@ const ProductTypePage = () => {
             setSuccessAlertOpen(true);
             fetchProductTypes(currentPage, pageSize);
         } catch (error) {
-            alert(error.message || "Lỗi khi cập nhật dòng sản phẩm");
+            console.log(error.message || "Lỗi khi cập nhật dòng sản phẩm");
         }
     };
 
@@ -149,6 +150,27 @@ const ProductTypePage = () => {
         description: type.description,
         status: type.status,
     }));
+
+    const [dotCount, setDotCount] = useState(0);
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setDotCount((prev) => (prev < 3 ? prev + 1 : 0));
+        }, 500);
+        return () => clearInterval(interval);
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center" style={{ height: '60vh' }}>
+                <div className="flex flex-col items-center">
+                    <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#0ab067' }} />
+                    <Typography variant="body1">
+                        Đang tải{'.'.repeat(dotCount)}
+                    </Typography>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="mb-8 flex flex-col gap-12">

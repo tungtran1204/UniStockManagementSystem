@@ -20,8 +20,8 @@ const RejectPurchaseRequestModal = ({ show, handleClose, onConfirm }) => {
             return;
         }
 
-        const confirmed = window.confirm("Bạn có chắc chắn muốn từ chối yêu cầu mua vật tư này?");
-        if (!confirmed) return;
+        // const confirmed = window.confirm("Bạn có chắc chắn muốn từ chối yêu cầu mua vật tư này?");
+        // if (!confirmed) return;
 
         onConfirm(reason);
         handleClose();

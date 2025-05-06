@@ -9,7 +9,7 @@ import robotoFont from '@/assets/fonts/Roboto-Regular-normal.js';
 import robotoBoldFont from '@/assets/fonts/Roboto-Regular-bold.js';
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
+import CircularProgress from '@mui/material/CircularProgress';
 import { saveAs } from "file-saver";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -57,7 +57,27 @@ const ViewIssueNote = () => {
     fetchDetail();
   }, [id, fetchIssueNoteDetail]);
 
-  if (loading) return <Typography>Đang tải dữ liệu...</Typography>;
+  const [dotCount, setDotCount] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDotCount((prev) => (prev < 3 ? prev + 1 : 0));
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center" style={{ height: '60vh' }}>
+        <div className="flex flex-col items-center">
+          <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#0ab067' }} />
+          <Typography variant="body1">
+            Đang tải{'.'.repeat(dotCount)}
+          </Typography>
+        </div>
+      </div>
+    );
+  }
+
   if (!data) return <Typography className="text-red-500">Không tìm thấy phiếu xuất</Typography>;
 
   const totalItems = data.details ? data.details.length : 0;
@@ -215,11 +235,11 @@ const ViewIssueNote = () => {
       ),
     },
   ];
-  
+
   const expectedMaterials = data.receiveOutsource?.materials?.map((item, idx) => ({
     ...item,
     index: idx,
-  }));  
+  }));
 
   const columnsConfig = getColumnsConfig(data.category);
 
@@ -489,7 +509,7 @@ const ViewIssueNote = () => {
                 )}
               </div>
             )}
-            
+
             {data.category === "Sản xuất" && data.receiver && (
               <div>
                 <Typography variant="medium" className="mb-1 text-black">

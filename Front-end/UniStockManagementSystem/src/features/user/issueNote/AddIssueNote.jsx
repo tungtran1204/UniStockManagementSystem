@@ -367,7 +367,7 @@ const AddIssueNote = () => {
             contactName: o.contactName,
           };
         })
-        .filter((c) => c.code && c.code.toUpperCase().includes("GC"));
+        .filter((c) => c.code && c.code.toUpperCase().includes("ĐTGC"));
       setOutsources(mapped);
     } catch (err) {
       console.error("Lỗi fetchOutsources:", err);
@@ -680,7 +680,7 @@ const AddIssueNote = () => {
           const isFirstRow = whIndex === 0;
           const rowSpan = inv.length;
           return (
-            <tr key={`${nvl.id}-wh-${whIndex}`} className="border-b hover:bg-gray-50">
+            <tr key={`${nvl.id}-wh-${whIndex}`} className="border-b hover:bg-[#0000000A]">
               {isFirstRow && (
                 <>
                   <td rowSpan={rowSpan} className="px-2 py-2 text-sm text-[#000000DE] text-center w-10 border-r border-[rgba(224,224,224,1)]">
@@ -1462,7 +1462,7 @@ const AddIssueNote = () => {
         return items.some((item) => item.exportQuantity > item.quantity);
       });
       if (isExportExceed) {
-        alert("Số lượng xuất không được vượt quá số lượng tồn kho!");
+        console.log("Số lượng xuất không được vượt quá số lượng tồn kho!");
         return;
       }
 
