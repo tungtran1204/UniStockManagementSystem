@@ -81,7 +81,7 @@ const MaterialPage = () => {
 
     const handleSearch = () => {
         // setCurrentPage(0);
-        fetchPaginatedMaterials(0, pageSize, searchTerm);
+        fetchPaginatedMaterials(0, pageSize, buildFilters(), false);
     };
 
     const [newMaterial, setNewMaterial] = useState({
@@ -163,6 +163,17 @@ const MaterialPage = () => {
     const handlePageChangeWrapper = (selectedItem) => {
         handlePageChange(selectedItem.selected);
     };
+
+    const buildFilters = () => ({
+        search: searchTerm || undefined,
+        statuses: selectedStatuses.length > 0 ? selectedStatuses.map(s => s.value) : undefined,
+        typeIds: selectedMaterialTypes.length > 0 ? selectedMaterialTypes.map(t => t.materialTypeId) : undefined,
+      });
+      useEffect(() => {
+        const isFilterChange = searchTerm || selectedStatuses.length > 0 || selectedMaterialTypes.length > 0;
+        fetchPaginatedMaterials(currentPage, pageSize, buildFilters(), !isFilterChange); 
+        // showLoading = false khi filter, true khi đổi page
+    }, [searchTerm, selectedStatuses, selectedMaterialTypes, currentPage, pageSize]);           
 
     const columnsConfig = [
         { field: 'materialCode', headerName: 'Mã VT', flex: 1, minWidth: 50, editable: false, filterable: false },
@@ -269,19 +280,19 @@ const MaterialPage = () => {
         isUsing: material.isUsing,
     }));
 
-    const filteredMaterials = Array.isArray(materials)
-        ? materials.filter(material => {
-            const matchesSearch =
-                material.materialCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                material.materialName?.toLowerCase().includes(searchTerm.toLowerCase());
+    // const filteredMaterials = Array.isArray(materials)
+    //     ? materials.filter(material => {
+    //         const matchesSearch =
+    //             material.materialCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    //             material.materialName?.toLowerCase().includes(searchTerm.toLowerCase());
 
-            const matchesMaterialType =
-                selectedMaterialTypes.length === 0 ||
-                selectedMaterialTypes.some((type) => type.materialTypeId === material.typeId);
+    //         const matchesMaterialType =
+    //             selectedMaterialTypes.length === 0 ||
+    //             selectedMaterialTypes.some((type) => type.materialTypeId === material.typeId);
 
-            return matchesSearch && matchesMaterialType;
-        })
-        : [];
+    //         return matchesSearch && matchesMaterialType;
+    //     })
+    //     : [];
 
     const [dotCount, setDotCount] = useState(0);
     useEffect(() => {
