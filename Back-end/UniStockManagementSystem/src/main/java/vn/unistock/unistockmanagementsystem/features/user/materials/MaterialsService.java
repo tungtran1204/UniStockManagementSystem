@@ -36,10 +36,10 @@ public class MaterialsService {
     private final NotificationService notificationService;
 
     // 🟢 Lấy tất cả nguyên liệu có phân trang
-    public Page<MaterialsDTO> getAllMaterials(int page, int size) {
+    public Page<MaterialsDTO> getAllMaterials(int page, int size, String search, List<Boolean> statuses, List<Long> typeIds) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Material> materialPage = materialsRepository.findAll(pageable);
-        return materialPage.map(materialsMapper::toDTO);
+        Page<Material> pageEntity = materialsRepository.searchMaterials(search, statuses, typeIds, pageable);
+        return pageEntity.map(materialsMapper::toDTO);
     }
 
     // 🟢 Tạo nguyên vật liệu mới
