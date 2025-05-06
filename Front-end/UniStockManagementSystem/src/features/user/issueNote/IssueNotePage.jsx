@@ -53,13 +53,32 @@ const IssueNotePage = () => {
     }
   }, [location.state]);
 
+  // useEffect(() => {
+  //   fetchPaginatedIssueNotes(currentPage, pageSize);
+  // }, [currentPage, pageSize, searchTerm, selectedCategories, startDate, endDate]);
   useEffect(() => {
-    fetchPaginatedIssueNotes(currentPage, pageSize);
-  }, [currentPage, pageSize, searchTerm, selectedCategories, startDate, endDate]);
+    fetchPaginatedIssueNotes(
+      currentPage,
+      pageSize,
+      searchTerm,
+      true  // ✅ Có loading khi đổi page
+    );
+  }, [currentPage, pageSize]);
 
-  const fetchPaginatedIssueNotes = async (page, size, search = "") => {
+  useEffect(() => {
+    setCurrentPage(0);  // Reset về trang đầu khi filter đổi
+    fetchPaginatedIssueNotes(
+      0,
+      pageSize,
+      searchTerm,
+      false  // 🚫 Không loading khi filter
+    );
+  }, [searchTerm, selectedCategories, startDate, endDate]);
+
+
+  const fetchPaginatedIssueNotes = async (page, size, search = "", showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
-      setLoading(true);
       // API trả về dạng: { totalPages, content: [ { ginId, ginCode, description, category, issueDate, soCode, createdByUsername, details, ... } ] }
       const data = await getIssueNotes(page, size, searchTerm, selectedCategories, startDate, endDate);
       setIssueNotes(data.content || []);
@@ -95,8 +114,8 @@ const IssueNotePage = () => {
   };
 
   const handleSearch = () => {
+    fetchPaginatedIssueNotes(0, pageSize, searchTerm, false);  // Không loading khi search
     setCurrentPage(0);
-    fetchPaginatedIssueNotes(0, pageSize, searchTerm);
   };
 
   // Lọc dữ liệu theo từ khóa dựa trên ginCode hoặc description
@@ -346,7 +365,8 @@ const IssueNotePage = () => {
                         onClick={() => {
                           setSelectedCategories([]);
                           setCurrentPage(0);
-                          fetchPaginatedIssueNotes(0, pageSize, searchTerm, [], startDate, endDate);
+                          fetchPaginatedIssueNotes(0, pageSize, searchTerm, [], startDate, endDate, false);
+                          setCurrentPage(0);  
                         }}
                         sx={{
                           color: "#000000DE",
