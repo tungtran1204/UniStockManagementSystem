@@ -7,10 +7,25 @@ const useProductType = () => {
     const [totalElements, setTotalElements] = useState(0);
     const [loading, setLoading] = useState(false);
 
-    const fetchProductTypes = useCallback(async (page = 0, size = 10) => {
+    const [filterState, setFilterState] = useState({
+        search: undefined,
+        statuses: undefined,
+    }); 
+    
+    const applyFilters = (filters, page = 0, size = 10) => {
+        setFilterState(filters);
+        fetchProductTypes(page, size, filters);
+    };
+    
+    const fetchProductTypes = useCallback(async (page = 0, size = 10, filters) => {
         try {
             setLoading(true);
-            const data = await fetchProductTypesService(page, size);
+            const data = await fetchProductTypesService({
+                page,
+                size,
+                search: filters.search,
+                statuses: filters.statuses,
+            });    
 
             if (Array.isArray(data)) {
                 setProductTypes(data);
@@ -36,19 +51,19 @@ const useProductType = () => {
         }
     }, []);
 
-    const toggleStatus = async (typeId, currentStatus) => {
+    const toggleStatus = async (typeId, currentStatus, page = 0, size = 10) => {
         try {
             setLoading(true);
             const newStatus = !currentStatus;
             await toggleStatusService(typeId, newStatus);
-            await fetchProductTypes(); // Làm mới danh sách sau khi thay đổi trạng thái
+            await fetchProductTypes(page, size, filterState);
         } catch (error) {
             console.error("❌ Lỗi khi thay đổi trạng thái:", error.message);
         } finally {
             setLoading(false);
         }
     };
-
+    
     const createProductType = async (productTypeData) => {
         try {
             setLoading(true);
@@ -84,6 +99,7 @@ const useProductType = () => {
         updateProductType,
         totalElements,
         loading,
+        applyFilters,
     };
 };
 

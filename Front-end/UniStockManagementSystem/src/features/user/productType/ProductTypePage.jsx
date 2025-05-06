@@ -16,6 +16,8 @@ import PageHeader from '@/components/PageHeader';
 import Table from "@/components/Table";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import SuccessAlert from "@/components/SuccessAlert";
+import StatusFilterButton from "@/components/StatusFilterButton";
+import TableSearch from '@/components/TableSearch';
 
 const ProductTypePage = () => {
     const {
@@ -26,7 +28,8 @@ const ProductTypePage = () => {
         updateProductType,
         totalPages,
         totalElements,
-        loading
+        loading,
+        applyFilters  // Added missing applyFilters from the hook
     } = useProductType();
 
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -38,13 +41,9 @@ const ProductTypePage = () => {
     const [editProductType, setEditProductType] = useState(null);
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
-
-    useEffect(() => {
-        fetchProductTypes(currentPage, pageSize);
-    }, [currentPage, pageSize, fetchProductTypes]);
-
-    useEffect(() => {
-    }, [showCreateModal]);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedStatuses, setSelectedStatuses] = useState([]);
+    const [statusAnchorEl, setStatusAnchorEl] = useState(null);
 
     const handlePageChange = (selectedItem) => {
         setCurrentPage(selectedItem.selected);
@@ -82,6 +81,42 @@ const ProductTypePage = () => {
             alert(error.message || "Lỗi khi cập nhật dòng sản phẩm");
         }
     };
+
+    const allStatuses = [
+        {
+          value: true,
+          label: "Đang hoạt động",
+          className: "bg-green-50 text-green-800",
+        },
+        {
+          value: false,
+          label: "Ngừng hoạt động",
+          className: "bg-red-50 text-red-800",
+        },
+      ];
+
+    const buildFilters = () => ({
+        search: searchTerm || undefined,
+        statuses: selectedStatuses.length
+            ? selectedStatuses.map(s => s.value)
+            : undefined,
+    });
+
+    const handleSearch = () => {
+        applyFilters(buildFilters(), currentPage, pageSize);
+    };
+
+    // useEffect(() => {
+    //     applyFilters(buildFilters(), currentPage, pageSize);
+    // }, [currentPage, pageSize, applyFilters]);
+    
+    useEffect(() => {
+        const delayDebounce = setTimeout(() => {
+            applyFilters(buildFilters(), 0, pageSize); 
+            setCurrentPage(0);
+        }, 500);
+        return () => clearTimeout(delayDebounce);
+    }, [searchTerm, selectedStatuses, applyFilters]);    
 
     const columnsConfig = [
         { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50 },
@@ -181,6 +216,26 @@ const ProductTypePage = () => {
                                 bản ghi mỗi trang
                             </Typography>
                         </div>
+                        <div className="mb-3 flex flex-wrap items-center gap-4">
+                            {/* Filter by status */}
+                            <StatusFilterButton
+                                anchorEl={statusAnchorEl}
+                                setAnchorEl={setStatusAnchorEl}
+                                selectedStatuses={selectedStatuses}
+                                setSelectedStatuses={setSelectedStatuses}
+                                allStatuses={allStatuses}
+                                buttonLabel="Trạng thái"
+                            />
+                            {/* Search input */}
+                            <div className="w-[250px]">
+                                <TableSearch
+                                    value={searchTerm}
+                                    onChange={setSearchTerm}
+                                    onSearch={handleSearch}
+                                    placeholder="Tìm kiếm sản phẩm"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <Table
@@ -235,12 +290,12 @@ const ProductTypePage = () => {
                 onClose={() => setConfirmDialogOpen(false)}
                 onConfirm={() => {
                     if (pendingToggleRow) {
-                        toggleStatus(pendingToggleRow.id, pendingToggleRow.status);
+                        toggleStatus(pendingToggleRow.id, pendingToggleRow.status, currentPage, pageSize);
                         setSuccessMessage("Cập nhật trạng thái thành công!");
                         setSuccessAlertOpen(true);
                     }
                     setConfirmDialogOpen(false);
-                }}
+                }}                
                 message={`Bạn có chắc chắn muốn ${pendingToggleRow?.status ? "ngưng hoạt động" : "kích hoạt lại"} dòng sản phẩm này không?`}
                 confirmText="Có"
                 cancelText="Không"
