@@ -29,7 +29,7 @@ const ViewReceiptNote = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { getReceiptNote } = useReceiptNote();
-  const { getUserById } = useUser();
+  // const { getUserById } = useUser();
   const [data, setData] = useState(null);
   const [creator, setCreator] = useState("Đang tải...");
   const [loading, setLoading] = useState(true);
@@ -127,9 +127,9 @@ const ViewReceiptNote = () => {
         setData(receipt);
         console.log("Phiếu nhập: ", receipt);
         if (receipt.createdBy) {
-          const user = await getUserById(receipt.createdBy);
-          console.log("Người tạo phiếu nhập: ", user);
-          setCreator(user.username || user.email || "Không xác định");
+          // const user = await getUserById(receipt.createdBy);
+          // console.log("Người tạo phiếu nhập: ", user);
+          setCreator(receipt.createdByUsername || user.email || "Không xác định");
           setPartnerName(receipt.partnerName || "");
           setContactName(receipt.contactName || "");
           setAddress(receipt.address || "");

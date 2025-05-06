@@ -489,7 +489,7 @@ const ViewIssueNote = () => {
                     to={`/user/sale-orders/${data.soId}`}
                     className="text-blue-600 hover:underline text-sm block mt-1"
                   >
-                    {`${data.soCode}`}
+                    Xem chứng từ
                   </Link>
                 ) : (
                   <TextField
