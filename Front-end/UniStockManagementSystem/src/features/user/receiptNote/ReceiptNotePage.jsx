@@ -86,8 +86,29 @@ const ReceiptNotePage = () => {
 
   // Fetch data on component mount and when page or size changes
   useEffect(() => {
-    fetchPaginatedReceiptNotes(currentPage, pageSize, searchTerm, selectedCategories, startDate, endDate);
-  }, [currentPage, pageSize, searchTerm, selectedCategories, startDate, endDate]);
+    fetchPaginatedReceiptNotes(
+      currentPage,
+      pageSize,
+      searchTerm,
+      selectedCategories,
+      startDate,
+      endDate,
+      true  // luôn bật loading khi đổi page
+    );
+  }, [currentPage, pageSize]);
+
+  useEffect(() => {
+    setCurrentPage(0);  // reset về trang đầu khi filter thay đổi
+    fetchPaginatedReceiptNotes(
+      0,
+      pageSize,
+      searchTerm,
+      selectedCategories,
+      startDate,
+      endDate,
+      false  // không bật loading khi filter
+    );
+  }, [searchTerm, selectedCategories, startDate, endDate]);
 
   // Fetch thông tin user và đơn hàng
 
@@ -110,7 +131,7 @@ const ReceiptNotePage = () => {
   // Handle search
   const handleSearch = () => {
     setCurrentPage(0);
-    fetchPaginatedReceiptNotes(0, pageSize, searchTerm, selectedCategories, startDate, endDate);
+    fetchPaginatedReceiptNotes(0, pageSize, searchTerm, selectedCategories, startDate, endDate, false);
   };
 
   const columnsConfig = [
@@ -422,7 +443,7 @@ const ReceiptNotePage = () => {
                         onClick={() => {
                           setSelectedCategories([]);
                           setCurrentPage(0);
-                          fetchPaginatedReceiptNotes(0, pageSize, searchTerm, [], startDate, endDate);
+                          fetchPaginatedReceiptNotes(0, pageSize, searchTerm, [], startDate, endDate, false);
                         }}
                         sx={{
                           color: "#000000DE",

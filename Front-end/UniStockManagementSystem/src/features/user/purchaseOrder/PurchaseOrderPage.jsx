@@ -115,24 +115,16 @@ const PurchaseOrderPage = () => {
   const [pageSize, setPageSize] = useState(10);
   const [selectedOrders, setSelectedOrders] = useState([]);
 
-  // Fetch orders when component mounts or pagination changes
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      const selected = selectedStatuses.length > 0 ? selectedStatuses[0].value : "";
-      fetchPaginatedOrders(currentPage, pageSize, searchTerm, selected, startDate, endDate);
-    }, 500);
+    const selected = selectedStatuses.length > 0 ? selectedStatuses[0].value : "";
+    fetchPaginatedOrders(currentPage, pageSize, searchTerm, selected, startDate, endDate, true);  // showLoading = true
+  }, [currentPage, pageSize]);
 
-    console.log("Calling fetchPaginatedOrders with:", {
-      page: currentPage,
-      size: pageSize,
-      search: searchTerm,
-      status: selectedStatuses.length > 0 ? selectedStatuses[0]?.value : "",
-      startDate,
-      endDate,
-    });
-
-    return () => clearTimeout(timeoutId);
-  }, [currentPage, pageSize, searchTerm, selectedStatuses, startDate, endDate])
+  useEffect(() => {
+    setCurrentPage(0); // Reset về page 0
+    const selected = selectedStatuses.length > 0 ? selectedStatuses[0].value : "";
+    fetchPaginatedOrders(0, pageSize, searchTerm, selected, startDate, endDate, false);  // showLoading = false
+  }, [searchTerm, selectedStatuses, startDate, endDate]);
 
   // Sorting handler
   const handleSort = (column) => {
@@ -259,10 +251,10 @@ const PurchaseOrderPage = () => {
   const navigator = useNavigate();
 
   const handleSearch = () => {
-    const selected = selectedStatuses.length > 0 ? selectedStatuses[0] : "";
-    fetchPaginatedOrders(0, pageSize, searchTerm, selected);
+    const selected = selectedStatuses.length > 0 ? selectedStatuses[0].value : "";
+    fetchPaginatedOrders(0, pageSize, searchTerm, selected, startDate, endDate, false);  
     setCurrentPage(0);
-  };
+  };  
 
   const handleCancelOrder = async (order) => {
     if (order.purchaseRequestId) {
@@ -380,18 +372,6 @@ const PurchaseOrderPage = () => {
               <VisibilityOutlined />
             </IconButton>
           </Tooltip>
-
-          {params.row.status !== "COMPLETED" && (
-            <Tooltip content="Hủy đơn">
-              <IconButton
-                size="small"
-                color="error"
-                onClick={() => handleCancelOrder(params.row)}
-              >
-                <CancelIcon />
-              </IconButton>
-            </Tooltip>
-          )}
 
           {/* Nút Nhập kho */}
           {/* {params.row.status !== "COMPLETED" && (
