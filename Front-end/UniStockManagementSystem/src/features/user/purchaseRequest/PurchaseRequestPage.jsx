@@ -46,7 +46,7 @@ const PurchaseRequestPage = () => {
     const [alertMessage, setAlertMessage] = useState("");
     const [currentUser, setCurrentUser] = useState(null);
     const location = useLocation();
-
+    const [firstLoad, setFirstLoad] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
@@ -94,7 +94,9 @@ const PurchaseRequestPage = () => {
             selectedStatuses.map(status => status.value),
             startDate,
             endDate
-        );
+        ).finally(() => {
+            setFirstLoad(false); // sau lần fetch đầu tiên
+        });
     }, [currentPage, pageSize, searchTerm, selectedStatuses, startDate, endDate]);
 
     useEffect(() => {
@@ -138,7 +140,7 @@ const PurchaseRequestPage = () => {
         CONFIRMED: "bg-green-50 text-green-800",
         CANCELLED: "bg-red-50 text-red-800",
         PURCHASED: "bg-indigo-50 text-indigo-800",
-        FINISHED: "bg-green-50 text-green-800",
+        REJECTED: "bg-pink-50 text-pink-800",
     };
 
     const getStatusClass = (statusCode) => {
