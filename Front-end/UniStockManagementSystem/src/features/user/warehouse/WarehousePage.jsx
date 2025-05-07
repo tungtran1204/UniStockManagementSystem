@@ -146,6 +146,7 @@ const WarehousePage = () => {
           <Switch
             color="green"
             checked={params.value}
+            disabled={!currentUser?.permissions?.includes("updateWarehouseStatus")}
             onChange={() => {
               setPendingToggleRow(params.row);
               setConfirmDialogOpen(true);
@@ -153,14 +154,14 @@ const WarehousePage = () => {
           />
           <div
             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                      ${params.value ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
-              }`}
+              ${params.value ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}
           >
             {params.value ? "Đang hoạt động" : "Ngừng hoạt động"}
           </div>
         </div>
       ),
-    },
+    } ,
+    
     {
       field: 'actions',
       headerName: 'Hành động',
@@ -170,18 +171,21 @@ const WarehousePage = () => {
       filterable: false,
       renderCell: (params) => (
         <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-          <Tooltip content="Chỉnh sửa">
-            <IconButton
-              size="small"
-              onClick={() => handleEditWarehouse(params.row)}
-              color="primary"
-            >
-              <ModeEditOutlineOutlinedIcon />
-            </IconButton>
-          </Tooltip>
+          {currentUser?.permissions?.includes("updateWarehouse") && (
+            <Tooltip content="Chỉnh sửa">
+              <IconButton
+                size="small"
+                onClick={() => handleEditWarehouse(params.row)}
+                color="primary"
+              >
+                <ModeEditOutlineOutlinedIcon />
+              </IconButton>
+            </Tooltip>
+          )}
         </div>
       ),
     },
+    
   ];
 
   // Filter warehouses based on search term
@@ -228,6 +232,8 @@ const WarehousePage = () => {
             title="Danh sách kho"
             addButtonLabel="Thêm kho"
             onAdd={() => setOpenAddModal(true)}
+            showAdd={currentUser && currentUser.permissions.includes("addWarehouse")}
+
             onImport={() => {/* Xử lý import nếu có */ }}
             onExport={() => {/* Xử lý export file ở đây nếu có */ }}
             showImport={false} // Ẩn nút import nếu không dùng

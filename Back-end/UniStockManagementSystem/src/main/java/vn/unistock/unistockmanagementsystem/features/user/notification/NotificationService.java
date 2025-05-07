@@ -89,10 +89,20 @@ public class NotificationService {
         Material material = materialRepository.findById(materialId)
                 .orElseThrow(() -> new IllegalArgumentException("Material not found"));
 
-        if (material.getLowStockThreshold() != null && availableQuantity >= material.getLowStockThreshold()) {
-            List<Notification> lowStockNotifications = notificationRepository.findByMaterialMaterialIdAndTypeAndIsReadFalse(
-                    materialId, Notification.NotificationType.LOW_STOCK
-            );
+        List<Notification> lowStockNotifications = notificationRepository.findByMaterialMaterialIdAndTypeAndIsReadFalse(
+                materialId, Notification.NotificationType.LOW_STOCK
+        );
+
+        if (material.getLowStockThreshold() == null || material.getLowStockThreshold() <= 0) {
+            // Nếu ngưỡng <= 0, coi như tắt cảnh báo ➔ đánh dấu hết là đã đọc
+            for (Notification notif : lowStockNotifications) {
+                notif.setIsRead(true);
+                notificationRepository.save(notif);
+            }
+            return;  // không kiểm tra thêm
+        }
+
+        if (availableQuantity >= material.getLowStockThreshold()) {
             for (Notification notif : lowStockNotifications) {
                 notif.setIsRead(true);
                 notificationRepository.save(notif);

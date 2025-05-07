@@ -157,22 +157,24 @@ const PartnerPage = () => {
             editable: false,
             filterable: false,
             renderCell: (params) => (
+              currentUser?.permissions?.includes("updatePartner") ? (
                 <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                    <Tooltip content="Chỉnh sửa">
-                        <IconButton
-                            size="small"
-                            onClick={() => {
-                                setSelectedPartner(params.row); // ✅ Gán đối tác được chọn
-                                setShowEditPopup(true);
-                            }}
-                            color="primary"
-                        >
-                            <ModeEditOutlineOutlinedIcon />
-                        </IconButton>
-                    </Tooltip>
+                  <Tooltip content="Chỉnh sửa">
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        setSelectedPartner(params.row);
+                        setShowEditPopup(true);
+                      }}
+                      color="primary"
+                    >
+                      <ModeEditOutlineOutlinedIcon />
+                    </IconButton>
+                  </Tooltip>
                 </div>
+              ) : null
             ),
-        }
+          }
     ];
 
     const data = partners.map((partner, index) => {
@@ -221,13 +223,15 @@ const PartnerPage = () => {
         <div className="mb-8 flex flex-col gap-12">
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
                 <CardBody className="pb-2 bg-white rounded-xl">
-                    <PageHeader
-                        title="Danh sách đối tác"
-                        onAdd={() => setShowCreatePopup(true)}
-                        showImport={false}
-                        showExport={false}
-                        addButtonLabel="Thêm đối tác"
-                    />
+                <PageHeader
+  title="Danh sách đối tác"
+  onAdd={() => setShowCreatePopup(true)}
+  showImport={false}
+  showExport={false}
+  addButtonLabel="Thêm đối tác"
+  showAdd={currentUser && currentUser.permissions.includes("createPartner")}
+/>
+
                     {showCreatePopup && (
                         <CreatePartnerModal
                             onClose={() => setShowCreatePopup(false)}

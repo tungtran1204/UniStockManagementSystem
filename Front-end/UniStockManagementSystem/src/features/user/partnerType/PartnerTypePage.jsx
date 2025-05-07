@@ -171,13 +171,13 @@ const PartnerTypePage = () => {
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
 
                 <CardBody className="pb-4 bg-white rounded-xl">
-                    <PageHeader
+                    {/* <PageHeader
                         title="Danh sách nhóm đối tác"
                         addButtonLabel="Thêm nhóm đối tác"
                         onAdd={() => setShowCreatePopup(true)}
                         showImport={false}
                         showExport={false}
-                    />
+                    /> */}
                     <div className="px-4 py-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Typography variant="small" color="blue-gray" className="font-normal whitespace-nowrap">

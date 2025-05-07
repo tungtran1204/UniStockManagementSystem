@@ -30,6 +30,8 @@ const authHeader = () => {
 const DetailProductPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const currentUser = JSON.parse(localStorage.getItem("user"));
+
     const [product, setProduct] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [units, setUnits] = useState([]);
@@ -938,22 +940,18 @@ const DetailProductPage = () => {
                         >
                             <FaArrowLeft className="h-3 w-3" /> Quay lại
                         </MuiButton>
-                        {!isEditing ? (
-                            <MuiButton
-                                variant="contained"
-                                size="medium"
-                                onClick={handleEdit}
-                                sx={{
-                                    boxShadow: 'none',
-                                    '&:hover': { boxShadow: 'none' },
-                                }}
-                            >
-                                <div className='flex items-center gap-2'>
-                                    <FaEdit className="h-4 w-4" />
-                                    <span>Chỉnh sửa</span>
-                                </div>
-                            </MuiButton>
-                        ) : (
+                        {!isEditing && currentUser?.permissions?.includes("updateProduct") ? (
+  <MuiButton
+    variant="contained"
+    size="medium"
+    onClick={handleEdit}
+  >
+    <div className='flex items-center gap-2'>
+      <FaEdit className="h-4 w-4" />
+      <span>Chỉnh sửa</span>
+    </div>
+  </MuiButton>
+) : isEditing ? (
                             <div className="flex items-center gap-2">
                                 <MuiButton
                                     size="medium"
@@ -975,7 +973,7 @@ const DetailProductPage = () => {
                                     Lưu
                                 </Button>
                             </div>
-                        )}
+                        ) : null}
                     </div>
                 </CardBody>
             </Card>

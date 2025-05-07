@@ -90,6 +90,8 @@ const getDisplayLabel = (status, purchaseRequestStatus) => {
 const EditSaleOrderPage = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
+    const [currentUser, setCurrentUser] = useState(null);
+  
   const { updateExistingOrder, updateSaleOrder } = useSaleOrder();
 
   const [orderCode, setOrderCode] = useState("");
@@ -279,6 +281,17 @@ const EditSaleOrderPage = () => {
   const handleSetMode = (newMode) => {
     setMode(newMode);
   };
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        setCurrentUser(JSON.parse(storedUser));
+      } catch (err) {
+        console.error("Lỗi parse JSON từ localStorage:", err);
+      }
+    }
+  }, []);
 
   // Lọc các sản phẩm chưa được chọn
   const getAvailableProducts = (currentRowId) => {
@@ -1651,7 +1664,11 @@ const EditSaleOrderPage = () => {
               </MuiButton>
 
               <div className="flex items-center gap-2">
-                {mode === MODE_VIEW && originalData?.status !== "CANCELLED" && originalData?.status !== "COMPLETED" && activeTab === "info" && (
+              {mode === MODE_VIEW && 
+ originalData?.status !== "CANCELLED" && 
+ originalData?.status !== "COMPLETED" && 
+ activeTab === "info" && 
+ currentUser?.permissions?.includes("cancelSaleOrder") && (
                   <MuiButton
                     size="medium"
                     color="error"

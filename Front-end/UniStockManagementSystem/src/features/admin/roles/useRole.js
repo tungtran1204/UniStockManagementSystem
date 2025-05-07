@@ -31,9 +31,9 @@ const PERMISSION_HIERARCHY = {
     "checkMaterialCode",
   ],
   viewProductType: ["getAllProductTypes"],
-  manageProductType: ["getAllProductTypes", "createProductType", "updateProductType", "checkTypeName"],
+  manageProductType: ["getAllProductTypes", "createProductType", "updateProductType", "checkTypeName","toggleStatusProductType"],
   viewPartner: ["getAllPartners"],
-  managePartner: [
+  managePartner: [    
     "getAllPartners",
     "getPartnerCode",
     "getPartnersByType",
@@ -90,7 +90,7 @@ const PERMISSION_HIERARCHY = {
     "checkName",
   ],
   viewSaleOrder: ["getFilteredOrders", "getOrderById", "getMaterialsByProduct", "getInventoryDetailsByWarehouse",
-     "getInventoryDetailsByWarehouseM", "getActiveProducts", "getPartnersByType"],
+     "getInventoryDetailsByWarehouseM", "getActiveProducts", "getPartnersByType", "cancelSaleOrder"    ],
   manageSaleOrder: [
     "getFilteredOrders",
     "getOrderById",
@@ -103,7 +103,6 @@ const PERMISSION_HIERARCHY = {
     "getNextOrderCode",
     "createSaleOrder",
     "updateSaleOrder",
-    "cancelSaleOrder",
     "setPreparingMaterial",
     "getAllPartners",
     "getInventoryDetailsByWarehouse",

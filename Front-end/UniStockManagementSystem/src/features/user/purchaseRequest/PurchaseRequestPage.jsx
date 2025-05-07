@@ -256,19 +256,19 @@ const PurchaseRequestPage = () => {
                 </div>
             )
         },
-        {
-            field: 'rejectionReason',
-            headerName: 'Lý do từ chối',
-            flex: 2,
-            minWidth: 220,
-            editable: false,
-            filterable: false,
-            renderCell: (params) => {
-                if (params.row.status !== 'CANCELLED') return '';
-                if (!params.value) return 'Không có';
-                return params.value.startsWith('Khác') ? 'Khác' : params.value;
-            },
-        },
+        // {
+        //     field: 'rejectionReason',
+        //     headerName: 'Lý do từ chối',
+        //     flex: 2,
+        //     minWidth: 220,
+        //     editable: false,
+        //     filterable: false,
+        //     renderCell: (params) => {
+        //         if (params.row.status !== 'REJECTED') return '';
+        //         if (!params.value) return 'Không có';
+        //         return params.value.startsWith('Khác') ? 'Khác' : params.value;
+        //     },
+        // },
         {
             field: 'actions',
             headerName: 'Hành động',
@@ -325,18 +325,18 @@ const PurchaseRequestPage = () => {
         return () => clearInterval(interval);
     }, []);
 
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center" style={{ height: '60vh' }}>
-                <div className="flex flex-col items-center">
-                    <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#0ab067' }} />
-                    <Typography variant="body1">
-                        Đang tải{'.'.repeat(dotCount)}
-                    </Typography>
-                </div>
-            </div>
-        );
-    }
+    // if (loading) {
+    //     return (
+    //         <div className="flex justify-center items-center" style={{ height: '60vh' }}>
+    //             <div className="flex flex-col items-center">
+    //                 <CircularProgress size={50} thickness={4} sx={{ mb: 2, color: '#0ab067' }} />
+    //                 <Typography variant="body1">
+    //                     Đang tải{'.'.repeat(dotCount)}
+    //                 </Typography>
+    //             </div>
+    //         </div>
+    //     );
+    // }
 
     return (
         <div className="mb-8 flex flex-col gap-12">

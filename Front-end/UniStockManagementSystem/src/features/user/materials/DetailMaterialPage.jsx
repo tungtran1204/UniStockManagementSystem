@@ -23,6 +23,7 @@ const SUPPLIER_TYPE_ID = 2;
 const DetailMaterialPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const currentUser = JSON.parse(localStorage.getItem("user"))
   const [isEditing, setIsEditing] = useState(false);
   const [material, setMaterial] = useState(null);
   const [editedMaterial, setEditedMaterial] = useState(null);
@@ -190,6 +191,8 @@ const DetailMaterialPage = () => {
         }
 
         await updateMaterial(id, formData);
+        window.dispatchEvent(new Event("refreshNotifications"));
+
 
         setIsEditing(false);
         const updatedMaterial = await getMaterialById(id);
@@ -592,44 +595,42 @@ const DetailMaterialPage = () => {
             >
               <FaArrowLeft className="h-3 w-3" /> Quay lại
             </MuiButton>
-            {!isEditing ? (
-              <MuiButton
-                variant="contained"
-                size="medium"
-                onClick={handleEdit}
-                sx={{
-                  boxShadow: 'none',
-                  '&:hover': { boxShadow: 'none' }
-                }}
-              >
-                <div className='flex items-center gap-2'>
-                  <FaEdit className="h-4 w-4" />
-                  <span>Chỉnh sửa</span>
-                </div>
-              </MuiButton>
-            ) : (
-              <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              {!isEditing && currentUser?.permissions?.includes("updateMaterial") ? (
                 <MuiButton
+                  variant="contained"
                   size="medium"
-                  color="error"
-                  variant="outlined"
-                  onClick={handleCancel}
+                  onClick={handleEdit}
                 >
-                  Hủy
+                  <div className='flex items-center gap-2'>
+                    <FaEdit className="h-4 w-4" />
+                    <span>Chỉnh sửa</span>
+                  </div>
                 </MuiButton>
-                <Button
-                  size="lg"
-                  color="white"
-                  variant="text"
-                  className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
-                  ripple={true}
-                  onClick={handleSave}
-                  disabled={loading || !!materialCodeError}
-                >
-                  Lưu
-                </Button>
-              </div>
-            )}
+              ) : isEditing ? (
+                <>
+                  <MuiButton
+                    size="medium"
+                    color="error"
+                    variant="outlined"
+                    onClick={handleCancel}
+                  >
+                    Hủy
+                  </MuiButton>
+                  <Button
+                    size="lg"
+                    color="white"
+                    variant="text"
+                    className="bg-[#0ab067] hover:bg-[#089456]/90 shadow-none text-white font-medium py-2 px-4 rounded-[4px] transition-all duration-200 ease-in-out"
+                    ripple={true}
+                    onClick={handleSave}
+                    disabled={loading || !!materialCodeError}
+                  >
+                    Lưu
+                  </Button>
+                </>
+              ) : null}
+            </div>
           </div>
         </CardBody>
       </Card>
@@ -637,7 +638,7 @@ const DetailMaterialPage = () => {
       <SuccessAlert
         open={showSuccessAlert}
         onClose={() => setShowSuccessAlert(false)}
-        message="Cập nhật vật tư thành công!"
+        message="Cập nhật vật tư thành công!"
       />
     </div>
   );

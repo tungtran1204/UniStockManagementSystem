@@ -42,7 +42,8 @@ public class PermissionHierarchy {
                 "getAllProductTypes",
                 "createProductType",
                 "updateProductType",
-                "checkTypeName"
+                "checkTypeName",
+                "toggleStatusProductType"
         ));
         // ======================
         // 2) ĐỐI TÁC
@@ -141,6 +142,7 @@ public class PermissionHierarchy {
                 "getInventoryDetailsByWarehouse",
                 "getInventoryDetailsByWarehouseM",
                 "getActiveProducts",
+                "cancelSaleOrder",
                 "getPartnersByType"
         ));
         PERMISSION_MAP.put("manageSaleOrder", List.of(
@@ -155,7 +157,6 @@ public class PermissionHierarchy {
                 "getNextOrderCode",
                 "createSaleOrder",
                 "updateSaleOrder",
-                "cancelSaleOrder",
                 "setPreparingMaterial",
                 "getAllPartners",
                 "getInventoryDetailsByWarehouse",

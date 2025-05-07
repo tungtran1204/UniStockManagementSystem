@@ -294,11 +294,22 @@ const AddMaterialPage = () => {
                                     onChange={(e) => {
                                         const value = e.target.value;
                                         // Không cho phép nhập số âm
-                                        if (value === '' || parseFloat(value) >= 0) {
+                                        if (value === '' || (/^\d*\.?\d*$/.test(value) && parseFloat(value) >= 0)) {
                                             setNewMaterial({ ...newMaterial, lowStockThreshold: value });
                                         }
                                     }}
-                                    inputProps={{ min: 0 }} // Đặt giá trị tối thiểu là 0
+                                    onKeyPress={(e) => {
+                                        // Chỉ cho phép các ký tự số và dấu chấm
+                                        const regex = /^[0-9.]$/;
+                                        if (!regex.test(e.key)) {
+                                            e.preventDefault();
+                                        }
+                                    }}
+                                    inputProps={{ 
+                                        min: 0,
+                                        inputMode: 'numeric',
+                                        pattern: '[0-9]*'
+                                    }}
                                 />
                             </div>
 

@@ -268,6 +268,7 @@ useEffect(() => {
             title="Danh sách phiếu xuất kho"
             addButtonLabel="Thêm phiếu xuất"
             onAdd={handleAdd}
+            showAdd={currentUser && currentUser.permissions.includes("createIssueNote")}
             showImport={false}
             showExport={false}
           />

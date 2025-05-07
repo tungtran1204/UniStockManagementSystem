@@ -145,43 +145,49 @@ const MaterialTypePage = () => {
             flex: 1,
             minWidth: 200,
             renderCell: (params) => (
-                <div className="flex items-center gap-2">
-                    <Switch
-                        color="green"
-                        checked={params.value}
-                        onChange={() => {
-                            setPendingToggleRow(params.row);
-                            setConfirmDialogOpen(true);
-                        }}
-                        disabled={loading}
-                    />
-                    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-            ${params.value ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}>
-                        {params.value ? "Đang hoạt động" : "Ngừng hoạt động"}
-                    </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  color="green"
+                  checked={params.value}
+                  disabled={!currentUser?.permissions?.includes("toggleStatusMaterialType")} // Vô hiệu hóa nếu không có quyền
+                  onChange={() => {
+                    setPendingToggleRow(params.row);
+                    setConfirmDialogOpen(true);
+                  }}
+                />
+                <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                  ${params.value ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}>
+                  {params.value ? "Đang hoạt động" : "Ngừng hoạt động"}
                 </div>
+              </div>
             ),
-        },
-        {
+          },
+          {
             field: 'actions',
             headerName: 'Hành động',
             flex: 0.5,
             minWidth: 100,
             renderCell: (params) => (
-                <div className="flex justify-center w-full">
-                    <IconButton
-                        size="small"
-                        onClick={() => {
-                            setEditMaterialType(params.row);
-                            setShowEditModal(true);
-                        }}
-                        color="primary"
-                    >
-                        <ModeEditOutlineOutlinedIcon />
-                    </IconButton>
-                </div>
+              <div className="flex justify-center w-full">
+                {currentUser?.permissions?.includes("updateMaterialType") && (
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      const materialTypeWithCorrectId = {
+                        ...params.row,
+                        materialTypeId: params.row.id
+                      };
+                      setEditMaterialType(materialTypeWithCorrectId);
+                      setShowEditModal(true);
+                    }}
+                    color="primary"
+                  >
+                    <ModeEditOutlineOutlinedIcon />
+                  </IconButton>
+                )}
+              </div>
             ),
-        },
+          },
     ];
 
     const data = materialTypes.map((type, index) => ({
@@ -218,13 +224,15 @@ const MaterialTypePage = () => {
         <div className="mb-8 flex flex-col gap-12">
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
                 <CardBody className="pb-2 bg-white rounded-xl">
-                    <PageHeader
-                        title="Danh sách danh mục vật tư"
-                        onAdd={() => setShowCreateModal(true)}
-                        addButtonLabel="Thêm danh mục vật tư"
-                        showImport={false}
-                        showExport={false}
-                    />
+                <PageHeader
+  title="Danh sách danh mục vật tư"
+  onAdd={() => setShowCreateModal(true)}
+  addButtonLabel="Thêm danh mục vật tư"
+  showImport={false}
+  showExport={false}
+  showAdd={currentUser && currentUser.permissions.includes("createMaterialType")}
+/>
+
                     <div className="px-4 py-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <Typography variant="small" className="font-normal whitespace-nowrap">

@@ -252,25 +252,25 @@ const MaterialPage = () => {
             editable: false,
             filterable: false,
             renderCell: (params) => {
-                return (
-                    <div className="flex items-center gap-2">
-                        <Switch
-                            color="green"
-                            checked={params.value}
-                            onChange={() => {
-                                setPendingToggleRow(params.row);
-                                setConfirmDialogOpen(true);
-                            }}
-                        />
-                        <div
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                      ${params.value ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
-                                }`}
-                        >
-                            {params.value ? "Đang hoạt động" : "Ngừng hoạt động"}
-                        </div>
-                    </div>
-                );
+              return (
+                <div className="flex items-center gap-2">
+                  <Switch
+                    color="green"
+                    checked={params.value}
+                    disabled={!currentUser?.permissions?.includes("toggleUsingStatusMaterial")} // Vô hiệu hóa nếu không có quyền
+                    onChange={() => {
+                      setPendingToggleRow(params.row);
+                      setConfirmDialogOpen(true);
+                    }}
+                  />
+                  <div
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                      ${params.value ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}
+                  >
+                    {params.value ? "Đang hoạt động" : "Ngừng hoạt động"}
+                  </div>
+                </div>
+              );
             },
         },
         {
@@ -346,13 +346,16 @@ const MaterialPage = () => {
         <div className="mb-8 flex flex-col gap-12">
             <Card className="bg-gray-50 p-7 rounded-none shadow-none">
                 <CardBody className="pb-2 bg-white rounded-xl">
-                    <PageHeader
-                        title="Danh sách vật tư"
-                        addButtonLabel="Thêm vật tư"
-                        onAdd={() => navigate("/user/materials/add")}
-                        onImport={() => setShowImportPopup(true)}
-                        onExport={handleExport}
-                    />
+                <PageHeader
+  title="Danh sách vật tư"
+  addButtonLabel="Thêm vật tư"
+  onAdd={() => navigate("/user/materials/add")}
+  onImport={() => setShowImportPopup(true)}
+  onExport={handleExport}
+  showAdd={currentUser && currentUser.permissions.includes("createMaterial")}
+  showImport={currentUser && currentUser.permissions.includes("importMaterials")}
+/>
+
                     <div className="py-2 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                             <Typography variant="small" color="blue-gray" className="font-light">

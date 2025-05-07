@@ -320,9 +320,12 @@ useEffect(() => {
             <Switch
               color="green"
               checked={params.value}
+              disabled={!currentUser?.permissions?.includes("toggleProductionStatus")}
+
               onChange={() => {
                 setPendingToggleRow(params.row);
                 setConfirmDialogOpen(true);
+                
               }}
             />
             <div
@@ -403,13 +406,16 @@ useEffect(() => {
     <div className="mb-8 flex flex-col gap-12">
       <Card className="bg-gray-50 p-7 rounded-none shadow-none">
         <CardBody className="pb-2 bg-white rounded-xl">
-          <PageHeader
-            title="Danh sách sản phẩm"
-            addButtonLabel="Thêm sản phẩm"
-            onAdd={handleAddProduct}
-            onImport={() => setShowImportPopup(true)}
-            onExport={handleExport} // Sử dụng hàm handleExport mới
-          />
+        <PageHeader
+  title="Danh sách sản phẩm"
+  addButtonLabel="Thêm sản phẩm"
+  onAdd={handleAddProduct}
+  onImport={() => setShowImportPopup(true)}
+  onExport={handleExport}
+  showAdd={currentUser && currentUser.permissions.includes("createProduct")}
+  showImport={currentUser && currentUser.permissions.includes("importProducts")}
+/>
+
           {/* Phần chọn số items/trang */}
           <div className="py-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">

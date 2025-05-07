@@ -302,6 +302,8 @@ useEffect(() => {
                 console.error("Không lấy được mã phiếu nhập:", error);
               }
             }}
+            showAdd={currentUser && currentUser.permissions.includes("createGoodReceipt")}
+
           // customButtons={
           //   <Menu placement="bottom-end">
           //     <MenuHandler>

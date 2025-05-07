@@ -346,12 +346,12 @@ const DetailPurchaseRequestPage = () => {
                             {purchaseRequest.status === "REJECTED" && (
                                 <div>
                                     <Typography variant="medium" className="mb-1 text-black">
-                                        Lý do hủy
+                                        Lý do từ chối
                                     </Typography>
                                     <TextField
                                         fullWidth
                                         size="small"
-                                        placeholder="Lý do huỷ"
+                                        placeholder="Lý do từ chối"
                                         hiddenLabel
                                         multiline
                                         rows={4}
