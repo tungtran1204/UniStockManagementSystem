@@ -19,6 +19,7 @@ import Table from "@/components/Table";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import SuccessAlert from "@/components/SuccessAlert";
 import CircularProgress from '@mui/material/CircularProgress';
+import { useNavigate, useLocation } from "react-router-dom";
 
 const UnitPage = () => {
     const { units, fetchUnits, toggleStatus, createUnit, updateUnit, totalPages, totalElements, loading } = useUnit();
@@ -32,6 +33,34 @@ const UnitPage = () => {
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
 
+    const navigate = useNavigate();
+    const [currentUser, setCurrentUser] = useState(null);
+      const location = useLocation();
+    
+      useEffect(() => {
+                // Lấy thông tin user từ localStorage
+                const storedUser = localStorage.getItem("user");
+                if (storedUser) {
+                    try {
+                        setCurrentUser(JSON.parse(storedUser));
+                    } catch (err) {
+                        console.error("Lỗi parse JSON từ localStorage:", err);
+                    }
+                }
+        
+                if (location.state?.successMessage) {
+                    console.log("Component mounted, location.state:", location.state?.successMessage);
+                    setAlertMessage(location.state.successMessage);
+                    setShowSuccessAlert(true);
+                    // Xóa state để không hiển thị lại nếu người dùng refresh
+                    window.history.replaceState({}, document.title);
+                }
+            }, [location.state]);
+      useEffect(() => {
+              if (currentUser && !currentUser.permissions?.includes("getAllUnits")) {
+                navigate("/unauthorized");
+              }
+            }, [currentUser, navigate]);
     useEffect(() => {
         fetchUnits(currentPage, pageSize);
     }, [currentPage, pageSize, fetchUnits]);

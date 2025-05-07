@@ -34,6 +34,7 @@ dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
 
 const ReceiptNotePage = () => {
+  const [currentUser, setCurrentUser] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
   const [searchTerm, setSearchTerm] = useState("");
@@ -66,7 +67,30 @@ const ReceiptNotePage = () => {
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
-
+  useEffect(() => {
+          // Lấy thông tin user từ localStorage
+          const storedUser = localStorage.getItem("user");
+          if (storedUser) {
+              try {
+                  setCurrentUser(JSON.parse(storedUser));
+              } catch (err) {
+                  console.error("Lỗi parse JSON từ localStorage:", err);
+              }
+          }
+  
+          if (location.state?.successMessage) {
+              console.log("Component mounted, location.state:", location.state?.successMessage);
+              setAlertMessage(location.state.successMessage);
+              setShowSuccessAlert(true);
+              // Xóa state để không hiển thị lại nếu người dùng refresh
+              window.history.replaceState({}, document.title);
+          }
+      }, [location.state]);
+useEffect(() => {
+        if (currentUser && !currentUser.permissions?.includes("getAllGoodReceipts")) {
+          navigate("/unauthorized");
+        }
+      }, [currentUser, navigate]);
   const {
     receiptNotes,
     totalPages,
@@ -86,8 +110,29 @@ const ReceiptNotePage = () => {
 
   // Fetch data on component mount and when page or size changes
   useEffect(() => {
-    fetchPaginatedReceiptNotes(currentPage, pageSize, searchTerm, selectedCategories, startDate, endDate);
-  }, [currentPage, pageSize, searchTerm, selectedCategories, startDate, endDate]);
+    fetchPaginatedReceiptNotes(
+      currentPage,
+      pageSize,
+      searchTerm,
+      selectedCategories,
+      startDate,
+      endDate,
+      true  // luôn bật loading khi đổi page
+    );
+  }, [currentPage, pageSize]);
+
+  useEffect(() => {
+    setCurrentPage(0);  // reset về trang đầu khi filter thay đổi
+    fetchPaginatedReceiptNotes(
+      0,
+      pageSize,
+      searchTerm,
+      selectedCategories,
+      startDate,
+      endDate,
+      false  // không bật loading khi filter
+    );
+  }, [searchTerm, selectedCategories, startDate, endDate]);
 
   // Fetch thông tin user và đơn hàng
 
@@ -110,7 +155,7 @@ const ReceiptNotePage = () => {
   // Handle search
   const handleSearch = () => {
     setCurrentPage(0);
-    fetchPaginatedReceiptNotes(0, pageSize, searchTerm, selectedCategories, startDate, endDate);
+    fetchPaginatedReceiptNotes(0, pageSize, searchTerm, selectedCategories, startDate, endDate, false);
   };
 
   const columnsConfig = [
@@ -422,7 +467,7 @@ const ReceiptNotePage = () => {
                         onClick={() => {
                           setSelectedCategories([]);
                           setCurrentPage(0);
-                          fetchPaginatedReceiptNotes(0, pageSize, searchTerm, [], startDate, endDate);
+                          fetchPaginatedReceiptNotes(0, pageSize, searchTerm, [], startDate, endDate, false);
                         }}
                         sx={{
                           color: "#000000DE",

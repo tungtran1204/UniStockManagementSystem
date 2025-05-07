@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import useProductType from "./useProductType";
 import CreateProductTypeModal from "./CreateProductTypeModal";
 import EditProductTypeModal from "./EditProductTypeModal";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
     Card,
     CardBody,
@@ -16,6 +17,8 @@ import PageHeader from '@/components/PageHeader';
 import Table from "@/components/Table";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import SuccessAlert from "@/components/SuccessAlert";
+import StatusFilterButton from "@/components/StatusFilterButton";
+import TableSearch from '@/components/TableSearch';
 import CircularProgress from '@mui/material/CircularProgress';
 
 const ProductTypePage = () => {
@@ -27,7 +30,8 @@ const ProductTypePage = () => {
         updateProductType,
         totalPages,
         totalElements,
-        loading
+        loading,
+        applyFilters  // Added missing applyFilters from the hook
     } = useProductType();
 
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -39,13 +43,37 @@ const ProductTypePage = () => {
     const [editProductType, setEditProductType] = useState(null);
     const [currentPage, setCurrentPage] = useState(0);
     const [pageSize, setPageSize] = useState(10);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedStatuses, setSelectedStatuses] = useState([]);
+    const [statusAnchorEl, setStatusAnchorEl] = useState(null);
+const navigate = useNavigate();
+const [currentUser, setCurrentUser] = useState(null);
+  const location = useLocation();
 
-    useEffect(() => {
-        fetchProductTypes(currentPage, pageSize);
-    }, [currentPage, pageSize, fetchProductTypes]);
-
-    useEffect(() => {
-    }, [showCreateModal]);
+  useEffect(() => {
+            // Lấy thông tin user từ localStorage
+            const storedUser = localStorage.getItem("user");
+            if (storedUser) {
+                try {
+                    setCurrentUser(JSON.parse(storedUser));
+                } catch (err) {
+                    console.error("Lỗi parse JSON từ localStorage:", err);
+                }
+            }
+    
+            if (location.state?.successMessage) {
+                console.log("Component mounted, location.state:", location.state?.successMessage);
+                setAlertMessage(location.state.successMessage);
+                setShowSuccessAlert(true);
+                // Xóa state để không hiển thị lại nếu người dùng refresh
+                window.history.replaceState({}, document.title);
+            }
+        }, [location.state]);
+  useEffect(() => {
+          if (currentUser && !currentUser.permissions?.includes("getAllProductTypes")) {
+            navigate("/unauthorized");
+          }
+        }, [currentUser, navigate]);
 
     const handlePageChange = (selectedItem) => {
         setCurrentPage(selectedItem.selected);
@@ -62,7 +90,7 @@ const ProductTypePage = () => {
             setShowCreateModal(false);
             setSuccessMessage("Tạo dòng sản phẩm thành công!");
             setSuccessAlertOpen(true);
-            fetchProductTypes(currentPage, pageSize);
+            fetchProductTypes(currentPage, pageSize, buildFilters());
         } catch (error) {
             console.log(error.message || "Lỗi khi tạo dòng sản phẩm");
         }
@@ -78,11 +106,49 @@ const ProductTypePage = () => {
             setShowEditPopup(false);
             setSuccessMessage("Cập nhật dòng sản phẩm thành công!");
             setSuccessAlertOpen(true);
-            fetchProductTypes(currentPage, pageSize);
+            fetchProductTypes(currentPage, pageSize, buildFilters());
         } catch (error) {
             console.log(error.message || "Lỗi khi cập nhật dòng sản phẩm");
         }
     };
+
+    const allStatuses = [
+        {
+            value: true,
+            label: "Đang hoạt động",
+            className: "bg-green-50 text-green-800",
+        },
+        {
+            value: false,
+            label: "Ngừng hoạt động",
+            className: "bg-red-50 text-red-800",
+        },
+    ];
+
+    const buildFilters = () => ({
+        search: searchTerm || undefined,
+        statuses: selectedStatuses.length
+            ? selectedStatuses.map(s => s.value)
+            : undefined,
+    });
+
+    const handleSearch = () => {
+        applyFilters(buildFilters(), 0, pageSize, false);  // Không loading
+    };
+    
+
+    // useEffect cho phân trang
+    useEffect(() => {
+        applyFilters(buildFilters(), currentPage, pageSize, true);  // 👉 Lần đầu hoặc đổi page thì loading
+    }, [currentPage, pageSize]);
+
+    useEffect(() => {
+        const delayDebounce = setTimeout(() => {
+            applyFilters(buildFilters(), 0, pageSize, false);  // 👉 Filter thì KHÔNG loading
+            setCurrentPage(0);
+        }, 500);
+        return () => clearTimeout(delayDebounce);
+    }, [searchTerm, selectedStatuses, pageSize]);    
 
     const columnsConfig = [
         { field: 'index', headerName: 'STT', flex: 0.5, minWidth: 50 },
@@ -203,6 +269,26 @@ const ProductTypePage = () => {
                                 bản ghi mỗi trang
                             </Typography>
                         </div>
+                        <div className="mb-3 flex flex-wrap items-center gap-4">
+                            {/* Filter by status */}
+                            <StatusFilterButton
+                                anchorEl={statusAnchorEl}
+                                setAnchorEl={setStatusAnchorEl}
+                                selectedStatuses={selectedStatuses}
+                                setSelectedStatuses={setSelectedStatuses}
+                                allStatuses={allStatuses}
+                                buttonLabel="Trạng thái"
+                            />
+                            {/* Search input */}
+                            <div className="w-[250px]">
+                                <TableSearch
+                                    value={searchTerm}
+                                    onChange={setSearchTerm}
+                                    onSearch={handleSearch}
+                                    placeholder="Tìm kiếm sản phẩm"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <Table
@@ -257,7 +343,7 @@ const ProductTypePage = () => {
                 onClose={() => setConfirmDialogOpen(false)}
                 onConfirm={() => {
                     if (pendingToggleRow) {
-                        toggleStatus(pendingToggleRow.id, pendingToggleRow.status);
+                        toggleStatus(pendingToggleRow.id, pendingToggleRow.status, currentPage, pageSize);
                         setSuccessMessage("Cập nhật trạng thái thành công!");
                         setSuccessAlertOpen(true);
                     }

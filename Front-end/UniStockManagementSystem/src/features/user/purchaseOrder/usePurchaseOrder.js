@@ -22,8 +22,9 @@ const usePurchaseOrder = () => {
   const [loading, setLoading] = useState(false); // ✅ New loading state
 
   // Lấy danh sách đơn hàng từ API
-  const fetchPaginatedOrders = async (page = currentPage, size = pageSize, search = searchKeyword, status = selectedStatus, startDate, endDate) => {
-    setLoading(true);
+  const fetchPaginatedOrders = async (page = currentPage, size = pageSize, search = searchKeyword, status = selectedStatus, startDate, endDate, showLoading = true
+  ) => {
+    if (showLoading) setLoading(false);
     try {
       const response = await fetchPurchaseOrders(page, size, search, status, startDate, endDate);
       console.log("API Response:", response);
@@ -35,7 +36,7 @@ const usePurchaseOrder = () => {
     } catch (error) {
       console.error("Lỗi khi tải danh sách đơn hàng:", error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 

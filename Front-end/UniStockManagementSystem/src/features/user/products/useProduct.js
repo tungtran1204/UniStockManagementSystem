@@ -14,15 +14,27 @@ const useProduct = () => {
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [filterState, setFilterState] = useState({
+    search: undefined,
+    statuses: undefined,
+    typeIds: undefined,
+  });
 
-  const fetchPaginatedProducts = async (page = currentPage, size = pageSize) => {
-    try {
+  const fetchPaginatedProducts = async (page = currentPage, size = pageSize, filters = filterState, isFirstLoad) => {
+    if (isFirstLoad) {
       setLoading(true);
-      const response = await getAllProducts(page, size);
-
+    }
+    try {
+      const response = await getAllProducts({
+        page,
+        size,
+        ...filters,
+      });
       setProducts(response.products || []);
       setTotalPages(response.totalPages || 0);
       setTotalElements(response.totalElements || 0);
+      setCurrentPage(page);
       return response;
     } catch (error) {
       console.error("❌ Lỗi khi lấy danh sách sản phẩm:", error);
@@ -30,9 +42,25 @@ const useProduct = () => {
       setTotalPages(0);
       setTotalElements(0);
     } finally {
-      setLoading(false);
+      if (isFirstLoad) {
+        setLoading(false);
+      }
     }
   };
+
+  // const applyFilters = (filters) => {
+  //   setFilterState(filters);
+  //   fetchPaginatedProducts(0, pageSize, filters, isFirstLoad);
+  //   if (isFirstLoad) {
+  //     setIsFirstLoad(false);  // ✅ Sau lần đầu, tắt flag này
+  //   }
+  // };
+
+  const applyFilters = (filters, isFirstLoad = false) => {
+    setFilterState(filters);
+    fetchPaginatedProducts(0, pageSize, filters, isFirstLoad);
+};
+
 
   const handleToggleStatus = async (productId) => {
     if (!productId) {
@@ -40,14 +68,14 @@ const useProduct = () => {
       console.log("Lỗi: Không tìm thấy ID sản phẩm!");
       return;
     }
-  
+
     try {
       const response = await axios.patch(
         `${import.meta.env.VITE_API_URL}/user/products/${productId}/toggle-production`,
         {},
         { headers: authHeader() } // ⚠️ Đảm bảo token được gửi trong request
       );
-  
+
       console.log("✅ [handleToggleStatus] API Response:", response.data);
       fetchPaginatedProducts(); // Refresh danh sách sản phẩm
     } catch (error) {
@@ -67,10 +95,10 @@ const useProduct = () => {
     fetchPaginatedProducts(0, size);
   };
 
-  // Load dữ liệu ban đầu
-  useEffect(() => {
-    fetchPaginatedProducts();
-  }, []);
+  // // Load dữ liệu ban đầu
+  // useEffect(() => {
+  //   fetchPaginatedProducts();
+  // }, []);
 
   return {
     products,
@@ -82,7 +110,8 @@ const useProduct = () => {
     fetchPaginatedProducts,
     handleToggleStatus,
     handlePageChange,
-    handlePageSizeChange
+    handlePageSizeChange,
+    applyFilters
   };
 };
 

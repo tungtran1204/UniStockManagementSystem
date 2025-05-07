@@ -80,6 +80,11 @@ const PurchaseRequestPage = () => {
             window.history.replaceState({}, document.title);
         }
     }, [location.state]);
+    useEffect(() => {
+        if (currentUser && !currentUser.permissions?.includes("getAllPurchaseRequests")) {
+          navigate("/unauthorized");
+        }
+      }, [currentUser, navigate]);
 
     useEffect(() => {
         fetchPurchaseRequests(

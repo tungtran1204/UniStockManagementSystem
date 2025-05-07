@@ -43,19 +43,9 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 const ProductPage = () => {
   const navigate = useNavigate();
   // Sử dụng useProduct hook
-  const {
-    products,
-    loading,
-    currentPage,
-    pageSize,
-    totalPages,
-    totalElements,
-    fetchPaginatedProducts,
-    handleToggleStatus,
-    handlePageChange,
-    handlePageSizeChange
-  } = useProduct();
+  const { products, loading, currentPage, pageSize, totalPages, totalElements, fetchPaginatedProducts, handleToggleStatus, handlePageChange, handlePageSizeChange, applyFilters } = useProduct();
 
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
   // Các state trong component
   const [showImportPopup, setShowImportPopup] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -72,6 +62,34 @@ const ProductPage = () => {
   const [selectedProductTypes, setSelectedProductTypes] = useState([]);
   const [productTypeAnchorEl, setProductTypeAnchorEl] = useState(null);
 
+const [currentUser, setCurrentUser] = useState(null);
+  const location = useLocation();
+
+  useEffect(() => {
+            // Lấy thông tin user từ localStorage
+            const storedUser = localStorage.getItem("user");
+            if (storedUser) {
+                try {
+                    setCurrentUser(JSON.parse(storedUser));
+                } catch (err) {
+                    console.error("Lỗi parse JSON từ localStorage:", err);
+                }
+            }
+    
+            if (location.state?.successMessage) {
+                console.log("Component mounted, location.state:", location.state?.successMessage);
+                setAlertMessage(location.state.successMessage);
+                setShowSuccessAlert(true);
+                // Xóa state để không hiển thị lại nếu người dùng refresh
+                window.history.replaceState({}, document.title);
+            }
+        }, [location.state]);
+  useEffect(() => {
+          if (currentUser && !currentUser.permissions?.includes("getProducts")) {
+            navigate("/unauthorized");
+          }
+        }, [currentUser, navigate]);
+
   const allStatuses = [
     {
       value: true,
@@ -87,10 +105,45 @@ const ProductPage = () => {
 
   // Handle search
   const handleSearch = () => {
-    // Reset to first page when searching
-    // setCurrentPage(0);
-    fetchPaginatedReceiptNotes(0, pageSize, searchTerm);
+    applyFilters(buildFilters());
   };
+
+  useEffect(() => {
+    applyFilters(buildFilters(), true); 
+}, []);
+
+useEffect(() => {
+  applyFilters(buildFilters());
+}, [selectedProductTypes]);
+
+  
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      applyFilters(buildFilters());
+    }, 500);  // debounce 500ms
+  
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm]);
+  
+
+  const buildFilters = () => {
+    const filters = {
+        search: searchTerm || undefined,
+        statuses: selectedStatuses.length
+          ? selectedStatuses.map(s => s.value)
+          : undefined,
+          typeIds: selectedProductTypes.length
+          ? selectedProductTypes.map(t => t.typeId ?? t.value)  // support cả typeId hoặc value
+          : undefined,
+    };
+    console.log("🔥 Filters:", filters);
+    return filters;
+};
+
+
+  useEffect(() => {
+    applyFilters(buildFilters());
+  }, [selectedStatuses]);  
 
   const [newProduct, setNewProduct] = useState({
     productCode: "",
@@ -105,7 +158,7 @@ const ProductPage = () => {
   const [pendingToggleRow, setPendingToggleRow] = useState(null);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
-  const location = useLocation();
+  // const location = useLocation();
 
   useEffect(() => {
     if (location.state?.successMessage) {
@@ -315,13 +368,13 @@ const ProductPage = () => {
     isProductionActive: !!product.isProductionActive,
   }));
 
-  // Add this function
-  const filteredProducts = Array.isArray(products)
-    ? products.filter(product =>
-      product.productCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.productName?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-    : [];
+  // // Add this function
+  // const filteredProducts = Array.isArray(products)
+  //   ? products.filter(product =>
+  //     product.productCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     product.productName?.toLowerCase().includes(searchTerm.toLowerCase())
+  //   )
+  //   : [];
 
   const hasInvalidRows = previewResults.some((row) => row.valid === false);
 
@@ -450,7 +503,6 @@ const ProductPage = () => {
                         ? selectedProductTypes.filter(p => p !== pt)
                         : [...selectedProductTypes, pt];
                       setSelectedProductTypes(updated);
-                      setCurrentPage(0);
                     }}
                     sx={{ paddingLeft: "7px", minWidth: "150px" }}
                   >
@@ -465,7 +517,7 @@ const ProductPage = () => {
                       size="medium"
                       onClick={() => {
                         setSelectedProductTypes([]);
-                        setCurrentPage(0);
+                        applyFilters(buildFilters());
                       }}
                       sx={{
                         color: "#000000DE",

@@ -81,7 +81,7 @@ const MaterialPage = () => {
 
     const handleSearch = () => {
         // setCurrentPage(0);
-        fetchPaginatedMaterials(0, pageSize, searchTerm);
+        fetchPaginatedMaterials(0, pageSize, buildFilters(), false);
     };
 
     const [newMaterial, setNewMaterial] = useState({
@@ -100,6 +100,33 @@ const MaterialPage = () => {
     const [showSuccessAlert, setShowSuccessAlert] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
     const location = useLocation();
+
+    const [currentUser, setCurrentUser] = useState(null);
+    
+      useEffect(() => {
+                // Lấy thông tin user từ localStorage
+                const storedUser = localStorage.getItem("user");
+                if (storedUser) {
+                    try {
+                        setCurrentUser(JSON.parse(storedUser));
+                    } catch (err) {
+                        console.error("Lỗi parse JSON từ localStorage:", err);
+                    }
+                }
+        
+                if (location.state?.successMessage) {
+                    console.log("Component mounted, location.state:", location.state?.successMessage);
+                    setAlertMessage(location.state.successMessage);
+                    setShowSuccessAlert(true);
+                    // Xóa state để không hiển thị lại nếu người dùng refresh
+                    window.history.replaceState({}, document.title);
+                }
+            }, [location.state]);
+      useEffect(() => {
+              if (currentUser && !currentUser.permissions?.includes("getAllMaterials")) {
+                navigate("/unauthorized");
+              }
+            }, [currentUser, navigate]);
 
     useEffect(() => {
         if (location.state?.successMessage) {
@@ -163,6 +190,17 @@ const MaterialPage = () => {
     const handlePageChangeWrapper = (selectedItem) => {
         handlePageChange(selectedItem.selected);
     };
+
+    const buildFilters = () => ({
+        search: searchTerm || undefined,
+        statuses: selectedStatuses.length > 0 ? selectedStatuses.map(s => s.value) : undefined,
+        typeIds: selectedMaterialTypes.length > 0 ? selectedMaterialTypes.map(t => t.materialTypeId) : undefined,
+      });
+      useEffect(() => {
+        const isFilterChange = searchTerm || selectedStatuses.length > 0 || selectedMaterialTypes.length > 0;
+        fetchPaginatedMaterials(currentPage, pageSize, buildFilters(), !isFilterChange); 
+        // showLoading = false khi filter, true khi đổi page
+    }, [searchTerm, selectedStatuses, selectedMaterialTypes, currentPage, pageSize]);           
 
     const columnsConfig = [
         { field: 'materialCode', headerName: 'Mã VT', flex: 1, minWidth: 50, editable: false, filterable: false },
@@ -269,19 +307,19 @@ const MaterialPage = () => {
         isUsing: material.isUsing,
     }));
 
-    const filteredMaterials = Array.isArray(materials)
-        ? materials.filter(material => {
-            const matchesSearch =
-                material.materialCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                material.materialName?.toLowerCase().includes(searchTerm.toLowerCase());
+    // const filteredMaterials = Array.isArray(materials)
+    //     ? materials.filter(material => {
+    //         const matchesSearch =
+    //             material.materialCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    //             material.materialName?.toLowerCase().includes(searchTerm.toLowerCase());
 
-            const matchesMaterialType =
-                selectedMaterialTypes.length === 0 ||
-                selectedMaterialTypes.some((type) => type.materialTypeId === material.typeId);
+    //         const matchesMaterialType =
+    //             selectedMaterialTypes.length === 0 ||
+    //             selectedMaterialTypes.some((type) => type.materialTypeId === material.typeId);
 
-            return matchesSearch && matchesMaterialType;
-        })
-        : [];
+    //         return matchesSearch && matchesMaterialType;
+    //     })
+    //     : [];
 
     const [dotCount, setDotCount] = useState(0);
     useEffect(() => {

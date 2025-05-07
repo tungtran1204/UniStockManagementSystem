@@ -28,9 +28,14 @@ public class MaterialsController {
     @GetMapping
     public ResponseEntity<Page<MaterialsDTO>> getAllMaterials(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) List<Boolean> statuses,
+            @RequestParam(name = "typeIds", required = false) List<Long> typeIds
     ) {
-        return ResponseEntity.ok(materialsService.getAllMaterials(page, size));
+        return ResponseEntity.ok(
+                materialsService.getAllMaterials(page, size, search, statuses, typeIds)
+        );
     }
 
     // 🟢 API lấy thông tin nguyên liệu theo ID

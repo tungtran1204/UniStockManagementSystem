@@ -112,7 +112,7 @@ public class SaleOrdersService {
                 dto.setStatusLabel("Chưa có yêu cầu");
             } else {
                 boolean allCancelled = requests.stream()
-                        .allMatch(r -> r.getStatus() == PurchaseRequest.RequestStatus.CANCELLED);
+                        .allMatch(r -> r.getStatus() == PurchaseRequest.RequestStatus.REJECTED);
                 boolean anyConfirmed = requests.stream()
                         .anyMatch(r -> r.getStatus() == PurchaseRequest.RequestStatus.CONFIRMED);
 

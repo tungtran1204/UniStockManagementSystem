@@ -40,7 +40,7 @@ public class PurchaseOrderController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PurchaseOrderDTO> getOrderById(@PathVariable Long id) {
+    public ResponseEntity<PurchaseOrderDTO> getPurchaseOrderById(@PathVariable Long id) {
         return ResponseEntity.ok(purchaseOrderService.getOrderById(id));
     }
 

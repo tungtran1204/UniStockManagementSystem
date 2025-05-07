@@ -34,6 +34,7 @@ const IssueNotePage = () => {
   const [categoryAnchorEl, setCategoryAnchorEl] = useState(null);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const categoryList = [
     "Bán hàng",
@@ -42,6 +43,31 @@ const IssueNotePage = () => {
     "Trả lại hàng mua",
     "Khác",
   ];
+
+useEffect(() => {
+          // Lấy thông tin user từ localStorage
+          const storedUser = localStorage.getItem("user");
+          if (storedUser) {
+              try {
+                  setCurrentUser(JSON.parse(storedUser));
+              } catch (err) {
+                  console.error("Lỗi parse JSON từ localStorage:", err);
+              }
+          }
+  
+          if (location.state?.successMessage) {
+              console.log("Component mounted, location.state:", location.state?.successMessage);
+              setAlertMessage(location.state.successMessage);
+              setShowSuccessAlert(true);
+              // Xóa state để không hiển thị lại nếu người dùng refresh
+              window.history.replaceState({}, document.title);
+          }
+      }, [location.state]);
+useEffect(() => {
+        if (currentUser && !currentUser.permissions?.includes("getAllIssueNotes")) {
+          navigate("/unauthorized");
+        }
+      }, [currentUser, navigate]);
 
   useEffect(() => {
     if (location.state?.successMessage) {
@@ -53,13 +79,32 @@ const IssueNotePage = () => {
     }
   }, [location.state]);
 
+  // useEffect(() => {
+  //   fetchPaginatedIssueNotes(currentPage, pageSize);
+  // }, [currentPage, pageSize, searchTerm, selectedCategories, startDate, endDate]);
   useEffect(() => {
-    fetchPaginatedIssueNotes(currentPage, pageSize);
-  }, [currentPage, pageSize, searchTerm, selectedCategories, startDate, endDate]);
+    fetchPaginatedIssueNotes(
+      currentPage,
+      pageSize,
+      searchTerm,
+      true  // ✅ Có loading khi đổi page
+    );
+  }, [currentPage, pageSize]);
 
-  const fetchPaginatedIssueNotes = async (page, size, search = "") => {
+  useEffect(() => {
+    setCurrentPage(0);  // Reset về trang đầu khi filter đổi
+    fetchPaginatedIssueNotes(
+      0,
+      pageSize,
+      searchTerm,
+      false  // 🚫 Không loading khi filter
+    );
+  }, [searchTerm, selectedCategories, startDate, endDate]);
+
+
+  const fetchPaginatedIssueNotes = async (page, size, search = "", showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
-      setLoading(true);
       // API trả về dạng: { totalPages, content: [ { ginId, ginCode, description, category, issueDate, soCode, createdByUsername, details, ... } ] }
       const data = await getIssueNotes(page, size, searchTerm, selectedCategories, startDate, endDate);
       setIssueNotes(data.content || []);
@@ -95,8 +140,8 @@ const IssueNotePage = () => {
   };
 
   const handleSearch = () => {
+    fetchPaginatedIssueNotes(0, pageSize, searchTerm, false);  // Không loading khi search
     setCurrentPage(0);
-    fetchPaginatedIssueNotes(0, pageSize, searchTerm);
   };
 
   // Lọc dữ liệu theo từ khóa dựa trên ginCode hoặc description
@@ -346,7 +391,8 @@ const IssueNotePage = () => {
                         onClick={() => {
                           setSelectedCategories([]);
                           setCurrentPage(0);
-                          fetchPaginatedIssueNotes(0, pageSize, searchTerm, [], startDate, endDate);
+                          fetchPaginatedIssueNotes(0, pageSize, searchTerm, [], startDate, endDate, false);
+                          setCurrentPage(0);  
                         }}
                         sx={{
                           color: "#000000DE",

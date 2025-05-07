@@ -121,6 +121,17 @@ const AddReceiptNoteGeneral = () => {
     isReturnCategory || w.warehouseCode !== "KPL"
   );
 
+  // Lọc các sản phẩm chưa được chọn (trừ chính dòng hiện tại)
+const getAvailableProducts = (currentRowId) => {
+  const selectedCodes = manualItems
+    .filter(item => item.id !== currentRowId)
+    .map(item => item.selected?.code)
+    .filter(Boolean);
+  
+  return getDropdownListByCategory().filter(option => !selectedCodes.includes(option.code));
+};
+
+
   const { fetchPendingReceiveOutsources } = useIssueNote();
 
   // region: useEffect - gọi data, set default values
@@ -638,7 +649,7 @@ const AddReceiptNoteGeneral = () => {
       editable: false,
       filterable: false,
       renderCell: (params) => {
-        const dropdownList = getDropdownListByCategory();
+        const dropdownList = getAvailableProducts(params.row.id);
         const rowError = quantityErrors.product?.[params.id] || "";
         return (
           <Autocomplete

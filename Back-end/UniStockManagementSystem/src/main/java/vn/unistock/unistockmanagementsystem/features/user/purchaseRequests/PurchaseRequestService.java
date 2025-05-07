@@ -531,14 +531,13 @@ public class PurchaseRequestService {
 //            dto.setPurchaseRequestDetails(new ArrayList<>());
 //        }
 //
-//        return dto;
-//    }
+//        return dto;z`
 
     public boolean canCreatePurchaseRequest(Long orderId) {
         List<PurchaseRequest> requests = purchaseRequestRepository.findAllBySalesOrder_OrderId(orderId);
         if (requests.isEmpty()) return true;
 
-        return requests.stream().allMatch(req -> req.getStatus() == PurchaseRequest.RequestStatus.CANCELLED);
+        return requests.stream().allMatch(req -> req.getStatus() == PurchaseRequest.RequestStatus.REJECTED);
     }
 
     @Transactional

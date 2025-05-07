@@ -280,6 +280,16 @@ const EditSaleOrderPage = () => {
     setMode(newMode);
   };
 
+  // Lọc các sản phẩm chưa được chọn
+  const getAvailableProducts = (currentRowId) => {
+  const selectedProductCodes = items
+    .filter((item) => item.id !== currentRowId) // loại bỏ chính dòng hiện tại (cho phép giữ nguyên)
+    .map((item) => item.productCode)
+    .filter(Boolean);
+  return products.filter((product) => !selectedProductCodes.includes(product.value));
+  };
+
+
   const handleEdit = () => {
     if (!originalData) return;
     handleSetMode(MODE_EDIT);
@@ -818,7 +828,7 @@ const EditSaleOrderPage = () => {
                 </td>
                 <td className="px-4 py-2 text-sm border-r border-[rgba(224,224,224,1)] w-80" rowSpan={details.length}>
                   <Autocomplete
-                    options={products}
+                    options={getAvailableProducts(item.id)}
                     size="small"
                     disabled={mode !== MODE_EDIT}
                     getOptionLabel={(option) => option.label}
@@ -946,7 +956,7 @@ const EditSaleOrderPage = () => {
           <td className="px-4 py-2 text-sm w-10 text-[#000000DE] border-r border-[rgba(224,224,224,1)]">{idx + 1}</td>
           <td className="px-4 py-2 text-sm border-r border-[rgba(224,224,224,1)] w-96">
             <Autocomplete
-              options={products}
+              options={getAvailableProducts(item.id)}
               size="small"
               disabled={mode !== MODE_EDIT}
               getOptionLabel={(option) => option.label}
@@ -1696,7 +1706,7 @@ const EditSaleOrderPage = () => {
               {canCreatePurchaseRequestState &&
                 mode === MODE_DINHMUC &&
                 originalData?.status !== "CANCELLED" &&
-                originalData?.status === "PROCESSING" &&
+                (originalData?.status === "REJECTED" || originalData?.status === "PROCESSING") &&
                 activeTab === "products" &&
                 showMaterialTable && (
                   materialRequirements.every((mat) => mat.quantityToBuy === 0) ? (
